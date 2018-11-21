@@ -49,7 +49,7 @@ class Ini:
 
         """
         from nemoa.base import env
-        from nemoa.base.file import inifile
+        from nemoa.file import inifile
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions

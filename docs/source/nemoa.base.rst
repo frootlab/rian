@@ -1,13 +1,6 @@
 nemoa.base package
 ==================
 
-Subpackages
------------
-
-.. toctree::
-
-    nemoa.base.file
-
 Submodules
 ----------
 

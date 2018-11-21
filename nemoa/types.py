@@ -20,7 +20,7 @@ import os
 import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
-from typing import Type, TypeVar, Union, NamedTuple, Container, Sized
+from typing import Type, TypeVar, Union, Container, Sized
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')
@@ -136,20 +136,6 @@ ClassStrList = ClassVar[StrList]
 ClassDict = ClassVar[AnyDict]
 ClassStrDict = ClassVar[StrDict]
 
-# Nested Types
-# TODO (patrick.michl@gmail.com): currently recursive type definition is not
-# fully supported by the typing module. When recursive type definition is
-# available replace the following lines by their respective recursive
-# definitions
-AnyDict2 = Dict[Any, AnyDict]
-AnyDict3 = Dict[Any, AnyDict2]
-NestDict = Union[AnyDict, AnyDict2, AnyDict3]
-#NestDict = Dict[Any, Union[Any, 'NestDict']]
-NestRecDict = Union[StrDict, RecDict, DictOfRecDicts]
-# NestStrDict = Dict[Str, Union[StrDict, 'NestStrDict']]
-OptNestDict = Optional[NestDict]
-IterNestRecDict = Iterable[NestRecDict]
-
 ################################################################################
 # Structural Types for Callables and Collections of Callables
 ################################################################################
@@ -187,14 +173,11 @@ FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
 # Structural Types for standard library packages
 ################################################################################
 
-# Named Tuples
-OptNamedTuple = Optional[NamedTuple]
-
-# Dynamic Typed (Duck Typed) Classes
-IterAny = Iterator[Any] # methods: __next__
-IterNone = Iterator[None] # methods: __next__
-OptContainer = Optional[Container] # methods: __contains__
-OptSized = Optional[Sized] # methods: __len__
+# Generic Collections
+IterAny = Iterator[Any]
+IterNone = Iterator[None]
+OptContainer = Optional[Container]
+OptSized = Optional[Sized]
 
 # Path Like
 OptPath = Optional[Path]
@@ -203,18 +186,6 @@ StrDictOfPaths = Dict[str, Path]
 PathLike = Union[str, Path]
 PathLikeList = List[PathLike]
 OptPathLike = Optional[PathLike]
-# Nested paths for tree structured path references
-# TODO (patrick.michl@gmail.com): currently (Python 3.7.1) recursive type
-# definition is not fully supported by the typing module. When recursive type
-# definition is available replace the following lines by their respective
-# recursive definitions
-PathLikeSeq = Sequence[PathLike]
-PathLikeSeq2 = Sequence[Union[PathLike, PathLikeSeq]]
-PathLikeSeq3 = Sequence[Union[PathLike, PathLikeSeq, PathLikeSeq2]]
-NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
-#NestPath = Sequence[Union[str, Path, 'NestPath']]
-NestPathDict = Dict[str, NestPath]
-OptNestPathDict = Optional[NestPathDict]
 
 # Exceptions
 Exc = BaseException

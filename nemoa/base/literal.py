@@ -321,7 +321,7 @@ def as_datetime(text: str, fmt: OptStr = None) -> Date:
     return datetime.datetime.strptime(text, fmt)
 
 def estimate(text: str) -> OptType:
-    """Estimate type of text by using :py:func:`~ast.literal_eval`.
+    """Estimate type of text by using :func:`~ast.literal_eval`.
 
     Args:
         text: String representation of python object.

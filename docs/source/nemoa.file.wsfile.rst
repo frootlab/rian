@@ -1,7 +1,7 @@
-nemoa.base.entity module
+nemoa.file.wsfile module
 ========================
 
-.. automodule:: nemoa.base.entity
+.. automodule:: nemoa.file.wsfile
     :members:
     :undoc-members:
     :show-inheritance:

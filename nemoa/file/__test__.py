@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Unittests for submodules of package 'nemoa.base.file'."""
+"""Unittests for submodules of package 'nemoa.file'."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -10,13 +10,13 @@ from configparser import ConfigParser
 import tempfile
 from pathlib import Path
 import numpy as np
-from nemoa.base.file import binfile, csvfile, inifile, textfile
+from nemoa.file import binfile, csvfile, inifile, textfile
 from nemoa.test import ModuleTestCase
 
 class TestBinfile(ModuleTestCase):
-    """Testcase for the module nemoa.base.file.binfile."""
+    """Testcase for the module nemoa.file.binfile."""
 
-    module = 'nemoa.base.file.binfile'
+    module = 'nemoa.file.binfile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.gz')
@@ -58,9 +58,9 @@ class TestBinfile(ModuleTestCase):
             self.filepath.unlink()
 
 class TestTextfile(ModuleTestCase):
-    """Testcase for the module nemoa.base.file.textfile."""
+    """Testcase for the module nemoa.file.textfile."""
 
-    module = 'nemoa.base.file.textfile'
+    module = 'nemoa.file.textfile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.txt')
@@ -112,9 +112,9 @@ class TestTextfile(ModuleTestCase):
             self.filepath.unlink()
 
 class TestCsvfile(ModuleTestCase):
-    """Testcase for the module nemoa.base.file.csvfile."""
+    """Testcase for the module nemoa.file.csvfile."""
 
-    module = 'nemoa.base.file.csvfile'
+    module = 'nemoa.file.csvfile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
@@ -156,9 +156,9 @@ class TestCsvfile(ModuleTestCase):
             self.filepath.unlink()
 
 class TestInifile(ModuleTestCase):
-    """Testcase for the module nemoa.base.file.inifile."""
+    """Testcase for the module nemoa.file.inifile."""
 
-    module = 'nemoa.base.file.inifile'
+    module = 'nemoa.file.inifile'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.ini')

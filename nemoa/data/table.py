@@ -19,7 +19,7 @@ from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
 
 #
-# Types
+# Structural Types
 #
 
 Field = dataclasses.Field
@@ -27,6 +27,9 @@ FieldTuple = Tuple[Field, ...]
 Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
 FieldLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldLike = Optional[FieldLike]
+OptRow = Optional['Record']
+RowLike = Union['Record', tuple, dict]
+RowLikeList = List[RowLike]
 
 #
 # Constants
@@ -35,7 +38,6 @@ OptFieldLike = Optional[FieldLike]
 ROW_STATE_CREATE = 0b0001
 ROW_STATE_UPDATE = 0b0010
 ROW_STATE_DELETE = 0b0100
-
 CUR_MODE_BUFFERED = 0b0001
 CUR_MODE_INDEXED = 0b0010
 CUR_MODE_SCROLLABLE = 0b0100
@@ -77,25 +79,13 @@ class CursorModeError(TableError, LookupError):
 class Record(ABC):
     """Abstract Base Class for Records."""
 
-    #
-    # Public Instance Variables
-    #
-
     id: int
     state: int
-
-    #
-    # Events
-    #
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self.validate()
         self.id = self._create_row_id()
         self.state = ROW_STATE_CREATE
-
-    #
-    # Public Methods
-    #
 
     def validate(self) -> None:
         """Check types of fields."""
@@ -128,10 +118,6 @@ class Record(ABC):
             self.state &= ~ROW_STATE_UPDATE
             self._revoke_hook(self.id)
 
-    #
-    # Protected Methods
-    #
-
     @abstractmethod
     def _create_row_id(self) -> int:
         raise NotImplementedError()
@@ -151,15 +137,6 @@ class Record(ABC):
     @abstractmethod
     def _revoke_hook(self, rowid: int) -> None:
         raise NotImplementedError()
-
-#
-# Structural types using the Record class
-#
-
-OptRec = Optional[Record]
-RecList = List[Record]
-RecLike = Union[Record, tuple, dict]
-RecLikeList = List[RecLike]
 
 #
 # Cursor Class
@@ -206,7 +183,7 @@ class Cursor(attrib.Container):
     :random: Random cursors move randomly through the result set. In difference
         to a randomly sorted cursor, the rows are not unique and the number of
         fetched rows is not limited to the size of the result set. If the method
-        :py:meth:`.fetch` is called with a zero value for size, a
+        :meth:`.fetch` is called with a zero value for size, a
         CursorModeError is raised.
 
     Supported operation modes are:
@@ -233,7 +210,7 @@ class Cursor(attrib.Container):
     batchsize: property = attrib.MetaData(classinfo=int, default=1)
     """
     The read-writable integer attribute *batchsize* specifies the default number
-    of rows which is to be fetched by the method :py:meth:`.fetch`. It defaults
+    of rows which is to be fetched by the method :meth:`.fetch`. It defaults
     to 1, meaning to fetch a single row at a time. Whether and which batchsize
     to use depends on the application and should be considered with care. The
     batchsize can also be adapted during the lifetime of the cursor, which
@@ -287,7 +264,7 @@ class Cursor(attrib.Container):
         self.reset()
         return self
 
-    def __next__(self) -> RecLike:
+    def __next__(self) -> RowLike:
         return self.next()
 
     def __len__(self) -> int:
@@ -307,7 +284,7 @@ class Cursor(attrib.Container):
         else: # TODO: handle case for dynamic cursors by self._iter_table
             self._iter_index = iter(self._index)
 
-    def next(self) -> RecLike:
+    def next(self) -> RowLike:
         """Return next row that matches the given filter."""
         mode = self._mode
         if mode & CUR_MODE_BUFFERED:
@@ -317,7 +294,7 @@ class Cursor(attrib.Container):
         # TODO: For dynamic cursors implement _get_next_from_dynamic_index()
         return self._get_next_from_fixed_index()
 
-    def fetch(self, size: OptInt = None) -> RecLikeList:
+    def fetch(self, size: OptInt = None) -> RowLikeList:
         """Fetch rows from the result set.
 
         Args:
@@ -332,7 +309,7 @@ class Cursor(attrib.Container):
         if self._mode & CUR_MODE_RANDOM and size <= 0:
             raise CursorModeError(self.mode, 'fetching all rows')
         finished = False
-        results: RecLikeList = []
+        results: RowLikeList = []
         while not finished:
             try:
                 results.append(self.next())
@@ -346,7 +323,7 @@ class Cursor(attrib.Container):
     # Protected Methods
     #
 
-    def _get_next_from_fixed_index(self) -> RecLike:
+    def _get_next_from_fixed_index(self) -> RowLike:
         is_random = self._mode & CUR_MODE_RANDOM
         matches = False
         while not matches:
@@ -363,7 +340,7 @@ class Cursor(attrib.Container):
             return self._mapper(row)
         return row
 
-    def _get_next_from_buffer(self) -> RecLike:
+    def _get_next_from_buffer(self) -> RowLike:
         if self._mode & CUR_MODE_RANDOM:
             row_id = random.randrange(len(self._buffer))
             return self._buffer[row_id]
@@ -510,7 +487,7 @@ class Table(attrib.Container):
             getter=self.get_row, predicate=predicate, mapper=mapper,
             mode=mode, parent=self)
 
-    def get_row(self, rowid: int) -> OptRec:
+    def get_row(self, rowid: int) -> OptRow:
         """ """
         return self._diff[rowid] or self._store[rowid]
 
@@ -553,7 +530,7 @@ class Table(attrib.Container):
 
     def select(
             self, columns: OptStrTuple = None, predicate: OptCallable = None,
-            fmt: type = tuple, mode: OptStr = None) -> RecLikeList:
+            fmt: type = tuple, mode: OptStr = None) -> RowLikeList:
         """ """
         if not columns:
             mapper = self._get_mapper(self.colnames, fmt=fmt)

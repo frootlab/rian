@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-#
-"""Console functions.
-
-.. References:
-.. _msvcrt: https://docs.python.org/3/library/msvcrt.html
-.. _termios: https://docs.python.org/3/library/termios.html
-
-"""
+"""Terminal I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for CSV-files.
-
-.. References:
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-.. _file-like object:
-    https://docs.python.org/3/glossary.html#term-file-like-object
-.. _RFC4180:
-    https://tools.ietf.org/html/rfc4180
-
-"""
+"""CSV-file I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -17,33 +7,114 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import csv
-
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
-from nemoa.base import attrib, check
-from nemoa.base.file import textfile
+from contextlib import contextmanager
+from io import TextIOWrapper
+from pathlib import Path
+import numpy as np
+from nemoa.base import attrib, check, env, literal
+from nemoa.file import textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
-from nemoa.types import OptNpArray, OptStr, OptStrList, StrList
+from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
+from nemoa.types import Iterator, StringIOLike, TextIOBaseClass
+from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc, Union
 
 #
-# Module exceptions
+# Stuctural Types
+#
+
+Fields = List[Tuple[str, type]]
+CSVStream = Union['CSVReader', 'CSVWriter']
+IterCSVStream = Iterator[CSVStream]
+
+#
+# Exceptions
 #
 
 class BadCSVFile(OSError):
     """Exception for invalid CSV-files."""
 
 #
-# Module Constants
+# Constants
 #
 
 CSV_FORMAT_STANDARD = 0
 CSV_FORMAT_RTABLE = 1
+
+#
+# CSVReader Class
+#
+
+class CSVReader:
+    """CSVReader Class."""
+
+    _file: StringIOLike
+    _reader: Iterator
+    _usecols: OptIntTuple
+    _fields: Fields
+    _close: bool
+
+    def __init__(
+            self, file: FileOrPathLike, delim: str,
+            skiprows: int, usecols: OptIntTuple, fields: Fields) -> None:
+        if isinstance(file, TextIOBaseClass):
+            self._file = file
+            self._close = False
+        elif isinstance(file, BytesIOBaseClass):
+            self._file = TextIOWrapper(file, write_through=True)
+            self._close = False
+        elif isinstance(file, (str, Path)):
+            self._file = open(env.expand(file), 'r')
+            self._close = True
+        else:
+            raise ValueError("given 'file' is not valid")
+        self._reader = csv.reader(self._file, delimiter=delim)
+        for i in range(skiprows):
+            next(self._reader)
+        self._usecols = usecols
+        self._fields = fields
+
+    def __iter__(self) -> 'CSVReader':
+        return self
+
+    def __next__(self) -> tuple:
+        return self.readline()
+
+    def __enter__(self) -> 'CSVReader':
+        return self
+
+    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        self.close()
+
+    def readline(self) -> tuple:
+        row = next(self._reader)
+        decode = lambda i: literal.decode(row[i[1]], self._fields[i[0]][1])
+        usecols = self._usecols or range(row)
+        return tuple(map(decode, enumerate(usecols)))
+
+    def close(self) -> None:
+        if self._close:
+            self._file.close()
+            self._close = False
+
+#
+# CSVWriter Class
+#
+
+class CSVWriter:
+    """CSVWriter Class."""
+
+    def __iter__(self) -> 'CSVWriter':
+        return self
+
+    def __next__(self) -> None:
+        return None
+
+    def close(self) -> None:
+        pass
 
 #
 # CSVFile Class
@@ -53,9 +124,9 @@ class CSVFile(attrib.Container):
     """CSV-File Class.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable CSV-file
-            in the directory structure of the system, or a :term:`file object`
-            in read mode.
+        file: String or :term:`path-like object`, which points to a readable
+            CSV-file in the directory structure of the system, or a :term:`file
+            object` in reading mode.
         delim: String containing CSV-delimiter. By default the CSV-delimiter is
             detected from the CSV-file.
         labels: List of column labels in CSV-file. By default the list of column
@@ -107,20 +178,27 @@ class CSVFile(attrib.Container):
 
     format: property = attrib.Virtual(fget='_get_format')
     format.__doc__ = """
-    CSV-File format. The following formats are supported:
-        0: `RFC4180`_:
-            The column header equals the size of the CSV records.
+    CSV-Header format. The following formats are supported:
+        0: :RFC:`4180`:
+            The column header equals the size of the rows.
         1: `R-Table`:
-            The column header equals the decremented size of the CSV records.
-            This follows by the convention, that in R-Tables the first column
-            always represents the record names, such that the respective field
-            is omitted within the header.
+            The column header has a size that is reduced by one, compared to the
+            rows. This smaller number of entries follows by the convention, that
+            in R the CSV export of tables adds an extra column with row names
+            as the first column. The column name of this column is omitted
+            within the header.
     """
 
     colnames: property = attrib.Virtual(fget='_get_colnames')
     colnames.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV-file.
+    """
+
+    fields: property = attrib.Virtual(fget='_get_fields')
+    colnames.__doc__ = """
+    List of pairs containing the column names and the estimated or given column
+    types of the CSV-file.
     """
 
     rownames: property = attrib.Virtual(fget='_get_rownames')
@@ -177,12 +255,12 @@ class CSVFile(attrib.Container):
                 CSV-file.
 
         Returns:
-            Numpy ndarray containing data from CSV-file, or None if the data
-            could not be imported.
+            :class:`numpy.ndarray` containing data from CSV-file, or None if
+            the data could not be imported.
 
         """
         # Check type of 'cols'
-        check.has_opt_type("argument 'columns'", columns, tuple)
+        check.has_opt_type("'columns'", columns, tuple)
 
         # Get column names and formats
         usecols = self._get_usecols(columns)
@@ -208,6 +286,43 @@ class CSVFile(attrib.Container):
                 delimiter=self._get_delim(),
                 usecols=usecols,
                 dtype={'names': names, 'formats': formats})
+
+    @contextmanager
+    def open(
+            self, mode: str = '', columns: OptStrTuple = None) -> IterCSVStream:
+        """Open CSV-file in reading or writing mode.
+
+        Args:
+            mode: String, which characters specify the mode in which the file is
+                to be opened. The default mode is reading mode. Supported
+                characters are:
+                'r': Reading mode (default)
+                'w': Writing mode
+            columns:
+
+        Yields:
+            :term:`File object`, that supports the given mode.
+
+        """
+        # Open file handler
+        file: CSVStream
+        if 'w' in mode:
+            if 'r' in mode:
+                raise ValueError(
+                    "'mode' is not allowed to contain characters 'r' AND 'w'")
+            file = self._open_write(columns)
+        else:
+            file = self._open_read(columns)
+
+        try:
+            yield file
+        finally:
+            file.close()
+
+    def read(self) -> List[tuple]:
+        with self.open(mode='r') as fp:
+            content = [row for row in fp]
+        return content
 
     #
     # Protected Methods
@@ -267,9 +382,10 @@ class CSVFile(attrib.Container):
             return None
 
         # Determine column label format
-        if lines[0].count(self.delim) == lines[1].count(self.delim):
+        delim = self.delim
+        if lines[0].count(delim) == lines[1].count(delim):
             return CSV_FORMAT_STANDARD
-        if lines[0].count(self.delim) == lines[1].count(self.delim) - 1:
+        if lines[0].count(delim) == lines[1].count(delim) - 1:
             return CSV_FORMAT_RTABLE
         return None
 
@@ -281,16 +397,34 @@ class CSVFile(attrib.Container):
         # Get first content line (non comment, non empty) of CSV-file
         line = textfile.get_content(self._file, lines=1)[0]
 
-        # Get column labels from first content
-        labels = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
+        # Get column names from first content line
+        names = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
 
         # Format column labels
         if self.format == CSV_FORMAT_STANDARD:
-            return labels
+            return names
         if self.format == CSV_FORMAT_RTABLE:
-            return [''] + labels
-        # TODO (patrick.michl@gmail.com): Give filename!
-        raise BadCSVFile("Bad file!")
+            return [''] + names
+        raise BadCSVFile(f"file {self._file.name} is not valid")
+
+    def _get_fields(self) -> Fields:
+        colnames = self.colnames
+        delim = self.delim
+        lines = textfile.get_content(self._file, lines=3)
+        if len(lines) != 3:
+            return []
+        row1 = lines[1].split(delim)
+        row2 = lines[2].split(delim)
+        fields = []
+        for colname, str1, str2 in zip(colnames, row1, row2):
+            type1 = literal.estimate(str1)
+            if type1:
+                type2 = literal.estimate(str1)
+                if type2 == type1:
+                    fields.append((colname, type1))
+                    continue
+            fields.append((colname, str))
+        return fields
 
     def _get_rownames(self) -> OptList:
         # Check type of 'cols'
@@ -351,10 +485,19 @@ class CSVFile(attrib.Container):
         if not columns:
             return tuple(range(len(colnames)))
         # Check if columns exist
-        check.is_subset(
-            "argument 'columns'", set(columns), 'column names', set(colnames))
+        check.is_subset("'columns'", set(columns), 'colnames', set(colnames))
         return tuple(colnames.index(col) for col in columns)
 
+    def _open_read(self, columns: OptStrTuple = None) -> CSVReader:
+        fields = self.fields
+        usecols = self._get_usecols(columns)
+        usefields = [fields[colid] for colid in usecols]
+        return CSVReader(
+            self._file, delim=self.delim, skiprows=self._get_skiprows(),
+            usecols=usecols, fields=usefields)
+
+    def _open_write(self, columns: OptStrTuple = None) -> CSVWriter:
+        return CSVWriter()
 
 def save(
         file: FileOrPathLike, data: NpArray, labels: OptStrList = None,
@@ -362,10 +505,10 @@ def save(
     """Save NumPy array to CSV-file.
 
     Args:
-        file: String, :term:`path-like object` or :term:`file object` that points to
-            a valid CSV-file in the directory structure of the system.
-        data: NumPy ndarray containing the data which is to be exported to
-            a CSV-file.
+        file: String, :term:`path-like object` or :term:`file object` that
+            points to a valid CSV-file in the directory structure of the system.
+        data: :class:`numpy.ndarray` containing the data which is to be
+            exported to a CSV-file.
         comment: String, which is included in the CSV-file whithin initial
             '#' lines. By default no initial lines are created.
         labels: List of strings with column names.

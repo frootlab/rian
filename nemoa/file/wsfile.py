@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
-"""I/O functions for workspace-files.
-
-.. References:
-.. _path-like object:
-    https://docs.python.org/3/glossary.html#term-path-like-object
-
-"""
+"""Workspace-file I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -19,16 +13,16 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
-from nemoa.base import attrib, env, env
+from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
-from nemoa.base.file import inifile
+from nemoa.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
-from nemoa.types import StrList, OptPath, Optional
+from nemoa.types import StrList, OptPath, Optional, ExcType, Exc
 
 #
-# Module types
+# Structural Types
 #
 
 StrucDict = inifile.StrucDict
@@ -37,14 +31,14 @@ SecDict = inifile.SecDict
 ZipInfoList = List[ZipInfo]
 
 #
-# Module exceptions
+# Exceptions
 #
 
 class BadWsFile(OSError):
     """Exception for invalid workspace files."""
 
 #
-# Module classes
+# Classes
 #
 
 class WsFile(attrib.Container):
@@ -83,14 +77,10 @@ class WsFile(attrib.Container):
     _default_encoding = env.get_encoding()
 
     #
-    # Public Attribute Groups
+    # Public Attributes and Attribute Groups
     #
 
     dc: attrib.Group = attrib.create_group(attrib.DCGroup)
-
-    #
-    # Public Attributes
-    #
 
     startup: property = attrib.MetaData(classinfo=Path, category='hooks')
     startup.__doc__ = """
@@ -141,7 +131,7 @@ class WsFile(attrib.Container):
         """Enter with statement."""
         return self
 
-    def __exit__(self, etype: str, value: int, tb: Traceback) -> None:
+    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
         """Close workspace file and buffer."""
         self.close()
 
@@ -205,7 +195,7 @@ class WsFile(attrib.Container):
                 f"file '{self._config_file}' could not be loaded") from err
 
         # Link configuration
-        self._set_attr_values(cfg.get('dc', {}), group='dc')
+        self._set_attr_values(cfg.get('dc', {}), group='dc') # type: ignore
 
     def save(self) -> None:
         """Save the workspace to it's filepath."""
@@ -219,8 +209,8 @@ class WsFile(attrib.Container):
         """Save the workspace to a file.
 
         Args:
-            filepath: String or :term:`path-like object`, that represents the name of
-                a workspace file.
+            filepath: String or :term:`path-like object`, that represents the
+                name of a workspace file.
 
         """
         path = env.expand(filepath)
@@ -264,10 +254,10 @@ class WsFile(attrib.Container):
         """Open file within the workspace.
 
         Args:
-            path: String or :term:`path-like object`, that represents a workspace
-                member. In reading mode the path has to point to a valid
-                workspace file, or a FileNotFoundError is raised. In writing
-                mode the path by default is treated as a file path. New
+            path: String or :term:`path-like object`, that represents a
+                workspace member. In reading mode the path has to point to a
+                valid workspace file, or a FileNotFoundError is raised. In
+                writing mode the path by default is treated as a file path. New
                 directories can be written by setting the argument is_dir to
                 True.
             mode: String, which characters specify the mode in which the file is
@@ -299,7 +289,7 @@ class WsFile(attrib.Container):
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError(
-                    "argument mode is not allowed to contain the "
+                    "'mode' is not allowed to contain the "
                     "characters 'r' AND 'w'")
             file = self._open_write(path, is_dir=is_dir)
         else:
@@ -331,15 +321,15 @@ class WsFile(attrib.Container):
         """Copy file within workspace.
 
         Args:
-            source: String or :term:`path-like object`, that points to a file in the
-                directory structure of the workspace. If the file does not
+            source: String or :term:`path-like object`, that points to a file in
+                the directory structure of the workspace. If the file does not
                 exist, a FileNotFoundError is raised. If the filepath points to
                 a directory, an IsADirectoryError is raised.
-            target: String or :term:`path-like object`, that points to a new filename
-                or an existing directory in the directory structure of the
-                workspace. If the target is a directory the target file consists
-                of the directory and the basename of the source file. If the
-                target file already exists a FileExistsError is raised.
+            target: String or :term:`path-like object`, that points to a new
+                filename or an existing directory in the directory structure of
+                the workspace. If the target is a directory the target file
+                consists of the directory and the basename of the source file.
+                If the target file already exists a FileExistsError is raised.
 
         Returns:
             Boolean value which is True if the file was copied.
@@ -396,15 +386,15 @@ class WsFile(attrib.Container):
         """Move file within workspace.
 
         Args:
-            source: String or :term:`path-like object`, that points to a file in the
-                directory structure of the workspace. If the file does not
+            source: String or :term:`path-like object`, that points to a file in
+                the directory structure of the workspace. If the file does not
                 exist, a FileNotFoundError is raised. If the filepath points to
                 a directory, an IsADirectoryError is raised.
-            target: String or :term:`path-like object`, that points to a new filename
-                or an existing directory in the directory structure of the
-                workspace. If the target is a directory the target file consists
-                of the directory and the basename of the source file. If the
-                target file already exists a FileExistsError is raised.
+            target: String or :term:`path-like object`, that points to a new
+                filename or an existing directory in the directory structure of
+                the workspace. If the target is a directory the target file
+                consists of the directory and the basename of the source file.
+                If the target file already exists a FileExistsError is raised.
 
         Returns:
             Boolean value which is True if the file has been moved.
@@ -418,10 +408,10 @@ class WsFile(attrib.Container):
         """Append file to the workspace.
 
         Args:
-            source: String or :term:`path-like object`, that points to a valid file
-                in the directory structure if the system. If the file does not
-                exist, a FileNotFoundError is raised. If the filepath points to
-                a directory, a IsADirectoryError is raised.
+            source: String or :term:`path-like object`, that points to a valid
+                file in the directory structure if the system. If the file does
+                not exist, a FileNotFoundError is raised. If the filepath points
+                to a directory, a IsADirectoryError is raised.
             target: String or :term:`path-like object`, that points to a valid
                 directory in the directory structure of the workspace. By
                 default the root directory is used. If the directory does not
@@ -475,9 +465,9 @@ class WsFile(attrib.Container):
         """Read text from file.
 
         Args:
-            filepath: String or :term:`path-like object`, that points to a valid file
-                in the directory structure of the workspace. If the file does
-                not exist a FileNotFoundError is raised.
+            filepath: String or :term:`path-like object`, that points to a valid
+                file in the directory structure of the workspace. If the file
+                does not exist a FileNotFoundError is raised.
             encoding: Specifies the name of the encoding, which is used to
                 decode the stream’s bytes into strings. By default the preferred
                 encoding of the operating system is used.
@@ -496,9 +486,9 @@ class WsFile(attrib.Container):
         """Read bytes from file.
 
         Args:
-            filepath: String or :term:`path-like object`, that points to a valid file
-                in the dirctory structure of the workspace. If the file does not
-                exist a FileNotFoundError is raised.
+            filepath: String or :term:`path-like object`, that points to a valid
+                file in the dirctory structure of the workspace. If the file
+                does not exist a FileNotFoundError is raised.
 
         Returns:
             Contents of the given filepath as bytes.
@@ -517,8 +507,8 @@ class WsFile(attrib.Container):
 
         Args:
             text: String, which has to be written to the given file.
-            filepath: String or :term:`path-like object`, that represents a valid
-                filename in the dirctory structure of the workspace.
+            filepath: String or :term:`path-like object`, that represents a
+                valid filename in the dirctory structure of the workspace.
             encoding: Specifies the name of the encoding, which is used to
                 encode strings into bytes. By default the preferred encoding of
                 the operating system is used.
@@ -537,8 +527,8 @@ class WsFile(attrib.Container):
 
         Args:
             blob: Bytes, which are to be written to the given file.
-            filepath: String or :term:`path-like object`, that represents a valid
-                filename in the dirctory structure of the workspace.
+            filepath: String or :term:`path-like object`, that represents a
+                valid filename in the dirctory structure of the workspace.
 
         Returns:
             Number of bytes, that are written to the file.
@@ -553,10 +543,10 @@ class WsFile(attrib.Container):
         """Remove file from workspace.
 
         Args:
-            filepath: String or :term:`path-like object`, that points to a file in
-                the directory structure of the workspace. If the filepath points
-                to a directory, an IsADirectoryError is raised. For the case,
-                that the file does not exist, the argument ignore_missing
+            filepath: String or :term:`path-like object`, that points to a file
+                in the directory structure of the workspace. If the filepath
+                points to a directory, an IsADirectoryError is raised. For the
+                case, that the file does not exist, the argument ignore_missing
                 determines, if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target file does not exist. The default
@@ -608,10 +598,10 @@ class WsFile(attrib.Container):
         """Remove directory from workspace.
 
         Args:
-            dirpath: String or :term:`path-like object`, that points to a directory
-                in the directory structure of the workspace. If the directory
-                does not exist, the argument ignore_missing determines, if a
-                FileNotFoundError is raised.
+            dirpath: String or :term:`path-like object`, that points to a
+                directory in the directory structure of the workspace. If the
+                directory does not exist, the argument ignore_missing
+                determines, if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
                 is raised, if the target directory does not exist. The default
                 behaviour, is to raise an error if the directory is missing.

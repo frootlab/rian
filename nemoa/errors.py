@@ -85,8 +85,8 @@ class IsNegativeError(NemoaAssert, ValueError):
         msg = f"{name} is required to be a positive number not {val}"
         super().__init__(msg)
 
-class NotIsPositiveError(NemoaAssert, ValueError):
-    """Raise when a number must be strictly positive."""
+class NotPositiveError(NemoaAssert, ValueError):
+    """Raise when a number has strictly to be positive."""
 
     def __init__(self, name: str, val: Number) -> None:
         msg = f"{name} is required to be a strictly positive number not {val}"
@@ -99,8 +99,8 @@ class IsPositiveError(NemoaAssert, ValueError):
         msg = f"{name} is required not to be a negative number not {val}"
         super().__init__(msg)
 
-class NotIsNegativeError(NemoaAssert, ValueError):
-    """Raise when a number must be strictly negative."""
+class NotNegativeError(NemoaAssert, ValueError):
+    """Raise when a number has strictly to be negative."""
 
     def __init__(self, name: str, val: Number) -> None:
         msg = f"{name} is required to be a strictly negative number not {val}"
@@ -113,7 +113,7 @@ class NotInSequenceError(NemoaAssert, ValueError):
         msg = f"value {val} of {name} is not contained in {seqname}"
         super().__init__(msg)
 
-class NotIsSubsetError(NemoaAssert, ValueError):
+class NoSubsetError(NemoaAssert, ValueError):
     """Raise when sequence elements are not contained within another."""
 
     def __init__(self, a: str, seta: set, b: str, setb: set) -> None:
@@ -123,7 +123,7 @@ class NotIsSubsetError(NemoaAssert, ValueError):
         msg = f"{elements} of {a} {are} not contained in {b}"
         super().__init__(msg)
 
-class EqualSizeError(NemoaAssert, ValueError):
+class SizeError(NemoaAssert, ValueError):
     """Raise when a sized object has an invalid size."""
 
     def __init__(self, name: str, obj: Sized, size: int) -> None:
@@ -184,8 +184,8 @@ class FileNotGivenError(NemoaAssert, OSError):
 # Application specific Lookup Errors
 ################################################################################
 
-class SingletonExistsError(NemoaAssert, LookupError):
-    """Raise when a singleton which allready exists shall be initialized."""
+class ExistsError(NemoaAssert, LookupError):
+    """Raise when an existing singleton shall be created."""
 
-class NotStartedError(NemoaAssert, LookupError):
-    """Raise when a singleton is closed but not has been initialized."""
+class NotExistsError(NemoaAssert, LookupError):
+    """Raise when a non existing singleton shall be destructed."""
