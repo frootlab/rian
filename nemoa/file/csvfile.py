@@ -9,17 +9,16 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 import csv
 from contextlib import contextmanager
-from io import TextIOWrapper
-from pathlib import Path
+from io import IOBase
 import numpy as np
-from nemoa.base import attrib, check, env, literal
-from nemoa.file import textfile
+from nemoa.base import attrib, check, literal
+from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
-from nemoa.types import Iterable, Iterator, StringIOLike, TextIOBaseClass, Any
-from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc, Union
-from nemoa.types import StrDict
+from nemoa.types import Iterable, Iterator, TextIOBaseClass, Any
+from nemoa.types import Traceback, ExcType, Exc, Union
+from nemoa.types import StrDict, FileRef
 
 #
 # Stuctural Types
@@ -51,21 +50,15 @@ CSV_FORMAT_RTABLE = 1
 class CSVIOBase(ABC):
     """CSV-file IOBase Class."""
 
-    _file: StringIOLike
-    _close: bool
+    _cman: stream.Connector
+    _file: IOBase
 
-    def __init__(self, file: FileOrPathLike, mode: str = 'r') -> None:
-        if isinstance(file, TextIOBaseClass):
-            self._file = file
-            self._close = False
-        elif isinstance(file, BytesIOBaseClass):
-            self._file = TextIOWrapper(file, write_through=True)
-            self._close = False
-        elif isinstance(file, (str, Path)):
-            self._file = open(env.expand(file), mode=mode, newline='')
-            self._close = True
-        else:
-            raise ValueError("'file' is not valid")
+    def __init__(self, file: FileRef, mode: str = 'r') -> None:
+        self._cman = stream.Connector(file)
+        self._file = self._cman.open(mode)
+        if not isinstance(self._file, TextIOBaseClass):
+            self._cman.close()
+            raise ValueError('the opened stream is not a valid text file')
 
     def __iter__(self) -> 'CSVIOBase':
         return self
@@ -83,9 +76,7 @@ class CSVIOBase(ABC):
         self.close()
 
     def close(self) -> None:
-        if self._close:
-            self._file.close()
-            self._close = False
+        self._cman.close()
 
     @abstractmethod
     def read_row(self) -> tuple:
@@ -115,7 +106,7 @@ class CSVReader(CSVIOBase):
             self, file: FileOrPathLike, skiprows: int, usecols: OptIntTuple,
             fields: Fields, **kwds: Any) -> None:
         super().__init__(file, mode='r')
-        self._reader = csv.reader(self._file, **kwds)
+        self._reader = csv.reader(self._file, **kwds) # type: ignore
         for i in range(skiprows):
             next(self._reader)
         self._usecols = usecols
