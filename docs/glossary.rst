@@ -1,5 +1,5 @@
-Glossary
-========
+Math Glossary
+=============
 
 Norms and Metrices
 ------------------
@@ -477,3 +477,20 @@ Statistics
         The SAD is effectively the simplest possible distance, that takes into
         account every observation of a fixed finite set. This makes SAD an
         extremely fast distance measure.
+
+API Glossary
+============
+
+Types
+-----
+
+.. glossary::
+
+    File Reference
+
+        *File references* generalize :term:`path-like object <path-like
+        objects>` to a broader class of stream handlers. A file reference can
+        be: (1) A :term:`file object`, (2) a String or :term:`path-like object`,
+        which points to a valid filename in the directory structure of the
+        system or (3) an instance of :class:`nemoa.file.stream.FileRefBase
+        <stream.FileRefBase>`.
