@@ -419,6 +419,10 @@ class Table(attrib.Container):
     _iter_index: property = attrib.Temporary()
     _Record: property = attrib.Temporary(classinfo=type)
 
+    #
+    # Events
+    #
+
     def __init__(self, columns: OptFieldLike = None) -> None:
         """ """
         super().__init__()
@@ -437,6 +441,10 @@ class Table(attrib.Container):
 
     def __len__(self) -> int:
         return len(self._index)
+
+    #
+    # Public Methods
+    #
 
     def commit(self) -> None:
         """Apply changes to table."""
@@ -558,6 +566,10 @@ class Table(attrib.Container):
         # Rebuild diff table
         self._diff = [None] * len(self._store)
 
+    #
+    # Protected Methods
+    #
+
     def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
         def mapper_tuple(row: Record) -> tuple:
             return tuple(getattr(row, col) for col in columns)
@@ -641,6 +653,10 @@ class Table(attrib.Container):
         self._store = []
         self._diff = []
         self._index = []
+
+#
+# DEPRECATED
+#
 
 def addcols(
         base: NpRecArray, data: NpRecArray,

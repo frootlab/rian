@@ -34,11 +34,13 @@ void: Callable[..., None] = lambda *args, **kwds: None
 # Stub Classes
 ################################################################################
 
-class FileRefBase(ABC):
-    """File-Reference Base Class."""
+class FileAccessorBase(ABC):
+    """FileHandler Base Class."""
+
+    name: str
 
     @abstractmethod
-    def open(self, *args: Any, mode: str = 'r', **kwds: Any) -> io.IOBase:
+    def open(self, *args: Any, **kwds: Any) -> io.IOBase:
         raise NotImplementedError(
             f"'type(self).__name__' requires to implement 'open'")
 
@@ -217,7 +219,7 @@ CManFileLike = ContextManager[FileLike]
 
 # File References
 FileOrPathLike = Union[FileLike, PathLike]
-FileRef = Union[FileOrPathLike, FileRefBase]
+FileRef = Union[FileOrPathLike, FileAccessorBase]
 
 ################################################################################
 # Structural Types for external Packages

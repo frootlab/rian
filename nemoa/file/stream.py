@@ -11,7 +11,7 @@ import io
 from nemoa.base import env
 from nemoa.types import Any
 from nemoa.types import Path, Iterator, PathLike
-from nemoa.types import ExcType, Exc, Traceback, FileRefBase, FileRef
+from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase, FileRef
 
 #
 # Stream Connector
@@ -41,7 +41,7 @@ class Connector:
         self.close()
 
     def open(self, *args: Any, **kwds: Any) -> io.IOBase:
-        """Open stream reference as file object."""
+        """Open file reference as file object."""
         file = self._ref
         if isinstance(file, (str, Path)):
             return self._open_from_path(file, *args, **kwds)
@@ -49,10 +49,10 @@ class Connector:
             return self._open_from_textfile(file, *args, **kwds)
         if isinstance(file, io.BufferedIOBase):
             return self._open_from_binfile(file, *args, **kwds)
-        if isinstance(file, FileRefBase):
+        if isinstance(file, FileAccessorBase):
             return self._open_from_ref(file, *args, **kwds)
         raise TypeError(
-            "'file' is required to be a stream reference, "
+            "'file' is required to be a valid file reference, "
             f"not '{type(file).__name__}'")
 
     def close(self) -> None:
@@ -105,7 +105,7 @@ class Connector:
         return self._file
 
     def _open_from_ref(
-            self, ref: FileRefBase, *args: Any, **kwds: Any) -> io.IOBase:
+            self, ref: FileAccessorBase, *args: Any, **kwds: Any) -> io.IOBase:
         self._file = ref.open(*args, **kwds)
         self._close = True
         return self._file
@@ -116,20 +116,21 @@ class Connector:
 
 @contextlib.contextmanager
 def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[io.IOBase]:
-    """Context manager for stream references.
+    """Context manager for file references.
 
     This context manager extends :py:func`open` by allowing the passed `file`
-    argument to be an arbitrary :term:`stream reference`.
-    If the `file` argument is a str or a path-like object, the given path may
-    contain application variables, like `%home%` or `%user_data_dir%`, which are
-    extended before returning a file handler to a :term:`binary file`.
-    Afterwards, when exiting the `with`-statement, the file is closed. If the
-    *file* argument, however, is a :term:`file object`, the file is not closed,
-    when exiting the `with`-statement.
+    argument to be an arbitrary :term:`file reference`. If the `file` argument
+    is a String or :term:`path-like object`, the given path may contain
+    application variables, like `%home%` or `%user_data_dir%`, which are
+    extended before returning a file handler. Afterwards, when exiting the
+    `with`-statement, the file is closed. If the passes passed `file`, however,
+    is a :term:`file object`, the file is not closed, when exiting the
+    `with`-statement.
 
     Args:
-        file: String or :term:`path-like object` that points to a valid filename
-            in the directory structure of the system, or a :term:`file object`.
+        file: :term:`File reference` that points to a valid filename in the
+            directory structure of the system, a :term:`file object` or a
+            generic :class:`file accessor <nemoa.types.FileAccessorBase>`.
         mode: String, which characters specify the mode in which the file stream
             is opened or wrapped. The default mode is text reading mode.
             Supported characters are:

@@ -10,16 +10,16 @@ import datetime
 import time
 import warnings
 from zipfile import BadZipFile, ZipFile, ZipInfo
-from contextlib import contextmanager
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError
 from nemoa.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
-from nemoa.types import IterFileLike, List, OptBytes, OptStr, OptPathLike
+from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
-from nemoa.types import StrList, OptPath, Optional, ExcType, Exc
+from nemoa.types import FileLike, StrList, OptPath, Optional, ExcType, Exc
+from nemoa.types import Any, AnyFunc
 
 #
 # Structural Types
@@ -38,7 +38,7 @@ class BadWsFile(OSError):
     """Exception for invalid workspace files."""
 
 #
-# Classes
+# WsFile Class
 #
 
 class WsFile(attrib.Container):
@@ -247,10 +247,36 @@ class WsFile(attrib.Container):
         # Reload saved workpace from file
         self.load(path, pwd=self._pwd)
 
-    @contextmanager
+    def get_accessor(self, path: PathLike) -> FileAccessorBase:
+        """Get file accessor to workspace member.
+
+        Args:
+            path: String or :term:`path-like object`, that represents a
+                workspace member. In reading mode the path has to point to a
+                valid workspace file, or a FileNotFoundError is raised. In
+                writing mode the path by default is treated as a file path. New
+                directories can be written by setting the argument is_dir to
+                True.
+
+        Returns:
+            :class:`File accessor <nemoa.types.FileAccessorBase>` to workspace
+            member.
+
+        """
+        def wrap_open(path: PathLike) -> AnyFunc:
+            def wrapped_open(
+                    obj: FileAccessorBase, *args: Any, **kwds: Any) -> FileLike:
+                return self.open(path, *args, **kwds)
+            return wrapped_open
+
+        return type( # pylint: disable=E0110
+            'FileAccessor', (FileAccessorBase,), {
+            'name': str(path),
+            'open': wrap_open(path)})()
+
     def open(
-            self, path: PathLike, mode: str = '', encoding: OptStr = None,
-            is_dir: bool = False) -> IterFileLike:
+            self, path: PathLike, mode: str = 'r', encoding: OptStr = None,
+            is_dir: bool = False) -> FileLike:
         """Open file within the workspace.
 
         Args:
@@ -277,8 +303,8 @@ class WsFile(attrib.Container):
                 directories to the workspace. The default behaviour is not to
                 treat paths as directories.
 
-        Yields:
-            Iterator to a file handler, to support the with statement.
+        Returns:
+            :term:`File object` in reading or writing mode.
 
         Examples:
             >>> with self.open('workspace.ini') as file:
@@ -295,20 +321,16 @@ class WsFile(attrib.Container):
         else:
             file = self._open_read(path)
 
-        # Format buffered stream as bytes-stream or text-stream
-        try:
-            if 'b' in mode:
-                if 't' in mode:
-                    raise ValueError(
-                        "argument mode is not allowed to contain the "
-                        "characters 'b' AND 't'")
-                yield file
-            else:
-                yield TextIOWrapper(
-                    file, encoding=encoding or self._default_encoding,
-                    write_through=True)
-        finally:
-            file.close()
+        # Wrap binary files to text files if required
+        if 'b' in mode:
+            if 't' in mode:
+                raise ValueError(
+                    "'mode' is not allowed to contain the "
+                    "characters 'b' AND 't'")
+            return file
+        return TextIOWrapper(
+            file, encoding=encoding or self._default_encoding,
+            write_through=True)
 
     def close(self) -> None:
         """Close current workspace and buffer."""

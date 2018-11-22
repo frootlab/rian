@@ -1,8 +1,11 @@
+Glossary
+========
+
 Math Glossary
-=============
+-------------
 
 Norms and Metrices
-------------------
+~~~~~~~~~~~~~~~~~~
 
 .. glossary::
 
@@ -348,7 +351,7 @@ Norms and Metrices
         referred as :term:`Root-Mean-Square Error`.
 
 Statistics
-----------
+~~~~~~~~~~
 
 .. glossary::
 
@@ -479,18 +482,17 @@ Statistics
         extremely fast distance measure.
 
 API Glossary
-============
+------------
 
 Types
------
+~~~~~
 
 .. glossary::
 
     File Reference
 
-        *File references* generalize :term:`path-like object <path-like
-        objects>` to a broader class of stream handlers. A file reference can
-        be: (1) A :term:`file object`, (2) a String or :term:`path-like object`,
-        which points to a valid filename in the directory structure of the
-        system or (3) an instance of :class:`nemoa.file.stream.FileRefBase
-        <stream.FileRefBase>`.
+        *File references* aggregate different types, that identify files,
+        including: :term:`File objects <file object>`, Strings and
+        :term:`path-like objects <path-like object>`, that point to filenames in
+        the directory structure of the system and instances of the class
+        :class:`~nemoa.types.FileAccessorBase`.

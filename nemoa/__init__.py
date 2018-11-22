@@ -11,7 +11,7 @@ modeling`_ with `structured data-analysis`_ and data visualization.
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.286'
+__version__ = '0.5.287'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
