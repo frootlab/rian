@@ -14,9 +14,9 @@ from pathlib import Path
 from nemoa.base import attrib, env
 from nemoa.core import log
 from nemoa.file import inifile, wsfile
-from nemoa.types import Any, BytesLike, CManFileLike, ClassVar, Exc, ExcType
+from nemoa.types import Any, BytesLike, FileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
-from nemoa.types import StrDict, StrList, StrOrInt, Traceback
+from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessorBase
 
 #
 # Types
@@ -154,16 +154,34 @@ class Session(attrib.Container):
         self._ws.saveas(filepath)
 
     def close(self) -> None:
-        """Close current workspace."""
+        """Close current session."""
         if self.config.get('autosave_on_exit') and self._ws.changed:
             self.save()
         if hasattr(self._ws, 'close'):
             self._ws.close()
 
+    def get_accessor(self, path: PathLike) -> FileAccessorBase:
+        """Get file accessor to workspace member.
+
+        Args:
+            path: String or :term:`path-like object`, that represents a
+                workspace member. In reading mode the path has to point to a
+                valid workspace file, or a FileNotFoundError is raised. In
+                writing mode the path by default is treated as a file path. New
+                directories can be written by setting the argument is_dir to
+                True.
+
+        Returns:
+            :class:`File accessor <nemoa.types.FileAccessorBase>` to workspace
+            member.
+
+        """
+        return self._ws.get_accessor(path)
+
     def open(
             self, filepath: PathLike, workspace: OptPathLike = None,
             basedir: OptPathLike = None, pwd: OptBytes = None, mode: str = '',
-            encoding: OptStr = None, is_dir: bool = False) -> CManFileLike:
+            encoding: OptStr = None, is_dir: bool = False) -> FileLike:
         """Open file within current or given workspace.
 
         Args:
