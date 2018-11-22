@@ -375,6 +375,11 @@ class CSVFile(attrib.Container):
             content = [row for row in fp]
         return content
 
+    def write(self, rows: List[Iterable]) -> None:
+        with self.open(mode='w') as fp:
+            for row in rows:
+                fp.write_row(row)
+
     #
     # Protected Methods
     #
