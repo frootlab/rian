@@ -247,7 +247,7 @@ class WsFile(attrib.Container):
         # Reload saved workpace from file
         self.load(path, pwd=self._pwd)
 
-    def get_accessor(self, path: PathLike) -> FileAccessorBase:
+    def get_file_accessor(self, path: PathLike) -> FileAccessorBase:
         """Get file accessor to workspace member.
 
         Args:

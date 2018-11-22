@@ -160,7 +160,7 @@ class Session(attrib.Container):
         if hasattr(self._ws, 'close'):
             self._ws.close()
 
-    def get_accessor(self, path: PathLike) -> FileAccessorBase:
+    def get_file_accessor(self, path: PathLike) -> FileAccessorBase:
         """Get file accessor to workspace member.
 
         Args:
@@ -176,7 +176,7 @@ class Session(attrib.Container):
             member.
 
         """
-        return self._ws.get_accessor(path)
+        return self._ws.get_file_accessor(path)
 
     def open(
             self, filepath: PathLike, workspace: OptPathLike = None,

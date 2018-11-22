@@ -94,6 +94,7 @@ class CSVReader(CSVIOBase):
     """CSV-file Reader Class.
 
     Args:
+        file:
         **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
 
     """
@@ -103,7 +104,7 @@ class CSVReader(CSVIOBase):
     _fields: Fields
 
     def __init__(
-            self, file: FileOrPathLike, skiprows: int, usecols: OptIntTuple,
+            self, file: FileRef, skiprows: int, usecols: OptIntTuple,
             fields: Fields, **kwds: Any) -> None:
         super().__init__(file, mode='r')
         self._reader = csv.reader(self._file, **kwds) # type: ignore
@@ -136,7 +137,7 @@ class CSVWriter(CSVIOBase):
     _writer: Any # TODO (patrick.michl@gmail.com): specify!
 
     def __init__(
-            self, file: FileOrPathLike, header: StrList,
+            self, file: FileRef, header: StrList,
             comment: OptStr = None, **kwds: Any) -> None:
         super().__init__(file, mode='w')
         self._writer = csv.writer(self._file, **kwds)
@@ -271,7 +272,7 @@ class CSVFile(attrib.Container):
     # Events
     #
 
-    def __init__(self, file: FileOrPathLike, mode: str = '',
+    def __init__(self, file: FileRef, mode: str = '',
             comment: OptStr = None, delim: OptStr = None,
             csvformat: OptInt = None, labels: OptStrList = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
@@ -553,6 +554,10 @@ class CSVFile(attrib.Container):
         fmt = self._get_fmt_params()
         return CSVWriter(
             self._file, header=self.colnames, comment=self.comment, **fmt)
+
+#
+# DEPRECATED
+#
 
 def save(
         file: FileOrPathLike, data: NpArray, labels: OptStrList = None,
