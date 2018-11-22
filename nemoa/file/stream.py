@@ -7,10 +7,10 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
-from io import IOBase, TextIOWrapper
+import io
 from nemoa.base import env
-from nemoa.types import Any, BytesIOBaseClass
-from nemoa.types import Path, TextIOBaseClass, Iterator, PathLike
+from nemoa.types import Any
+from nemoa.types import Path, Iterator, PathLike
 from nemoa.types import ExcType, Exc, Traceback, FileRefBase, FileRef
 
 #
@@ -21,7 +21,7 @@ class Connector:
     """Stream Connector Class."""
 
     _ref: FileRef
-    _file: IOBase
+    _file: io.IOBase
     _close: bool
     _args: tuple
     _kwds: dict
@@ -31,7 +31,7 @@ class Connector:
         self._args = args
         self._kwds = kwds
 
-    def __enter__(self) -> IOBase:
+    def __enter__(self) -> io.IOBase:
         return self.open(self._ref, *self._args, **self._kwds)
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
@@ -40,13 +40,15 @@ class Connector:
     def __del__(self) -> None:
         self.close()
 
-    def open(self, *args: Any, **kwds: Any) -> IOBase:
+    def open(self, *args: Any, **kwds: Any) -> io.IOBase:
         """Open stream reference as file object."""
         file = self._ref
         if isinstance(file, (str, Path)):
             return self._open_from_path(file, *args, **kwds)
-        if isinstance(file, IOBase):
-            return self._open_from_file(file, *args, **kwds)
+        if isinstance(file, io.TextIOBase):
+            return self._open_from_textfile(file, *args, **kwds)
+        if isinstance(file, io.BufferedIOBase):
+            return self._open_from_binfile(file, *args, **kwds)
         if isinstance(file, FileRefBase):
             return self._open_from_ref(file, *args, **kwds)
         raise TypeError(
@@ -58,30 +60,52 @@ class Connector:
             self._file.close()
 
     def _open_from_path(
-            self, path: PathLike, *args: Any, **kwds: Any) -> IOBase:
+            self, path: PathLike, *args: Any, **kwds: Any) -> io.IOBase:
         self._file = open(env.expand(path), *args, **kwds) # type: ignore
         self._close = True
         return self._file
 
-    def _open_from_file(self, file: IOBase, mode: str = 'r') -> IOBase:
-        if isinstance(file, TextIOBaseClass):
-            if 'b' in mode:
-                raise RuntimeError(
-                    "wrapping text streams to byte streams is not supported")
+    def _open_from_textfile(
+            self, file: io.TextIOBase, mode: str = 'r') -> io.IOBase:
+        # Check reading / writing mode
+        file_mode = getattr(file, 'mode', None)
+        if file_mode and file_mode not in mode:
+            file_name = getattr(file, 'name', '?')
+            raise RuntimeError(
+                f"file '{file_name}' in mode '{file_mode}' can not be"
+                f"reopened in mode '{mode}'")
+
+        # Check text / binary mode
+        if 'b' in mode:
+            raise RuntimeError(
+                "wrapping text streams to byte streams is not supported")
+        self._file = file
+        self._close = False
+        return file
+
+    def _open_from_binfile(
+            self, file: io.BufferedIOBase, mode: str = 'r') -> io.IOBase:
+        # Check reading / writing mode
+        file_mode = getattr(file, 'mode', None)
+        if file_mode and file_mode not in mode:
+            file_name = getattr(file, 'name', '?')
+            raise RuntimeError(
+                f"file '{file_name}' in mode '{file_mode}' can not be "
+                f"reopened in mode '{mode}'")
+
+        # Check text / binary mode
+        if 'b' in mode:
             self._file = file
-        elif isinstance(file, BytesIOBaseClass):
-            if 'b' in mode:
-                self._file = file
-            elif 'w' in mode:
-                self._file = TextIOWrapper( # type: ignore
-                    file, write_through=True)
-            else:
-                self._file = TextIOWrapper(file) # type: ignore
+        elif 'w' in mode:
+            self._file = io.TextIOWrapper( # type: ignore
+                file, write_through=True)
+        else:
+            self._file = io.TextIOWrapper(file) # type: ignore
         self._close = False
         return self._file
 
     def _open_from_ref(
-            self, ref: FileRefBase, *args: Any, **kwds: Any) -> IOBase:
+            self, ref: FileRefBase, *args: Any, **kwds: Any) -> io.IOBase:
         self._file = ref.open(*args, **kwds)
         self._close = True
         return self._file
@@ -91,7 +115,7 @@ class Connector:
 #
 
 @contextlib.contextmanager
-def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[IOBase]:
+def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[io.IOBase]:
     """Context manager for stream references.
 
     This context manager extends :py:func`open` by allowing the passed `file`
