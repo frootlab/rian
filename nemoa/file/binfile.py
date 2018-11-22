@@ -7,12 +7,23 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
-from nemoa.base import env, binary
-from nemoa.types import BytesIOBaseClass, BytesLikeOrStr, FileOrPathLike
-from nemoa.types import IterBytesIOLike, OptInt, OptStr, Path, TextIOBaseClass
+from nemoa.base import binary
+from nemoa.file import stream
+from nemoa.types import BytesIOBaseClass, BytesLikeOrStr
+from nemoa.types import OptInt, OptStr, FileRef, Iterator
+
+#
+# Structural Types
+#
+
+IterBytesIO = Iterator[BytesIOBaseClass]
+
+#
+# Functions
+#
 
 @contextlib.contextmanager
-def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
+def openx(file: FileRef, mode: str = 'rb') -> IterBytesIO:
     """Context manager to provide a unified interface to binary files.
 
     This context manager extends the standard implementation of :py:func`open`
@@ -39,37 +50,21 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterBytesIOLike:
         :term:`binary file` in reading or writing mode.
 
     """
-    # Get file handler from file-like or path-like objects
-    if isinstance(file, TextIOBaseClass):
-        raise RuntimeError(
-            "wrapping text streams to byte streams is currently not supported")
-    elif isinstance(file, BytesIOBaseClass):
-        fd, close = file, False
-    elif isinstance(file, (str, Path)):
-        path = env.expand(file)
-        if 'w' in mode:
-            try:
-                fd, close = open(path, 'wb'), True
-            except IOError as err:
-                raise IOError(f"file '{path}' is not writable") from err
-        else:
-            if not path.is_file():
-                raise FileNotFoundError(f"file '{path}' does not exist")
-            fd, close = open(path, 'rb'), True
-    else:
-        raise TypeError(
-            "first argument 'file' is required to be of types 'str', "
-            f"'path-like' or 'file-like', not '{type(file).__name__}'")
-
+    cman = stream.Connector(file)
+    if 'b' not in mode:
+        mode += 'b'
+    fh = cman.open(mode=mode)
+    if not isinstance(fh, BytesIOBaseClass):
+        cman.close()
+        raise ValueError('the opened stream is not a valid binary file')
     # Define enter and exit of context manager
     try:
-        yield fd
+        yield fh
     finally:
-        if close:
-            fd.close()
+        cman.close()
 
 def load(
-        file: FileOrPathLike, encoding: OptStr = None,
+        file: FileRef, encoding: OptStr = None,
         compressed: bool = False) -> bytes:
     """Load binary data from file.
 
@@ -96,7 +91,7 @@ def load(
     return data
 
 def save(
-        data: BytesLikeOrStr, file: FileOrPathLike, encoding: OptStr = None,
+        data: BytesLikeOrStr, file: FileRef, encoding: OptStr = None,
         compression: OptInt = None) -> None:
     """Save binary data to file.
 

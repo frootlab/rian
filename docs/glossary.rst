@@ -1,8 +1,11 @@
 Glossary
 ========
 
+Math Glossary
+-------------
+
 Norms and Metrices
-------------------
+~~~~~~~~~~~~~~~~~~
 
 .. glossary::
 
@@ -348,7 +351,7 @@ Norms and Metrices
         referred as :term:`Root-Mean-Square Error`.
 
 Statistics
-----------
+~~~~~~~~~~
 
 .. glossary::
 
@@ -477,3 +480,19 @@ Statistics
         The SAD is effectively the simplest possible distance, that takes into
         account every observation of a fixed finite set. This makes SAD an
         extremely fast distance measure.
+
+API Glossary
+------------
+
+Types
+~~~~~
+
+.. glossary::
+
+    File Reference
+
+        *File references* aggregate different types, that identify files,
+        including: :term:`File objects <file object>`, Strings and
+        :term:`path-like objects <path-like object>`, that point to filenames in
+        the directory structure of the system and instances of the class
+        :class:`~nemoa.types.FileAccessorBase`.

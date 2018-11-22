@@ -1,17 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Types.
-
-
-
-
-"""
-from __future__ import annotations
+"""Types."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from abc import ABC, abstractmethod
 import array
 import collections
 import datetime
@@ -21,6 +16,7 @@ import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized
+#from nemoa.file import stream
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')
@@ -33,6 +29,20 @@ T = TypeVar('T')
 NaN = float('nan')
 Infty = float('inf')
 void: Callable[..., None] = lambda *args, **kwds: None
+
+################################################################################
+# Stub Classes
+################################################################################
+
+class FileAccessorBase(ABC):
+    """FileHandler Base Class."""
+
+    name: str
+
+    @abstractmethod
+    def open(self, *args: Any, **kwds: Any) -> io.IOBase:
+        raise NotImplementedError(
+            f"'type(self).__name__' requires to implement 'open'")
 
 ################################################################################
 # Classes
@@ -207,8 +217,9 @@ FileLike = Union[BytesIOLike, StringIOLike]
 IterFileLike = Iterator[FileLike]
 CManFileLike = ContextManager[FileLike]
 
-# File like or Path like
+# File References
 FileOrPathLike = Union[FileLike, PathLike]
+FileRef = Union[FileOrPathLike, FileAccessorBase]
 
 ################################################################################
 # Structural Types for external Packages

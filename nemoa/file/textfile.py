@@ -7,13 +7,21 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
-from io import TextIOWrapper
-from nemoa.base import env
-from nemoa.types import BytesIOBaseClass, FileOrPathLike, IterStringIOLike
-from nemoa.types import Path, StrList, TextIOBaseClass
+from nemoa.file import stream
+from nemoa.types import StrList, TextIOBaseClass, Iterator, FileRef
+
+#
+# Structural Types
+#
+
+IterTextIO = Iterator[TextIOBaseClass]
+
+#
+# Functions
+#
 
 @contextlib.contextmanager
-def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
+def openx(file: FileRef, mode: str = 'rt') -> IterTextIO:
     """Contextmanager to provide a unified interface to text files.
 
     This context manager extends the standard implementation of :func:`open`
@@ -40,39 +48,20 @@ def openx(file: FileOrPathLike, mode: str = '') -> IterStringIOLike:
         :term:`text file` in reading or writing mode.
 
     """
-    # Get file handler from file-like or path-like objects
-    if isinstance(file, TextIOBaseClass):
-        fh, close = file, False
-    elif isinstance(file, BytesIOBaseClass):
-        if 'w' in mode:
-            fh = TextIOWrapper(file, write_through=True)
-        else:
-            fh = TextIOWrapper(file)
-        close = False
-    elif isinstance(file, (str, Path)):
-        path = env.expand(file)
-        if 'w' in mode:
-            try:
-                fh = open(path, 'w')
-            except IOError as err:
-                raise IOError(f"file '{path}' can not be written") from err
-        else:
-            if not path.is_file():
-                raise FileNotFoundError(f"file '{path}' does not exist")
-            fh = open(path, 'r')
-        close = True
-    else:
-        raise TypeError(
-            "first argument 'file' is required to be of type 'str', "
-            f"'path-like' or 'file-like', not '{type(file).__name__}'")
-
-    try: # Enter 'with' statement
+    cman = stream.Connector(file)
+    if 't' not in mode:
+        mode += 't'
+    fh = cman.open(mode=mode)
+    if not isinstance(fh, TextIOBaseClass):
+        cman.close()
+        raise ValueError('the opened stream is not a valid text file')
+    # Define enter and exit of context manager
+    try:
         yield fh
-    finally: # Exit 'with' statement
-        if close:
-            fh.close()
+    finally:
+        cman.close()
 
-def load(file: FileOrPathLike) -> str:
+def load(file: FileRef) -> str:
     """Load text from file.
 
     Args:
@@ -87,7 +76,7 @@ def load(file: FileOrPathLike) -> str:
     with openx(file, mode='r') as fh:
         return fh.read()
 
-def save(text: str, file: FileOrPathLike) -> None:
+def save(text: str, file: FileRef) -> None:
     """Save text to file.
 
     Args:
@@ -100,7 +89,7 @@ def save(text: str, file: FileOrPathLike) -> None:
     with openx(file, mode='w') as fh:
         fh.write(text)
 
-def get_comment(file: FileOrPathLike) -> str:
+def get_comment(file: FileRef) -> str:
     """Read initial comment lines from :term:`text file`.
 
     Args:
@@ -113,7 +102,7 @@ def get_comment(file: FileOrPathLike) -> str:
 
     """
     lines = []
-    with openx(file) as fh:
+    with openx(file, mode='r') as fh:
         for line in fh:
             lstrip = line.lstrip() # Left strip line to keep linebreaks
             if not lstrip.rstrip(): # Discard blank lines
@@ -123,7 +112,7 @@ def get_comment(file: FileOrPathLike) -> str:
             lines.append(lstrip[1:].lstrip()) # Add comment lines to header
     return ''.join(lines).rstrip()
 
-def get_content(file: FileOrPathLike, lines: int = 0) -> StrList:
+def get_content(file: FileRef, lines: int = 0) -> StrList:
     """Read non-blank non-comment lines from :term:`text file`.
 
     Args:
@@ -138,7 +127,7 @@ def get_content(file: FileOrPathLike, lines: int = 0) -> StrList:
 
     """
     content: StrList = []
-    with openx(file) as fh:
+    with openx(file, mode='r') as fh:
         for line in fh:
             if lines and len(content) >= lines:
                 break

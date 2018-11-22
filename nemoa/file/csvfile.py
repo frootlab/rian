@@ -6,18 +6,19 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from abc import ABC, abstractmethod
 import csv
 from contextlib import contextmanager
-from io import TextIOWrapper
-from pathlib import Path
+from io import IOBase
 import numpy as np
-from nemoa.base import attrib, check, env, literal
-from nemoa.file import textfile
+from nemoa.base import attrib, check, literal
+from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
-from nemoa.types import Iterator, StringIOLike, TextIOBaseClass
-from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc, Union
+from nemoa.types import Iterable, Iterator, TextIOBaseClass, Any
+from nemoa.types import Traceback, ExcType, Exc, Union
+from nemoa.types import StrDict, FileRef
 
 #
 # Stuctural Types
@@ -26,6 +27,7 @@ from nemoa.types import BytesIOBaseClass, Traceback, ExcType, Exc, Union
 Fields = List[Tuple[str, type]]
 CSVStream = Union['CSVReader', 'CSVWriter']
 IterCSVStream = Iterator[CSVStream]
+IterCSVIOBase = Iterator['CSVIOBase']
 
 #
 # Exceptions
@@ -42,45 +44,29 @@ CSV_FORMAT_STANDARD = 0
 CSV_FORMAT_RTABLE = 1
 
 #
-# CSVReader Class
+# CSVFileIO
 #
 
-class CSVReader:
-    """CSVReader Class."""
+class CSVIOBase(ABC):
+    """CSV-file IOBase Class."""
 
-    _file: StringIOLike
-    _reader: Iterator
-    _usecols: OptIntTuple
-    _fields: Fields
-    _close: bool
+    _cman: stream.Connector
+    _file: IOBase
 
-    def __init__(
-            self, file: FileOrPathLike, delim: str,
-            skiprows: int, usecols: OptIntTuple, fields: Fields) -> None:
-        if isinstance(file, TextIOBaseClass):
-            self._file = file
-            self._close = False
-        elif isinstance(file, BytesIOBaseClass):
-            self._file = TextIOWrapper(file, write_through=True)
-            self._close = False
-        elif isinstance(file, (str, Path)):
-            self._file = open(env.expand(file), 'r')
-            self._close = True
-        else:
-            raise ValueError("given 'file' is not valid")
-        self._reader = csv.reader(self._file, delimiter=delim)
-        for i in range(skiprows):
-            next(self._reader)
-        self._usecols = usecols
-        self._fields = fields
+    def __init__(self, file: FileRef, mode: str = 'r') -> None:
+        self._cman = stream.Connector(file)
+        self._file = self._cman.open(mode)
+        if not isinstance(self._file, TextIOBaseClass):
+            self._cman.close()
+            raise ValueError('the opened stream is not a valid text file')
 
-    def __iter__(self) -> 'CSVReader':
+    def __iter__(self) -> 'CSVIOBase':
         return self
 
     def __next__(self) -> tuple:
-        return self.readline()
+        return self.read_row()
 
-    def __enter__(self) -> 'CSVReader':
+    def __enter__(self) -> 'CSVIOBase':
         return self
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
@@ -89,32 +75,89 @@ class CSVReader:
     def __del__(self) -> None:
         self.close()
 
-    def readline(self) -> tuple:
+    def close(self) -> None:
+        self._cman.close()
+
+    @abstractmethod
+    def read_row(self) -> tuple:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_row(self, row: Iterable) -> None:
+        raise NotImplementedError()
+
+#
+# CSVReader Class
+#
+
+class CSVReader(CSVIOBase):
+    """CSV-file Reader Class.
+
+    Args:
+        file:
+        **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
+
+    """
+
+    _reader: Iterator # TODO (patrick.michl@gmail.com): specify!
+    _usecols: OptIntTuple
+    _fields: Fields
+
+    def __init__(
+            self, file: FileRef, skiprows: int, usecols: OptIntTuple,
+            fields: Fields, **kwds: Any) -> None:
+        super().__init__(file, mode='r')
+        self._reader = csv.reader(self._file, **kwds) # type: ignore
+        for i in range(skiprows):
+            next(self._reader)
+        self._usecols = usecols
+        self._fields = fields
+
+    def read_row(self) -> tuple:
         row = next(self._reader)
         decode = lambda i: literal.decode(row[i[1]], self._fields[i[0]][1])
         usecols = self._usecols or range(row)
         return tuple(map(decode, enumerate(usecols)))
 
-    def close(self) -> None:
-        if self._close:
-            self._file.close()
-            self._close = False
+    def write_row(self, row: Iterable) -> None:
+        raise OSError("writing rows is not supported in reading mode")
 
 #
 # CSVWriter Class
 #
 
-class CSVWriter:
-    """CSVWriter Class."""
+class CSVWriter(CSVIOBase):
+    """CSV-file Writer Class.
 
-    def __iter__(self) -> 'CSVWriter':
-        return self
+    Args:
+        **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
 
-    def __next__(self) -> None:
-        return None
+    """
 
-    def close(self) -> None:
-        pass
+    _writer: Any # TODO (patrick.michl@gmail.com): specify!
+
+    def __init__(
+            self, file: FileRef, header: StrList,
+            comment: OptStr = None, **kwds: Any) -> None:
+        super().__init__(file, mode='w')
+        self._writer = csv.writer(self._file, **kwds)
+        if comment:
+            self._write_comment(comment)
+        self._write_header(header)
+
+    def _write_comment(self, comment: str) -> None:
+        writeline = getattr(self._file, 'writeline')
+        for line in comment.splitlines():
+            writeline(f'# line\n')
+
+    def _write_header(self, header: StrList) -> None:
+        self.write_row(header)
+
+    def read_row(self) -> tuple:
+        raise OSError("reading rows is not supported in writing mode")
+
+    def write_row(self, row: Iterable) -> None:
+        self._writer.write_row(row)
 
 #
 # CSVFile Class
@@ -229,7 +272,7 @@ class CSVFile(attrib.Container):
     # Events
     #
 
-    def __init__(self, file: FileOrPathLike, mode: str = '',
+    def __init__(self, file: FileRef, mode: str = '',
             comment: OptStr = None, delim: OptStr = None,
             csvformat: OptInt = None, labels: OptStrList = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
@@ -289,7 +332,7 @@ class CSVFile(attrib.Container):
 
     @contextmanager
     def open(
-            self, mode: str = '', columns: OptStrTuple = None) -> IterCSVStream:
+            self, mode: str = '', columns: OptStrTuple = None) -> IterCSVIOBase:
         """Open CSV-file in reading or writing mode.
 
         Args:
@@ -305,24 +348,29 @@ class CSVFile(attrib.Container):
 
         """
         # Open file handler
-        file: CSVStream
+        fh: CSVIOBase
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError(
                     "'mode' is not allowed to contain characters 'r' AND 'w'")
-            file = self._open_write(columns)
+            fh = self._open_write()
         else:
-            file = self._open_read(columns)
+            fh = self._open_read(columns)
 
         try:
-            yield file
+            yield fh
         finally:
-            file.close()
+            fh.close()
 
     def read(self) -> List[tuple]:
         with self.open(mode='r') as fp:
             content = [row for row in fp]
         return content
+
+    def write(self, rows: List[Iterable]) -> None:
+        with self.open(mode='w') as fp:
+            for row in rows:
+                fp.write_row(row)
 
     #
     # Protected Methods
@@ -488,16 +536,28 @@ class CSVFile(attrib.Container):
         check.is_subset("'columns'", set(columns), 'colnames', set(colnames))
         return tuple(colnames.index(col) for col in columns)
 
+    def _get_fmt_params(self) -> StrDict:
+        return {
+            'delimiter': self.delim}
+
     def _open_read(self, columns: OptStrTuple = None) -> CSVReader:
-        fields = self.fields
         usecols = self._get_usecols(columns)
+        skiprows = self._get_skiprows()
+        fields = self.fields
         usefields = [fields[colid] for colid in usecols]
+        fmt = self._get_fmt_params()
         return CSVReader(
-            self._file, delim=self.delim, skiprows=self._get_skiprows(),
-            usecols=usecols, fields=usefields)
+            self._file, skiprows=skiprows, usecols=usecols, fields=usefields,
+            **fmt)
 
     def _open_write(self, columns: OptStrTuple = None) -> CSVWriter:
-        return CSVWriter()
+        fmt = self._get_fmt_params()
+        return CSVWriter(
+            self._file, header=self.colnames, comment=self.comment, **fmt)
+
+#
+# DEPRECATED
+#
 
 def save(
         file: FileOrPathLike, data: NpArray, labels: OptStrList = None,
