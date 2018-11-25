@@ -118,8 +118,7 @@ class TestCase(BaseTestCase):
 
         with self.subTest(cmd="nemoa.list('workspaces', base = 'site')"):
             workspaces = nemoa.list('workspaces', base='site')
-            test = isinstance(workspaces, list) \
-                and 'testsuite' in workspaces
+            test = isinstance(workspaces, list)
             self.assertTrue(test)
 
         with self.subTest(cmd="nemoa.list('workspaces', base = 'user')"):

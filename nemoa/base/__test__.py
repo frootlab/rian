@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Unittests for submodules of package 'nemoa.base'."""
+"""Unittests for package 'nemoa.base'."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -15,7 +15,17 @@ from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
 from nemoa.types import OrderedDict
 
-class TestAssess(ModuleTestCase):
+#
+# Module Variables
+#
+
+osname = env.get_osname()
+
+#
+# Test Cases
+#
+
+class TestEntity(ModuleTestCase):
     """Testcase for the module nemoa.base.entity."""
 
     module = 'nemoa.base.entity'
@@ -322,6 +332,8 @@ class TestEnv(ModuleTestCase):
         if dirname in self.sys_dirs: # Check system directories
             return True
         if dirname in self.app_dirs: # Check application dir
+            if osname == 'Linux':
+                return appname in str(path)
             return appname in str(path) and appauthor in str(path)
         if dirname in self.dist_dirs: # Check distribution dir
             return appname in str(path)
@@ -420,15 +432,16 @@ class TestEnv(ModuleTestCase):
         self.assertEqual(env.clear_filename('3/\nE{$5}.e'), '3E5.e')
 
     def test_match_paths(self) -> None:
-        paths: PathLikeList = [Path('a.b'), Path('b.a'), Path('c/a.b')]
+        paths: PathLikeList = [
+            Path('a.b'), Path('b.a'), Path('c/a.b'), Path('a/b/c')]
         val = env.match_paths(paths, 'a.*')
         self.assertEqual(val, [Path('a.b')])
         val = env.match_paths(paths, '*.a')
         self.assertEqual(val, [Path('b.a')])
-        val = env.match_paths(paths, 'c\\*')
-        self.assertEqual(val, [Path('c/a.b')])
         val = env.match_paths(paths, 'c/*')
         self.assertEqual(val, [Path('c/a.b')])
+        val = env.match_paths(paths, 'a/*/c')
+        self.assertEqual(val, [Path('a/b/c')])
 
     def test_join_path(self) -> None:
         val = env.join_path(('a', ('b', 'c')), 'd')
@@ -647,7 +660,7 @@ class TestLiteral(ModuleTestCase):
     def test_as_path(self) -> None:
         self.assertAllEqual(literal.as_path, [
             Case(args=('a/b/c', ), value=Path('a/b/c')),
-            Case(args=('a\\b\\c', ), value=Path('a/b/c')),
+            Case(args=('%cwd%/test', ), value=Path.cwd() / 'test'),
             Case(args=('%home%/test', ), value=Path.home() / 'test')])
 
     def test_as_datetime(self) -> None:
