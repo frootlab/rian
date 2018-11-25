@@ -9,6 +9,7 @@ __docformat__ = 'google'
 import tempfile
 import datetime
 from pathlib import Path
+from unittest import skipIf
 from nemoa.base import entity, binary, check, env, literal, this, tty
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
@@ -20,6 +21,7 @@ from nemoa.types import OrderedDict
 #
 
 osname = env.get_osname()
+ttylib = tty.get_lib().__name__
 
 #
 # Test Cases
@@ -648,9 +650,19 @@ class TestTTY(ModuleTestCase):
     def test_get_lib(self) -> None:
         self.assertIsInstance(tty.get_lib(), Module)
 
-    def test_Getch(self) -> None:
-        obj = tty.Getch() if callable(tty.Getch) else None
-        self.assertIsInstance(obj, tty.GetchBase)
+    def test_get_class(self) -> None:
+        self.assertIsSubclass(tty.get_class(), tty.TTYBase)
+
+    def test_get_instance(self) -> None:
+        self.assertIsInstance(tty.get_instance(), tty.TTYBase)
+
+    @skipIf(ttylib != 'msvcrt', 'Requires Windows')
+    def test_TTYMsvcrt(self) -> None:
+        pass
+
+    @skipIf(ttylib != 'termios', 'Requires Unix')
+    def test_TTYTermios(self) -> None:
+        pass
 
 class TestLiteral(ModuleTestCase):
     """Testcase for the module nemoa.base.literal."""

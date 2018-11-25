@@ -25,14 +25,20 @@ class Optimizer:
         # algorithms
         if key == 'algorithm':
             return self._get_algorithm(*args, **kwds)
-        if key == 'algorithms': return self._get_algorithms(
-            attribute = 'about', *args, **kwds)
+        if key == 'algorithms':
+            return self._get_algorithms(
+                attribute = 'about', *args, **kwds)
 
-        if key == 'data': return self._get_data(*args, **kwds)
-        if key == 'epoch': return self._get_epoch()
-        if key == 'estimatetime': return self._get_estimatetime()
-        if key == 'progress': return self._get_progress()
-        if key == 'model': return self._get_model()
+        if key == 'data':
+            return self._get_data(*args, **kwds)
+        if key == 'epoch':
+            return self._get_epoch()
+        if key == 'estimatetime':
+            return self._get_estimatetime()
+        if key == 'progress':
+            return self._get_progress()
+        if key == 'model':
+            return self._get_model()
 
         if key in self._buffer: return self._buffer[key]
 
@@ -257,7 +263,6 @@ class Optimizer:
             retval &= self.model.network.initialize(self.model.system)
         except KeyboardInterrupt:
             retval = False
-        finally:
             nemoa.set('shell', 'buffmode', 'line')
 
         return retval

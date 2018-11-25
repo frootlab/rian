@@ -259,7 +259,7 @@ class Session:
 
         return sorted(workspaces)
 
-    def _get_shell(self, key = None, *args, **kwds):
+    def _get_shell(self, key=None, *args, **kwds):
         """Get shell attribute."""
 
         if key == 'inkey':
@@ -467,7 +467,8 @@ class Session:
     def log(self, *args, **kwds):
         """Log message to file and console output."""
 
-        if not args: return True
+        if not args:
+            return True
 
         mode = self._get_mode()
         obj = args[0]
@@ -630,36 +631,6 @@ class Session:
 
         return True
 
-    # def _init_exception_handler(self):
-    #     """Initialize exception handler."""
-    #
-    #     from functools import wraps
-    #     import sys
-    #
-    #     def bypass(func):
-    #
-    #         @wraps(func)
-    #         def wrapper(*args, **kwds):
-    #             print('hook from Python')
-    #
-    #             exc_info = sys.exc_info()
-    #             msg = exc_info[1]
-    #             log.exception(msg, exc_info=exc_info)
-    #             return func(*args, **kwds)
-    #
-    #         return wrapper
-    #     #
-    #     # # pipe exceptions to logfile
-    #     # def hook(*args, **kwds):
-    #     #     exc_info = sys.exc_info()
-    #     #     msg = exc_info[1]
-    #     #     log.exception(msg, exc_info=exc_info)
-    #     #     return sys.__excepthook__(*args, **kwds)
-    #
-    #     sys.excepthook = bypass(sys.excepthook)
-    #
-    #     return True
-
     def run(self, script = None, *args, **kwds):
         """Run python script."""
 
@@ -709,8 +680,10 @@ class Session:
     def set(self, key, *args, **kwds):
         """Set configuration parameters and env vars."""
 
-        if key == 'shell': return self._set_shell(*args, **kwds)
-        if key == 'mode': return self._set_mode(*args, **kwds)
+        if key == 'shell':
+            return self._set_shell(*args, **kwds)
+        if key == 'mode':
+            return self._set_mode(*args, **kwds)
         if key == 'workspace':
             return self._set_workspace(*args, **kwds)
 
@@ -726,22 +699,18 @@ class Session:
 
     def _set_shell_buffmode(self, mode='line'):
         """Set current key buffer mode."""
+        terminal = tty.get_instance() # type: ignore
 
-        curmode = self._get_shell_buffmode()
-
-        if mode == curmode:
+        if mode == 'key':
+            terminal.set_mode('key')
+            terminal.start_getch()
             return True
 
-        if curmode == 'line' and mode == 'key':
-            if not self._buffer.get('inkey', None):
-                self._buffer['inkey'] = tty.Getch() # type: ignore
-            self._buffer['inkey'].start()
+        if mode == 'line':
+            terminal.stop_getch()
+            terminal.set_mode('line')
             return True
 
-        if curmode == 'key' and mode == 'line':
-            self._buffer['inkey'].stop()
-            del self._buffer['inkey']
-            return True
         return False
 
     def _set_mode(self, mode = None, *args, **kwds):

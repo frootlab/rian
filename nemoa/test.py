@@ -41,6 +41,10 @@ Cases = List[Case]
 class BaseTestCase(TestCase):
     """Custom testcase."""
 
+    def assertIsSubclass(self, cls: type, supercls: type) -> None:
+        """Assert that a class is a subclass of another."""
+        self.assertTrue(issubclass(cls, supercls))
+
     def assertAllIn(self, func: AnyFunc, cases: Cases) -> None:
         """Assert that all function evaluations are in the given values."""
         for case in cases:
