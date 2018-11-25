@@ -70,6 +70,16 @@ class TTYBase(ABC):
         """Get character from TTY."""
         raise NotImplementedError()
 
+    @abstractmethod
+    def start_getch(self) -> None:
+        """Start handling of :meth:`.getch` requests."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def stop_getch(self) -> None:
+        """Stop handling of :meth:`.getch` requests."""
+        raise NotImplementedError()
+
 class TTYMsvcrt(TTYBase):
     """Windows/msvcrt implementation of Getch.
 
@@ -90,6 +100,14 @@ class TTYMsvcrt(TTYBase):
 
     def set_mode(self, mode: str) -> None:
         """Set mode of current terminal."""
+        pass
+
+    def start_getch(self) -> None:
+        """Start handling of :meth:`.getch` requests."""
+        pass
+
+    def stop_getch(self) -> None:
+        """Stop handling of :meth:`.getch` requests."""
         pass
 
     def getch(self) -> str:
