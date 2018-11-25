@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import tempfile
 import datetime
 from pathlib import Path
-from nemoa.base import entity, binary, check, env, literal, stdio, this
+from nemoa.base import entity, binary, check, env, literal, this, tty
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -627,17 +627,17 @@ class TestNdict(ModuleTestCase):
             ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
             {1: 'ab', 2: 2})
 
-class TestStdio(ModuleTestCase):
-    """Testcase for the module nemoa.base.stdio."""
+class TestTTY(ModuleTestCase):
+    """Testcase for the module nemoa.base.tty."""
 
-    module = 'nemoa.base.stdio'
+    module = 'nemoa.base.tty'
 
-    def test_get_ttylib(self) -> None:
-        self.assertIsInstance(stdio.get_ttylib(), Module)
+    def test_get_lib(self) -> None:
+        self.assertIsInstance(tty.get_lib(), Module)
 
     def test_Getch(self) -> None:
-        obj = stdio.Getch() if callable(stdio.Getch) else None
-        self.assertIsInstance(obj, stdio.GetchBase)
+        obj = tty.Getch() if callable(tty.Getch) else None
+        self.assertIsInstance(obj, tty.GetchBase)
 
 class TestLiteral(ModuleTestCase):
     """Testcase for the module nemoa.base.literal."""

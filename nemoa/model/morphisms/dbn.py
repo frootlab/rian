@@ -29,12 +29,11 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.grbm': 'default' }
 
     @meta.custom(
-        name     = 'dbn',
+        name = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
-        type     = 'metaalgorithm',
-        syscheck = lambda net: net._is_compatible_dbn()
-    )
+        type = 'metaalgorithm',
+        syscheck = lambda net: net._is_compatible_dbn())
     def _dbn(self):
         """Deep belief network optimization."""
 
@@ -53,7 +52,6 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         category = 'optimization',
         type     = 'metaalgorithm',
         syscheck = None)
-
     def _dbn_pretraining(self):
         """Deep belief network pretraining.
 
@@ -223,7 +221,6 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         category = 'optimization',
         type     = 'metaalgorithm',
         syscheck = None)
-
     def _dbn_finetuning(self):
         """Deep belief network finetuning.
 

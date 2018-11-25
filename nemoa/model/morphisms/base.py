@@ -216,8 +216,10 @@ class Optimizer:
     def optimize(self, config = None, **kwds):
         """ """
 
-        if not self._set_config(config, **kwds): return None
-        if not self._set_buffer_reset(): return None
+        if not self._set_config(config, **kwds):
+            return None
+        if not self._set_buffer_reset():
+            return None
 
         # get name of optimization algorithm
         name = self._config.get('algorithm', None)
@@ -244,27 +246,35 @@ class Optimizer:
                 self._buffer['key_events_started'] = True
                 nemoa.set('shell', 'buffmode', 'key')
 
-        # 2Do retval, try / except etc.
-        transformation = algorithm.get('reference', None)
-        if not transformation: return None
+        # TODO: retval, try / except etc.
+        run_optimizer = algorithm.get('reference', None)
+        if not run_optimizer:
+            return None
 
-        retval = transformation()
-        retval &= self.model.network.initialize(self.model.system)
+        retval = True
+        try:
+            retval &= run_optimizer()
+            retval &= self.model.network.initialize(self.model.system)
+        except KeyboardInterrupt:
+            retval = False
+        finally:
+            nemoa.set('shell', 'buffmode', 'line')
 
         return retval
 
     def set(self, key, *args, **kwds):
         """ """
 
-        if key == 'model': return self._set_model(*args, **kwds)
-        if key == 'config': return self._set_config(*args, **kwds)
-        if key == 'buffer': return self._set_buffer(*args, **kwds)
+        if key == 'model':
+            return self._set_model(*args, **kwds)
+        if key == 'config':
+            return self._set_config(*args, **kwds)
+        if key == 'buffer':
+            return self._set_buffer(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
     def _set_config(self, config = None, **kwds):
-        """Set configuration for transformation from dictionary."""
-
         if not isinstance(config, dict):
             if not config: key = 'default'
             elif isinstance(config, str):
@@ -272,11 +282,11 @@ class Optimizer:
             else:
                 raise Warning(
                     "could not configure transformation: "
-                    "invalid configuration.") or None
+                    "invalid configuration.")
             if not self.model:
                 raise Warning(
                     "could not configure transformation: "
-                    "no model given.") or None
+                    "no model given.")
             system = self.model.system
             schedules = system._config.get('schedules', {})
             config = schedules.get(key, {}).get(system.type, {})
@@ -286,14 +296,12 @@ class Optimizer:
         return True
 
     def _set_model(self, model):
-        """Set model."""
-
         import nemoa.model.evaluation
 
         if not self._get_compatibility(model):
-            raise Warning("""Could not apply
-                transformation: transformation is not compatible with
-                model.""") or None
+            raise Warning(
+                "Could not apply transformation: "
+                "transformation is not compatible with model.")
 
         self.model = model
         self.evaluation = nemoa.model.evaluation.new(model)
@@ -304,8 +312,8 @@ class Optimizer:
         return True
 
     def _set_buffer(self, key, value = None):
-
-        if key == 'reset': return self._set_buffer_reset()
+        if key == 'reset':
+            return self._set_buffer_reset()
         if key in self._buffer:
             self._buffer[key] = value
             return True
@@ -313,8 +321,6 @@ class Optimizer:
         raise KeyError(f"unknown key '{key}'")
 
     def _set_buffer_reset(self):
-        """ """
-
         now = time.time()
 
         self._buffer = {
@@ -364,12 +370,12 @@ class Optimizer:
 
     def update(self):
         """Update epoch and check termination criterions."""
-
         self._buffer['epoch'] += 1
-        if self._buffer['epoch'] == self._config['updates']:
+        if self._buffer['epoch'] >= self._config['updates']:
             self._buffer['continue'] = False
 
-        if self._buffer['key_events']: self._update_keypress()
+        if self._buffer['key_events']:
+            self._update_keypress()
         if self._config.get('tracker_obj_tracking_enable', False):
             self._update_objective_function()
         if self._config.get('tracker_eval_enable', False):
@@ -384,7 +390,8 @@ class Optimizer:
         """Check Keyboard."""
 
         char = nemoa.get('shell', 'inkey')
-        if not char: return True
+        if not char:
+            return True
 
         if char == 'e':
             pass

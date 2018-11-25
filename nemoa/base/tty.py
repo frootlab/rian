@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-#
-"""Terminal I/O."""
+"""Text Terminal I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,7 +14,7 @@ from threading import Thread
 from nemoa.base import entity, env
 from nemoa.types import Module, OptModule, ClassVar
 
-def get_ttylib() -> OptModule:
+def get_lib() -> OptModule:
     """Get module for tty I/O control.
 
     Depending on the plattform the module within the standard library, which is
@@ -38,26 +38,32 @@ def get_ttylib() -> OptModule:
 class GetchBase(ABC):
     """Abstract base class for Getch classes."""
 
+    ttylib: Module
+
     def __init__(self) -> None:
         """Initialize instance."""
+        self.ttylib = get_lib()
         self.start()
 
     def __del__(self) -> None:
         """Release resources required for handling :meth:`.getch` requests."""
         self.stop()
+        self.ttylib = None
 
     @abstractmethod
     def start(self) -> None:
         """Start handling of :meth:`.getch` requests."""
-        pass
+        raise NotImplementedError()
+
     @abstractmethod
     def getch(self) -> str:
-        """Get character from stdio."""
-        pass
+        """Get character from TTY."""
+        raise NotImplementedError()
+
     @abstractmethod
     def stop(self) -> None:
         """Stop handling of :meth:`.getch` requests."""
-        pass
+        raise NotImplementedError()
 
 class GetchMsvcrt(GetchBase):
     """Windows/msvcrt implementation of Getch.
@@ -68,34 +74,18 @@ class GetchMsvcrt(GetchBase):
     """
 
     encoding: ClassVar[str] = env.get_encoding()
-    msvcrt: OptModule
-
-    def __init__(self) -> None:
-        """Initialize instance."""
-        try:
-            import msvcrt
-        except ImportError as err:
-            raise ImportError(
-                "required package msvcrt from standard library "
-                "is only available on the Windows plattform") from err
-        self.msvcrt = msvcrt
-        super().__init__()
-
-    def __del__(self) -> None:
-        """Release resources required for handling :meth:`.getch` requests."""
-        self.msvcrt = None
 
     def start(self) -> None:
         """Start handling of :meth:`.getch` requests."""
         pass
 
     def getch(self) -> str:
-        """Get character from stdio."""
-        if not isinstance(self.msvcrt, Module):
+        """Get character from tty."""
+        if not isinstance(self.ttylib, Module):
             return ''
-        if not getattr(self.msvcrt, 'kbhit')():
+        if not getattr(self.ttylib, 'kbhit')():
             return ''
-        return str(getattr(self.msvcrt, 'getch')(), self.encoding)
+        return str(getattr(self.ttylib, 'getch')(), self.encoding)
 
     def stop(self) -> None:
         """Stop handling of :meth:`.getch` requests."""
@@ -109,7 +99,6 @@ class GetchTermios(GetchBase):
 
     """
 
-    termios: OptModule
     buffer: Queue
     runsignal: bool
     time: float
@@ -117,42 +106,22 @@ class GetchTermios(GetchBase):
     fdesc: int
     thread: Thread
 
-    def __init__(self) -> None:
-        """Initialize instance."""
-        try:
-            import termios
-        except ImportError as err:
-            raise ImportError(
-                "required module termios from standard library "
-                "is only available on Unix-like systems") from err
-        self.termios = termios
-        super().__init__()
-
-    def __del__(self) -> None:
-        """Release resources required for handling :meth:`.getch` requests."""
-        self.termios = None
-
     def start(self) -> None:
         """Change terminal mode and start reading stdin to buffer."""
-        if not isinstance(self.termios, Module):
-            raise ImportError(
-                "required module termios from standard library "
-                "has not been imported")
-
         # Get current tty attributes
-        tcgetattr = getattr(self.termios, 'tcgetattr')
+        tcgetattr = getattr(self.ttylib, 'tcgetattr')
         self.fdesc = sys.stdin.fileno()
         self.curterm = tcgetattr(self.fdesc)
 
-        # Modify lflag from current tty attributes
+        # Modify lflag from current TTY attributes
         # to set terminal to unbuffered mode (not waiting for Enter)
         newattr = tcgetattr(self.fdesc)
         if isinstance(newattr[3], int):
-            ECHO = getattr(self.termios, 'ECHO')
-            ICANON = getattr(self.termios, 'ICANON')
+            ECHO = getattr(self.ttylib, 'ECHO')
+            ICANON = getattr(self.ttylib, 'ICANON')
             newattr[3] = newattr[3] & ~ICANON & ~ECHO
-        tcsetattr = getattr(self.termios, 'tcsetattr')
-        TCSAFLUSH = getattr(self.termios, 'TCSAFLUSH')
+        tcsetattr = getattr(self.ttylib, 'tcsetattr')
+        TCSAFLUSH = getattr(self.ttylib, 'TCSAFLUSH')
         tcsetattr(self.fdesc, TCSAFLUSH, newattr)
 
         # Initialize buffer and start thread for reading stdio to buffer
@@ -169,38 +138,28 @@ class GetchTermios(GetchBase):
         self.time = time.time()
 
     def getch(self) -> str:
-        """Return character from buffer."""
-        if 'buffer' not in self.__dict__:
-            self.start()
+        """Return single Character from buffer."""
         now = time.time()
-        if now < self.time + .5:
+        if now < self.time + .1: # Wait for 100 milliseconds
             return ''
 
         # Update time
         self.time = now
 
         try:
-            return self.buffer.get()
+            return self.buffer.get_nowait()
         except Empty:
             return ''
 
     def stop(self) -> None:
         """Stop handling of :meth:`.getch` requests."""
-        if not isinstance(self.termios, Module):
-            raise ImportError(
-                "required module termios from standard library "
-                "has not been imported")
-
         # Reset terminal mode to previous tty attributes
-        TCSAFLUSH = getattr(self.termios, 'TCSAFLUSH')
-        tcsetattr = getattr(self.termios, 'tcsetattr')
+        TCSAFLUSH = getattr(self.ttylib, 'TCSAFLUSH')
+        tcsetattr = getattr(self.ttylib, 'tcsetattr')
         tcsetattr(self.fdesc, TCSAFLUSH, self.curterm)
 
         # Stop thread from reading characters
         self.resume = False
-
-        # Delete stdin buffer
-        del self.__dict__['buffer']
 
 def getch_class() -> GetchBase:
     """Get platform specific class to handle getch() requests.
@@ -211,7 +170,7 @@ def getch_class() -> GetchBase:
 
     """
     # Get platform specific tty I/O module.
-    ref = get_ttylib()
+    ref = get_lib()
     if not ref:
         raise ImportError("no module for tty I/O could be imported")
     cname = 'Getch' + ref.__name__.capitalize()
