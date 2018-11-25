@@ -39,6 +39,10 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
     # Search for algorithms
     return entity.search(ref=module, rules=rules, **kwds)
 
+#
+# Functors
+#
+
 def custom(
         name: OptStr = None, category: OptStr = None,
         classes: OptStrList = None, tags: OptStrList = None,

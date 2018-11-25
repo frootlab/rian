@@ -3,13 +3,9 @@
 
 Generic class of layered feed forward networks aimed to provide common
 attributes, methods, optimization algorithms like back-propagation of
-errors (1) and unit classes to other systems by inheritence. For
+errors [HINTON1986]_ and unit classes to other systems by inheritence. For
 multilayer network topologies DBNs usually show better performance than
 plain ANNs.
-
-References:
-    (1) "Learning representations by back-propagating errors",
-        Rumelhart, D. E., Hinton, G. E., Williams, R. J. (1986)
 
 """
 
@@ -17,10 +13,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
 import numpy
-
-from nemoa.math import meta
+import nemoa
+from nemoa.math import category
 
 class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).
@@ -175,7 +170,7 @@ class ANN(nemoa.system.classes.base.System):
 
         return True
 
-    @meta.custom(
+    @category.custom(
         name     = 'energy',
         category = ('system', 'evaluation'),
         args     = 'all',
@@ -201,7 +196,7 @@ class ANN(nemoa.system.classes.base.System):
         # calculate (pseudo) energy of system
         return numpy.log(1. + numpy.exp(-energy).sum())
 
-    @meta.custom(
+    @category.custom(
         name     = 'units_energy',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -229,7 +224,7 @@ class ANN(nemoa.system.classes.base.System):
         data = self._get_unitexpect(data, mapping)
         return self._units[mapping[-1]].energy(data)
 
-    @meta.custom(
+    @category.custom(
         name     = 'links_energy',
         category = ('system', 'links', 'evaluation'),
         args     = 'input',

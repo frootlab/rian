@@ -8,21 +8,21 @@ __docformat__ = 'google'
 
 import networkx as nx
 import numpy as np
-from nemoa.math import curve, graph, matrix, meta, regression, vector
+from nemoa.math import curve, category, graph, matrix, regression, vector
 from nemoa.test import ModuleTestCase, MathTestCase
 from nemoa.types import NaN
 
-class TestAlgo(ModuleTestCase):
-    """Testcase for the module nemoa.math.meta."""
+class TestCategory(ModuleTestCase):
+    """Testcase for the module nemoa.math.category."""
 
-    module = 'nemoa.math.meta'
+    module = 'nemoa.math.category'
 
     def test_search(self) -> None:
         self.assertEqual(
-            len(meta.search(meta, name='search')), 1)
+            len(category.search(category, name='search')), 1)
 
     def test_custom(self) -> None:
-        @meta.custom(category='custom')
+        @category.custom(category='custom')
         def test_custom() -> None:
             pass
         self.assertEqual(
@@ -31,7 +31,7 @@ class TestAlgo(ModuleTestCase):
             getattr(test_custom, 'category', None), 'custom')
 
     def test_objective(self) -> None:
-        @meta.objective()
+        @category.objective()
         def test_objective() -> None:
             pass
         self.assertEqual(
@@ -40,7 +40,7 @@ class TestAlgo(ModuleTestCase):
             getattr(test_objective, 'category', None), 'objective')
 
     def test_sampler(self) -> None:
-        @meta.sampler()
+        @category.sampler()
         def test_sampler() -> None:
             pass
         self.assertEqual(
@@ -49,7 +49,7 @@ class TestAlgo(ModuleTestCase):
             getattr(test_sampler, 'category', None), 'sampler')
 
     def test_statistic(self) -> None:
-        @meta.statistic()
+        @category.statistic()
         def test_statistic() -> None:
             pass
         self.assertEqual(
@@ -58,7 +58,7 @@ class TestAlgo(ModuleTestCase):
             getattr(test_statistic, 'category', None), 'statistic')
 
     def test_association(self) -> None:
-        @meta.association()
+        @category.association()
         def test_association() -> None:
             pass
         self.assertEqual(

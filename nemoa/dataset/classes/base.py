@@ -16,7 +16,7 @@ except ImportError as err:
 import nemoa
 from nemoa.base import entity, nbase
 from nemoa.core import log, ui
-from nemoa.math import meta
+from nemoa.math import category
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -1328,7 +1328,7 @@ class Dataset(nbase.ObjectIP):
 
         return algorithms[name](*args, **kwds)
 
-    @meta.custom(
+    @category.custom(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1339,7 +1339,7 @@ class Dataset(nbase.ObjectIP):
 
         return self._get_data(*args, **kwds)
 
-    @meta.custom(
+    @category.custom(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1365,7 +1365,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @meta.custom(
+    @category.custom(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1391,7 +1391,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @meta.custom(
+    @category.custom(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1420,7 +1420,7 @@ class Dataset(nbase.ObjectIP):
 
         return pca_data
 
-    @meta.custom(
+    @category.custom(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1453,7 +1453,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @meta.custom(
+    @category.custom(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1486,7 +1486,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @meta.custom(
+    @category.custom(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1513,7 +1513,7 @@ class Dataset(nbase.ObjectIP):
 
         return isbinary
 
-    @meta.custom(
+    @category.custom(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),
