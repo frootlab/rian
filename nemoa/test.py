@@ -6,6 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import inspect
 from io import StringIO
 from typing import NamedTuple
 from unittest import skipIf
@@ -139,10 +140,13 @@ class ModuleTestCase(BaseTestCase):
             entity.get_members(ref, classinfo=(type, Function))):
             if name.startswith('_'):
                 continue # Filter protected members
-            if getattr(ref, name).__module__ != ref.__name__:
+            obj = getattr(ref, name)
+            if obj.__module__ != ref.__name__:
                 continue # Filter imported members
-            if BaseException in getattr(getattr(ref, name), '__mro__', []):
+            if BaseException in getattr(obj, '__mro__', []):
                 continue # Filter exceptions
+            if inspect.isabstract(obj):
+                continue # Filter abstract classes
             members.add(name)
 
         # Get tested module members
