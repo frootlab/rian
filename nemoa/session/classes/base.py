@@ -7,7 +7,8 @@ __license__ = 'GPLv3'
 import logging
 import traceback
 import nemoa
-from nemoa.base import env, this, tty
+from nemoa.base import env, this
+from nemoa.core import tty
 
 class Session:
     """Session Manager."""

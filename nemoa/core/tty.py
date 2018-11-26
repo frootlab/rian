@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-#
-"""Text Terminal I/O."""
+"""Text Terminal I/O Controle.
+
+This module implements process global TTY I/O controle as a Singleton object.
+Supported plattforms are Microsoft Windows by using the Microsoft Visual C/C++
+Runtime Library for Python :py:mod:`msvcrt` and Unix-like systems by using the
+Unix Terminal I/O API for Python :py:mod:`termios`.
+
+"""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -16,11 +23,13 @@ from nemoa.types import Any, Module, ClassVar, Exc, ExcType, Traceback, Method
 from nemoa.types import OptStr
 
 #
-# TTY Classes
+# TTY Controle Classes
 #
 
 class TTYBase(ABC):
-    """Abstract base class for text terminals."""
+    """Abstract base class for TTY controle."""
+
+    _encoding: ClassVar[str] = env.get_encoding()
 
     _ttylib: Module
     _cur_attr: Any
@@ -87,8 +96,6 @@ class TTYMsvcrt(TTYBase):
     C/C++ Runtime Library for Python :py:mod:`msvcrt`.
 
     """
-
-    _encoding: ClassVar[str] = env.get_encoding()
 
     def get_attr(self) -> Any:
         """Get attributes of current terminal."""
@@ -209,7 +216,7 @@ class TTYTermios(TTYBase):
         self._resume = False # Stop thread from reading characters
 
 #
-# Functions
+# Singleton Accessor Functions
 #
 
 def get_lib() -> Module:

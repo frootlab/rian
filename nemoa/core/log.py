@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """Logging.
 
-This module implements application global logging as a singleton, using the
+This module implements process global logging as a singleton object, using the
 standard library module :py:mod:`logging`.
+
 """
 
 __author__ = 'Patrick Michl'

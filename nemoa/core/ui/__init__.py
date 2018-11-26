@@ -13,8 +13,16 @@ from nemoa.base import this
 from nemoa.core import log
 from nemoa.types import Any, AnyFunc, ExcType, Exc, Traceback, OptVoidFunc
 
+#
+# Module Variables
+#
+
 _NOTIFICATION_TYPES = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 _DEFAULT_NOTIFICATION_LEVEL = 1
+
+#
+# Notifications
+#
 
 def get_notification_level() -> str:
     """Get notification level."""
@@ -100,9 +108,17 @@ def hook_critical(msg: str, *args: Any, **kwds: Any) -> None:
     """Print critical error notification to stdout."""
     print(msg, *args, **kwds)
 
+#
+#
+#
+
 def clear() -> None:
     """Clear screen."""
     os.system('cls' if os.name == 'nt' else 'clear')
+
+#
+# Exception Handling
+#
 
 def hook_exception(Error: ExcType, value: Exc, tb: Traceback) -> None:
     """Alternative exception hook."""

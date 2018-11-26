@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Session management.
 
-This module implements session management by a singleton design pattern.
+This module implements process global session management by a singleton object.
 
 """
 
@@ -19,17 +19,17 @@ from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
 from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessorBase
 
 #
-# Types
+# Structural Types
 #
 
 SecDict = inifile.SecDict
 
-class Session(attrib.Container):
-    """Session."""
+#
+# Classes
+#
 
-    #
-    # Private Class Variables
-    #
+class Session(attrib.Container):
+    """Session Class."""
 
     _config_file_path: ClassVar[str] = '%user_config_dir%/nemoa.ini'
     _config_file_struct: ClassVar[SecDict] = {
@@ -449,7 +449,7 @@ class Session(attrib.Container):
         self.logger.log(level, msg, *args, **kwds)
 
     #
-    # Private Methods
+    # Protected Methods
     #
 
     def _load_config(self) -> None:
@@ -489,6 +489,16 @@ class Session(attrib.Container):
             raise FileNotFoundError(
                 f"file {workspace} does not exist")
         return Path(basedir, workspace)
+
+#
+# Singleton Accessor Functions
+#
+
+def get_instance() -> Session:
+    """Get current session instance."""
+    if not '_session' in globals():
+        globals()['_session'] = Session()
+    return globals()['_session']
 
 # from nemoa.types import Any
 #
