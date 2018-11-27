@@ -16,7 +16,6 @@ import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized
-#from nemoa.file import stream
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')
@@ -65,10 +64,10 @@ Traceback = types.TracebackType
 ################################################################################
 
 CallableClasses = (Function, Method)
-PathLikeClasses = (str, Path)
 FileClasses = (BytesIOBaseClass, TextIOBaseClass)
-TextFileClasses = (str, Path, TextIOBaseClass)
+PathLikeClasses = (str, Path)
 ClassInfoClasses = (type, tuple)
+FileRefClasses = PathLikeClasses + FileClasses + (FileAccessorBase, )
 
 ################################################################################
 # Structural Types for Literals and Collections of Literals

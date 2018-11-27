@@ -7,11 +7,11 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
-from nemoa.errors import (
-    IsPositiveError, IsNegativeError, SizeError,
-    InvalidTypeError, InvalidClassError, NotClassError, NotCallableError,
-    InvalidAttrError, NoSubsetError, NotPositiveError, NotNegativeError,
-    MinSizeError, MaxSizeError)
+from nemoa.errors import IsPositiveError, IsNegativeError, SizeError
+from nemoa.errors import InvalidTypeError, InvalidClassError, NotClassError
+from nemoa.errors import NotCallableError, InvalidAttrError, NoSubsetError
+from nemoa.errors import NotPositiveError, NotNegativeError, MinSizeError
+from nemoa.errors import MaxSizeError, InvalidFormatError
 from nemoa.types import Class, ClassInfo, Sized, RealNumber, OptInt
 from nemoa.types import ClassInfoClasses
 
@@ -51,8 +51,13 @@ def is_subclass(name: str, obj: object, ref: Class) -> None:
 # Check Value of Objects
 #
 
+def is_identifier(name: str, string: str) -> None:
+    """Check if a string is a valid identifier."""
+    if not string.isidentifier():
+        raise InvalidFormatError(name, string, "'UAX-31'")
+
 def is_subset(a: str, seta: set, b: str, setb: set) -> None:
-    """Check if set is a subset of another set."""
+    """Check if a set is a subset of another."""
     if not seta.issubset(setb):
         raise NoSubsetError(a, seta, b, setb)
 

@@ -193,6 +193,18 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 1, float)),
             Case(args=('', dict(), list))])
 
+    def test_is_identifier(self) -> None:
+        self.assertNoneRaises(ValueError, check.is_identifier, [
+            Case(args=('', 'id')),
+            Case(args=('', 'ID')),
+            Case(args=('', 'Table')),
+            Case(args=('', 'Table1'))])
+        self.assertAllRaises(ValueError, check.is_identifier, [
+            Case(args=('', '')),
+            Case(args=('', '1')),
+            Case(args=('', 'a b')),
+            Case(args=('', 'a.b'))])
+
     def test_has_opt_type(self) -> None:
         self.assertNoneRaises(TypeError, check.has_opt_type, [
             Case(args=('', None, int)),

@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Nemoa Tables."""
+"""Tables, Cursors and Records."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-
-import dataclasses
 import random
 from abc import ABC, abstractmethod
 from numpy.lib import recfunctions as nprf
+import dataclasses
 from nemoa.base import attrib, check
 from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
@@ -28,6 +27,7 @@ Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
 FieldLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldLike = Optional[FieldLike]
 OptRow = Optional['Record']
+RowList = List[tuple]
 RowLike = Union['Record', tuple, dict]
 RowLikeList = List[RowLike]
 
@@ -35,9 +35,9 @@ RowLikeList = List[RowLike]
 # Constants
 #
 
-ROW_STATE_CREATE = 0b0001
-ROW_STATE_UPDATE = 0b0010
-ROW_STATE_DELETE = 0b0100
+ROW_STATE_FLAG_CREATE = 0b0001
+ROW_STATE_FLAG_UPDATE = 0b0010
+ROW_STATE_FLAG_DELETE = 0b0100
 CUR_MODE_BUFFERED = 0b0001
 CUR_MODE_INDEXED = 0b0010
 CUR_MODE_SCROLLABLE = 0b0100
@@ -79,13 +79,13 @@ class CursorModeError(TableError, LookupError):
 class Record(ABC):
     """Abstract Base Class for Records."""
 
-    id: int
+    _id: int
     state: int
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self.validate()
-        self.id = self._create_row_id()
-        self.state = ROW_STATE_CREATE
+        self._id = self._create_row_id()
+        self.state = ROW_STATE_FLAG_CREATE
 
     def validate(self) -> None:
         """Check types of fields."""
@@ -96,27 +96,27 @@ class Record(ABC):
 
     def delete(self) -> None:
         """Mark record as deleted and remove it's ID from index."""
-        if not self.state & ROW_STATE_DELETE:
-            self.state |= ROW_STATE_DELETE
-            self._delete_hook(self.id)
+        if not self.state & ROW_STATE_FLAG_DELETE:
+            self.state |= ROW_STATE_FLAG_DELETE
+            self._delete_hook(self._id)
 
     def restore(self) -> None:
         """Mark record as not deleted and append it's ID to index."""
-        if self.state & ROW_STATE_DELETE:
-            self.state &= ~ROW_STATE_DELETE
-            self._restore_hook(self.id)
+        if self.state & ROW_STATE_FLAG_DELETE:
+            self.state &= ~ROW_STATE_FLAG_DELETE
+            self._restore_hook(self._id)
 
     def update(self, **kwds: Any) -> None:
         """Mark record as updated and write the update to diff table."""
-        if not self.state & ROW_STATE_UPDATE:
-            self.state |= ROW_STATE_UPDATE
-            self._update_hook(self.id, **kwds)
+        if not self.state & ROW_STATE_FLAG_UPDATE:
+            self.state |= ROW_STATE_FLAG_UPDATE
+            self._update_hook(self._id, **kwds)
 
     def revoke(self) -> None:
         """Mark record as not updated and remove the update from diff table."""
-        if self.state & ROW_STATE_UPDATE:
-            self.state &= ~ROW_STATE_UPDATE
-            self._revoke_hook(self.id)
+        if self.state & ROW_STATE_FLAG_UPDATE:
+            self.state &= ~ROW_STATE_FLAG_UPDATE
+            self._revoke_hook(self._id)
 
     @abstractmethod
     def _create_row_id(self) -> int:
@@ -399,6 +399,10 @@ class Cursor(attrib.Container):
             mapper=self._mapper)
         self._buffer = cur.fetch(0) # Fetch all from result set
 
+#
+# Table Class
+#
+
 class Table(attrib.Container):
     """Table Class."""
 
@@ -406,6 +410,7 @@ class Table(attrib.Container):
     # Public Attributes
     #
 
+    name: property = attrib.Virtual(fget='_get_name')
     fields: property = attrib.Virtual(fget='_get_fields')
     colnames: property = attrib.Virtual(fget='_get_colnames')
 
@@ -418,16 +423,28 @@ class Table(attrib.Container):
     _index: property = attrib.Temporary(classinfo=list, default=[])
     _iter_index: property = attrib.Temporary()
     _Record: property = attrib.Temporary(classinfo=type)
+    _name: property = attrib.MetaData(classinfo=str)
 
     #
     # Events
     #
 
-    def __init__(self, columns: OptFieldLike = None) -> None:
-        """ """
+    def __init__(
+            self, name: OptStr = None, fields: OptFieldLike = None) -> None:
+        """Initialize Table.
+
+        Args:
+            name: Table identifier, given as a valid ASCII identifier as defined
+                in [UAX31]_.
+            fields:
+
+        """
         super().__init__()
-        if columns:
-            self._create_header(columns)
+        if name:
+            check.is_identifier(f"'name'", name)
+            self._name = name
+        if fields:
+            self._create_header(fields)
 
     def __iter__(self) -> Iterator:
         self._iter_index = iter(self._index)
@@ -454,13 +471,13 @@ class Table(attrib.Container):
             if not row:
                 continue
             state = row.state
-            if state & ROW_STATE_DELETE:
+            if state & ROW_STATE_FLAG_DELETE:
                 self._store[rowid] = None
                 try:
                     self._index.remove(rowid)
                 except ValueError:
                     pass
-            elif state & (ROW_STATE_CREATE | ROW_STATE_UPDATE):
+            elif state & (ROW_STATE_FLAG_CREATE | ROW_STATE_FLAG_UPDATE):
                 self._store[rowid] = self._diff[rowid]
                 self._store[rowid].state = 0
 
@@ -476,7 +493,7 @@ class Table(attrib.Container):
             if not row:
                 continue
             state = row.state
-            if state & ROW_STATE_CREATE:
+            if state & ROW_STATE_FLAG_CREATE:
                 try:
                     self._index.remove(rowid)
                 except ValueError:
@@ -510,7 +527,12 @@ class Table(attrib.Container):
         row = self._create_row(*args, **kwds)
         self._store.append(None)
         self._diff.append(row)
-        self._append_row_id(row.id)
+        self._append_row_id(row._id) # pylint: disable=W0212
+
+    def append_rows(self, rows: RowList) -> None:
+        """Append multiple rows."""
+        for row in rows:
+            self.append_row(*row)
 
     def delete_row(self, rowid: int) -> None:
         """ """
@@ -561,7 +583,7 @@ class Table(attrib.Container):
         # Rebuild table index
         self._index = list(range(len(self._store)))
         for rowid in self._index:
-            self._store[rowid].id = rowid
+            self._store[rowid]._id = rowid # pylint: disable=W0212
 
         # Rebuild diff table
         self._diff = [None] * len(self._store)
@@ -570,46 +592,8 @@ class Table(attrib.Container):
     # Protected Methods
     #
 
-    def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
-        def mapper_tuple(row: Record) -> tuple:
-            return tuple(getattr(row, col) for col in columns)
-        def mapper_dict(row: Record) -> dict:
-            return {col: getattr(row, col) for col in columns}
-        if fmt == tuple:
-            return mapper_tuple
-        if fmt == dict:
-            return mapper_dict
-        raise TableError(f"'fmt' requires to be tuple or dict")
-
-    def _get_fields(self) -> FieldTuple:
-        return dataclasses.fields(self._Record)
-
-    def _get_colnames(self) -> StrTuple:
-        return tuple(field.name for field in self.fields)
-
-    def _create_row_id(self) -> int:
-        return len(self._store)
-
     def _append_row_id(self, rowid: int) -> None:
         self._index.append(rowid)
-
-    def _remove_row_id(self, rowid: int) -> None:
-        self._index.remove(rowid)
-
-    def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
-        row = self.get_row(rowid)
-        if not row:
-            raise RowLookupError(rowid)
-        upd = dataclasses.replace(row, **kwds)
-        upd.id = rowid
-        upd.state = row.state
-        self._diff[rowid] = upd
-
-    def _remove_row_diff(self, rowid: int) -> None:
-        self._diff[rowid] = None
-
-    def _create_row(self, *args: Any, **kwds: Any) -> Record:
-        return self._Record(*args, **kwds) # pylint: disable=E0110
 
     def _create_header(self, columns: FieldLike) -> None:
         # Check types of fieldlike column descriptors and convert them to field
@@ -653,6 +637,47 @@ class Table(attrib.Container):
         self._store = []
         self._diff = []
         self._index = []
+
+    def _create_row(self, *args: Any, **kwds: Any) -> Record:
+        return self._Record(*args, **kwds) # pylint: disable=E0110
+
+    def _create_row_id(self) -> int:
+        return len(self._store)
+
+    def _get_colnames(self) -> StrTuple:
+        return tuple(field.name for field in self.fields)
+
+    def _get_fields(self) -> FieldTuple:
+        return dataclasses.fields(self._Record)
+
+    def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
+        def mapper_tuple(row: Record) -> tuple:
+            return tuple(getattr(row, col) for col in columns)
+        def mapper_dict(row: Record) -> dict:
+            return {col: getattr(row, col) for col in columns}
+        if fmt == tuple:
+            return mapper_tuple
+        if fmt == dict:
+            return mapper_dict
+        raise TableError(f"'fmt' requires to be tuple or dict")
+
+    def _get_name(self) -> str:
+        return self._name
+
+    def _remove_row_diff(self, rowid: int) -> None:
+        self._diff[rowid] = None
+
+    def _remove_row_id(self, rowid: int) -> None:
+        self._index.remove(rowid)
+
+    def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
+        row = self.get_row(rowid)
+        if not row:
+            raise RowLookupError(rowid)
+        new_row = dataclasses.replace(row, **kwds)
+        new_row._id = rowid # pylint: disable=W0212
+        new_row.state = row.state
+        self._diff[rowid] = new_row
 
 #
 # DEPRECATED

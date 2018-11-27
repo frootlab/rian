@@ -78,6 +78,13 @@ class NotCallableError(NemoaAssert, TypeError):
 # Application specific Value Errors
 ################################################################################
 
+class InvalidFormatError(NemoaAssert, ValueError):
+    """Rasise when a string has an invalid format."""
+
+    def __init__(self, name: str, val: str, fmt: str) -> None:
+        msg = f"{name} '{val}' does not have the required format {fmt}"
+        super().__init__(msg)
+
 class IsNegativeError(NemoaAssert, ValueError):
     """Raise when a number may not be negative."""
 

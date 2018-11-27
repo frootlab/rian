@@ -26,7 +26,7 @@ from nemoa.base import attrib, check, literal
 from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
-from nemoa.types import IntTuple, OptList, OptStrTuple, TextFileClasses
+from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, TextIOBaseClass, Any
 from nemoa.types import Traceback, ExcType, Exc, Union
 from nemoa.types import StrDict, FileRef
@@ -199,7 +199,7 @@ class DSVFile(attrib.Container):
     # Class Variables
     #
 
-    _delim_candidates: ClassVar[StrList] = [',', '\t', ';', ' ', ':']
+    _delim_candidates: ClassVar[StrList] = [',', '\t', ';', ' ', ':', '|']
     """
     Optional list of strings containing delimiter candidates to search for.
     Default: [',', '\t', ';', ' ', ':']
@@ -274,7 +274,7 @@ class DSVFile(attrib.Container):
     # Protected Attributes
     #
 
-    _file: property = attrib.Content(classinfo=TextFileClasses)
+    _fileref: property = attrib.Content(classinfo=FileRefClasses)
     _comment: property = attrib.MetaData(classinfo=str, default=None)
     _delim: property = attrib.MetaData(classinfo=str, default=None)
     _format: property = attrib.MetaData(classinfo=str, default=None)
@@ -292,7 +292,8 @@ class DSVFile(attrib.Container):
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
         """Initialize instance attributes."""
         super().__init__()
-        self._file = file
+
+        self._fileref = file
         self._comment = comment
         self._delim = delim
         self._csvformat = csvformat
@@ -337,7 +338,7 @@ class DSVFile(attrib.Container):
             usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
 
         # Import data from DSV-file as numpy array
-        with textfile.openx(self._file, mode='r') as fh:
+        with textfile.openx(self._fileref, mode='r') as fh:
             return np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
                 delimiter=self._get_delim(),
@@ -394,7 +395,7 @@ class DSVFile(attrib.Container):
         # Return comment if set manually
         if self._comment is not None:
             return self._comment
-        return textfile.get_comment(self._file)
+        return textfile.get_comment(self._fileref)
 
     def _get_delim(self) -> OptStr:
         # Return delimiter if set manually
@@ -407,7 +408,7 @@ class DSVFile(attrib.Container):
         delim: OptStr = None
 
         # Detect delimiter
-        with textfile.openx(self._file, mode='r') as fd:
+        with textfile.openx(self._fileref, mode='r') as fd:
             size, probe = 0, ''
             for line in fd:
                 # Check termination criteria
@@ -439,7 +440,7 @@ class DSVFile(attrib.Container):
 
         # Get first and second content lines (non comment, non empty) of
         # DSV-file
-        lines = textfile.get_content(self._file, lines=2)
+        lines = textfile.get_content(self._fileref, lines=2)
         if len(lines) != 2:
             return None
 
@@ -457,7 +458,7 @@ class DSVFile(attrib.Container):
             return self._colnames
 
         # Get first content line (non comment, non empty) of DSV-file
-        line = textfile.get_content(self._file, lines=1)[0]
+        line = textfile.get_content(self._fileref, lines=1)[0]
 
         # Get column names from first content line
         names = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
@@ -467,12 +468,13 @@ class DSVFile(attrib.Container):
             return names
         if self.format == DSV_FORMAT_RTABLE:
             return [''] + names
-        raise BadDSVFile(f"file {self._file.name} is not valid")
+        name = getattr(self._fileref, 'name', '?')
+        raise BadDSVFile(f"referenced file '{name}' is not valid")
 
     def _get_fields(self) -> Fields:
         colnames = self.colnames
         delim = self.delim
-        lines = textfile.get_content(self._file, lines=3)
+        lines = textfile.get_content(self._fileref, lines=3)
         if len(lines) != 3:
             return []
         row1 = lines[1].split(delim)
@@ -489,14 +491,15 @@ class DSVFile(attrib.Container):
         return fields
 
     def _get_rownames(self) -> OptList:
+        # TODO (patrick.michl@gmail.com): Reimplement without using numpy
         # Check type of 'cols'
         lblcol = self._get_namecol()
         if lblcol is None:
             return None
         lbllbl = self.colnames[lblcol]
 
-        # Import DSV-file to NumPy ndarray
-        with textfile.openx(self._file, mode='r') as fh:
+        # Import DSV-file to Numpy ndarray
+        with textfile.openx(self._fileref, mode='r') as fh:
             rownames = np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
                 delimiter=self._get_delim(),
@@ -507,7 +510,7 @@ class DSVFile(attrib.Container):
     def _get_skiprows(self) -> int:
         # Count how many 'comment' and 'blank' rows are to be skipped
         skiprows = 1
-        with textfile.openx(self._file, mode='r') as fd:
+        with textfile.openx(self._fileref, mode='r') as fd:
             for line in fd:
                 strip = line.strip()
                 if not strip or strip.startswith('#'):
@@ -527,7 +530,7 @@ class DSVFile(attrib.Container):
 
         # Get first and second content lines (non comment, non empty) of
         # DSV-file
-        lines = textfile.get_content(self._file, lines=2)
+        lines = textfile.get_content(self._fileref, lines=2)
         if len(lines) != 2:
             return None
 
@@ -561,13 +564,13 @@ class DSVFile(attrib.Container):
         usefields = [fields[colid] for colid in usecols]
         fmt = self._get_fmt_params()
         return DSVReader(
-            self._file, skiprows=skiprows, usecols=usecols, fields=usefields,
+            self._fileref, skiprows=skiprows, usecols=usecols, fields=usefields,
             **fmt)
 
     def _open_write(self, columns: OptStrTuple = None) -> DSVWriter:
         fmt = self._get_fmt_params()
         return DSVWriter(
-            self._file, header=self.colnames, comment=self.comment, **fmt)
+            self._fileref, header=self.colnames, comment=self.comment, **fmt)
 
 #
 # DEPRECATED
