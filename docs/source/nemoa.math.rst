@@ -6,10 +6,10 @@ Submodules
 
 .. toctree::
 
+   nemoa.math.category
    nemoa.math.curve
    nemoa.math.graph
    nemoa.math.matrix
-   nemoa.math.meta
    nemoa.math.regression
    nemoa.math.vector
 

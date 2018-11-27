@@ -6,12 +6,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.data import proxy
+from nemoa.data import table
 
 #
 # Classes
 #
 
-class ExcelTable(proxy.Table):
-    """Excel-Table Proxy."""
+class Table(table.Proxy):
+    """SQL-Table Proxy."""
     pass

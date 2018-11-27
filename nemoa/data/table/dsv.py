@@ -8,14 +8,14 @@ __docformat__ = 'google'
 
 from nemoa.base import attrib
 from nemoa.file import dsv #, inifile
-from nemoa.data import proxy
+from nemoa.data import table
 from nemoa.types import FileRef, Any
 
 #
 # Classes
 #
 
-class Table(proxy.Table):
+class Table(table.Proxy):
     """DSV-Table Proxy."""
 
     _file: property = attrib.Temporary(classinfo=dsv.File)

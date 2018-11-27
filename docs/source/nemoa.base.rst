@@ -14,7 +14,6 @@ Submodules
    nemoa.base.literal
    nemoa.base.nbase
    nemoa.base.ndict
-   nemoa.base.stdio
    nemoa.base.this
    nemoa.base.thread
 

@@ -1,5 +1,5 @@
 nemoa.file.dsv module
-=========================
+=====================
 
 .. automodule:: nemoa.file.dsv
     :members:

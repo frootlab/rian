@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Tables, Cursors and Records."""
+"""Table and Table Proxy for Data Integration."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import random
 from abc import ABC, abstractmethod
-from numpy.lib import recfunctions as nprf
 import dataclasses
+import random
+from numpy.lib import recfunctions as nprf
 from nemoa.base import attrib, check
 from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
@@ -38,10 +38,14 @@ RowLikeList = List[RowLike]
 ROW_STATE_FLAG_CREATE = 0b0001
 ROW_STATE_FLAG_UPDATE = 0b0010
 ROW_STATE_FLAG_DELETE = 0b0100
+
 CUR_MODE_BUFFERED = 0b0001
 CUR_MODE_INDEXED = 0b0010
 CUR_MODE_SCROLLABLE = 0b0100
 CUR_MODE_RANDOM = 0b1000
+
+PROXY_MODE_FLAG_CACHE = 0b0001
+PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 
 #
 # Exceptions
@@ -71,6 +75,15 @@ class CursorModeError(TableError, LookupError):
         else:
             msg = f"{operation} is not supported by {mode} cursors"
         super().__init__(msg)
+
+class ProxyError(NemoaError):
+    """Base Exception for Proxy Errors."""
+
+class PushError(ProxyError):
+    """Raises when a push-request could not be finished."""
+
+class PullError(ProxyError):
+    """Raises when a pull-request could not be finished."""
 
 #
 # Record Class
@@ -681,6 +694,65 @@ class Table(attrib.Container):
         new_row._id = rowid # pylint: disable=W0212
         new_row.state = row.state
         self._diff[rowid] = new_row
+
+#
+# Proxy Class
+#
+
+class Proxy(Table, ABC):
+    """Table Proxy Base Class."""
+
+    _proxy_mode: property = attrib.MetaData(classinfo=int, default=1)
+
+    def __init__(
+            self, *args: Any, proxy_mode: OptInt = None, **kwds: Any) -> None:
+        """Initialize Table Proxy.
+
+        Args:
+            proxy_mode:
+            *args:
+            **kwds:
+
+        """
+        # Initialize Table
+        super().__init__(*args, **kwds)
+
+        # Set proxy mode
+        if proxy_mode is None:
+            self._proxy_mode = PROXY_MODE_FLAG_CACHE
+        else:
+            self._proxy_mode = proxy_mode
+
+    def _post_init(self) -> None:
+        # Finalize the initialization of the Table Proxy
+
+        # Retrieve all rows from source if table is cached
+        if self._proxy_mode & PROXY_MODE_FLAG_CACHE:
+            self.pull()
+
+    def commit(self) -> None:
+        """Push changes to source table and apply changes to local table."""
+        # For incremental updates of the source, the push request requires, that
+        # changes have not yet been applied to the local table
+        if self._proxy_mode & PROXY_MODE_FLAG_INCREMENTAL:
+            self.push()
+            super().commit()
+            return
+        # For full updates of the source, the push request requires, that all
+        # changes have been applied to the local table
+        super().commit()
+        self.push()
+
+    @abstractmethod
+    def pull(self) -> None:
+        """Pull rows from source table."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def push(self) -> None:
+        """Push changes to source table."""
+        raise NotImplementedError()
+
 
 #
 # DEPRECATED
