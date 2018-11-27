@@ -39,6 +39,9 @@ class Table(proxy.Table):
         # Create header
         self._create_header(self._file.fields)
 
+        # Run post init hook
+        self._post_init()
+
     def pull(self) -> None:
         """Pull all rows from DSV-File."""
         rows = self._file.read()

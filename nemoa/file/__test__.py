@@ -111,7 +111,7 @@ class TestTextfile(ModuleTestCase):
         if self.filepath.is_file():
             self.filepath.unlink()
 
-class TestDsvfile(ModuleTestCase):
+class TestDsv(ModuleTestCase):
     """Testcase for the module nemoa.file.dsv."""
 
     module = 'nemoa.file.dsv'

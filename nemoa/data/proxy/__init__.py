@@ -16,8 +16,8 @@ from nemoa.types import Any, OptInt
 # Constants
 #
 
-PROXY_FLAG_CACHE = 0b0001
-PROXY_FLAG_INCREMENTAL = 0b0010
+PROXY_MODE_FLAG_CACHE = 0b0001
+PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 
 #
 # Exceptions
@@ -54,21 +54,24 @@ class Table(table.Table, ABC):
         # Initialize Table
         super().__init__(*args, **kwds)
 
-        # Retrieve all rows from source if table is cached
+        # Set proxy mode
         if proxy_mode is None:
-            self._proxy_mode = proxy_mode
+            self._proxy_mode = PROXY_MODE_FLAG_CACHE
         else:
             self._proxy_mode = proxy_mode
 
+    def _post_init(self) -> None:
+        # Finalize the initialization of the Table Proxy
+
         # Retrieve all rows from source if table is cached
-        if self._proxy_mode & PROXY_FLAG_CACHE:
+        if self._proxy_mode & PROXY_MODE_FLAG_CACHE:
             self.pull()
 
     def commit(self) -> None:
         """Push changes to source table and apply changes to local table."""
         # For incremental updates of the source, the push request requires, that
         # changes have not yet been applied to the local table
-        if self._proxy_mode & PROXY_FLAG_INCREMENTAL:
+        if self._proxy_mode & PROXY_MODE_FLAG_INCREMENTAL:
             self.push()
             super().commit()
             return

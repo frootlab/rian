@@ -29,7 +29,7 @@ from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, TextIOBaseClass, Any
-from nemoa.types import Traceback, ExcType, Exc, Union
+from nemoa.types import Traceback, ExcType, Exc
 from nemoa.types import StrDict, FileRef
 
 #
@@ -86,7 +86,15 @@ class StreamBase(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def read_rows(self) -> List[tuple]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def write_row(self, row: Iterable) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_rows(self, row: List[Iterable]) -> None:
         raise NotImplementedError()
 
 #
@@ -122,7 +130,13 @@ class Reader(StreamBase):
         usecols = self._usecols or range(row)
         return tuple(map(decode, enumerate(usecols)))
 
+    def read_rows(self) -> List[tuple]:
+        return [row for row in self]
+
     def write_row(self, row: Iterable) -> None:
+        raise OSError("writing rows is not supported in reading mode")
+
+    def write_rows(self, row: List[Iterable]) -> None:
         raise OSError("writing rows is not supported in reading mode")
 
 #
@@ -162,8 +176,14 @@ class Writer(StreamBase):
     def read_row(self) -> tuple:
         raise OSError("reading rows is not supported in writing mode")
 
+    def read_rows(self) -> tuple:
+        raise OSError("reading rows is not supported in writing mode")
+
     def write_row(self, row: Iterable) -> None:
         self._writer.writerow(row)
+
+    def write_rows(self, rows: List[Iterable]) -> None:
+        self._writer.writerows(rows)
 
 #
 # DSV-format File Class
@@ -371,13 +391,11 @@ class File(attrib.Container):
 
     def read(self) -> List[tuple]:
         with self.open(mode='r') as fp:
-            content = [row for row in fp]
-        return content
+            return fp.read_rows()
 
     def write(self, rows: List[Iterable]) -> None:
         with self.open(mode='w') as fp:
-            for row in rows:
-                fp.write_row(row)
+            fp.write_rows(rows)
 
     #
     # Protected Methods
