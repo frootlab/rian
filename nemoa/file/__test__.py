@@ -123,12 +123,12 @@ class TestDsvfile(ModuleTestCase):
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
         self.delim = ','
-        self.colnames = ['', 'col1', 'col2']
+        self.colnames = ['col0', 'col1', 'col2']
         self.rownames = list(self.data['label'].flat)
         dsv.save(
             self.filepath, self.data, comment=self.comment,
             labels=self.colnames, delim=self.delim)
-        self.file = dsv.DSVFile(self.filepath)
+        self.file = dsv.File(self.filepath)
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())

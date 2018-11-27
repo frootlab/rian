@@ -52,8 +52,8 @@ class Csv:
         from nemoa.file import dsv, inifile
         from nemoa.base import env
 
-        # get DSVFile instance
-        file = dsv.DSVFile(path)
+        # Get instance of DSV-file
+        file = dsv.File(path)
 
         # Get configuration from CSV comment lines
         comment = file.comment

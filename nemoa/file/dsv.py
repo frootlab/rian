@@ -23,6 +23,7 @@ from contextlib import contextmanager
 from io import IOBase
 import numpy as np
 from nemoa.base import attrib, check, literal
+from nemoa.errors import InvalidFileFormat
 from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
@@ -36,16 +37,7 @@ from nemoa.types import StrDict, FileRef
 #
 
 Fields = List[Tuple[str, type]]
-DSVStream = Union['DSVReader', 'DSVWriter']
-IterDSVStream = Iterator[DSVStream]
-IterDSVIOBase = Iterator['DSVIOBase']
-
-#
-# Exceptions
-#
-
-class BadDSVFile(OSError):
-    """Exception for invalid DSV-files."""
+IterStream = Iterator['StreamBase']
 
 #
 # Constants
@@ -55,10 +47,10 @@ DSV_FORMAT_RFC4180 = 0
 DSV_FORMAT_RTABLE = 1
 
 #
-# DSVFileIO
+# DSV-file I/O
 #
 
-class DSVIOBase(ABC):
+class StreamBase(ABC):
     """DSV-file IOBase Class."""
 
     _cman: stream.Connector
@@ -71,13 +63,13 @@ class DSVIOBase(ABC):
             self._cman.close()
             raise ValueError('the opened stream is not a valid text file')
 
-    def __iter__(self) -> 'DSVIOBase':
+    def __iter__(self) -> 'StreamBase':
         return self
 
     def __next__(self) -> tuple:
         return self.read_row()
 
-    def __enter__(self) -> 'DSVIOBase':
+    def __enter__(self) -> 'StreamBase':
         return self
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
@@ -98,11 +90,11 @@ class DSVIOBase(ABC):
         raise NotImplementedError()
 
 #
-# DSVReader Class
+# DSV-Reader Class
 #
 
-class DSVReader(DSVIOBase):
-    """DSV-file Reader Class.
+class Reader(StreamBase):
+    """DSV-Reader Class.
 
     Args:
         file:
@@ -134,11 +126,11 @@ class DSVReader(DSVIOBase):
         raise OSError("writing rows is not supported in reading mode")
 
 #
-# DSVWriter Class
+# DSV-Writer Class
 #
 
-class DSVWriter(DSVIOBase):
-    """DSV-file Writer Class.
+class Writer(StreamBase):
+    """DSV-Writer Class.
 
     Args:
         file:
@@ -171,14 +163,14 @@ class DSVWriter(DSVIOBase):
         raise OSError("reading rows is not supported in writing mode")
 
     def write_row(self, row: Iterable) -> None:
-        self._writer.write_row(row)
+        self._writer.writerow(row)
 
 #
-# DSVFile Class
+# DSV-format File Class
 #
 
-class DSVFile(attrib.Container):
-    """DSV-File Class.
+class File(attrib.Container):
+    """DSV-format File Class.
 
     Args:
         file: String or :term:`path-like object`, which points to a readable
@@ -347,7 +339,7 @@ class DSVFile(attrib.Container):
 
     @contextmanager
     def open(
-            self, mode: str = '', columns: OptStrTuple = None) -> IterDSVIOBase:
+            self, mode: str = '', columns: OptStrTuple = None) -> IterStream:
         """Open DSV-file in reading or writing mode.
 
         Args:
@@ -363,7 +355,7 @@ class DSVFile(attrib.Container):
 
         """
         # Open file handler
-        fh: DSVIOBase
+        fh: StreamBase
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError(
@@ -460,16 +452,36 @@ class DSVFile(attrib.Container):
         # Get first content line (non comment, non empty) of DSV-file
         line = textfile.get_content(self._fileref, lines=1)[0]
 
-        # Get column names from first content line
+        # Read column names from first content line
         names = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
-
-        # Format column labels
         if self.format == DSV_FORMAT_RFC4180:
-            return names
-        if self.format == DSV_FORMAT_RTABLE:
-            return [''] + names
-        name = getattr(self._fileref, 'name', '?')
-        raise BadDSVFile(f"referenced file '{name}' is not valid")
+            colnames = names
+        elif self.format == DSV_FORMAT_RTABLE:
+            if not 'name' in names:
+                colnames = ['name'] + names
+            else:
+                i = 1
+                while f'name_{i}' in names:
+                    i += 1
+                colnames = [f'name_{i}'] + names
+        else:
+            file_name = getattr(self._fileref, 'name', '?')
+            raise InvalidFileFormat(
+                f"the referenced file '{file_name}' has an invalid format")
+
+        # Replace empty column names by unique identifier
+        while '' in colnames:
+            colid = colnames.index('')
+            colname = 'col' + str(colid)
+            if not colname in colnames:
+                colnames[colid] = colname
+                continue
+            i = 1
+            while f'{colname}_{i}' in colnames:
+                i += 1
+            colnames[colid] = f'{colname}_{i}'
+
+        return colnames
 
     def _get_fields(self) -> Fields:
         colnames = self.colnames
@@ -557,19 +569,19 @@ class DSVFile(attrib.Container):
         return {
             'delimiter': self.delim}
 
-    def _open_read(self, columns: OptStrTuple = None) -> DSVReader:
+    def _open_read(self, columns: OptStrTuple = None) -> Reader:
         usecols = self._get_usecols(columns)
         skiprows = self._get_skiprows()
         fields = self.fields
         usefields = [fields[colid] for colid in usecols]
         fmt = self._get_fmt_params()
-        return DSVReader(
+        return Reader(
             self._fileref, skiprows=skiprows, usecols=usecols, fields=usefields,
             **fmt)
 
-    def _open_write(self, columns: OptStrTuple = None) -> DSVWriter:
+    def _open_write(self, columns: OptStrTuple = None) -> Writer:
         fmt = self._get_fmt_params()
-        return DSVWriter(
+        return Writer(
             self._fileref, header=self.colnames, comment=self.comment, **fmt)
 
 #

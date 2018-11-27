@@ -391,7 +391,10 @@ class Cursor(attrib.Container):
         return len(self._index)
 
     def _create_index(self) -> None:
-        self._index = self._index.copy()
+        if isinstance(self._index, list):
+            self._index = self._index.copy()
+        else:
+            self._index = []
 
     def _create_buffer(self) -> None:
         cur = self.__class__( # Create new dynamic cursor

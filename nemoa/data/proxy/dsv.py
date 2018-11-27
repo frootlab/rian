@@ -15,10 +15,10 @@ from nemoa.types import FileRef, Any
 # Classes
 #
 
-class DSVTable(proxy.Table):
+class Table(proxy.Table):
     """DSV-Table Proxy."""
 
-    _file: property = attrib.Temporary(classinfo=dsv.DSVFile)
+    _file: property = attrib.Temporary(classinfo=dsv.File)
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
         """Initialize DSV-Table Proxy.
@@ -26,17 +26,18 @@ class DSVTable(proxy.Table):
         Args:
             file:
             *args: Additional arguments, that are passed to
-                :class:`~nemoa.file.dsv.DSVFile`.
-            **kwds: Additional keyword arguments, that are passed to DSVFile.
+                :class:`dsv.File <nemoa.file.dsv.File>`.
+            **kwds: Additional keyword arguments, that are passed to dsv.File.
 
         """
-        self._file = dsv.DSVFile(file, *args, **kwds)
+        # Initialize table proxy
+        super().__init__()
+
+        # Open DSV-formatted file
+        self._file = dsv.File(file, *args, **kwds)
 
         # Create header
         self._create_header(self._file.fields)
-
-        # Initialize table proxy
-        super().__init__()
 
     def pull(self) -> None:
         """Pull all rows from DSV-File."""
@@ -55,7 +56,7 @@ class DSVTable(proxy.Table):
     #         namecol: OptInt = None) -> None:
     #     """ """
     #     # Get configuration from CSV header
-    #     comment = dsv.DSVFile(file).comment
+    #     comment = dsv.File(file).comment
     #
     #     structure = {
     #         'name': str,
@@ -90,7 +91,7 @@ class DSVTable(proxy.Table):
     #     config['colfilter'] = {'*': ['*:*']}
     #     config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
     #
-    #     data = dsv.DSVFile(
+    #     data = dsv.File(
     #         file=file, delim=delim, labels=labels, usecols=usecols,
     #         namecol=namecol).select()
     #

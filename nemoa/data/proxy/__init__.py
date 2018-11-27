@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from nemoa.base import attrib
 from nemoa.data import table
 from nemoa.errors import NemoaError
-from nemoa.types import Any
+from nemoa.types import Any, OptInt
 
 #
 # Constants
@@ -41,7 +41,8 @@ class Table(table.Table, ABC):
 
     _proxy_mode: property = attrib.MetaData(classinfo=int, default=1)
 
-    def __init__(self, *args: Any, proxy_mode: int = 0, **kwds: Any) -> None:
+    def __init__(
+            self, *args: Any, proxy_mode: OptInt = None, **kwds: Any) -> None:
         """Initialize Table Proxy.
 
         Args:
@@ -50,9 +51,17 @@ class Table(table.Table, ABC):
             **kwds:
 
         """
+        # Initialize Table
         super().__init__(*args, **kwds)
-        self._proxy_mode = proxy_mode
-        if proxy_mode & PROXY_FLAG_CACHE:
+
+        # Retrieve all rows from source if table is cached
+        if proxy_mode is None:
+            self._proxy_mode = proxy_mode
+        else:
+            self._proxy_mode = proxy_mode
+
+        # Retrieve all rows from source if table is cached
+        if self._proxy_mode & PROXY_FLAG_CACHE:
             self.pull()
 
     def commit(self) -> None:

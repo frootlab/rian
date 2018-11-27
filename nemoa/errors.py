@@ -29,7 +29,7 @@ class NemoaAssert(NemoaError, AssertionError):
     """Exception for assertions in nemoa."""
 
 ################################################################################
-# Application specific Type Errors
+# Type Errors
 ################################################################################
 
 class MissingKwError(NemoaAssert, TypeError):
@@ -75,7 +75,7 @@ class NotCallableError(NemoaAssert, TypeError):
         super().__init__(msg)
 
 ################################################################################
-# Application specific Value Errors
+# Value Errors
 ################################################################################
 
 class InvalidFormatError(NemoaAssert, ValueError):
@@ -158,7 +158,7 @@ class MaxSizeError(NemoaAssert, ValueError):
         super().__init__(msg)
 
 ################################################################################
-# Application specific Attribute Errors
+# Attribute Errors
 ################################################################################
 
 class InvalidAttrError(NemoaAssert, AttributeError):
@@ -178,17 +178,20 @@ class ReadOnlyAttrError(NemoaAssert, AttributeError):
         super().__init__(msg)
 
 ################################################################################
-# Application specific OS Errors
+# OS Errors
 ################################################################################
 
 class DirNotEmptyError(NemoaAssert, OSError):
-    """Raise on remove() requests on a non-empty directory."""
+    """Raise on remove requests on non-empty directories."""
 
 class FileNotGivenError(NemoaAssert, OSError):
-    """Raise when a file or directory is required but not given."""
+    """Raise when a file or directory is required, but not given."""
+
+class InvalidFileFormat(NemoaAssert, OSError):
+    """Raise when the given file has an invalid file format."""
 
 ################################################################################
-# Application specific Lookup Errors
+# Lookup Errors
 ################################################################################
 
 class ExistsError(NemoaAssert, LookupError):
