@@ -7,19 +7,19 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.file import csvfile, inifile
+from nemoa.file import dsv, inifile
 from nemoa.data import table
 from nemoa.types import FileOrPathLike, OptStr, OptIntTuple, OptStrList, OptInt
 from nemoa.types import Any
+
+#
+# Classes
+#
 
 class Table(table.Table):
     """Table Proxy Base Class."""
     def __init__(self, *args: Any, **kwds: Any) -> None:
         super().__init__(*args, **kwds)
-
-class SQLTable(Table):
-    """SQL-Table Proxy."""
-    pass
 
 class CSVTable(Table):
     """CSV-Table Proxy."""
@@ -29,7 +29,7 @@ class CSVTable(Table):
             namecol: OptInt = None) -> None:
         """ """
         # Get configuration from CSV header
-        comment = csvfile.CSVFile(file).comment
+        comment = dsv.DSVFile(file).comment
 
         structure = {
             'name': str,
@@ -64,7 +64,7 @@ class CSVTable(Table):
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = csvfile.CSVFile(
+        data = dsv.DSVFile(
             file=file, delim=delim, labels=labels, usecols=usecols,
             namecol=namecol).select()
 
@@ -84,3 +84,7 @@ class CSVTable(Table):
 
         self.config = config
         self.tables = tables
+
+class SQLTable(Table):
+    """SQL-Table Proxy."""
+    pass

@@ -7,7 +7,7 @@ Submodules
 .. toctree::
 
    nemoa.file.binfile
-   nemoa.file.csvfile
+   nemoa.file.dsv
    nemoa.file.inifile
    nemoa.file.nplot
    nemoa.file.stream

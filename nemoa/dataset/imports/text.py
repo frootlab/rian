@@ -49,11 +49,11 @@ class Csv:
 
         """
 
-        from nemoa.file import csvfile, inifile
+        from nemoa.file import dsv, inifile
         from nemoa.base import env
 
-        # get CSVFile instance
-        file = csvfile.CSVFile(path)
+        # get DSVFile instance
+        file = dsv.DSVFile(path)
 
         # Get configuration from CSV comment lines
         comment = file.comment

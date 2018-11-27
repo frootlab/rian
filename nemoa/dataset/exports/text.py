@@ -43,7 +43,7 @@ class Csv:
 
     def save(self, dataset, path):
 
-        from nemoa.file import csvfile, inifile
+        from nemoa.file import dsv, inifile
 
         # Create the configuration which is included in the CSV file
         # as initial comment lines
@@ -59,7 +59,7 @@ class Csv:
         delim = self.settings['delim']
         cols, data = dataset.get('data', output=('cols', 'recarray'))
 
-        return csvfile.save(path, data, comment=comment, delim=delim,
+        return dsv.save(path, data, comment=comment, delim=delim,
             labels=[''] + cols)
 
 class Tsv(Csv):
