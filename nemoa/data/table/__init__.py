@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Table and Table Proxy for Data Integration."""
+"""Table and Table Proxy Class for Data Integration."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -10,12 +10,12 @@ from abc import ABC, abstractmethod
 import dataclasses
 import random
 from numpy.lib import recfunctions as nprf
-from nemoa.base import attrib, check
+from nemoa.base import attrib, check, this
 from nemoa.errors import NemoaError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
-from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
+from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr, Module
 
 #
 # Structural Types
@@ -35,14 +35,14 @@ RowLikeList = List[RowLike]
 # Constants
 #
 
-ROW_STATE_FLAG_CREATE = 0b0001
-ROW_STATE_FLAG_UPDATE = 0b0010
-ROW_STATE_FLAG_DELETE = 0b0100
+RECORD_STATE_FLAG_CREATE = 0b0001
+RECORD_STATE_FLAG_UPDATE = 0b0010
+RECORD_STATE_FLAG_DELETE = 0b0100
 
-CUR_MODE_BUFFERED = 0b0001
-CUR_MODE_INDEXED = 0b0010
-CUR_MODE_SCROLLABLE = 0b0100
-CUR_MODE_RANDOM = 0b1000
+CURSOR_MODE_FLAG_BUFFERED = 0b0001
+CURSOR_MODE_FLAG_INDEXED = 0b0010
+CURSOR_MODE_FLAG_SCROLLABLE = 0b0100
+CURSOR_MODE_FLAG_RANDOM = 0b1000
 
 PROXY_MODE_FLAG_CACHE = 0b0001
 PROXY_MODE_FLAG_INCREMENTAL = 0b0010
@@ -52,7 +52,7 @@ PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 #
 
 class TableError(NemoaError):
-    """Default Table Error."""
+    """Base Exception for Table Errors."""
 
 class RowLookupError(TableError, LookupError):
     """Row Lookup Error."""
@@ -85,8 +85,11 @@ class PushError(ProxyError):
 class PullError(ProxyError):
     """Raises when a pull-request could not be finished."""
 
+class ConnectError(ProxyError):
+    """Raises when a proxy connection can not be established."""
+
 #
-# Record Class
+# Record Base Class
 #
 
 class Record(ABC):
@@ -98,7 +101,7 @@ class Record(ABC):
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self.validate()
         self._id = self._create_row_id()
-        self.state = ROW_STATE_FLAG_CREATE
+        self.state = RECORD_STATE_FLAG_CREATE
 
     def validate(self) -> None:
         """Check types of fields."""
@@ -109,26 +112,26 @@ class Record(ABC):
 
     def delete(self) -> None:
         """Mark record as deleted and remove it's ID from index."""
-        if not self.state & ROW_STATE_FLAG_DELETE:
-            self.state |= ROW_STATE_FLAG_DELETE
+        if not self.state & RECORD_STATE_FLAG_DELETE:
+            self.state |= RECORD_STATE_FLAG_DELETE
             self._delete_hook(self._id)
 
     def restore(self) -> None:
         """Mark record as not deleted and append it's ID to index."""
-        if self.state & ROW_STATE_FLAG_DELETE:
-            self.state &= ~ROW_STATE_FLAG_DELETE
+        if self.state & RECORD_STATE_FLAG_DELETE:
+            self.state &= ~RECORD_STATE_FLAG_DELETE
             self._restore_hook(self._id)
 
     def update(self, **kwds: Any) -> None:
         """Mark record as updated and write the update to diff table."""
-        if not self.state & ROW_STATE_FLAG_UPDATE:
-            self.state |= ROW_STATE_FLAG_UPDATE
+        if not self.state & RECORD_STATE_FLAG_UPDATE:
+            self.state |= RECORD_STATE_FLAG_UPDATE
             self._update_hook(self._id, **kwds)
 
     def revoke(self) -> None:
         """Mark record as not updated and remove the update from diff table."""
-        if self.state & ROW_STATE_FLAG_UPDATE:
-            self.state &= ~ROW_STATE_FLAG_UPDATE
+        if self.state & RECORD_STATE_FLAG_UPDATE:
+            self.state &= ~RECORD_STATE_FLAG_UPDATE
             self._revoke_hook(self._id)
 
     @abstractmethod
@@ -171,7 +174,7 @@ class Cursor(attrib.Container):
     # Protected Class Variables
     #
 
-    _default_mode: ClassVar[int] = CUR_MODE_INDEXED
+    _default_mode: ClassVar[int] = CURSOR_MODE_FLAG_INDEXED
 
     #
     # Public Attributes
@@ -267,9 +270,9 @@ class Cursor(attrib.Container):
             self._set_mode(mode)
         if batchsize:
             self.batchsize = batchsize
-        if self._mode & CUR_MODE_INDEXED:
+        if self._mode & CURSOR_MODE_FLAG_INDEXED:
             self._create_index()
-        if self._mode & CUR_MODE_BUFFERED:
+        if self._mode & CURSOR_MODE_FLAG_BUFFERED:
             self._create_buffer()
         self.reset() # Initialize iterator
 
@@ -290,9 +293,9 @@ class Cursor(attrib.Container):
     def reset(self) -> None:
         """Reset cursor position before the first record."""
         mode = self._mode
-        if mode & CUR_MODE_BUFFERED: # Iterate over fixed result set
+        if mode & CURSOR_MODE_FLAG_BUFFERED: # Iterate over fixed result set
             self._iter_buffer = iter(self._buffer)
-        elif mode & CUR_MODE_INDEXED: # Iterate over fixed index
+        elif mode & CURSOR_MODE_FLAG_INDEXED: # Iterate over fixed index
             self._iter_index = iter(self._index)
         else: # TODO: handle case for dynamic cursors by self._iter_table
             self._iter_index = iter(self._index)
@@ -300,9 +303,9 @@ class Cursor(attrib.Container):
     def next(self) -> RowLike:
         """Return next row that matches the given filter."""
         mode = self._mode
-        if mode & CUR_MODE_BUFFERED:
+        if mode & CURSOR_MODE_FLAG_BUFFERED:
             return self._get_next_from_buffer()
-        if mode & CUR_MODE_INDEXED:
+        if mode & CURSOR_MODE_FLAG_INDEXED:
             return self._get_next_from_fixed_index()
         # TODO: For dynamic cursors implement _get_next_from_dynamic_index()
         return self._get_next_from_fixed_index()
@@ -319,7 +322,7 @@ class Cursor(attrib.Container):
         """
         if size is None:
             size = self.batchsize
-        if self._mode & CUR_MODE_RANDOM and size <= 0:
+        if self._mode & CURSOR_MODE_FLAG_RANDOM and size <= 0:
             raise CursorModeError(self.mode, 'fetching all rows')
         finished = False
         results: RowLikeList = []
@@ -337,7 +340,7 @@ class Cursor(attrib.Container):
     #
 
     def _get_next_from_fixed_index(self) -> RowLike:
-        is_random = self._mode & CUR_MODE_RANDOM
+        is_random = self._mode & CURSOR_MODE_FLAG_RANDOM
         matches = False
         while not matches:
             if is_random:
@@ -354,7 +357,7 @@ class Cursor(attrib.Container):
         return row
 
     def _get_next_from_buffer(self) -> RowLike:
-        if self._mode & CUR_MODE_RANDOM:
+        if self._mode & CURSOR_MODE_FLAG_RANDOM:
             row_id = random.randrange(len(self._buffer))
             return self._buffer[row_id]
         return next(self._iter_buffer)
@@ -363,14 +366,14 @@ class Cursor(attrib.Container):
         mode = self._mode
         tokens = []
         # Add name of traversal mode
-        if mode & CUR_MODE_RANDOM:
+        if mode & CURSOR_MODE_FLAG_RANDOM:
             tokens.append('random')
-        elif mode & CUR_MODE_SCROLLABLE:
+        elif mode & CURSOR_MODE_FLAG_SCROLLABLE:
             tokens.append('scrollable')
         # Add name of operation mode
-        if mode & CUR_MODE_BUFFERED:
+        if mode & CURSOR_MODE_FLAG_BUFFERED:
             tokens.append('static')
-        elif mode & CUR_MODE_INDEXED:
+        elif mode & CURSOR_MODE_FLAG_INDEXED:
             tokens.append('indexed')
         else:
             tokens.append('dynamic')
@@ -382,22 +385,22 @@ class Cursor(attrib.Container):
 
         # Set traversal mode flags
         if 'random' in name:
-            mode |= CUR_MODE_RANDOM
+            mode |= CURSOR_MODE_FLAG_RANDOM
         elif 'scrollable' in name:
-            mode |= CUR_MODE_SCROLLABLE
+            mode |= CURSOR_MODE_FLAG_SCROLLABLE
 
         # Set operation mode flags
         if 'static' in name:
-            mode |= CUR_MODE_BUFFERED | CUR_MODE_INDEXED
+            mode |= CURSOR_MODE_FLAG_BUFFERED | CURSOR_MODE_FLAG_INDEXED
         elif 'indexed' in name:
-            mode |= CUR_MODE_INDEXED
+            mode |= CURSOR_MODE_FLAG_INDEXED
         self._mode = mode
 
     def _get_rowcount(self) -> int:
         mode = self._mode
-        if mode & CUR_MODE_RANDOM:
+        if mode & CURSOR_MODE_FLAG_RANDOM:
             raise CursorModeError(self.mode, 'counting rows')
-        if mode & CUR_MODE_BUFFERED:
+        if mode & CURSOR_MODE_FLAG_BUFFERED:
             return len(self._buffer)
         if self._filter:
             raise CursorModeError(self.mode, 'counting filtered rows')
@@ -487,13 +490,13 @@ class Table(attrib.Container):
             if not row:
                 continue
             state = row.state
-            if state & ROW_STATE_FLAG_DELETE:
+            if state & RECORD_STATE_FLAG_DELETE:
                 self._store[rowid] = None
                 try:
                     self._index.remove(rowid)
                 except ValueError:
                     pass
-            elif state & (ROW_STATE_FLAG_CREATE | ROW_STATE_FLAG_UPDATE):
+            elif state & (RECORD_STATE_FLAG_CREATE | RECORD_STATE_FLAG_UPDATE):
                 self._store[rowid] = self._diff[rowid]
                 self._store[rowid].state = 0
 
@@ -509,7 +512,7 @@ class Table(attrib.Container):
             if not row:
                 continue
             state = row.state
-            if state & ROW_STATE_FLAG_CREATE:
+            if state & RECORD_STATE_FLAG_CREATE:
                 try:
                     self._index.remove(rowid)
                 except ValueError:
@@ -696,7 +699,7 @@ class Table(attrib.Container):
         self._diff[rowid] = new_row
 
 #
-# Proxy Class
+# Proxy Base Class
 #
 
 class Proxy(Table, ABC):
@@ -753,6 +756,27 @@ class Proxy(Table, ABC):
         """Push changes to source table."""
         raise NotImplementedError()
 
+#
+# Constructors
+#
+
+def connect(module: str, *args: Any, **kwds: Any) -> Proxy:
+    """Connect Table Proxy
+
+    Args:
+        module: Name of module, which is used to connect a Table Proxy.
+        *args: Arguments, that are passed to the class 'Table' of the given
+            module.
+        **kwds: Keyword arguments, that are passed to the class 'Table' of the
+            given module.
+
+    """
+    mref = this.get_submodule(module)
+    if not isinstance(mref, Module):
+        raise ConnectError("module '{module}' does not exist")
+    if not hasattr(mref, 'Table'):
+        raise ConnectError("module '{module}' does not contain a 'Table' class")
+    return mref.Table(*args, **kwds) # type: ignore
 
 #
 # DEPRECATED
