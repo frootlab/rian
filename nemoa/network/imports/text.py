@@ -46,12 +46,12 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.file import inifile
+        from nemoa.file import ini
 
         structure = {
             'network': {
                 'type': str}}
-        network = inifile.load(path, structure)
+        network = ini.load(path, structure)
         if not network \
             or not 'network' in network \
             or not 'type' in network['network']:
@@ -68,7 +68,7 @@ class Ini:
 
     def _parse_layer_network(self, path):
         from nemoa.base import env
-        from nemoa.file import inifile
+        from nemoa.file import ini
 
         structure = {
             'network': {
@@ -96,7 +96,7 @@ class Ini:
             'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
                 '[0-9a-zA-Z]*': list}}
 
-        ini_dict = inifile.load(path, structure=structure)
+        ini_dict = ini.load(path, structure=structure)
         config = ini_dict['network'].copy()
 
         # layers

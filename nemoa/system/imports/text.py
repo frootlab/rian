@@ -49,11 +49,11 @@ class Ini:
 
         """
         from nemoa.base import env
-        from nemoa.file import inifile
+        from nemoa.file import ini
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions
-        system = inifile.load(path, {
+        system = ini.load(path, {
             'system': {
                 'name': str,
                 'type': str},

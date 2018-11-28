@@ -10,7 +10,7 @@ from configparser import ConfigParser
 import tempfile
 from pathlib import Path
 import numpy as np
-from nemoa.file import binfile, dsv, inifile, textfile
+from nemoa.file import binfile, dsv, ini, textfile
 from nemoa.test import ModuleTestCase
 
 class TestBinfile(ModuleTestCase):
@@ -156,9 +156,9 @@ class TestDsv(ModuleTestCase):
             self.filepath.unlink()
 
 class TestInifile(ModuleTestCase):
-    """Testcase for the module nemoa.file.inifile."""
+    """Testcase for the module nemoa.file.ini."""
 
-    module = 'nemoa.file.inifile'
+    module = 'nemoa.file.ini'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.ini')
@@ -173,32 +173,32 @@ class TestInifile(ModuleTestCase):
             "# -*- coding: utf-8 -*-\n\n"
             "[n]\na = s\nb = True\nc = 1\n\n"
             "[l1]\na = 1\n\n[l2]\na = 2\n\n")
-        inifile.save(self.obj, self.filepath, comment=self.comment)
+        ini.save(self.obj, self.filepath, comment=self.comment)
 
     def test_parse(self) -> None:
         parser = ConfigParser()
         setattr(parser, 'optionxform', lambda key: key)
         parser.read_string(self.text)
-        obj = inifile.parse(parser, structure=self.structure)
+        obj = ini.parse(parser, structure=self.structure)
         self.assertEqual(obj, self.obj)
 
     def test_encode(self) -> None:
-        text = inifile.encode(self.obj, comment=self.comment)
+        text = ini.encode(self.obj, comment=self.comment)
         self.assertEqual(text, self.text)
 
     def test_decode(self) -> None:
-        obj = inifile.decode(self.text, structure=self.structure)
+        obj = ini.decode(self.text, structure=self.structure)
         self.assertEqual(obj, self.obj)
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())
 
     def test_load(self) -> None:
-        obj = inifile.load(self.filepath, structure=self.structure)
+        obj = ini.load(self.filepath, structure=self.structure)
         self.assertEqual(obj, self.obj)
 
     def test_get_comment(self) -> None:
-        comment = inifile.get_comment(self.filepath)
+        comment = ini.get_comment(self.filepath)
         self.assertEqual(comment, self.comment)
 
     def tearDown(self) -> None:

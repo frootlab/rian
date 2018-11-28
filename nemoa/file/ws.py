@@ -14,7 +14,7 @@ from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, InvalidFileFormat
-from nemoa.file import inifile
+from nemoa.file import ini
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
 from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
@@ -25,9 +25,9 @@ from nemoa.types import Any, AnyFunc
 # Structural Types
 #
 
-StrucDict = inifile.StrucDict
-ConfigDict = inifile.ConfigDict
-SecDict = inifile.SecDict
+StrucDict = ini.StrucDict
+ConfigDict = ini.ConfigDict
+SecDict = ini.SecDict
 ZipInfoList = List[ZipInfo]
 
 #
@@ -181,7 +181,7 @@ class File(attrib.Container):
             'hooks': self._get_attr_types(category='hooks')}
         try:
             with self.open(self._config_file) as file:
-                cfg = inifile.load(file, structure=structure)
+                cfg = ini.load(file, structure=structure)
         except KeyError as err:
             raise InvalidFileFormat(
                 f"workspace '{self.path}' is not valid: "
@@ -213,7 +213,7 @@ class File(attrib.Container):
 
         # Update 'workspace.ini'
         with self.open(self._config_file, mode='w') as file:
-            inifile.save({
+            ini.save({
                 'dc': self._get_attr_values(group='dc'),
                 'hooks': self._get_attr_values(category='hooks')}, file)
 

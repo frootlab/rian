@@ -194,8 +194,8 @@ class TestCase(BaseTestCase):
             test = isinstance(nemoa.path('cache'), str)
             self.assertTrue(test)
 
-        with self.subTest(cmd = "nemoa.path('inifile')"):
-            test = isinstance(nemoa.path('inifile'), str)
+        with self.subTest(cmd = "nemoa.path('ini')"):
+            test = isinstance(nemoa.path('ini'), str)
             self.assertTrue(test)
 
         with self.subTest(cmd = "nemoa.path('logfile')"):

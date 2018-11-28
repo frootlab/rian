@@ -43,7 +43,7 @@ class Csv:
 
     def save(self, dataset, path):
 
-        from nemoa.file import dsv, inifile
+        from nemoa.file import dsv, ini
 
         # Create the configuration which is included in the CSV file
         # as initial comment lines
@@ -55,7 +55,7 @@ class Csv:
             if key in keys: config[key] = val
 
         # prepare CSV parameters and write CSV file
-        comment = inifile.encode(config, flat=True).strip('\n')
+        comment = ini.encode(config, flat=True).strip('\n')
         delim = self.settings['delim']
         cols, data = dataset.get('data', output=('cols', 'recarray'))
 

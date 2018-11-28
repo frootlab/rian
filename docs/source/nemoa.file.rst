@@ -8,7 +8,7 @@ Submodules
 
    nemoa.file.binfile
    nemoa.file.dsv
-   nemoa.file.inifile
+   nemoa.file.ini
    nemoa.file.nplot
    nemoa.file.stream
    nemoa.file.textfile

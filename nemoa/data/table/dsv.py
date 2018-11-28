@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import attrib
-from nemoa.file import dsv #, inifile
+from nemoa.file import dsv #, ini
 from nemoa.data import table
 from nemoa.types import FileRef, Any
 
@@ -75,7 +75,7 @@ class Table(table.Proxy):
     #         'type': str,
     #         'labelformat': str}
     #
-    #     config = inifile.decode(comment, flat=True, structure=structure)
+    #     config = ini.decode(comment, flat=True, structure=structure)
     #
     #     if 'name' in config:
     #         name = config['name']

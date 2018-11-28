@@ -13,7 +13,7 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import attrib, env
 from nemoa.core import log
-from nemoa.file import inifile, ws
+from nemoa.file import ini, ws
 from nemoa.types import Any, BytesLike, FileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
 from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessorBase
@@ -22,7 +22,7 @@ from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessorBase
 # Structural Types
 #
 
-SecDict = inifile.SecDict
+SecDict = ini.SecDict
 
 #
 # Classes
@@ -453,14 +453,14 @@ class Session(attrib.Container):
     #
 
     def _load_config(self) -> None:
-        config = inifile.load(self._config_file_path, self._config_file_struct)
+        config = ini.load(self._config_file_path, self._config_file_struct)
         if 'session' in config and isinstance(config['session'], dict):
             for key, val in config['session'].items():
                 self.config[key] = val
 
     def _save_config(self) -> None:
         config = {'session': self.config}
-        inifile.save(config, self._config_file_path)
+        ini.save(config, self._config_file_path)
 
     def _get_path(self) -> OptPath:
         return self._ws.path

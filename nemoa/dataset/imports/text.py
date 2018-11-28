@@ -49,7 +49,7 @@ class Csv:
 
         """
 
-        from nemoa.file import dsv, inifile
+        from nemoa.file import dsv, ini
         from nemoa.base import env
 
         # Get instance of DSV-file
@@ -72,7 +72,7 @@ class Csv:
             'type': str,
             'labelformat': str}
 
-        config = inifile.decode(comment, flat=True, structure=structure)
+        config = ini.decode(comment, flat=True, structure=structure)
 
         if 'name' in config:
             name = config['name']

@@ -119,7 +119,7 @@ def decode(
         if isinstance(structure, dict):
             structure = cast(SecDict, {'root': structure})
 
-    # Parse inifile without literal decoding
+    # Parse ini without literal decoding
     parser = ConfigParser()
     setattr(parser, 'optionxform', lambda key: key)
     parser.read_string(text)

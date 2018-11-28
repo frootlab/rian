@@ -49,7 +49,7 @@ class Session:
                 'models': ('%basepath%', '%workspace%', 'models'),
                 'scripts': ('%basepath%', '%workspace%', 'scripts'),
                 'cache': ('%basepath%', '%workspace%', 'cache'),
-                'inifile':
+                'ini':
                     ('%basepath%', '%workspace%', 'workspace.ini'),
                 'logfile':
                     ('%basepath%', '%workspace%', 'nemoa_old.log')}},
@@ -65,7 +65,7 @@ class Session:
         import os
         import sys
 
-        from nemoa.file import inifile
+        from nemoa.file import ini
 
         self._config = {**self._default, **kwds}
 
@@ -80,7 +80,7 @@ class Session:
         configfile = self._get_path_expand(configfile)
 
         if os.path.exists(configfile):
-            ini_dict = inifile.load(configfile, self._struct)
+            ini_dict = ini.load(configfile, self._struct)
 
             if 'folders' in ini_dict:
                 for key, val in ini_dict['folders'].items():
@@ -249,7 +249,7 @@ class Session:
         baseglob = self._get_path_expand((basepath, '*'))
 
         workspaces = []
-        fname = self._config['default']['path']['inifile'][-1]
+        fname = self._config['default']['path']['ini'][-1]
         for subdir in glob.iglob(baseglob):
             if not os.path.isdir(subdir):
                 continue
