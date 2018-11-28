@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Stream I/O."""
+"""File Mapper."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -8,17 +8,18 @@ __docformat__ = 'google'
 
 import contextlib
 import io
+from pathlib import Path
+import tempfile
 from nemoa.base import env
-from nemoa.types import Any
-from nemoa.types import Path, Iterator, PathLike
+from nemoa.types import Any, Iterator, PathLike
 from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase, FileRef
 
 #
-# Stream Connector
+# File Connector Class
 #
 
 class Connector:
-    """Stream Connector Class."""
+    """File Connector Class."""
 
     _ref: FileRef
     _file: io.IOBase
@@ -111,12 +112,59 @@ class Connector:
         return self._file
 
 #
-# Functions
+# Temporary File Wrapper Class
+#
+
+class TemporaryFile:
+    """Temporary file wrapper for file references."""
+
+    _connector: Connector
+    path: Path
+
+    def __init__(self, file: FileRef) -> None:
+        """Initialize temporary file.
+
+        Args:
+            file: :term:`File reference` that points to a valid filename in the
+                directory structure of the system, a :term:`file object` or a
+                generic :class:`file accessor <nemoa.types.FileAccessorBase>`.
+
+        """
+        self._connector = Connector(file)
+        self.path = Path(tempfile.NamedTemporaryFile().name)
+        self.pull()
+
+    def __del__(self) -> None:
+        self.close()
+
+    def pull(self) -> None:
+        """Copy referenced file object to temporary file."""
+        with self._connector.open(mode='r') as src:
+            lines = src.readlines()
+        with self.path.open(mode='w') as tgt:
+            tgt.writelines(lines)
+
+    def push(self) -> None:
+        """Copy temporary file to referenced file object."""
+        with self.path.open(mode='r') as src:
+            lines = src.readlines()
+        with self._connector.open(mode='w') as tgt:
+            tgt.writelines(lines)
+
+    def close(self) -> None:
+        """Call push and release bound resources."""
+        if self.path.is_file():
+            self.push()
+            self._connector.close()
+            self.path.unlink()
+
+#
+# Constructors
 #
 
 @contextlib.contextmanager
 def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[io.IOBase]:
-    """Context manager for file references.
+    """Open file reference.
 
     This context manager extends :py:func`open` by allowing the passed `file`
     argument to be an arbitrary :term:`file reference`. If the `file` argument
@@ -150,3 +198,22 @@ def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[io.IOBase]:
         yield connector.open(*args, **kwds)
     finally:
         connector.close()
+
+@contextlib.contextmanager
+def tmpfile(file: FileRef) -> Iterator[Path]:
+    """Create a temporary file for a given file reference.
+
+    Args:
+        file: :term:`File reference` that points to a valid filename in the
+            directory structure of the system, a :term:`file object` or a
+            generic :class:`file accessor <nemoa.types.FileAccessorBase>`.
+
+    Yields:
+        :term:`path-like object` that points to a temporary file.
+
+    """
+    try:
+        handler = TemporaryFile(file)
+        yield handler.path
+    finally:
+        handler.close()

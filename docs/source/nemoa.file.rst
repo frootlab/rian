@@ -12,7 +12,7 @@ Submodules
    nemoa.file.nplot
    nemoa.file.stream
    nemoa.file.textfile
-   nemoa.file.wsfile
+   nemoa.file.ws
 
 Module contents
 ---------------

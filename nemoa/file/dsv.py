@@ -20,7 +20,7 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 import csv
 from contextlib import contextmanager
-from io import IOBase
+import io
 import numpy as np
 from nemoa.base import attrib, check, literal
 from nemoa.errors import InvalidFileFormat
@@ -28,8 +28,7 @@ from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
-from nemoa.types import Iterable, Iterator, TextIOBaseClass, Any
-from nemoa.types import Traceback, ExcType, Exc
+from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
 from nemoa.types import StrDict, FileRef
 
 #
@@ -37,7 +36,7 @@ from nemoa.types import StrDict, FileRef
 #
 
 Fields = List[Tuple[str, type]]
-IterStream = Iterator['StreamBase']
+IterIOBase = Iterator['IOBase']
 
 #
 # Constants
@@ -47,29 +46,29 @@ DSV_FORMAT_RFC4180 = 0
 DSV_FORMAT_RTABLE = 1
 
 #
-# DSV-file I/O
+# DSV-file I/O Base Class
 #
 
-class StreamBase(ABC):
+class IOBase(ABC):
     """DSV-file IOBase Class."""
 
     _cman: stream.Connector
-    _file: IOBase
+    _file: io.IOBase
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
         self._cman = stream.Connector(file)
         self._file = self._cman.open(mode)
-        if not isinstance(self._file, TextIOBaseClass):
+        if not isinstance(self._file, io.TextIOBase):
             self._cman.close()
             raise ValueError('the opened stream is not a valid text file')
 
-    def __iter__(self) -> 'StreamBase':
+    def __iter__(self) -> 'IOBase':
         return self
 
     def __next__(self) -> tuple:
         return self.read_row()
 
-    def __enter__(self) -> 'StreamBase':
+    def __enter__(self) -> 'IOBase':
         return self
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
@@ -101,7 +100,7 @@ class StreamBase(ABC):
 # DSV-Reader Class
 #
 
-class Reader(StreamBase):
+class Reader(IOBase):
     """DSV-Reader Class.
 
     Args:
@@ -143,7 +142,7 @@ class Reader(StreamBase):
 # DSV-Writer Class
 #
 
-class Writer(StreamBase):
+class Writer(IOBase):
     """DSV-Writer Class.
 
     Args:
@@ -176,7 +175,7 @@ class Writer(StreamBase):
     def read_row(self) -> tuple:
         raise OSError("reading rows is not supported in writing mode")
 
-    def read_rows(self) -> tuple:
+    def read_rows(self) -> List[tuple]:
         raise OSError("reading rows is not supported in writing mode")
 
     def write_row(self, row: Iterable) -> None:
@@ -359,7 +358,7 @@ class File(attrib.Container):
 
     @contextmanager
     def open(
-            self, mode: str = '', columns: OptStrTuple = None) -> IterStream:
+            self, mode: str = '', columns: OptStrTuple = None) -> IterIOBase:
         """Open DSV-file in reading or writing mode.
 
         Args:
@@ -375,7 +374,7 @@ class File(attrib.Container):
 
         """
         # Open file handler
-        fh: StreamBase
+        fh: IOBase
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError(

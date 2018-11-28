@@ -5,14 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 from typing import Any, Dict, Optional
-
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
+import numpy as np
 import nemoa
 from nemoa.base import entity, nbase
 from nemoa.core import log, ui

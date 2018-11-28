@@ -13,7 +13,7 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 from io import TextIOWrapper, BytesIO
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env
-from nemoa.errors import DirNotEmptyError, FileNotGivenError
+from nemoa.errors import DirNotEmptyError, FileNotGivenError, InvalidFileFormat
 from nemoa.file import inifile
 from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
@@ -31,17 +31,10 @@ SecDict = inifile.SecDict
 ZipInfoList = List[ZipInfo]
 
 #
-# Exceptions
+# Workspace File Class
 #
 
-class BadWsFile(OSError):
-    """Exception for invalid workspace files."""
-
-#
-# WsFile Class
-#
-
-class WsFile(attrib.Container):
+class File(attrib.Container):
     """Workspace File.
 
     Workspace files are Zip-Archives, that contain a INI-formatted
@@ -54,11 +47,11 @@ class WsFile(attrib.Container):
             file, then the class instance is initialized with a memory copy of
             the file. If the given file, however, does not exist, isn't a valid
             ZipFile, or does not contain a workspace configuration, respectively
-            one of the errors FileNotFoundError, BadZipFile or BadWsFile is
-            raised. The default behaviour, if the filepath is None, is to create
-            an empty workspace in the memory, that uses the default folders
-            layout. In this case the attribute maintainer is initialized with
-            the current username.
+            one of the errors FileNotFoundError, BadZipFile or InvalidFileFormat
+            is raised. The default behaviour, if the filepath is None, is to
+            create an empty workspace in the memory, that uses the default
+            folders layout. In this case the attribute maintainer is initialized
+            with the current username.
         pwd: Bytes representing password of workspace file.
 
     """
@@ -127,7 +120,7 @@ class WsFile(attrib.Container):
         else:
             self._create_new()
 
-    def __enter__(self) -> 'WsFile':
+    def __enter__(self) -> 'File':
         """Enter with statement."""
         return self
 
@@ -149,7 +142,7 @@ class WsFile(attrib.Container):
                 of the file. If the given file, however, does not exist, isn't a
                 valid ZipFile, or does not contain a workspace configuration,
                 respectively one of the errors FileNotFoundError, BadZipFile or
-                BadWsFile is raised.
+                InvalidFileFormat is raised.
             pwd: Bytes representing password of workspace file.
 
         """
@@ -190,7 +183,7 @@ class WsFile(attrib.Container):
             with self.open(self._config_file) as file:
                 cfg = inifile.load(file, structure=structure)
         except KeyError as err:
-            raise BadWsFile(
+            raise InvalidFileFormat(
                 f"workspace '{self.path}' is not valid: "
                 f"file '{self._config_file}' could not be loaded") from err
 

@@ -13,7 +13,7 @@ __docformat__ = 'google'
 from pathlib import Path
 from nemoa.base import attrib, env
 from nemoa.core import log
-from nemoa.file import inifile, wsfile
+from nemoa.file import inifile, ws
 from nemoa.types import Any, BytesLike, FileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
 from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessorBase
@@ -72,7 +72,7 @@ class Session(attrib.Container):
     # Protected Attributes
     #
 
-    _ws: property = attrib.Content(classinfo=wsfile.WsFile)
+    _ws: property = attrib.Content(classinfo=ws.File)
 
     #
     # Events
@@ -86,7 +86,7 @@ class Session(attrib.Container):
 
         # Initialize instance variables with default values
         self.config = self._default_config.copy()
-        self._ws = wsfile.WsFile()
+        self._ws = ws.File()
         self.paths = [env.expand(path) for path in self._default_paths]
         self.logger = log.get_instance()
 
@@ -136,7 +136,7 @@ class Session(attrib.Container):
 
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
-        self._ws = wsfile.WsFile(filepath=path, pwd=pwd)
+        self._ws = ws.File(filepath=path, pwd=pwd)
         self.parent = self._ws
 
     def save(self) -> None:
@@ -216,8 +216,8 @@ class Session(attrib.Container):
         """
         if workspace:
             path = self._locate_path(workspace=workspace, basedir=basedir)
-            ws = wsfile.WsFile(filepath=path, pwd=pwd)
-            return ws.open(
+            ws_file = ws.File(filepath=path, pwd=pwd)
+            return ws_file.open(
                 filepath, mode=mode, encoding=encoding, is_dir=is_dir)
         return self._ws.open(
             filepath, mode=mode, encoding=encoding, is_dir=is_dir)
