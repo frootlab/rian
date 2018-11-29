@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import entity
-from nemoa.types import Any, Class, Number, Sized
+from nemoa.types import Any, Class, FileRef, Number, Sized
 
 ################################################################################
 # Generic Application Exceptions
@@ -187,8 +187,16 @@ class DirNotEmptyError(NemoaAssert, OSError):
 class FileNotGivenError(NemoaAssert, OSError):
     """Raise when a file or directory is required, but not given."""
 
-class InvalidFileFormat(NemoaAssert, OSError):
-    """Raise when the given file has an invalid file format."""
+class FileFormatError(NemoaAssert, OSError):
+    """Raise when a referenced file has an invalid file format."""
+
+    def __init__(self, obj: FileRef, fmt: str) -> None:
+        name = getattr(obj, 'name', None)
+        if name:
+            msg = f"the referenced file '{name}' has not a valid {fmt} format"
+        else:
+            msg = f"the referenced file has not a valid {fmt} format"
+        super().__init__(msg)
 
 ################################################################################
 # Lookup Errors

@@ -13,7 +13,7 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 import io
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env
-from nemoa.errors import DirNotEmptyError, FileNotGivenError, InvalidFileFormat
+from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
 from nemoa.file import ini
 from nemoa.types import BytesIOLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
@@ -47,7 +47,7 @@ class File(attrib.Container):
             file, then the class instance is initialized with a memory copy of
             the file. If the given file, however, does not exist, isn't a valid
             ZipFile, or does not contain a workspace configuration, respectively
-            one of the errors FileNotFoundError, BadZipFile or InvalidFileFormat
+            one of the errors FileNotFoundError, BadZipFile or FileFormatError
             is raised. The default behaviour, if the filepath is None, is to
             create an empty workspace in the memory, that uses the default
             folders layout. In this case the attribute maintainer is initialized
@@ -142,7 +142,7 @@ class File(attrib.Container):
                 of the file. If the given file, however, does not exist, isn't a
                 valid ZipFile, or does not contain a workspace configuration,
                 respectively one of the errors FileNotFoundError, BadZipFile or
-                InvalidFileFormat is raised.
+                FileFormatError is raised.
             pwd: Bytes representing password of workspace file.
 
         """
@@ -183,9 +183,7 @@ class File(attrib.Container):
             with self.open(self._config_file) as file:
                 cfg = ini.load(file, structure=structure)
         except KeyError as err:
-            raise InvalidFileFormat(
-                f"workspace '{self.path}' is not valid: "
-                f"file '{self._config_file}' could not be loaded") from err
+            raise FileFormatError(self.path, 'nemoa workspace') from err
 
         # Link configuration
         self._set_attr_values(cfg.get('dc', {}), group='dc') # type: ignore

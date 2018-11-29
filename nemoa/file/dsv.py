@@ -19,11 +19,11 @@ __docformat__ = 'google'
 
 from abc import ABC, abstractmethod
 import csv
-from contextlib import contextmanager
+import contextlib
 import io
 import numpy as np
 from nemoa.base import attrib, check, literal
-from nemoa.errors import InvalidFileFormat
+from nemoa.errors import FileFormatError
 from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
@@ -54,6 +54,8 @@ class IOBase(ABC):
 
     _cman: stream.Connector
     _file: io.IOBase
+    _wrapper: stream.FileWrapper
+    _tmpfile: io.IOBase
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
         self._cman = stream.Connector(file)
@@ -78,7 +80,12 @@ class IOBase(ABC):
         self.close()
 
     def close(self) -> None:
-        self._cman.close()
+        with contextlib.suppress(AttributeError):
+            self._tmpfile.close()
+        with contextlib.suppress(AttributeError):
+            self._wrapper.close()
+        with contextlib.suppress(AttributeError):
+            self._cman.close()
 
     @abstractmethod
     def read_row(self) -> tuple:
@@ -156,15 +163,23 @@ class Writer(IOBase):
     _writer: Any # TODO (patrick.michl@gmail.com): specify!
 
     def __init__(
-            self, file: FileRef, header: StrList, comment: OptStr = None,
+            self, file: FileRef, header: StrList, comment: str = '',
             **kwds: Any) -> None:
         super().__init__(file, mode='w')
-        self._writer = csv.writer(self._file, **kwds)
-        if comment:
-            self._write_comment(comment)
-        self._write_header(header)
+
+        # Create file wrapper and temporary file
+        self._wrapper = stream.FileWrapper(file, mode='w')
+        self._tmpfile = self._wrapper.path.open(mode='w', newline='')
+
+        # Initialize CSV writer with temporary file
+        self._writer = csv.writer(self._tmpfile, **kwds)
+
+        self._write_comment(comment) # Write initial comment lines
+        self._write_header(header) # Write CSV header
 
     def _write_comment(self, comment: str) -> None:
+        if not comment:
+            return
         writeline = getattr(self._file, 'writeline')
         for line in comment.splitlines():
             writeline(f'# line\n')
@@ -356,9 +371,9 @@ class File(attrib.Container):
                 usecols=usecols,
                 dtype={'names': names, 'formats': formats})
 
-    @contextmanager
+    @contextlib.contextmanager
     def open(
-            self, mode: str = '', columns: OptStrTuple = None) -> IterIOBase:
+            self, mode: str = 'r', columns: OptStrTuple = None) -> IterIOBase:
         """Open DSV-file in reading or writing mode.
 
         Args:
@@ -467,7 +482,10 @@ class File(attrib.Container):
             return self._colnames
 
         # Get first content line (non comment, non empty) of DSV-file
-        line = textfile.get_content(self._fileref, lines=1)[0]
+        try:
+            line = textfile.get_content(self._fileref, lines=1)[0]
+        except IndexError as err:
+            raise FileFormatError(self._fileref, 'DSV') from err
 
         # Read column names from first content line
         names = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
@@ -482,9 +500,7 @@ class File(attrib.Container):
                     i += 1
                 colnames = [f'name_{i}'] + names
         else:
-            file_name = getattr(self._fileref, 'name', '?')
-            raise InvalidFileFormat(
-                f"the referenced file '{file_name}' has an invalid format")
+            raise FileFormatError(self._fileref, 'DSV')
 
         # Replace empty column names by unique identifier
         while '' in colnames:
