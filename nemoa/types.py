@@ -34,7 +34,7 @@ void: Callable[..., None] = lambda *args, **kwds: None
 ################################################################################
 
 class FileAccessorBase(ABC):
-    """FileHandler Base Class."""
+    """File Accessor/Opener Base Class."""
 
     name: str
 
@@ -55,8 +55,6 @@ Module = types.ModuleType
 OrderedDict = collections.OrderedDict
 Collection = collections.Collection
 Path = os.PathLike
-BytesIOBaseClass = io.BufferedIOBase
-TextIOBaseClass = io.TextIOBase
 Traceback = types.TracebackType
 
 ################################################################################
@@ -64,7 +62,7 @@ Traceback = types.TracebackType
 ################################################################################
 
 CallableClasses = (Function, Method)
-FileClasses = (BytesIOBaseClass, TextIOBaseClass)
+FileClasses = (io.BufferedIOBase, io.TextIOBase)
 PathLikeClasses = (str, Path)
 ClassInfoClasses = (type, tuple)
 FileRefClasses = PathLikeClasses + FileClasses + (FileAccessorBase, )

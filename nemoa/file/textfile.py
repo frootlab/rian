@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Text-file I/O."""
+"""Text-stream I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,14 +7,15 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
+import io
 from nemoa.file import stream
-from nemoa.types import StrList, TextIOBaseClass, Iterator, FileRef
+from nemoa.types import StrList, Iterator, FileRef
 
 #
 # Structural Types
 #
 
-IterTextIO = Iterator[TextIOBaseClass]
+IterTextIO = Iterator[io.TextIOBase]
 
 #
 # Functions
@@ -52,7 +53,7 @@ def openx(file: FileRef, mode: str = 'rt') -> IterTextIO:
     if 't' not in mode:
         mode += 't'
     fh = cman.open(mode=mode)
-    if not isinstance(fh, TextIOBaseClass):
+    if not isinstance(fh, io.TextIOBase):
         cman.close()
         raise ValueError('the opened stream is not a valid text file')
     # Define enter and exit of context manager

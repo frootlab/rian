@@ -77,18 +77,6 @@ class CursorModeError(TableError, LookupError):
             msg = f"{operation} is not supported by {mode} cursors"
         super().__init__(msg)
 
-class ProxyError(NemoaError):
-    """Base Exception for Proxy Errors."""
-
-class PushError(ProxyError):
-    """Raises when a push-request could not be finished."""
-
-class PullError(ProxyError):
-    """Raises when a pull-request could not be finished."""
-
-class ConnectError(ProxyError):
-    """Raises when a proxy connection can not be established."""
-
 #
 # Record Base Class
 #

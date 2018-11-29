@@ -199,3 +199,19 @@ class ExistsError(NemoaAssert, LookupError):
 
 class NotExistsError(NemoaAssert, LookupError):
     """Raise when a non existing singleton shall be destructed."""
+
+################################################################################
+# Proxy Errors
+################################################################################
+
+class ProxyError(NemoaError):
+    """Base Exception for Proxy Errors."""
+
+class PushError(ProxyError):
+    """Raises when a push-request could not be finished."""
+
+class PullError(ProxyError):
+    """Raises when a pull-request could not be finished."""
+
+class ConnectError(ProxyError):
+    """Raises when a proxy connection can not be established."""

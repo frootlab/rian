@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""File Mapper."""
+"""Raw stream I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -11,11 +11,12 @@ import io
 from pathlib import Path
 import tempfile
 from nemoa.base import env
+from nemoa.errors import PullError, PushError
 from nemoa.types import Any, Iterator, PathLike
 from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase, FileRef
 
 #
-# File Connector Class
+# Stream Connector Class
 #
 
 class Connector:
@@ -112,33 +113,59 @@ class Connector:
         return self._file
 
 #
-# Temporary File Wrapper Class
+# File Wrapper Class
 #
 
-class TemporaryFile:
-    """Temporary file wrapper for file references."""
+class FileWrapper:
+    """File wrapper for referenced streams.
+
+    Creates a temporary file within the :func:`tempdir <tempfile.gettempdir>` of
+    the system which acts as a local proxy for a referenced file stream.
+
+    """
 
     _connector: Connector
+    _mode: str
+
     path: Path
 
-    def __init__(self, file: FileRef) -> None:
+    def __init__(self, file: FileRef, mode: str = 'rw') -> None:
         """Initialize temporary file.
 
         Args:
             file: :term:`File reference` that points to a valid filename in the
                 directory structure of the system, a :term:`file object` or a
                 generic :class:`file accessor <nemoa.types.FileAccessorBase>`.
+            mode: String, which characters specify the mode in which the file
+                stream is wrapped. If mode contains the character 'r', then a
+                :meth:`.pull`-request is executed during the initialisation,
+                otherwise any pull-request raises a
+                :class:`~nemoa.errors.PullError`. If mode contains the character
+                'w', then a :meth:`.push`-request is executed when closing the
+                FileWrapper ibtance with :meth:`.close`, otherwise any
+                push-request raises a :class:`~nemoa.errors.PushError`. The
+                default mode is 'rw'.
 
         """
         self._connector = Connector(file)
+        self._mode = mode
+
+        # Create temporary file
         self.path = Path(tempfile.NamedTemporaryFile().name)
-        self.pull()
+        self.path.touch()
+
+        # Copy referenced file object to temporary file
+        if 'r' in self._mode:
+            self.pull()
 
     def __del__(self) -> None:
         self.close()
 
     def pull(self) -> None:
         """Copy referenced file object to temporary file."""
+        if 'r' not in self._mode:
+            raise PullError(
+                "file wrappers in writing mode do not support pull requests")
         with self._connector.open(mode='r') as src:
             lines = src.readlines()
         with self.path.open(mode='w') as tgt:
@@ -146,17 +173,26 @@ class TemporaryFile:
 
     def push(self) -> None:
         """Copy temporary file to referenced file object."""
+        if 'w' not in self._mode:
+            raise PushError(
+                "file wrappers in reading mode do not support push requests")
         with self.path.open(mode='r') as src:
             lines = src.readlines()
         with self._connector.open(mode='w') as tgt:
             tgt.writelines(lines)
 
     def close(self) -> None:
-        """Call push and release bound resources."""
-        if self.path.is_file():
+        """Execute push request and release bound resources."""
+        if not self.path.is_file():
+            return
+
+        # Copy temporary file to referenced stream
+        if 'w' in self._mode:
             self.push()
-            self._connector.close()
-            self.path.unlink()
+
+        # Remove temporary file and close
+        self.path.unlink()
+        self._connector.close()
 
 #
 # Constructors
@@ -180,8 +216,8 @@ def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[io.IOBase]:
             directory structure of the system, a :term:`file object` or a
             generic :class:`file accessor <nemoa.types.FileAccessorBase>`.
         mode: String, which characters specify the mode in which the file stream
-            is opened or wrapped. The default mode is text reading mode.
-            Supported characters are:
+            is opened. The default mode is text reading mode. Supported
+            characters are:
 
             :r: Reading mode (default)
             :w: Writing mode
@@ -213,7 +249,7 @@ def tmpfile(file: FileRef) -> Iterator[Path]:
 
     """
     try:
-        handler = TemporaryFile(file)
-        yield handler.path
+        wrapper = FileWrapper(file)
+        yield wrapper.path
     finally:
-        handler.close()
+        wrapper.close()

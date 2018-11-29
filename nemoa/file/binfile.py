@@ -7,16 +7,17 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import contextlib
+import io
 from nemoa.base import binary
 from nemoa.file import stream
-from nemoa.types import BytesIOBaseClass, BytesLikeOrStr
+from nemoa.types import BytesLikeOrStr
 from nemoa.types import OptInt, OptStr, FileRef, Iterator
 
 #
 # Structural Types
 #
 
-IterBytesIO = Iterator[BytesIOBaseClass]
+IterBytesIO = Iterator[io.BufferedIOBase]
 
 #
 # Functions
@@ -54,7 +55,7 @@ def openx(file: FileRef, mode: str = 'rb') -> IterBytesIO:
     if 'b' not in mode:
         mode += 'b'
     fh = cman.open(mode=mode)
-    if not isinstance(fh, BytesIOBaseClass):
+    if not isinstance(fh, io.BufferedIOBase):
         cman.close()
         raise ValueError('the opened stream is not a valid binary file')
     # Define enter and exit of context manager

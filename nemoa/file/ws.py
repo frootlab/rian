@@ -10,14 +10,14 @@ import datetime
 import time
 import warnings
 from zipfile import BadZipFile, ZipFile, ZipInfo
-from io import TextIOWrapper, BytesIO
+import io
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, InvalidFileFormat
 from nemoa.file import ini
-from nemoa.types import BytesIOBaseClass, BytesIOLike, BytesLike, ClassVar
+from nemoa.types import BytesIOLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
-from nemoa.types import PathLike, PathLikeList, TextIOBaseClass, Traceback
+from nemoa.types import PathLike, PathLikeList, Traceback
 from nemoa.types import FileLike, StrList, OptPath, Optional, ExcType, Exc
 from nemoa.types import Any, AnyFunc
 
@@ -101,7 +101,7 @@ class File(attrib.Container):
     #
 
     _file: property = attrib.Content(classinfo=ZipFile)
-    _buffer: property = attrib.Content(classinfo=BytesIOBaseClass)
+    _buffer: property = attrib.Content(classinfo=io.BufferedIOBase)
     _path: property = attrib.Temporary(classinfo=Path)
     _pwd: property = attrib.Temporary(classinfo=bytes)
     _changed: property = attrib.Temporary(classinfo=bool, default=False)
@@ -150,7 +150,7 @@ class File(attrib.Container):
         self._changed = False
         self._path = env.expand(filepath)
         self._pwd = pwd
-        self._buffer = BytesIO()
+        self._buffer = io.BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
 
         # Copy contents from ZipFile to buffered ZipFile
@@ -229,7 +229,7 @@ class File(attrib.Container):
         self._file.close()
 
         # Read buffer and write workspace file
-        if not isinstance(self._buffer, BytesIO):
+        if not isinstance(self._buffer, io.BytesIO):
             raise TypeError("buffer has not been initialized")
         with open(path, 'wb') as file:
             file.write(self._buffer.getvalue())
@@ -321,7 +321,7 @@ class File(attrib.Container):
                     "'mode' is not allowed to contain the "
                     "characters 'b' AND 't'")
             return file
-        return TextIOWrapper(
+        return io.TextIOWrapper(
             file, encoding=encoding or self._default_encoding,
             write_through=True)
 
@@ -533,7 +533,7 @@ class File(attrib.Container):
 
         """
         with self.open(filepath, mode='w', encoding=encoding) as file:
-            if isinstance(file, TextIOBaseClass):
+            if isinstance(file, io.TextIOBase):
                 return file.write(text)
         return 0
 
@@ -550,7 +550,7 @@ class File(attrib.Container):
 
         """
         with self.open(filepath, mode='wb') as file:
-            if isinstance(file, BytesIOBaseClass):
+            if isinstance(file, io.BufferedIOBase):
                 return file.write(blob)
         return 0
 
@@ -688,7 +688,7 @@ class File(attrib.Container):
         self._path = None
         self._changed = False
         self._pwd = None
-        self._buffer = BytesIO()
+        self._buffer = io.BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
 
         # Create folders
@@ -780,7 +780,7 @@ class File(attrib.Container):
                 f"could not locate workspace members: {names}")
 
         # Create new ZipArchive in Memory
-        new_buffer = BytesIO()
+        new_buffer = io.BytesIO()
         new_file = ZipFile(new_buffer, mode='w')
 
         # Copy all workspace members on the new list from current
