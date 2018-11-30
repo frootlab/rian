@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Delimiter separated value file I/O.
+"""Delimiter separated values file I/O.
 
 File formats that use delimiter-separated values (DSV) store two-dimensional
 arrays of data by separating the values in each row with specific delimiter
@@ -222,16 +222,16 @@ class File(attrib.Container):
     """
 
     #
-    # Class Variables
+    # Protected Class Variables
     #
 
     _delim_candidates: ClassVar[StrList] = [',', '\t', ';', ' ', ':', '|']
     """
     Optional list of strings containing delimiter candidates to search for.
-    Default: [',', '\t', ';', ' ', ':']
+    Default: [',', '\t', ';', ' ', ':', '|']
     """
 
-    _delim_mincount: ClassVar[int] = 3
+    _delim_mincount: ClassVar[int] = 2
     """
     Minimum number of lines used to detect DSV delimiter. Thereby only non
     comment and non empty lines are used.
@@ -264,10 +264,10 @@ class File(attrib.Container):
     DSV-Header format. The following formats are supported:
         0: :RFC:`4180`:
             The column header equals the size of the rows.
-        1: `R-Table`:
+        1: R-Table:
             The column header has a size that is reduced by one, compared to the
             rows. This smaller number of entries follows by the convention, that
-            in R the DSV export of tables adds an extra column with row names
+            in R the CSV export of tables adds an extra column with row names
             as the first column. The column name of this column is omitted
             within the header.
     """
@@ -330,6 +330,45 @@ class File(attrib.Container):
     # Public Methods
     #
 
+    @contextlib.contextmanager
+    def open(
+            self, mode: str = 'r', columns: OptStrTuple = None) -> IterIOBase:
+        """Open DSV-file in reading or writing mode.
+
+        Args:
+            mode: String, which characters specify the mode in which the file is
+                to be opened. The default mode is reading mode, which is
+                indicated by the character `r`. The character `w` indicates
+                writing mode. Thereby reading and writing mode are exclusive and
+                can not be used together.
+            columns:
+
+        Yields:
+            :term:`File object`, that supports the given mode.
+
+        """
+        # Open file handler
+        fh: IOBase
+        if 'w' in mode:
+            if 'r' in mode:
+                raise ValueError("'mode' requires to be excusively 'r' or 'w'")
+            fh = self._open_write()
+        else:
+            fh = self._open_read(columns)
+        try:
+            yield fh
+        finally:
+            fh.close()
+
+    def read(self) -> List[tuple]:
+        with self.open(mode='r') as fp:
+            return fp.read_rows()
+
+    def write(self, rows: List[Iterable]) -> None:
+        with self.open(mode='w') as fp:
+            fp.write_rows(rows)
+
+    # DEPRECATED
     def select(self, columns: OptStrTuple = None) -> OptNpArray:
         """Load numpy ndarray from DSV-file.
 
@@ -370,46 +409,6 @@ class File(attrib.Container):
                 delimiter=self._get_delim(),
                 usecols=usecols,
                 dtype={'names': names, 'formats': formats})
-
-    @contextlib.contextmanager
-    def open(
-            self, mode: str = 'r', columns: OptStrTuple = None) -> IterIOBase:
-        """Open DSV-file in reading or writing mode.
-
-        Args:
-            mode: String, which characters specify the mode in which the file is
-                to be opened. The default mode is reading mode. Supported
-                characters are:
-                'r': Reading mode (default)
-                'w': Writing mode
-            columns:
-
-        Yields:
-            :term:`File object`, that supports the given mode.
-
-        """
-        # Open file handler
-        fh: IOBase
-        if 'w' in mode:
-            if 'r' in mode:
-                raise ValueError(
-                    "'mode' is not allowed to contain characters 'r' AND 'w'")
-            fh = self._open_write()
-        else:
-            fh = self._open_read(columns)
-
-        try:
-            yield fh
-        finally:
-            fh.close()
-
-    def read(self) -> List[tuple]:
-        with self.open(mode='r') as fp:
-            return fp.read_rows()
-
-    def write(self, rows: List[Iterable]) -> None:
-        with self.open(mode='w') as fp:
-            fp.write_rows(rows)
 
     #
     # Protected Methods
@@ -463,18 +462,16 @@ class File(attrib.Container):
             return self._csvformat
 
         # Get first and second content lines (non comment, non empty) of
-        # DSV-file
+        # DSV-file and determine column label format
         lines = textfile.get_content(self._fileref, lines=2)
-        if len(lines) != 2:
-            return None
+        if len(lines) == 2:
+            delim = self.delim
+            if lines[0].count(delim) == lines[1].count(delim):
+                return DSV_FORMAT_RFC4180
+            if lines[0].count(delim) == lines[1].count(delim) - 1:
+                return DSV_FORMAT_RTABLE
 
-        # Determine column label format
-        delim = self.delim
-        if lines[0].count(delim) == lines[1].count(delim):
-            return DSV_FORMAT_RFC4180
-        if lines[0].count(delim) == lines[1].count(delim) - 1:
-            return DSV_FORMAT_RTABLE
-        return None
+        raise FileFormatError(self._fileref, 'DSV')
 
     def _get_colnames(self) -> StrList:
         # Return value if set manually
@@ -482,23 +479,22 @@ class File(attrib.Container):
             return self._colnames
 
         # Get first content line (non comment, non empty) of DSV-file
-        try:
-            line = textfile.get_content(self._fileref, lines=1)[0]
-        except IndexError as err:
-            raise FileFormatError(self._fileref, 'DSV') from err
+        lines = textfile.get_content(self._fileref, lines=1)
+        if len(lines) != 1:
+            raise FileFormatError(self._fileref, 'DSV')
 
         # Read column names from first content line
-        names = [col.strip('\"\'\n\r\t ') for col in line.split(self.delim)]
+        names = [col.strip('\"\'\n\r\t ') for col in lines[0].split(self.delim)]
         if self.format == DSV_FORMAT_RFC4180:
             colnames = names
         elif self.format == DSV_FORMAT_RTABLE:
-            if not 'name' in names:
-                colnames = ['name'] + names
+            if not '_name' in names:
+                colnames = ['_name'] + names
             else:
                 i = 1
-                while f'name_{i}' in names:
+                while f'_name_{i}' in names:
                     i += 1
-                colnames = [f'name_{i}'] + names
+                colnames = [f'_name_{i}'] + names
         else:
             raise FileFormatError(self._fileref, 'DSV')
 
@@ -520,20 +516,32 @@ class File(attrib.Container):
         colnames = self.colnames
         delim = self.delim
         lines = textfile.get_content(self._fileref, lines=3)
-        if len(lines) != 3:
-            return []
-        row1 = lines[1].split(delim)
-        row2 = lines[2].split(delim)
-        fields = []
-        for colname, str1, str2 in zip(colnames, row1, row2):
-            type1 = literal.estimate(str1)
-            if type1:
-                type2 = literal.estimate(str1)
-                if type2 == type1:
-                    fields.append((colname, type1))
+
+        # By default estimate the column types from the values of two rows and
+        # add the type if the estimations are identical
+        if len(lines) == 3:
+            row1 = lines[1].split(delim)
+            row2 = lines[2].split(delim)
+            fields = []
+            for name, str1, str2 in zip(colnames, row1, row2):
+                type1 = literal.estimate(str1)
+                type2 = literal.estimate(str2)
+                if type1 and type2 == type1:
+                    fields.append((name, type1))
                     continue
-            fields.append((colname, str))
-        return fields
+                fields.append((name, str))
+            return fields
+
+        # If the DSV file only contains a single row of values, estimate the
+        # column tyoe from the values of this row
+        if len(lines) == 2:
+            row = lines[1].split(delim)
+            fields = []
+            for name, text in zip(colnames, row):
+                fields.append((name, literal.estimate(text) or str))
+            return fields
+
+        raise FileFormatError(self._fileref, 'DSV')
 
     def _get_rownames(self) -> OptList:
         # TODO (patrick.michl@gmail.com): Reimplement without using numpy
@@ -574,10 +582,10 @@ class File(attrib.Container):
             return 0
 
         # Get first and second content lines (non comment, non empty) of
-        # DSV-file
+        # DSV-file.
         lines = textfile.get_content(self._fileref, lines=2)
         if len(lines) != 2:
-            return None
+            raise FileFormatError(self._fileref, 'DSV')
 
         # Determine annotation column id from first value in the second line,
         # which can not be converted to a float
@@ -599,8 +607,7 @@ class File(attrib.Container):
         return tuple(colnames.index(col) for col in columns)
 
     def _get_fmt_params(self) -> StrDict:
-        return {
-            'delimiter': self.delim}
+        return {'delimiter': self.delim}
 
     def _open_read(self, columns: OptStrTuple = None) -> Reader:
         usecols = self._get_usecols(columns)
