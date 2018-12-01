@@ -10,7 +10,7 @@ from configparser import ConfigParser
 import tempfile
 from pathlib import Path
 import numpy as np
-from nemoa.file import binfile, dsv, ini, textfile
+from nemoa.file import binfile, csv, ini, textfile
 from nemoa.test import ModuleTestCase
 
 class TestBinfile(ModuleTestCase):
@@ -112,9 +112,9 @@ class TestTextfile(ModuleTestCase):
             self.filepath.unlink()
 
 class TestDsv(ModuleTestCase):
-    """Testcase for the module nemoa.file.dsv."""
+    """Testcase for the module nemoa.file.csv."""
 
-    module = 'nemoa.file.dsv'
+    module = 'nemoa.file.csv'
 
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
@@ -122,13 +122,13 @@ class TestDsv(ModuleTestCase):
         self.data = np.array(
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
-        self.delim = ','
+        self.delimiter = ','
         self.colnames = ['col0', 'col1', 'col2']
         self.rownames = list(self.data['label'].flat)
-        dsv.save(
+        csv.save(
             self.filepath, self.data, comment=self.comment,
-            labels=self.colnames, delim=self.delim)
-        self.file = dsv.File(self.filepath)
+            labels=self.colnames, delimiter=self.delimiter)
+        self.file = csv.File(self.filepath)
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())
@@ -137,10 +137,10 @@ class TestDsv(ModuleTestCase):
         self.assertEqual(self.file.comment, self.comment)
 
     def test_delim(self) -> None:
-        self.assertEqual(self.file.delim, self.delim)
+        self.assertEqual(self.file.delimiter, self.delimiter)
 
     def test_format(self) -> None:
-        self.assertEqual(self.file.format, dsv.DSV_FORMAT_RFC4180)
+        self.assertEqual(self.file.format, csv.CSV_FORMAT_RFC4180)
 
     def test_colnames(self) -> None:
         self.assertEqual(self.file.colnames, self.colnames)

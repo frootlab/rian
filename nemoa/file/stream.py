@@ -122,6 +122,21 @@ class FileWrapper:
     Creates a temporary file within the :func:`tempdir <tempfile.gettempdir>` of
     the system which acts as a local proxy for a referenced file stream.
 
+    Args:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            or writing mode.
+        mode: String, which characters specify the mode in which the file stream
+            is wrapped. If mode contains the character 'r', then a
+            :meth:`.pull`-request is executed during the initialisation,
+            otherwise any pull-request raises a
+            :class:`~nemoa.errors.PullError`. If mode contains the character
+            'w', then a :meth:`.push`-request is executed when closing the
+            FileWrapper ibtance with :meth:`.close`, otherwise any push-request
+            raises a :class:`~nemoa.errors.PushError`. The default mode is 'rw'.
+
     """
 
     _connector: Connector
@@ -130,23 +145,7 @@ class FileWrapper:
     path: Path
 
     def __init__(self, file: FileRef, mode: str = 'rw') -> None:
-        """Initialize temporary file.
-
-        Args:
-            file: :term:`File reference` that points to a valid filename in the
-                directory structure of the system, a :term:`file object` or a
-                generic :class:`file accessor <nemoa.types.FileAccessorBase>`.
-            mode: String, which characters specify the mode in which the file
-                stream is wrapped. If mode contains the character 'r', then a
-                :meth:`.pull`-request is executed during the initialisation,
-                otherwise any pull-request raises a
-                :class:`~nemoa.errors.PullError`. If mode contains the character
-                'w', then a :meth:`.push`-request is executed when closing the
-                FileWrapper ibtance with :meth:`.close`, otherwise any
-                push-request raises a :class:`~nemoa.errors.PushError`. The
-                default mode is 'rw'.
-
-        """
+        """Initialize temporary file."""
         self._connector = Connector(file)
         self._mode = mode
 

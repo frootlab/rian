@@ -4,8 +4,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-import os
+from nemoa.base import env
+from nemoa.file import csv, ini
 
 def filetypes():
     """Get supported text filetypes for dataset import."""
@@ -17,8 +17,6 @@ def filetypes():
 def load(path, **kwds):
     """Import dataset from text file."""
 
-    from nemoa.base import env
-
     # get extract filetype from file extension
     filetype = env.fileext(path).lower()
 
@@ -26,8 +24,10 @@ def load(path, **kwds):
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    if filetype == 'csv': return Csv(**kwds).load(path)
-    if filetype in ['tsv', 'tab']: return Tsv(**kwds).load(path)
+    if filetype == 'csv':
+        return Csv(**kwds).load(path)
+    if filetype in ['tsv', 'tab']:
+        return Tsv(**kwds).load(path)
 
     return False
 
@@ -49,11 +49,8 @@ class Csv:
 
         """
 
-        from nemoa.file import dsv, ini
-        from nemoa.base import env
-
         # Get instance of DSV-file
-        file = dsv.File(path)
+        file = csv.File(path)
 
         # Get configuration from CSV comment lines
         comment = file.comment
@@ -94,17 +91,18 @@ class Csv:
         config['colmapping'] = {}
         config['table'][name]['columns'] = []
         for column in data.dtype.names:
-            if column == 'label': continue
+            if column == 'label':
+                continue
             config['columns'] += (('', column),)
             config['colmapping'][column] = column
             config['table'][name]['columns'].append(column)
 
-        # get data table from csv data
-        tables = { name: data }
+        # Get data table from CSV data
+        tables = {name: data}
 
-        return { 'config': config, 'tables': tables }
+        return {'config': config, 'tables': tables}
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
 
-    default = { 'delim': '\t' }
+    default = {'delim': '\t'}

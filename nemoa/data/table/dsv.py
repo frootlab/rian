@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import attrib
-from nemoa.file import dsv #, ini
+from nemoa.file import csv #, ini
 from nemoa.data import table
 from nemoa.types import FileRef, Any
 
@@ -18,7 +18,7 @@ from nemoa.types import FileRef, Any
 class Table(table.Proxy):
     """DSV-Table Proxy."""
 
-    _file: property = attrib.Temporary(classinfo=dsv.File)
+    _file: property = attrib.Temporary(classinfo=csv.File)
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
         """Initialize DSV-Table Proxy.
@@ -26,15 +26,15 @@ class Table(table.Proxy):
         Args:
             file:
             *args: Additional arguments, that are passed to
-                :class:`dsv.File <nemoa.file.dsv.File>`.
-            **kwds: Additional keyword arguments, that are passed to dsv.File.
+                :class:`csv.File <nemoa.file.csv.File>`.
+            **kwds: Additional keyword arguments, that are passed to csv.File.
 
         """
         # Initialize table proxy
         super().__init__()
 
         # Open DSV-formatted file
-        self._file = dsv.File(file, *args, **kwds)
+        self._file = csv.File(file, *args, **kwds)
 
         # Create header
         self._create_header(self._file.fields)
@@ -59,7 +59,7 @@ class Table(table.Proxy):
     #         namecol: OptInt = None) -> None:
     #     """ """
     #     # Get configuration from CSV header
-    #     comment = dsv.File(file).comment
+    #     comment = csv.File(file).comment
     #
     #     structure = {
     #         'name': str,
@@ -94,7 +94,7 @@ class Table(table.Proxy):
     #     config['colfilter'] = {'*': ['*:*']}
     #     config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
     #
-    #     data = dsv.File(
+    #     data = csv.File(
     #         file=file, delim=delim, labels=labels, usecols=usecols,
     #         namecol=namecol).select()
     #

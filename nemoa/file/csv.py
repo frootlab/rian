@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Delimiter separated values file I/O.
+"""File I/O for textfiles containing delimiter-separated values.
 
-File formats that use delimiter-separated values (DSV) store two-dimensional
-arrays of data by separating the values in each row with specific delimiter
-characters. Most database and spreadsheet programs are able to read or save data
-in a delimited format, which makes it particularly suitable as a fallback for
-data exchange. For more information please see the `wikipedia article`_.
+The `delimiter-separated values format`_ is a family of file formats, used for
+the storage of tabular data. In it's most common variant, the `comma-separated
+values format`_, the format was used many years prior to attempts to it's
+standardization by :RFC:`4180`, such that subtle differences often exist in the
+data produced and consumed by different applications. This circumstance is
+explained in more detail in :PEP:`305` and basically addressed by the standard
+library module :mod:`csv`. The current module extends the capabilities by
+additional conveniance functions for file I/O handling and parameter detection.
 
-.. _wikipedia article:
+.. _delimiter-separated values format:
     https://en.wikipedia.org/wiki/Delimiter-separated_values
+.. _comma-separated values format:
+    https://en.wikipedia.org/wiki/Comma-separated_values
 
 """
 
@@ -36,21 +41,21 @@ from nemoa.types import StrDict, FileRef
 #
 
 Fields = List[Tuple[str, type]]
-IterIOBase = Iterator['IOBase']
+IterHandler = Iterator['HandlerBase']
 
 #
 # Constants
 #
 
-DSV_FORMAT_RFC4180 = 0
-DSV_FORMAT_RTABLE = 1
+CSV_FORMAT_RFC4180 = 0
+CSV_FORMAT_RLANG = 1
 
 #
-# DSV-file I/O Base Class
+# CSV-file I/O Handler Base Class
 #
 
-class IOBase(ABC):
-    """DSV-file IOBase Class."""
+class HandlerBase(ABC):
+    """CSV-file I/O Handler Base Class."""
 
     _cman: stream.Connector
     _file: io.IOBase
@@ -64,13 +69,13 @@ class IOBase(ABC):
             self._cman.close()
             raise ValueError('the opened stream is not a valid text file')
 
-    def __iter__(self) -> 'IOBase':
+    def __iter__(self) -> 'HandlerBase':
         return self
 
     def __next__(self) -> tuple:
         return self.read_row()
 
-    def __enter__(self) -> 'IOBase':
+    def __enter__(self) -> 'HandlerBase':
         return self
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
@@ -104,14 +109,18 @@ class IOBase(ABC):
         raise NotImplementedError()
 
 #
-# DSV-Reader Class
+# CSV-file I/O Reader Class
 #
 
-class Reader(IOBase):
-    """DSV-Reader Class.
+class Reader(HandlerBase):
+    """CSV-file I/O Reader Class.
 
     Args:
-        file:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            mode.
         **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
 
     """
@@ -146,16 +155,20 @@ class Reader(IOBase):
         raise OSError("writing rows is not supported in reading mode")
 
 #
-# DSV-Writer Class
+# CSV-file I/O Writer Class
 #
 
-class Writer(IOBase):
-    """DSV-Writer Class.
+class Writer(HandlerBase):
+    """CSV-file I/O Writer Class.
 
     Args:
-        file:
-        header:
-        comment:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in writing
+            mode.
+        header: List of column names, that specify the header of the CSV-file.
+        comment: Initial comment of the CSV-file.
         **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
 
     """
@@ -207,17 +220,21 @@ class File(attrib.Container):
     """DSV-format File Class.
 
     Args:
-        file: String or :term:`path-like object`, which points to a readable
-            DSV-file in the directory structure of the system, or a :term:`file
-            object` in reading mode.
-        delim: String containing DSV-delimiter. By default the DSV-delimiter is
-            detected from the DSV-file.
-        labels: List of column labels in DSV-file. By default the list of column
-            labels is taken from the first content line in the DSV-file.
-        usecols: Indices of the columns which are to be imported from the file.
-            By default all columns are imported.
-        namecol: Column ID of column, which contains the row annotation.
-            By default the first column is used for annotation.
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            or writing mode.
+        delimiter: Single character, which is used as delimiter within the
+            CSV-file. For an existing file, the delimiter by default is detected
+            from the file.
+        labels: List of column names, that specify the header of the CSV-file.
+            For an existing file, the column names by default are taken from the
+            first content line of the file.
+        usecols: Tuple with column IDs of the columns, which are imported from
+            the given CSV-file. By default all columns are imported.
+        namecol: Single column ID of a column, which is used to identify row
+            names. By default the first text column is used for row names.
 
     """
 
@@ -225,19 +242,19 @@ class File(attrib.Container):
     # Protected Class Variables
     #
 
-    _delim_candidates: ClassVar[StrList] = [',', '\t', ';', ' ', ':', '|']
+    _delimiter_candidates: ClassVar[StrList] = [',', '\t', ';', ' ', ':', '|']
     """
     Optional list of strings containing delimiter candidates to search for.
     Default: [',', '\t', ';', ' ', ':', '|']
     """
 
-    _delim_mincount: ClassVar[int] = 2
+    _delimiter_mincount: ClassVar[int] = 2
     """
     Minimum number of lines used to detect DSV delimiter. Thereby only non
     comment and non empty lines are used.
     """
 
-    _delim_maxcount: ClassVar[int] = 100
+    _delimiter_maxcount: ClassVar[int] = 100
     """
     Maximum number of lines used to detect DSV delimiter. Thereby only non
     comment and non empty lines are used.
@@ -249,13 +266,13 @@ class File(attrib.Container):
 
     comment: property = attrib.Virtual(fget='_get_comment')
     comment.__doc__ = """
-    String containing the initial '#' lines of the DSV-file or an empty string,
+    String containing the initial '#' lines of the CSV-file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delim: property = attrib.Virtual(fget='_get_delim')
-    delim.__doc__ = """
-    Delimiter string of the DSV-file or None, if the delimiter could not be
+    delimiter: property = attrib.Virtual(fget='_get_delimiter')
+    delimiter.__doc__ = """
+    Delimiter string of the CSV-file or None, if the delimiter could not be
     detected.
     """
 
@@ -275,13 +292,13 @@ class File(attrib.Container):
     colnames: property = attrib.Virtual(fget='_get_colnames')
     colnames.__doc__ = """
     List of strings containing column names from first non comment, non empty
-    line of DSV-file.
+    line of CSV-file.
     """
 
     fields: property = attrib.Virtual(fget='_get_fields')
     colnames.__doc__ = """
     List of pairs containing the column names and the estimated or given column
-    types of the DSV-file.
+    types of the CSV-file.
     """
 
     rownames: property = attrib.Virtual(fget='_get_rownames')
@@ -292,8 +309,8 @@ class File(attrib.Container):
 
     namecol: property = attrib.Virtual(fget='_get_namecol')
     namecol.__doc__ = """
-    Index of the column of a DSV-file that contains the row names. The value
-    None is used for DSV-files that do not contain row names.
+    Index of the column of a CSV-file that contains the row names. The value
+    None is used for CSV-files that do not contain row names.
     """
 
     #
@@ -302,7 +319,7 @@ class File(attrib.Container):
 
     _fileref: property = attrib.Content(classinfo=FileRefClasses)
     _comment: property = attrib.MetaData(classinfo=str, default=None)
-    _delim: property = attrib.MetaData(classinfo=str, default=None)
+    _delimiter: property = attrib.MetaData(classinfo=str, default=None)
     _format: property = attrib.MetaData(classinfo=str, default=None)
     _colnames: property = attrib.MetaData(classinfo=list, default=None)
     _rownames: property = attrib.MetaData(classinfo=list, default=None)
@@ -313,7 +330,7 @@ class File(attrib.Container):
     #
 
     def __init__(self, file: FileRef, mode: str = '',
-            comment: OptStr = None, delim: OptStr = None,
+            comment: OptStr = None, delimiter: OptStr = None,
             csvformat: OptInt = None, labels: OptStrList = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
         """Initialize instance attributes."""
@@ -321,7 +338,7 @@ class File(attrib.Container):
 
         self._fileref = file
         self._comment = comment
-        self._delim = delim
+        self._delimiter = delimiter
         self._csvformat = csvformat
         self._colnames = labels
         self._namecol = namecol
@@ -331,24 +348,26 @@ class File(attrib.Container):
     #
 
     @contextlib.contextmanager
-    def open(
-            self, mode: str = 'r', columns: OptStrTuple = None) -> IterIOBase:
-        """Open DSV-file in reading or writing mode.
+    def open(self, mode: str = 'r', columns: OptStrTuple = None) -> IterHandler:
+        """Open CSV-file in reading or writing mode.
 
         Args:
             mode: String, which characters specify the mode in which the file is
-                to be opened. The default mode is reading mode, which is
+                to be opened. The default mode is *reading mode*, which is
                 indicated by the character `r`. The character `w` indicates
-                writing mode. Thereby reading and writing mode are exclusive and
-                can not be used together.
-            columns:
+                *writing mode*. Thereby reading- and writing mode are exclusive
+                and can not be used together.
+            columns: List of column labels in the CSV-file, that specifies the
+                row header. By default the list of column labels is taken from
+                the first content line of the current CSV-file.
 
         Yields:
-            :term:`File object`, that supports the given mode.
+            :class:`~nemoa.file.csv.Reader` in reading mode and
+            :class:`~nemoa.file.csv.Writer` in writing mode.
 
         """
         # Open file handler
-        fh: IOBase
+        fh: HandlerBase
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError("'mode' requires to be excusively 'r' or 'w'")
@@ -361,24 +380,40 @@ class File(attrib.Container):
             fh.close()
 
     def read(self) -> List[tuple]:
-        with self.open(mode='r') as fp:
-            return fp.read_rows()
+        """Read all rows from current CSV-file.
+
+        Returns:
+            rows: List of tuples, which respectively contain the values of a
+                single row.
+
+        """
+        file: Reader
+        with self.open(mode='r') as file:
+            return file.read_rows()
 
     def write(self, rows: List[Iterable]) -> None:
-        with self.open(mode='w') as fp:
-            fp.write_rows(rows)
+        """Write rows to current CSV-file.
+
+        Args:
+            rows: List of tuples (or arbitrary iterables), which respectively
+                contain the values of a single row.
+
+        """
+        file: Writer
+        with self.open(mode='w') as file:
+            file.write_rows(rows)
 
     # DEPRECATED
     def select(self, columns: OptStrTuple = None) -> OptNpArray:
-        """Load numpy ndarray from DSV-file.
+        """Load numpy ndarray from CSV-file.
 
         Args:
-            columns: List of column labels in DSV-file. By default the list of
+            columns: List of column labels in CSV-file. By default the list of
                 column labels is taken from the first content line in the
-                DSV-file.
+                CSV-file.
 
         Returns:
-            :class:`numpy.ndarray` containing data from DSV-file, or None if
+            :class:`numpy.ndarray` containing data from CSV-file, or None if
             the data could not be imported.
 
         """
@@ -402,11 +437,11 @@ class File(attrib.Container):
             names = tuple(['label'] + [l for l in names if l != lbllbl])
             usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
 
-        # Import data from DSV-file as numpy array
+        # Import data from CSV-file as numpy array
         with textfile.openx(self._fileref, mode='r') as fh:
             return np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
-                delimiter=self._get_delim(),
+                delimiter=self._get_delimiter(),
                 usecols=usecols,
                 dtype={'names': names, 'formats': formats})
 
@@ -420,22 +455,22 @@ class File(attrib.Container):
             return self._comment
         return textfile.get_comment(self._fileref)
 
-    def _get_delim(self) -> OptStr:
+    def _get_delimiter(self) -> OptStr:
         # Return delimiter if set manually
-        if self._delim is not None:
-            return self._delim
+        if self._delimiter is not None:
+            return self._delimiter
 
         # Initialize DSV-Sniffer with default values
         sniffer = csv.Sniffer()
-        sniffer.preferred = self._delim_candidates
-        delim: OptStr = None
+        sniffer.preferred = self._delimiter_candidates
+        delimiter: OptStr = None
 
         # Detect delimiter
         with textfile.openx(self._fileref, mode='r') as fd:
             size, probe = 0, ''
             for line in fd:
                 # Check termination criteria
-                if size > self._delim_maxcount:
+                if size > self._delimiter_maxcount:
                     break
                 # Check exclusion criteria
                 strip = line.strip()
@@ -444,17 +479,17 @@ class File(attrib.Container):
                 # Increase probe size
                 probe += line
                 size += 1
-                if size <= self._delim_mincount:
+                if size <= self._delimiter_mincount:
                     continue
                 # Try to detect delimiter from probe using csv.Sniffer
                 try:
                     dialect = sniffer.sniff(probe)
                 except csv.Error:
                     continue
-                delim = dialect.delimiter
+                delimiter = dialect.delimiter
                 break
 
-        return delim
+        return delimiter
 
     def _get_format(self) -> OptInt:
         # Return value if set manually
@@ -462,14 +497,14 @@ class File(attrib.Container):
             return self._csvformat
 
         # Get first and second content lines (non comment, non empty) of
-        # DSV-file and determine column label format
+        # CSV-file and determine column label format
         lines = textfile.get_content(self._fileref, lines=2)
         if len(lines) == 2:
-            delim = self.delim
-            if lines[0].count(delim) == lines[1].count(delim):
-                return DSV_FORMAT_RFC4180
-            if lines[0].count(delim) == lines[1].count(delim) - 1:
-                return DSV_FORMAT_RTABLE
+            delimiter = self.delimiter
+            if lines[0].count(delimiter) == lines[1].count(delimiter):
+                return CSV_FORMAT_RFC4180
+            if lines[0].count(delimiter) == lines[1].count(delimiter) - 1:
+                return CSV_FORMAT_RLANG
 
         raise FileFormatError(self._fileref, 'DSV')
 
@@ -478,16 +513,17 @@ class File(attrib.Container):
         if self._colnames is not None:
             return self._colnames
 
-        # Get first content line (non comment, non empty) of DSV-file
+        # Get first content line (non comment, non empty) of CSV-file
         lines = textfile.get_content(self._fileref, lines=1)
         if len(lines) != 1:
             raise FileFormatError(self._fileref, 'DSV')
 
         # Read column names from first content line
-        names = [col.strip('\"\'\n\r\t ') for col in lines[0].split(self.delim)]
-        if self.format == DSV_FORMAT_RFC4180:
+        tokens = lines[0].split(self.delimiter)
+        names = [col.strip('\"\'\n\r\t ') for col in tokens]
+        if self.format == CSV_FORMAT_RFC4180:
             colnames = names
-        elif self.format == DSV_FORMAT_RTABLE:
+        elif self.format == CSV_FORMAT_RLANG:
             if not '_name' in names:
                 colnames = ['_name'] + names
             else:
@@ -514,14 +550,14 @@ class File(attrib.Container):
 
     def _get_fields(self) -> Fields:
         colnames = self.colnames
-        delim = self.delim
+        delimiter = self.delimiter
         lines = textfile.get_content(self._fileref, lines=3)
 
         # By default estimate the column types from the values of two rows and
         # add the type if the estimations are identical
         if len(lines) == 3:
-            row1 = lines[1].split(delim)
-            row2 = lines[2].split(delim)
+            row1 = lines[1].split(delimiter)
+            row2 = lines[2].split(delimiter)
             fields = []
             for name, str1, str2 in zip(colnames, row1, row2):
                 type1 = literal.estimate(str1)
@@ -535,7 +571,7 @@ class File(attrib.Container):
         # If the DSV file only contains a single row of values, estimate the
         # column tyoe from the values of this row
         if len(lines) == 2:
-            row = lines[1].split(delim)
+            row = lines[1].split(delimiter)
             fields = []
             for name, text in zip(colnames, row):
                 fields.append((name, literal.estimate(text) or str))
@@ -551,11 +587,11 @@ class File(attrib.Container):
             return None
         lbllbl = self.colnames[lblcol]
 
-        # Import DSV-file to Numpy ndarray
+        # Import CSV-file to Numpy ndarray
         with textfile.openx(self._fileref, mode='r') as fh:
             rownames = np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
-                delimiter=self._get_delim(),
+                delimiter=self._get_delimiter(),
                 usecols=(lblcol, ),
                 dtype={'names': (lbllbl, ), 'formats': ('<U12', )})
         return [name[0] for name in rownames.flat]
@@ -578,18 +614,19 @@ class File(attrib.Container):
             return self._namecol
 
         # In R-tables the first column is always used for record names
-        if self.format == DSV_FORMAT_RTABLE:
+        if self.format == CSV_FORMAT_RLANG:
             return 0
 
         # Get first and second content lines (non comment, non empty) of
-        # DSV-file.
+        # CSV-file.
         lines = textfile.get_content(self._fileref, lines=2)
         if len(lines) != 2:
             raise FileFormatError(self._fileref, 'DSV')
 
         # Determine annotation column id from first value in the second line,
         # which can not be converted to a float
-        values = [col.strip('\"\' \n') for col in lines[1].split(self.delim)]
+        tokens = lines[1].split(self.delimiter)
+        values = [col.strip('\"\' \n') for col in tokens]
         for cid, val in enumerate(values):
             try:
                 float(val)
@@ -607,7 +644,7 @@ class File(attrib.Container):
         return tuple(colnames.index(col) for col in columns)
 
     def _get_fmt_params(self) -> StrDict:
-        return {'delimiter': self.delim}
+        return {'delimiter': self.delimiter}
 
     def _open_read(self, columns: OptStrTuple = None) -> Reader:
         usecols = self._get_usecols(columns)
@@ -630,18 +667,18 @@ class File(attrib.Container):
 
 def save(
         file: FileOrPathLike, data: NpArray, labels: OptStrList = None,
-        comment: OptStr = None, delim: str = ',') -> None:
-    """Save NumPy array to DSV-file.
+        comment: OptStr = None, delimiter: str = ',') -> None:
+    """Save NumPy array to CSV-file.
 
     Args:
         file: String, :term:`path-like object` or :term:`file object` that
-            points to a valid DSV-file in the directory structure of the system.
+            points to a valid CSV-file in the directory structure of the system.
         data: :class:`numpy.ndarray` containing the data which is to be
-            exported to a DSV-file.
-        comment: String, which is included in the DSV-file whithin initial
+            exported to a CSV-file.
+        comment: String, which is included in the CSV-file whithin initial
             '#' lines. By default no initial lines are created.
         labels: List of strings with column names.
-        delim: String containing DSV-delimiter. The default value is ','
+        delimiter: String containing DSV-delimiter. The default value is ','
 
     Returns:
         True if no error occured.
@@ -651,15 +688,15 @@ def save(
     if isinstance(comment, str):
         comment = '# ' + comment.replace('\n', '\n# ') + '\n\n'
         if isinstance(labels, list):
-            comment += delim.join(labels)
+            comment += delimiter.join(labels)
     elif isinstance(labels, list):
-        comment = delim.join(labels)
+        comment = delimiter.join(labels)
 
     # Get number of columns from last entry in data.shape
     cols = list(getattr(data, 'shape'))[-1]
 
     # Get column format
-    fmt = delim.join(['%s'] + ['%10.10f'] * (cols - 1))
+    fmt = delimiter.join(['%s'] + ['%10.10f'] * (cols - 1))
 
     with textfile.openx(file, mode='w') as fh:
         np.savetxt(fh, data, fmt=fmt, header=comment, comments='')
