@@ -55,7 +55,21 @@ CSV_FORMAT_RLANG = 1
 #
 
 class HandlerBase(ABC):
-    """CSV-file I/O Handler Base Class."""
+    """CSV-file I/O Handler Base Class.
+
+    Args:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            mode.
+        mode: String, which characters specify the mode in which the file is to
+            be opened. The default mode is *reading mode*, which is indicated by
+            the character `r`. The character `w` indicates *writing mode*.
+            Thereby reading- and writing mode are exclusive and can not be used
+            together.
+
+    """
 
     _cman: stream.Connector
     _file: io.IOBase
@@ -85,6 +99,7 @@ class HandlerBase(ABC):
         self.close()
 
     def close(self) -> None:
+        """Close file wrapper and file."""
         with contextlib.suppress(AttributeError):
             self._tmpfile.close()
         with contextlib.suppress(AttributeError):
@@ -94,18 +109,22 @@ class HandlerBase(ABC):
 
     @abstractmethod
     def read_row(self) -> tuple:
+        """Read a single row from the referenced file as a tuple."""
         raise NotImplementedError()
 
     @abstractmethod
     def read_rows(self) -> List[tuple]:
+        """Read multiple rows from the referenced file as a list of tuples."""
         raise NotImplementedError()
 
     @abstractmethod
     def write_row(self, row: Iterable) -> None:
+        """Write a single row to the referenced file from a tuple."""
         raise NotImplementedError()
 
     @abstractmethod
     def write_rows(self, row: List[Iterable]) -> None:
+        """Write multiple rows to the referenced file from a list of tuples."""
         raise NotImplementedError()
 
 #
@@ -140,18 +159,22 @@ class Reader(HandlerBase):
         self._fields = fields
 
     def read_row(self) -> tuple:
+        """Read a single row from the referenced file as a tuple."""
         row = next(self._reader)
         decode = lambda i: literal.decode(row[i[1]], self._fields[i[0]][1])
         usecols = self._usecols or range(row)
         return tuple(map(decode, enumerate(usecols)))
 
     def read_rows(self) -> List[tuple]:
+        """Read multiple rows from the referenced file as a list of tuples."""
         return [row for row in self]
 
     def write_row(self, row: Iterable) -> None:
+        """Write a single row to the referenced file from a tuple."""
         raise OSError("writing rows is not supported in reading mode")
 
     def write_rows(self, row: List[Iterable]) -> None:
+        """Write multiple rows to the referenced file from a list of tuples."""
         raise OSError("writing rows is not supported in reading mode")
 
 #
@@ -201,15 +224,19 @@ class Writer(HandlerBase):
         self.write_row(header)
 
     def read_row(self) -> tuple:
+        """Read a single row from the referenced file as a tuple."""
         raise OSError("reading rows is not supported in writing mode")
 
     def read_rows(self) -> List[tuple]:
+        """Read multiple rows from the referenced file as a list of tuples."""
         raise OSError("reading rows is not supported in writing mode")
 
     def write_row(self, row: Iterable) -> None:
+        """Write a single row to the referenced file from a tuple."""
         self._writer.writerow(row)
 
     def write_rows(self, rows: List[Iterable]) -> None:
+        """Write multiple rows to the referenced file from a list of tuples."""
         self._writer.writerows(rows)
 
 #
@@ -329,11 +356,10 @@ class File(attrib.Container):
     # Events
     #
 
-    def __init__(self, file: FileRef, mode: str = '',
+    def __init__(self, file: FileRef, mode: str = 'r',
             comment: OptStr = None, delimiter: OptStr = None,
             csvformat: OptInt = None, labels: OptStrList = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
-        """Initialize instance attributes."""
         super().__init__()
 
         self._fileref = file
@@ -387,9 +413,9 @@ class File(attrib.Container):
                 single row.
 
         """
-        file: Reader
-        with self.open(mode='r') as file:
-            return file.read_rows()
+        handler: Reader
+        with self.open(mode='r') as handler:
+            return handler.read_rows()
 
     def write(self, rows: List[Iterable]) -> None:
         """Write rows to current CSV-file.
@@ -399,9 +425,9 @@ class File(attrib.Container):
                 contain the values of a single row.
 
         """
-        file: Writer
-        with self.open(mode='w') as file:
-            file.write_rows(rows)
+        handler: Writer
+        with self.open(mode='w') as handler:
+            handler.write_rows(rows)
 
     # DEPRECATED
     def select(self, columns: OptStrTuple = None) -> OptNpArray:

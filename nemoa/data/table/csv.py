@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Table Proxy for DSV-formatted flat file databases."""
+"""Table Proxy for textfiles containing delimiter-separated values."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,8 +7,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import attrib
-from nemoa.file import csv #, ini
 from nemoa.data import table
+from nemoa.file import csv
 from nemoa.types import FileRef, Any
 
 #
@@ -16,12 +16,12 @@ from nemoa.types import FileRef, Any
 #
 
 class Table(table.Proxy):
-    """DSV-Table Proxy."""
+    """CSV-Table Proxy."""
 
     _file: property = attrib.Temporary(classinfo=csv.File)
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
-        """Initialize DSV-Table Proxy.
+        """Initialize CSV-Table Proxy.
 
         Args:
             file:
@@ -33,7 +33,7 @@ class Table(table.Proxy):
         # Initialize table proxy
         super().__init__()
 
-        # Open DSV-formatted file
+        # Open CSV-formatted file
         self._file = csv.File(file, *args, **kwds)
 
         # Create header
@@ -43,12 +43,12 @@ class Table(table.Proxy):
         self._post_init()
 
     def pull(self) -> None:
-        """Pull all rows from DSV-File."""
+        """Pull all rows from CSV-File."""
         rows = self._file.read()
         self.append_rows(rows)
 
     def push(self) -> None:
-        """Push all rows to DSV-File."""
+        """Push all rows to CSV-File."""
         rows = self.select()
         self._file.write(rows)
 
