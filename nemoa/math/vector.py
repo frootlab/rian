@@ -328,8 +328,8 @@ def dist_minkowski(
     """Calculate :term:`Minkowski distance` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         p: Positive real number, which determines the Minkowsi distance by the
             respective p-norm. For p < 1, the function does not satisfy the
             triangle inequality and thus is not a valid metric, but a
@@ -353,8 +353,8 @@ def dist_manhattan(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Manhattan distance` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Axis (or axes) along which the distance is calculated. Within a
             one-dimensional array the axis always has index 0. A two-dimensional
             array has two corresponding axes: The first running vertically
@@ -372,8 +372,8 @@ def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Euclidean distance` along given axes for.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -392,8 +392,8 @@ def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Chebyshev distance` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -413,8 +413,8 @@ def dist_pmean(
     """Calculate :term:`power mean difference` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         p: Positive real number, which determines the power mean difference by
             the respective power mean. For p < 1, the power mean does not
             satisfy the triangle inequality, such that the induced power mean
@@ -439,8 +439,8 @@ def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`mean absolute difference` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -459,8 +459,8 @@ def dist_qmean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`quadratic mean difference` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0

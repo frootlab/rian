@@ -63,7 +63,7 @@ Required packages
 By using the ``pip install`` the required packages should by installed
 automatically. These packages include::
 
-- `NumPy <https://www.numpy.org/>`_ (>= 1.15.0)
+- `numpy <https://www.numpy.org/>`_ (>= 1.15.0)
 - `NetworkX <https://networkx.github.io/>`_ (>= 2.1)
 - `Matplotlib <https://matplotlib.org/>`_ (>= 2.2.2)
 - `AppDirs <https://github.com/ActiveState/appdirs>`_ (>= 1.1.0)

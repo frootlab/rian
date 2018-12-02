@@ -90,8 +90,8 @@ def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Sum of Absolute Differences` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -110,8 +110,8 @@ def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Residual Sum of Squares` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -130,8 +130,8 @@ def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Estimate :term:`Mean Squared Error` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -150,8 +150,8 @@ def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Estimate :term:`Mean Absolute Error` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0
@@ -170,8 +170,8 @@ def error_rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Estimate :term:`Root-Mean-Square Error` along given axes.
 
     Args:
-        x: NumPy ndarray with numeric values of arbitrary dimension.
-        y: NumPy ndarray with same dimension, shape and datatypes as 'x'
+        x: Numpy ndarray with numeric values of arbitrary dimension.
+        y: Numpy ndarray with same dimension, shape and datatypes as 'x'
         axes: Integer or tuple of integers, that identify the array axes, along
             which the function is evaluated. In a one-dimensional array the
             single axis has ID 0. In a two-dimensional array the axis with ID 0

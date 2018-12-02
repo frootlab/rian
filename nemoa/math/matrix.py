@@ -293,7 +293,7 @@ def from_dict(
     # Declare and initialize return value
     x: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
 
-    # Get NumPy ndarray
+    # Get numpy ndarray
     setit = getattr(x, 'itemset')
     for i, row in enumerate(labels[0]):
         for j, col in enumerate(labels[1]):
@@ -306,7 +306,7 @@ def as_dict(
     """Convert two dimensional array to dictionary of pairs.
 
     Args:
-        x: NumPy ndarray of shape (*n*, *m*), where *n* equals the number of
+        x: Numpy ndarray of shape (*n*, *m*), where *n* equals the number of
             <*rows*> and *m* the number of <*columns*>.
         labels: Tuple of format (<*rows*>, <*columns*>), where <*rows*> is a
             list of row labels, e.g. ['row1', 'row2', ...] and <*columns*> a

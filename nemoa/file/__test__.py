@@ -126,8 +126,8 @@ class TestDsv(ModuleTestCase):
         self.colnames = ['col0', 'col1', 'col2']
         self.rownames = list(self.data['label'].flat)
         csv.save(
-            self.filepath, self.data, comment=self.comment,
-            labels=self.colnames, delimiter=self.delimiter)
+            self.filepath, self.data, header=self.colnames,
+            comment=self.comment, delimiter=self.delimiter)
         self.file = csv.File(self.filepath)
 
     def test_save(self) -> None:

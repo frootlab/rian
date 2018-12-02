@@ -4,16 +4,20 @@
 The `delimiter-separated values format`_ is a family of file formats, used for
 the storage of tabular data. In it's most common variant, the `comma-separated
 values format`_, the format was used many years prior to attempts to it's
-standardization by :RFC:`4180`, such that subtle differences often exist in the
-data produced and consumed by different applications. This circumstance is
-explained in more detail in :PEP:`305` and basically addressed by the standard
-library module :mod:`csv`. The current module extends the capabilities by
-additional conveniance functions for file I/O handling and parameter detection.
+standardization in :RFC:`4180`, such that subtle differences often exist in the
+data produced and consumed by different applications. This circumstance has
+and basically been addressed by :PEP:`305` and the standard library module
+:mod:`csv`. The current module extends the capabilities of the standard library
+by I/O handling of :term:`file references <file reference>`, support of
+non-standard CSV headers, as used in CSV-exports of the `R programming
+language`_, and automation in CSV parameter detection.
 
 .. _delimiter-separated values format:
     https://en.wikipedia.org/wiki/Delimiter-separated_values
 .. _comma-separated values format:
     https://en.wikipedia.org/wiki/Comma-separated_values
+.. _R programming language:
+    https://www.r-project.org/
 
 """
 
@@ -34,13 +38,16 @@ from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
-from nemoa.types import StrDict, FileRef
+from nemoa.types import StrDict, FileRef, Optional
 
 #
 # Stuctural Types
 #
 
-Fields = List[Tuple[str, type]]
+Header = Iterable[str]
+OptHeader = Optional[Header]
+Field = Tuple[str, type]
+Fields = Iterable[Field]
 IterHandler = Iterator['HandlerBase']
 
 #
@@ -99,7 +106,7 @@ class HandlerBase(ABC):
         self.close()
 
     def close(self) -> None:
-        """Close file wrapper and file."""
+        """Close the file wrapper of the referenced file."""
         with contextlib.suppress(AttributeError):
             self._tmpfile.close()
         with contextlib.suppress(AttributeError):
@@ -140,7 +147,13 @@ class Reader(HandlerBase):
             to a valid entry in the file system, a :class:`file accessor
             <nemoa.types.FileAccessorBase>` or an opened file object in reading
             mode.
-        **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
+        skiprows: Number of initial lines within the given CSV-file before the
+            CSV-Header. By default no lines are skipped.
+        usecols: Tuple with column IDs of the columns, which are imported from
+            the given CSV-file. By default all columns are imported.
+        fields: List (or arbitrary iterable) of field descriptors, respectively
+            given by a tuple, containing a column name and a column type.
+        **kwds: :ref:`Dialects and formatting parameters<csv-fmt-params>`
 
     """
 
@@ -190,16 +203,17 @@ class Writer(HandlerBase):
             to a valid entry in the file system, a :class:`file accessor
             <nemoa.types.FileAccessorBase>` or an opened file object in writing
             mode.
-        header: List of column names, that specify the header of the CSV-file.
+        header: List (or arbitrary iterable) of column names, that specify the
+            header of the CSV-file.
         comment: Initial comment of the CSV-file.
-        **kwds: :ref:`Dialects and Formatting Parameters<csv-fmt-params>`
+        **kwds: :ref:`Dialects and formatting parameters<csv-fmt-params>`
 
     """
 
     _writer: Any # TODO (patrick.michl@gmail.com): specify!
 
     def __init__(
-            self, file: FileRef, header: StrList, comment: str = '',
+            self, file: FileRef, header: Header, comment: str = '',
             **kwds: Any) -> None:
         super().__init__(file, mode='w')
 
@@ -220,7 +234,7 @@ class Writer(HandlerBase):
         for line in comment.splitlines():
             writeline(f'# line\n')
 
-    def _write_header(self, header: StrList) -> None:
+    def _write_header(self, header: Header) -> None:
         self.write_row(header)
 
     def read_row(self) -> tuple:
@@ -240,11 +254,11 @@ class Writer(HandlerBase):
         self._writer.writerows(rows)
 
 #
-# DSV-format File Class
+# File Class for text files containing delimiter separated values
 #
 
 class File(attrib.Container):
-    """DSV-format File Class.
+    """File Class for text files containing delimiter separated values.
 
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
@@ -255,9 +269,9 @@ class File(attrib.Container):
         delimiter: Single character, which is used as delimiter within the
             CSV-file. For an existing file, the delimiter by default is detected
             from the file.
-        labels: List of column names, that specify the header of the CSV-file.
-            For an existing file, the column names by default are taken from the
-            first content line of the file.
+        header: List (or arbitrary iterable) of column names, that specify the
+            header of the CSV-file. For an existing file, the header by default
+            is extracted from the first content line of the file.
         usecols: Tuple with column IDs of the columns, which are imported from
             the given CSV-file. By default all columns are imported.
         namecol: Single column ID of a column, which is used to identify row
@@ -358,7 +372,7 @@ class File(attrib.Container):
 
     def __init__(self, file: FileRef, mode: str = 'r',
             comment: OptStr = None, delimiter: OptStr = None,
-            csvformat: OptInt = None, labels: OptStrList = None,
+            csvformat: OptInt = None, header: OptHeader = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
         super().__init__()
 
@@ -366,7 +380,7 @@ class File(attrib.Container):
         self._comment = comment
         self._delimiter = delimiter
         self._csvformat = csvformat
-        self._colnames = labels
+        self._colnames = header
         self._namecol = namecol
 
     #
@@ -383,9 +397,10 @@ class File(attrib.Container):
                 indicated by the character `r`. The character `w` indicates
                 *writing mode*. Thereby reading- and writing mode are exclusive
                 and can not be used together.
-            columns: List of column labels in the CSV-file, that specifies the
-                row header. By default the list of column labels is taken from
-                the first content line of the current CSV-file.
+            columns: Has no effect in writing mode. For redaing mode it
+                specifies the columns, which are return from the CSV-file by
+                their respective column name. By default all columns are
+                returned.
 
         Yields:
             :class:`~nemoa.file.csv.Reader` in reading mode and
@@ -434,9 +449,10 @@ class File(attrib.Container):
         """Load numpy ndarray from CSV-file.
 
         Args:
-            columns: List of column labels in CSV-file. By default the list of
-                column labels is taken from the first content line in the
-                CSV-file.
+            columns: Has no effect in writing mode. For redaing mode it
+                specifies the columns, which are return from the CSV-file by
+                their respective column name. By default all columns are
+                returned.
 
         Returns:
             :class:`numpy.ndarray` containing data from CSV-file, or None if
@@ -661,7 +677,7 @@ class File(attrib.Container):
         return None
 
     def _get_usecols(self, columns: OptStrTuple = None) -> IntTuple:
-        # Get column labels
+        # Get column IDs for given column names
         colnames = self._get_colnames()
         if not columns:
             return tuple(range(len(colnames)))
@@ -692,9 +708,9 @@ class File(attrib.Container):
 #
 
 def save(
-        file: FileOrPathLike, data: NpArray, labels: OptStrList = None,
+        file: FileOrPathLike, data: NpArray, header: OptHeader = None,
         comment: OptStr = None, delimiter: str = ',') -> None:
-    """Save NumPy array to CSV-file.
+    """Save numpy array to CSV-file.
 
     Args:
         file: String, :term:`path-like object` or :term:`file object` that
@@ -703,7 +719,9 @@ def save(
             exported to a CSV-file.
         comment: String, which is included in the CSV-file whithin initial
             '#' lines. By default no initial lines are created.
-        labels: List of strings with column names.
+        header: List (or arbitrary iterable) of column names, that specify the
+            header of the CSV-file. For an existing file, the header by default
+            is extracted from the first content line of the file.
         delimiter: String containing DSV-delimiter. The default value is ','
 
     Returns:
@@ -713,10 +731,10 @@ def save(
     # Check and prepare arguments
     if isinstance(comment, str):
         comment = '# ' + comment.replace('\n', '\n# ') + '\n\n'
-        if isinstance(labels, list):
-            comment += delimiter.join(labels)
-    elif isinstance(labels, list):
-        comment = delimiter.join(labels)
+        if isinstance(header, list):
+            comment += delimiter.join(header)
+    elif isinstance(header, list):
+        comment = delimiter.join(header)
 
     # Get number of columns from last entry in data.shape
     cols = list(getattr(data, 'shape'))[-1]
