@@ -96,7 +96,7 @@ class Table(table.Proxy):
     #
     #     data = csv.File(
     #         file=file, delim=delim, labels=labels, usecols=usecols,
-    #         namecol=namecol).select()
+    #         namecol=namecol).load_old()
     #
     #     config['table'] = {name: config.copy()}
     #     config['table'][name]['fraction'] = 1.0

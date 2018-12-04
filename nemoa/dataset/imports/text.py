@@ -83,7 +83,7 @@ class Csv:
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = file.select()
+        data = file.load_old()
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0

@@ -58,8 +58,9 @@ class Csv:
         delimiter = self.settings['delim']
         cols, data = dataset.get('data', output=('cols', 'recarray'))
 
-        return csv.save(path, data, comment=comment, delimiter=delimiter,
-            labels=[''] + cols)
+        return csv.save_old(
+            path, data, header=[''] + cols, comment=comment,
+            delimiter=delimiter)
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""

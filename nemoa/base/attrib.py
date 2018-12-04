@@ -335,10 +335,14 @@ class Attribute(property):
         return self.default
 
     def _get_readonly(self, obj: Group) -> bool:
+        if obj is None:
+            return self.readonly
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'readonly', self.readonly)
 
     def _is_remote(self, obj: Group) -> bool:
+        if obj is None:
+            return self.remote
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'remote', self.remote)
 

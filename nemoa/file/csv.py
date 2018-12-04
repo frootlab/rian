@@ -32,14 +32,15 @@ import contextlib
 import io
 import numpy as np
 import os
+import weakref
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError
 from nemoa.file import stream, textfile
 from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
-from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
+from nemoa.types import OptNpArray, OptStr, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
-from nemoa.types import StrDict, FileRef, Optional, FileLike
+from nemoa.types import StrDict, FileRef, Optional, FileLike, StrTuple
 
 #
 # Stuctural Types
@@ -51,7 +52,7 @@ Field = Tuple[str, type]
 Fields = List[Field]
 Rows = List[tuple]
 RowsLike = Iterable[tuple]
-IterHandler = Iterator['HandlerBase']
+OptColumns = OptStrTuple
 
 #
 # Constants
@@ -119,15 +120,15 @@ class HandlerBase(ABC):
 
     def close(self) -> None:
         """Close the CSV file handler."""
+        # In reading mode, when closing the file connector, also all opened file
+        # handlers to the connected file are closed
+        if 'r' in self._mode:
+            self._connector.close()
         # In writing mode, when closing the file wrapper, also all opened file
         # handlers to the temporary file are closed and the changes are written
         # to the original file.
-        if 'w' in self._mode:
+        elif 'w' in self._mode:
             self._wrapper.close()
-        # In reading mode, when closing the file connector, also all opened file
-        # handlers to the connected file are closed
-        elif 'r' in self._mode:
-            self._connector.close()
 
     @abstractmethod
     def read_row(self) -> tuple:
@@ -383,6 +384,7 @@ class File(attrib.Container):
     _delimiter: property = attrib.MetaData(classinfo=str, default=None)
     _hformat: property = attrib.MetaData(classinfo=int, default=None)
     _namecol: property = attrib.MetaData(classinfo=int, default=None)
+    _children: property = attrib.Temporary(classinfo=list)
 
     #
     # Events
@@ -399,6 +401,8 @@ class File(attrib.Container):
         self._comment = comment
         self._delimiter = delimiter
 
+        self._children = []
+
         if hformat is not None:
             self._hformat = hformat
 
@@ -408,8 +412,7 @@ class File(attrib.Container):
     # Public Methods
     #
 
-    @contextlib.contextmanager
-    def open(self, mode: str = 'r', columns: OptStrTuple = None) -> IterHandler:
+    def open(self, mode: str = 'r', columns: OptColumns = None) -> HandlerBase:
         """Open CSV file in reading or writing mode.
 
         Args:
@@ -418,38 +421,43 @@ class File(attrib.Container):
                 indicated by the character `r`. The character `w` indicates
                 *writing mode*. Thereby reading- and writing mode are exclusive
                 and can not be used together.
-            columns: Has no effect in writing mode. For redaing mode it
+            columns: Has no effect in writing mode. For reading mode it
                 specifies the columns, which are return from the CSV file by
-                their respective column name. By default all columns are
+                their respective column names. By default all columns are
                 returned.
 
-        Yields:
-            :class:`~nemoa.file.csv.Reader` in reading mode and
-            :class:`~nemoa.file.csv.Writer` in writing mode.
+        Returns:
+            In *reading mode* (if mode contains the character `w`) an instance
+            of the class :class:`~nemoa.file.csv.Reader` is returned and in
+            writing mode (if mode contains the character `r`) an instance of the
+            class :class:`~nemoa.file.csv.Writer` is returned.
 
         """
-        # Open file handler
-        fh: HandlerBase
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError("'mode' requires to be excusively 'r' or 'w'")
-            fh = self._open_write()
-        else:
-            fh = self._open_read(columns)
-        try:
-            yield fh
-        finally:
-            fh.close()
+            return self._open_write() # Open CSV Writer
+        return self._open_read(columns) # Open CSV Reader
 
-    def read(self) -> Rows:
+    def close(self) -> None:
+        """Close all opened file handlers of CSV File."""
+        for fh in self._children:
+            with contextlib.suppress(ReferenceError):
+                fh.close()
+
+    def read(self, columns: OptColumns = None) -> Rows:
         """Read all rows from current CSV file.
 
+        Args:
+            columns: Specifies the columns, which are return from the CSV file
+                by their respective column names. By default all columns are
+                returned.
+
         Returns:
-            rows: List of tuples, which respectively contain the values of a
-                single row.
+            List of tuples, which contain the values of the specified columns.
 
         """
-        with self.open(mode='r') as fh:
+        with self.open(mode='r', columns=columns) as fh:
             return fh.read_rows()
 
     def write(self, rows: Rows) -> None:
@@ -465,11 +473,11 @@ class File(attrib.Container):
 
     # DEPRECATED
     # TODO: write constructor load()
-    def select(self, columns: OptStrTuple = None) -> OptNpArray:
+    def load_old(self, columns: OptColumns = None) -> OptNpArray:
         """Load numpy ndarray from CSV file.
 
         Args:
-            columns: Has no effect in writing mode. For redaing mode it
+            columns: Has no effect in writing mode. For reading mode it
                 specifies the columns, which are return from the CSV file by
                 their respective column name. By default all columns are
                 returned.
@@ -556,7 +564,7 @@ class File(attrib.Container):
 
         return delimiter
 
-    def _get_header(self) -> StrList:
+    def _get_header(self) -> StrTuple:
         # Return value if set manually
         if self._header is not None:
             return self._header
@@ -594,7 +602,7 @@ class File(attrib.Container):
                 i += 1
             colnames[colid] = f'{colname}_{i}'
 
-        return colnames
+        return tuple(colnames)
 
     def _get_hformat(self) -> OptInt:
         # Return value if it has been set manually
@@ -701,7 +709,7 @@ class File(attrib.Container):
                 return cid
         return None
 
-    def _get_usecols(self, columns: OptStrTuple = None) -> IntTuple:
+    def _get_usecols(self, columns: OptColumns = None) -> IntTuple:
         # Get column IDs for given column names
         colnames = self._get_header()
         if not columns:
@@ -713,7 +721,7 @@ class File(attrib.Container):
     def _get_fmt_params(self) -> StrDict:
         return {'delimiter': self.delimiter}
 
-    def _open_read(self, columns: OptStrTuple = None) -> Reader:
+    def _open_read(self, columns: OptColumns = None) -> Reader:
         usecols = self._get_usecols(columns)
         skiprows = self._get_skiprows()
         fields = self.fields
@@ -723,18 +731,48 @@ class File(attrib.Container):
             self._file, skiprows=skiprows, usecols=usecols, fields=usefields,
             **fmt)
 
-    def _open_write(self, columns: OptStrTuple = None) -> Writer:
+    def _open_write(self, columns: OptColumns = None) -> Writer:
         fmt = self._get_fmt_params()
-        return Writer(
+        handler = Writer(
             self._file, header=self.header, comment=self.comment, **fmt)
+        self._children.append(weakref.proxy(handler))
+        return handler
 
 #
 # Constructors
 #
 
-def save_new(
+def load(
+        file: FileRef, columns: OptColumns = None,
+        delimiter: OptStr = None, hformat: OptInt = None) -> dict:
+    """Load CSV file.
+
+    Args:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            or writing mode.
+        columns: Specifies the columns, which are return from the CSV file by
+            their respective column name. By default all columns are returned.
+        delimiter: Single character, which is used to separetate the column
+            values within the CSV file. By default the delimiter is detected
+            from it's appearance within the file.
+        hformat:
+
+    Returns:
+        Dictionary with items 'comment', 'header' and 'values'
+
+    """
+    csvfile = File(file, delimiter=delimiter, hformat=hformat)
+    return {
+        'comment': csvfile.comment,
+        'header': csvfile.header,
+        'values': csvfile.read(columns)}
+
+def save(
         file: FileRef, header: Header, values: Rows, comment: OptStr = None,
-        delimiter: OptStr = None, hformat: int = 0) -> None:
+        delimiter: OptStr = None, hformat: OptInt = None) -> None:
     """Save data to CSV file.
 
     Args:
@@ -753,11 +791,11 @@ def save_new(
             file, the string by default is extracted from the initial comment
             lines (starting with `#`). For a new file the comment by default is
             empty.
-        hformat:
         delimiter: Single character, which is used to separetate the column
             values within the CSV file. For an existing file, the delimiter by
             default is detected from it's appearance within the file. For a new
             file the default value is `,`.
+        hformat:
 
     """
     csvfile = File(
@@ -769,7 +807,7 @@ def save_new(
 # DEPRECATED
 #
 
-def save(
+def save_old(
         file: FileOrPathLike, data: NpArray, header: OptHeader = None,
         comment: OptStr = None, delimiter: str = ',') -> None:
     """Save numpy array to CSV file.
@@ -785,9 +823,6 @@ def save(
             header of the CSV file. For an existing file, the header by default
             is extracted from the first content line of the file.
         delimiter: String containing CSV delimiter. The default value is ','
-
-    Returns:
-        True if no error occured.
 
     """
     # Check and prepare arguments

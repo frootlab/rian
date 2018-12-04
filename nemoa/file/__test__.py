@@ -128,7 +128,7 @@ class TestCsv(ModuleTestCase):
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
         self.rownames = list(self.data['label'].flat)
-        csv.save(
+        csv.save_old(
             self.filepath, self.data, header=self.header,
             comment=self.comment, delimiter=self.delimiter)
         self.file = csv.File(self.filepath)
@@ -147,7 +147,15 @@ class TestCsv(ModuleTestCase):
         with self.subTest(method=csv.File.write):
             file.write(values)
             self.assertTrue(filepath.is_file())
-
+            file.close()
+            file = csv.File(filepath)
+        with self.subTest(method=csv.File.delimiter):
+            self.assertEqual(file.delimiter, delimiter)
+        with self.subTest(method=csv.File.header):
+            self.assertEqual(file.header, header)
+        with self.subTest(method=csv.File.comment):
+            self.assertEqual(file.comment, comment)
+            file.close()
         filepath.unlink()
 
     def test_Reader(self) -> None:
