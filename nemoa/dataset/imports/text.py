@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import env
+from nemoa.base import array, env
 from nemoa.file import csv, ini
 
 def filetypes():
@@ -49,7 +49,7 @@ class Csv:
 
         """
 
-        # Get instance of DSV-file
+        # Get instance of CSV-file
         file = csv.File(path)
 
         # Get configuration from CSV comment lines
@@ -79,11 +79,14 @@ class Csv:
         if 'type' not in config:
             config['type'] = 'base.Dataset'
 
-        # add column and row filters
+        # Add column and row filters
         config['colfilter'] = {'*': ['*:*']}
         config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
 
-        data = file.load_old()
+        # Load data
+        names = list(file.header)
+        names[0] = 'label'
+        data = array.from_tuples(file.read(), names=tuple(names))
 
         config['table'] = {name: config.copy()}
         config['table'][name]['fraction'] = 1.0

@@ -8,8 +8,8 @@ __docformat__ = 'google'
 
 import numpy as np
 from nemoa.base import check
-from nemoa.types import StrPairDict, StrListPair, NaN, NpArray
-from nemoa.types import Number, OptNumber, List
+from nemoa.types import StrPairDict, StrListPair, NaN, NpArray, OptList
+from nemoa.types import Number, OptNumber, List, OptStrList
 
 #
 # Array transformations
@@ -89,7 +89,9 @@ def as_dict(
 
     return d
 
-def from_tuples(tuples: List[tuple]) -> NpArray:
+def from_tuples(
+        tuples: List[tuple], names: OptStrList = None,
+        formats: OptList = None) -> NpArray:
     """Convert list of tuples into two dimensional array.
 
     Args:
@@ -100,19 +102,29 @@ def from_tuples(tuples: List[tuple]) -> NpArray:
         of <*rows*> and *m* the number of <*columns*>.
 
     """
-    # Determine dtype
     first_row = tuples[0]
-    dtype: list = []
-    for index, value in enumerate(first_row):
-        if isinstance(value, str):
-            # Determine maximum length
-            maxlen = len(value)
-            for row in tuples:
-                if len(row[index]) > maxlen:
-                    maxlen = len(row[index])
-            dtype.append(('', str, maxlen))
-        else:
-            dtype.append(('', type(value)))
+
+    # Determine names from column index, if not given
+    if names is None:
+        names = [f'col{colid}' for colid in range(len(first_row))]
+
+    # Determine formats, if not given
+    if formats is None:
+        formats = []
+        for index, value in enumerate(first_row):
+            if isinstance(value, str):
+                # Determine maximum length
+                maxlen = len(value)
+                for row in tuples:
+                    if len(row[index]) > maxlen:
+                        maxlen = len(row[index])
+                formats.append((str, maxlen))
+            else:
+                formats.append(type(value))
+
+    # Get dtype from names and formats
+    dtype = np.dtype({'names': names, 'formats': formats})
+
     return np.array(tuples, dtype=dtype)
 
 def as_tuples(x: NpArray) -> List[tuple]:

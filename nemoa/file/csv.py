@@ -301,28 +301,6 @@ class File(attrib.Container):
     """
 
     #
-    # Protected Class Variables
-    #
-
-    _delimiter_candidates: ClassVar[StrList] = [',', '\t', ';', ' ', ':', '|']
-    """
-    Optional list of strings containing delimiter candidates to search for.
-    Default: [',', '\t', ';', ' ', ':', '|']
-    """
-
-    _delimiter_mincount: ClassVar[int] = 2
-    """
-    Minimum number of lines used to detect CSV delimiter. Thereby only non
-    comment and non empty lines are used.
-    """
-
-    _delimiter_maxcount: ClassVar[int] = 100
-    """
-    Maximum number of lines used to detect CSV delimiter. Thereby only non
-    comment and non empty lines are used.
-    """
-
-    #
     # Public Attributes
     #
 
@@ -395,18 +373,13 @@ class File(attrib.Container):
             delimiter: OptStr = None, hformat: OptInt = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
         super().__init__()
-
         self._file = file
         self._header = header
         self._comment = comment
         self._delimiter = delimiter
-
-        self._children = []
-
-        if hformat is not None:
-            self._hformat = hformat
-
+        self._hformat = hformat
         self._namecol = namecol
+        self._children = []
 
     def __enter__(self) -> 'File':
         return self
@@ -477,50 +450,6 @@ class File(attrib.Container):
         with self.open(mode='w') as fh:
             fh.write_rows(rows)
 
-    # DEPRECATED
-    # TODO: write constructor load()
-    def load_old(self, columns: OptColumns = None) -> OptNpArray:
-        """Load numpy ndarray from CSV file.
-
-        Args:
-            columns: Has no effect in writing mode. For reading mode it
-                specifies the columns, which are return from the CSV file by
-                their respective column name. By default all columns are
-                returned.
-
-        Returns:
-            :class:`numpy.ndarray` containing data from CSV file, or None if
-            the data could not be imported.
-
-        """
-        # Check type of 'cols'
-        check.has_opt_type("'columns'", columns, tuple)
-
-        # Get column names and formats
-        usecols = self._get_usecols(columns)
-        colnames = self._get_header()
-        names = tuple(colnames[colid] for colid in usecols)
-        lblcol = self._get_namecol()
-        if lblcol is None:
-            formats = tuple(['<f8'] * len(usecols))
-        elif lblcol not in usecols:
-            formats = tuple(['<U12'] + ['<f8'] * len(usecols))
-            names = ('label', ) + names
-            usecols = (lblcol, ) + usecols
-        else:
-            lbllbl = colnames[lblcol]
-            formats = tuple(['<U12'] + ['<f8'] * (len(usecols) - 1))
-            names = tuple(['label'] + [l for l in names if l != lbllbl])
-            usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
-
-        # Import data from CSV file as numpy array
-        with textfile.openx(self._file, mode='r') as fh:
-            return np.loadtxt(fh,
-                skiprows=self._get_skiprows(),
-                delimiter=self._get_delimiter(),
-                usecols=usecols,
-                dtype={'names': names, 'formats': formats})
-
     #
     # Protected Methods
     #
@@ -537,8 +466,11 @@ class File(attrib.Container):
             return self._delimiter
 
         # Initialize CSV Sniffer with default values
+        mincount: int = 2
+        maxcount: int = 100
+        candidates: StrList = [',', '\t', ';', ' ', ':', '|']
         sniffer = csv.Sniffer()
-        sniffer.preferred = self._delimiter_candidates
+        sniffer.preferred = candidates
         delimiter: OptStr = None
 
         # Detect delimiter
@@ -547,7 +479,7 @@ class File(attrib.Container):
                 size, probe = 0, ''
                 for line in fd:
                     # Check termination criteria
-                    if size > self._delimiter_maxcount:
+                    if size > maxcount:
                         break
                     # Check exclusion criteria
                     strip = line.strip()
@@ -556,7 +488,7 @@ class File(attrib.Container):
                     # Increase probe size
                     probe += line
                     size += 1
-                    if size <= self._delimiter_mincount:
+                    if size <= mincount:
                         continue
                     # Try to detect delimiter from probe using csv.Sniffer
                     try:

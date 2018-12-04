@@ -94,7 +94,7 @@ class Table(table.Proxy):
     #     config['colfilter'] = {'*': ['*:*']}
     #     config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
     #
-    #     data = csv.File(
+    #     data = csv.load(
     #         file=file, delim=delim, labels=labels, usecols=usecols,
     #         namecol=namecol).load_old()
     #
