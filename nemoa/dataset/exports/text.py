@@ -5,9 +5,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import os
+from nemoa.base import array
 from nemoa.file import csv, ini
 
-def filetypes():
+def filetypes() -> dict:
     """Get supported text filetypes for dataset export."""
     return {
         'csv': 'Comma Separated Values',
@@ -57,12 +58,12 @@ class Csv:
         comment = ini.encode(config, flat=True).strip('\n')
         delimiter = self.settings['delim']
         cols, data = dataset.get('data', output=('cols', 'recarray'))
+        header = [''] + cols
+        values = array.as_tuples(data)
 
         # Convert recarray to list of tuples
-
-        return csv.save_old(
-            path, data, header=[''] + cols, comment=comment,
-            delimiter=delimiter)
+        return csv.save(path, header=header, values=values,
+            comment=comment, delimiter=delimiter)
 
 class Tsv(Csv):
     """Export dataset to Tab Separated Values."""
