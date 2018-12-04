@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import numpy as np
 from nemoa.base import check
 from nemoa.types import StrPairDict, StrListPair, NaN, NpArray
-from nemoa.types import Number, OptNumber
+from nemoa.types import Number, OptNumber, List
 
 #
 # Array transformations
@@ -88,3 +88,45 @@ def as_dict(
                 d[(row, col)] = val
 
     return d
+
+def from_tuples(tuples: List[tuple]) -> NpArray:
+    """Convert list of tuples into two dimensional array.
+
+    Args:
+        tuples: List of tuples
+
+    Returns:
+        :class:`numpy.ndarray` of shape (*n*, *m*), where *n* equals the number
+        of <*rows*> and *m* the number of <*columns*>.
+
+    """
+    # Determine dtype
+    first_row = tuples[0]
+    dtype: list = []
+    for index, value in enumerate(first_row):
+        if isinstance(value, str):
+            # Determine maximum length
+            maxlen = len(value)
+            for row in tuples:
+                if len(row[index]) > maxlen:
+                    maxlen = len(row[index])
+            dtype.append(('', str, maxlen))
+        else:
+            dtype.append(('', type(value)))
+    return np.array(tuples, dtype=dtype)
+
+def as_tuples(x: NpArray) -> List[tuple]:
+    """Convert two dimensional array list of tuples.
+
+    Args:
+        x: Numpy ndarray of shape (*n*, *m*), where *n* equals the number of
+            <*rows*> and *m* the number of <*columns*>.
+
+    Returns:
+        List of tuples.
+
+    """
+    # Check type of 'x'
+    check.has_type("argument 'x'", x, np.ndarray)
+
+    return x.tolist()

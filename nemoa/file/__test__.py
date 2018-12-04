@@ -145,7 +145,7 @@ class TestCsv(ModuleTestCase):
 
     def test_save(self) -> None:
         filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
-        csv.save(
+        csv.save( # type: ignore
             filepath, header=self.header, values=self.values,
             comment=self.comment, delimiter=self.delimiter)
         with csv.File(filepath) as file:
@@ -208,21 +208,6 @@ class TestCsv(ModuleTestCase):
             self.assertEqual(file.read(), self.values)
         filepath.unlink()
 
-    # def test_save(self) -> None:
-    #     self.assertTrue(self.filepath.is_file())
-    #
-    # def test_comment(self) -> None:
-    #     self.assertEqual(self.file.comment, self.comment)
-    #
-    # def test_delim(self) -> None:
-    #     self.assertEqual(self.file.delimiter, self.delimiter)
-    #
-    # def test_header(self) -> None:
-    #     self.assertEqual(self.file.header, self.header)
-    #
-    # def test_hformat(self) -> None:
-    #     self.assertEqual(self.file.hformat, csv.CSV_HFORMAT_RFC4180)
-    #
     # def test_rownames(self) -> None:
     #     self.assertEqual(self.file.rownames, self.rownames)
     #

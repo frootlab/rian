@@ -34,6 +34,9 @@ class TestArray(ModuleTestCase):
     def setUp(self) -> None:
         self.x = np.array([[NaN, 1.], [NaN, NaN]])
         self.d = {('a', 'b'): 1.}
+        self.tuples = [
+            ('this', 1, 1., 1j), ('is', 2, 2., 2j),
+            ('awesome', 3, 3., 3j)]
         self.labels = (['a', 'b'], ['a', 'b'])
 
     def test_from_dict(self) -> None:
@@ -43,6 +46,15 @@ class TestArray(ModuleTestCase):
     def test_as_dict(self) -> None:
         d = array.as_dict(self.x, labels=self.labels)
         self.assertEqual(d, self.d)
+
+    def test_from_tuples(self) -> None:
+        x = array.from_tuples(self.tuples) # type: ignore
+        self.assertEqual(x.tolist(), self.tuples)
+
+    def test_as_tuples(self) -> None:
+        dtype = [('', str, 7), ('', int), ('', float), ('', complex)]
+        x = np.array(self.tuples, dtype=dtype)
+        self.assertEqual(array.as_tuples(x), self.tuples)
 
 class TestEntity(ModuleTestCase):
     """Testcase for the module nemoa.base.entity."""
