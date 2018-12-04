@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 from nemoa.file import binfile, csv, ini, textfile
 from nemoa.test import ModuleTestCase
+from nemoa.types import List
 
 class TestBinfile(ModuleTestCase):
     """Testcase for the module nemoa.file.binfile."""
@@ -111,7 +112,7 @@ class TestTextfile(ModuleTestCase):
         if self.filepath.is_file():
             self.filepath.unlink()
 
-class TestDsv(ModuleTestCase):
+class TestCsv(ModuleTestCase):
     """Testcase for the module nemoa.file.csv."""
 
     module = 'nemoa.file.csv'
@@ -119,16 +120,41 @@ class TestDsv(ModuleTestCase):
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
         self.comment = '-*- coding: utf-8 -*-'
+        self.header = ('name', 'x', 'y')
+        self.delimiter = ','
+        self.values = [('row1', 1, 1.), ('row2', 2, 2.), ('row3', 3, 3.)]
+
         self.data = np.array(
             [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
             dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
-        self.delimiter = ','
-        self.colnames = ['col0', 'col1', 'col2']
         self.rownames = list(self.data['label'].flat)
         csv.save(
-            self.filepath, self.data, header=self.colnames,
+            self.filepath, self.data, header=self.header,
             comment=self.comment, delimiter=self.delimiter)
         self.file = csv.File(self.filepath)
+
+    def test_File(self) -> None:
+        filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+        comment = '-*- coding: utf-8 -*-'
+        header = ('name', 'id', 'value')
+        delimiter = ','
+        values: List[tuple] = [('r1', 1, 1.), ('r2', 2, 2.), ('r3', 3, 3.)]
+
+        with self.subTest(method=csv.File.__init__):
+            file = csv.File(
+                filepath, header=header, comment=comment, delimiter=delimiter)
+            self.assertIsInstance(file, csv.File)
+        with self.subTest(method=csv.File.write):
+            file.write(values)
+            self.assertTrue(filepath.is_file())
+
+        filepath.unlink()
+
+    def test_Reader(self) -> None:
+        pass
+
+    def test_Writer(self) -> None:
+        pass
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())
@@ -139,11 +165,11 @@ class TestDsv(ModuleTestCase):
     def test_delim(self) -> None:
         self.assertEqual(self.file.delimiter, self.delimiter)
 
-    def test_format(self) -> None:
-        self.assertEqual(self.file.format, csv.CSV_FORMAT_RFC4180)
+    def test_header(self) -> None:
+        self.assertEqual(self.file.header, self.header)
 
-    def test_colnames(self) -> None:
-        self.assertEqual(self.file.colnames, self.colnames)
+    def test_hformat(self) -> None:
+        self.assertEqual(self.file.hformat, csv.CSV_HFORMAT_RFC4180)
 
     def test_rownames(self) -> None:
         self.assertEqual(self.file.rownames, self.rownames)
@@ -154,6 +180,7 @@ class TestDsv(ModuleTestCase):
     def tearDown(self) -> None:
         if self.filepath.is_file():
             self.filepath.unlink()
+        pass
 
 class TestInifile(ModuleTestCase):
     """Testcase for the module nemoa.file.ini."""

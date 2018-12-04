@@ -10,10 +10,11 @@ import contextlib
 import io
 from pathlib import Path
 import tempfile
+import weakref
 from nemoa.base import env
 from nemoa.errors import PullError, PushError
-from nemoa.types import Any, Iterator, PathLike
-from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase, FileRef
+from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef
+from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase
 
 #
 # Stream Connector Class
@@ -22,9 +23,10 @@ from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase, FileRef
 class Connector:
     """File Connector Class."""
 
+    opened: bool
+
     _ref: FileRef
     _file: io.IOBase
-    _close: bool
     _args: tuple
     _kwds: dict
 
@@ -58,13 +60,13 @@ class Connector:
             f"not '{type(file).__name__}'")
 
     def close(self) -> None:
-        if hasattr(self, '_close') and self._close:
+        if hasattr(self, 'opened') and self.opened:
             self._file.close()
 
     def _open_from_path(
             self, path: PathLike, *args: Any, **kwds: Any) -> io.IOBase:
         self._file = open(env.expand(path), *args, **kwds) # type: ignore
-        self._close = True
+        self.opened = True
         return self._file
 
     def _open_from_textfile(
@@ -82,7 +84,7 @@ class Connector:
             raise RuntimeError(
                 "wrapping text streams to byte streams is not supported")
         self._file = file
-        self._close = False
+        self.opened = False
         return file
 
     def _open_from_binfile(
@@ -103,13 +105,13 @@ class Connector:
                 file, write_through=True)
         else:
             self._file = io.TextIOWrapper(file) # type: ignore
-        self._close = False
+        self.opened = False
         return self._file
 
     def _open_from_ref(
             self, ref: FileAccessorBase, *args: Any, **kwds: Any) -> io.IOBase:
         self._file = ref.open(*args, **kwds)
-        self._close = True
+        self.opened = True
         return self._file
 
 #
@@ -141,6 +143,7 @@ class FileWrapper:
 
     _connector: Connector
     _mode: str
+    _children: list
 
     path: Path
 
@@ -148,6 +151,7 @@ class FileWrapper:
         """Initialize temporary file."""
         self._connector = Connector(file)
         self._mode = mode
+        self._children = []
 
         # Create temporary file
         self.path = Path(tempfile.NamedTemporaryFile().name)
@@ -159,6 +163,14 @@ class FileWrapper:
 
     def __del__(self) -> None:
         self.close()
+
+    def open(self, *args: Any, **kwds: Any) -> FileLike:
+        """Open file handler to temporary file."""
+        # Open file handler to temporary file path
+        file = self.path.open(*args, **kwds)
+        # Store weak reference of file handler
+        self._children.append(weakref.proxy(file))
+        return file
 
     def pull(self) -> None:
         """Copy referenced file object to temporary file."""
@@ -184,14 +196,12 @@ class FileWrapper:
         """Execute push request and release bound resources."""
         if not self.path.is_file():
             return
-
-        # Copy temporary file to referenced stream
-        if 'w' in self._mode:
+        for fh in self._children: # Close all opened file handlers
+            fh.close()
+        if 'w' in self._mode: # Copy temporary file to referenced file
             self.push()
-
-        # Remove temporary file and close
-        self.path.unlink()
-        self._connector.close()
+        self.path.unlink() # Remove temporary file
+        self._connector.close() # Close connector
 
 #
 # Constructors

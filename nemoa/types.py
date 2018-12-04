@@ -199,20 +199,20 @@ Exc = BaseException
 ExcType = Type[Exc]
 ExcInfo = Union[ExcType, Tuple[ExcType, ...]]
 
-# BytesIO Like
+# File Like
+FileLike = IO[Any]
+IterFileLike = Iterator[FileLike]
+CManFileLike = ContextManager[FileLike]
+
+# Binary File Like
 BytesIOLike = IO[bytes]
 IterBytesIOLike = Iterator[BytesIOLike]
 CManBytesIOLike = ContextManager[BytesIOLike]
 
-# StringIO Like
+# Text File Like
 StringIOLike = IO[str]
 IterStringIOLike = Iterator[StringIOLike]
 CManStringIOLike = ContextManager[StringIOLike]
-
-# File Like
-FileLike = Union[BytesIOLike, StringIOLike]
-IterFileLike = Iterator[FileLike]
-CManFileLike = ContextManager[FileLike]
 
 # File References
 FileOrPathLike = Union[FileLike, PathLike]

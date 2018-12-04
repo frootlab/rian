@@ -9,7 +9,7 @@ data produced and consumed by different applications. This circumstance has
 and basically been addressed by :PEP:`305` and the standard library module
 :mod:`csv`. The current module extends the capabilities of the standard library
 by I/O handling of :term:`file references <file reference>`, support of
-non-standard CSV headers, as used in CSV-exports of the `R programming
+non-standard CSV headers, as used in CSV exports of the `R programming
 language`_, and automation in CSV parameter detection.
 
 .. _delimiter-separated values format:
@@ -31,6 +31,7 @@ import csv
 import contextlib
 import io
 import numpy as np
+import os
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError
 from nemoa.file import stream, textfile
@@ -38,7 +39,7 @@ from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
 from nemoa.types import OptNpArray, OptStr, OptStrList, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
-from nemoa.types import StrDict, FileRef, Optional
+from nemoa.types import StrDict, FileRef, Optional, FileLike
 
 #
 # Stuctural Types
@@ -47,22 +48,24 @@ from nemoa.types import StrDict, FileRef, Optional
 Header = Iterable[str]
 OptHeader = Optional[Header]
 Field = Tuple[str, type]
-Fields = Iterable[Field]
+Fields = List[Field]
+Rows = List[tuple]
+RowsLike = Iterable[tuple]
 IterHandler = Iterator['HandlerBase']
 
 #
 # Constants
 #
 
-CSV_FORMAT_RFC4180 = 0
-CSV_FORMAT_RLANG = 1
+CSV_HFORMAT_RFC4180 = 0
+CSV_HFORMAT_RLANG = 1
 
 #
-# CSV-file I/O Handler Base Class
+# CSV file I/O Handler Base Class
 #
 
 class HandlerBase(ABC):
-    """CSV-file I/O Handler Base Class.
+    """CSV file I/O Handler Base Class.
 
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
@@ -78,16 +81,27 @@ class HandlerBase(ABC):
 
     """
 
-    _cman: stream.Connector
-    _file: io.IOBase
+    _fileref: FileRef
+    _mode: str
+    _connector: stream.Connector
     _wrapper: stream.FileWrapper
-    _tmpfile: io.IOBase
+    _file: FileLike
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
-        self._cman = stream.Connector(file)
-        self._file = self._cman.open(mode)
+        self._fileref = file
+        self._mode = mode
+
+        # In reading mode open file handler from a file connector
+        if 'r' in mode:
+            self._connector = stream.Connector(file)
+            self._file = self._connector.open(mode)
+        # In writing mode open file handler from a temporary file path
+        elif 'w' in mode:
+            self._wrapper = stream.FileWrapper(file, mode='w')
+            self._file = self._wrapper.open(mode='w', newline='')
+        # Check file handler
         if not isinstance(self._file, io.TextIOBase):
-            self._cman.close()
+            self._connector.close()
             raise ValueError('the opened stream is not a valid text file')
 
     def __iter__(self) -> 'HandlerBase':
@@ -106,13 +120,18 @@ class HandlerBase(ABC):
         self.close()
 
     def close(self) -> None:
-        """Close the file wrapper of the referenced file."""
-        with contextlib.suppress(AttributeError):
-            self._tmpfile.close()
-        with contextlib.suppress(AttributeError):
+        """Close the CSV file handler."""
+        # In writing mode, when closing the file wrapper alsoe all opened file
+        # handlers to the temporary file are closed, the changes are written
+        # to the original file and the temporary file is removed.
+        if 'w' in self._mode:
             self._wrapper.close()
-        with contextlib.suppress(AttributeError):
-            self._cman.close()
+        # In reading mode close the file handler, if it has been openen by the
+        # connector and afterwards close the connector
+        elif 'r' in self._mode:
+            if self._connector.opened:
+                self._file.close()
+            self._connector.close()
 
     @abstractmethod
     def read_row(self) -> tuple:
@@ -120,7 +139,7 @@ class HandlerBase(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def read_rows(self) -> List[tuple]:
+    def read_rows(self) -> Rows:
         """Read multiple rows from the referenced file as a list of tuples."""
         raise NotImplementedError()
 
@@ -130,16 +149,16 @@ class HandlerBase(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def write_rows(self, row: List[Iterable]) -> None:
+    def write_rows(self, rows: RowsLike) -> None:
         """Write multiple rows to the referenced file from a list of tuples."""
         raise NotImplementedError()
 
 #
-# CSV-file I/O Reader Class
+# CSV file I/O Reader Class
 #
 
 class Reader(HandlerBase):
-    """CSV-file I/O Reader Class.
+    """CSV file I/O Reader Class.
 
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
@@ -147,10 +166,10 @@ class Reader(HandlerBase):
             to a valid entry in the file system, a :class:`file accessor
             <nemoa.types.FileAccessorBase>` or an opened file object in reading
             mode.
-        skiprows: Number of initial lines within the given CSV-file before the
-            CSV-Header. By default no lines are skipped.
+        skiprows: Number of initial lines within the given CSV file before the
+            CSV Header. By default no lines are skipped.
         usecols: Tuple with column IDs of the columns, which are imported from
-            the given CSV-file. By default all columns are imported.
+            the given CSV file. By default all columns are imported.
         fields: List (or arbitrary iterable) of field descriptors, respectively
             given by a tuple, containing a column name and a column type.
         **kwds: :ref:`Dialects and formatting parameters<csv-fmt-params>`
@@ -178,7 +197,7 @@ class Reader(HandlerBase):
         usecols = self._usecols or range(row)
         return tuple(map(decode, enumerate(usecols)))
 
-    def read_rows(self) -> List[tuple]:
+    def read_rows(self) -> Rows:
         """Read multiple rows from the referenced file as a list of tuples."""
         return [row for row in self]
 
@@ -186,16 +205,16 @@ class Reader(HandlerBase):
         """Write a single row to the referenced file from a tuple."""
         raise OSError("writing rows is not supported in reading mode")
 
-    def write_rows(self, row: List[Iterable]) -> None:
+    def write_rows(self, rows: RowsLike) -> None:
         """Write multiple rows to the referenced file from a list of tuples."""
         raise OSError("writing rows is not supported in reading mode")
 
 #
-# CSV-file I/O Writer Class
+# CSV file I/O Writer Class
 #
 
 class Writer(HandlerBase):
-    """CSV-file I/O Writer Class.
+    """CSV file I/O Writer Class.
 
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
@@ -204,8 +223,8 @@ class Writer(HandlerBase):
             <nemoa.types.FileAccessorBase>` or an opened file object in writing
             mode.
         header: List (or arbitrary iterable) of column names, that specify the
-            header of the CSV-file.
-        comment: Initial comment of the CSV-file.
+            header of the CSV file.
+        comment: Initial comment of the CSV file.
         **kwds: :ref:`Dialects and formatting parameters<csv-fmt-params>`
 
     """
@@ -217,12 +236,8 @@ class Writer(HandlerBase):
             **kwds: Any) -> None:
         super().__init__(file, mode='w')
 
-        # Create file wrapper and temporary file
-        self._wrapper = stream.FileWrapper(file, mode='w')
-        self._tmpfile = self._wrapper.path.open(mode='w', newline='')
-
-        # Initialize CSV writer with temporary file
-        self._writer = csv.writer(self._tmpfile, **kwds)
+        # Initialize CSV writer
+        self._writer = csv.writer(self._file, **kwds)
 
         self._write_comment(comment) # Write initial comment lines
         self._write_header(header) # Write CSV header
@@ -230,18 +245,18 @@ class Writer(HandlerBase):
     def _write_comment(self, comment: str) -> None:
         if not comment:
             return
-        writeline = getattr(self._file, 'writeline')
-        for line in comment.splitlines():
-            writeline(f'# line\n')
+        lb = os.linesep
+        writelines = getattr(self._file, 'writelines')
+        writelines([f'# {line}{lb}' for line in comment.splitlines()] + [lb])
 
     def _write_header(self, header: Header) -> None:
-        self.write_row(header)
+        self._writer.writerow(header)
 
     def read_row(self) -> tuple:
         """Read a single row from the referenced file as a tuple."""
         raise OSError("reading rows is not supported in writing mode")
 
-    def read_rows(self) -> List[tuple]:
+    def read_rows(self) -> Rows:
         """Read multiple rows from the referenced file as a list of tuples."""
         raise OSError("reading rows is not supported in writing mode")
 
@@ -249,16 +264,16 @@ class Writer(HandlerBase):
         """Write a single row to the referenced file from a tuple."""
         self._writer.writerow(row)
 
-    def write_rows(self, rows: List[Iterable]) -> None:
+    def write_rows(self, rows: RowsLike) -> None:
         """Write multiple rows to the referenced file from a list of tuples."""
         self._writer.writerows(rows)
 
 #
-# File Class for text files containing delimiter separated values
+# CSV File Class
 #
 
 class File(attrib.Container):
-    """File Class for text files containing delimiter separated values.
+    """File Class for text files containing delimiter-separated values.
 
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
@@ -266,14 +281,23 @@ class File(attrib.Container):
             to a valid entry in the file system, a :class:`file accessor
             <nemoa.types.FileAccessorBase>` or an opened file object in reading
             or writing mode.
-        delimiter: Single character, which is used as delimiter within the
-            CSV-file. For an existing file, the delimiter by default is detected
-            from the file.
-        header: List (or arbitrary iterable) of column names, that specify the
-            header of the CSV-file. For an existing file, the header by default
-            is extracted from the first content line of the file.
+        header: Optional list (or arbitrary iterable) of strings, that specify
+            the column names within the CSV file. For an existing file, the
+            header by default is extracted from the first content line (not
+            blank and not starting with `#`). For a new file the header is
+            required and an error is raised if the header is not given.
+        comment: Optional string, which precedes the header and the rows of the
+            CSV file, e.g. to include metadata within the file. For an existing
+            file, the string by default is extracted from the initial comment
+            lines (starting with `#`). For a new file the comment by default is
+            empty.
+        delimiter: Single character, which is used to separetate the column
+            values within the CSV file. For an existing file, the delimiter by
+            default is detected from it's appearance within the file. For a new
+            file the default value is `,`.
+
         usecols: Tuple with column IDs of the columns, which are imported from
-            the given CSV-file. By default all columns are imported.
+            the given CSV file. By default all columns are imported.
         namecol: Single column ID of a column, which is used to identify row
             names. By default the first text column is used for row names.
 
@@ -291,13 +315,13 @@ class File(attrib.Container):
 
     _delimiter_mincount: ClassVar[int] = 2
     """
-    Minimum number of lines used to detect DSV delimiter. Thereby only non
+    Minimum number of lines used to detect CSV delimiter. Thereby only non
     comment and non empty lines are used.
     """
 
     _delimiter_maxcount: ClassVar[int] = 100
     """
-    Maximum number of lines used to detect DSV delimiter. Thereby only non
+    Maximum number of lines used to detect CSV delimiter. Thereby only non
     comment and non empty lines are used.
     """
 
@@ -307,39 +331,38 @@ class File(attrib.Container):
 
     comment: property = attrib.Virtual(fget='_get_comment')
     comment.__doc__ = """
-    String containing the initial '#' lines of the CSV-file or an empty string,
+    String containing the initial '#' lines of the CSV file or an empty string,
     if no initial comment lines could be detected.
     """
 
     delimiter: property = attrib.Virtual(fget='_get_delimiter')
     delimiter.__doc__ = """
-    Delimiter string of the CSV-file or None, if the delimiter could not be
-    detected.
+    Delimiter character of the CSV file or None, if for an existing file the
+    delimiter could not be detected.
     """
 
-    format: property = attrib.Virtual(fget='_get_format')
-    format.__doc__ = """
-    DSV-Header format. The following formats are supported:
-        0: :RFC:`4180`:
-            The column header equals the size of the rows.
-        1: R-Table:
-            The column header has a size that is reduced by one, compared to the
-            rows. This smaller number of entries follows by the convention, that
-            in R the CSV export of tables adds an extra column with row names
-            as the first column. The column name of this column is omitted
-            within the header.
-    """
-
-    colnames: property = attrib.Virtual(fget='_get_colnames')
-    colnames.__doc__ = """
+    header: property = attrib.Virtual(fget='_get_header')
+    header.__doc__ = """
     List of strings containing column names from first non comment, non empty
-    line of CSV-file.
+    line of CSV file.
+    """
+
+    hformat: property = attrib.Virtual(fget='_get_hformat')
+    hformat.__doc__ = """
+    CSV Header format. The following formats are supported:
+        0: :RFC:`4180`:
+            The column header represents the structure of the rows.
+        1: R-Language:
+            The column header does not include the first column of the rows.
+            This follows by the convention, that in the R programming language
+            the CSV export adds an extra column with row names as the first
+            column, which is omitted within the CSV header.
     """
 
     fields: property = attrib.Virtual(fget='_get_fields')
-    colnames.__doc__ = """
+    fields.__doc__ = """
     List of pairs containing the column names and the estimated or given column
-    types of the CSV-file.
+    types of the CSV file.
     """
 
     rownames: property = attrib.Virtual(fget='_get_rownames')
@@ -350,37 +373,39 @@ class File(attrib.Container):
 
     namecol: property = attrib.Virtual(fget='_get_namecol')
     namecol.__doc__ = """
-    Index of the column of a CSV-file that contains the row names. The value
-    None is used for CSV-files that do not contain row names.
+    Index of the column of a CSV file that contains the row names. The value
+    None is used for CSV files that do not contain row names.
     """
 
     #
     # Protected Attributes
     #
 
-    _fileref: property = attrib.Content(classinfo=FileRefClasses)
+    _file: property = attrib.Content(classinfo=FileRefClasses)
+    _header: property = attrib.MetaData(classinfo=(list, tuple), default=None)
     _comment: property = attrib.MetaData(classinfo=str, default=None)
     _delimiter: property = attrib.MetaData(classinfo=str, default=None)
-    _format: property = attrib.MetaData(classinfo=str, default=None)
-    _colnames: property = attrib.MetaData(classinfo=list, default=None)
-    _rownames: property = attrib.MetaData(classinfo=list, default=None)
+    _hformat: property = attrib.MetaData(classinfo=int, default=None)
     _namecol: property = attrib.MetaData(classinfo=int, default=None)
 
     #
     # Events
     #
 
-    def __init__(self, file: FileRef, mode: str = 'r',
-            comment: OptStr = None, delimiter: OptStr = None,
-            csvformat: OptInt = None, header: OptHeader = None,
+    def __init__(self, file: FileRef,
+            header: OptHeader = None, comment: OptStr = None,
+            delimiter: OptStr = None, hformat: OptInt = None,
             usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
         super().__init__()
 
-        self._fileref = file
+        self._file = file
+        self._header = header
         self._comment = comment
         self._delimiter = delimiter
-        self._csvformat = csvformat
-        self._colnames = header
+
+        if hformat is not None:
+            self._hformat = hformat
+
         self._namecol = namecol
 
     #
@@ -389,7 +414,7 @@ class File(attrib.Container):
 
     @contextlib.contextmanager
     def open(self, mode: str = 'r', columns: OptStrTuple = None) -> IterHandler:
-        """Open CSV-file in reading or writing mode.
+        """Open CSV file in reading or writing mode.
 
         Args:
             mode: String, which characters specify the mode in which the file is
@@ -398,7 +423,7 @@ class File(attrib.Container):
                 *writing mode*. Thereby reading- and writing mode are exclusive
                 and can not be used together.
             columns: Has no effect in writing mode. For redaing mode it
-                specifies the columns, which are return from the CSV-file by
+                specifies the columns, which are return from the CSV file by
                 their respective column name. By default all columns are
                 returned.
 
@@ -420,42 +445,41 @@ class File(attrib.Container):
         finally:
             fh.close()
 
-    def read(self) -> List[tuple]:
-        """Read all rows from current CSV-file.
+    def read(self) -> Rows:
+        """Read all rows from current CSV file.
 
         Returns:
             rows: List of tuples, which respectively contain the values of a
                 single row.
 
         """
-        handler: Reader
-        with self.open(mode='r') as handler:
-            return handler.read_rows()
+        with self.open(mode='r') as fh:
+            return fh.read_rows()
 
-    def write(self, rows: List[Iterable]) -> None:
-        """Write rows to current CSV-file.
+    def write(self, rows: Rows) -> None:
+        """Write rows to current CSV file.
 
         Args:
             rows: List of tuples (or arbitrary iterables), which respectively
                 contain the values of a single row.
 
         """
-        handler: Writer
-        with self.open(mode='w') as handler:
-            handler.write_rows(rows)
+        with self.open(mode='w') as fh:
+            fh.write_rows(rows)
 
     # DEPRECATED
+    # TODO: write constructor load()
     def select(self, columns: OptStrTuple = None) -> OptNpArray:
-        """Load numpy ndarray from CSV-file.
+        """Load numpy ndarray from CSV file.
 
         Args:
             columns: Has no effect in writing mode. For redaing mode it
-                specifies the columns, which are return from the CSV-file by
+                specifies the columns, which are return from the CSV file by
                 their respective column name. By default all columns are
                 returned.
 
         Returns:
-            :class:`numpy.ndarray` containing data from CSV-file, or None if
+            :class:`numpy.ndarray` containing data from CSV file, or None if
             the data could not be imported.
 
         """
@@ -464,7 +488,7 @@ class File(attrib.Container):
 
         # Get column names and formats
         usecols = self._get_usecols(columns)
-        colnames = self._get_colnames()
+        colnames = self._get_header()
         names = tuple(colnames[colid] for colid in usecols)
         lblcol = self._get_namecol()
         if lblcol is None:
@@ -479,8 +503,8 @@ class File(attrib.Container):
             names = tuple(['label'] + [l for l in names if l != lbllbl])
             usecols = tuple([lblcol] + [c for c in usecols if c != lblcol])
 
-        # Import data from CSV-file as numpy array
-        with textfile.openx(self._fileref, mode='r') as fh:
+        # Import data from CSV file as numpy array
+        with textfile.openx(self._file, mode='r') as fh:
             return np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
                 delimiter=self._get_delimiter(),
@@ -495,77 +519,63 @@ class File(attrib.Container):
         # Return comment if set manually
         if self._comment is not None:
             return self._comment
-        return textfile.get_comment(self._fileref)
+        return textfile.get_comment(self._file)
 
     def _get_delimiter(self) -> OptStr:
         # Return delimiter if set manually
         if self._delimiter is not None:
             return self._delimiter
 
-        # Initialize DSV-Sniffer with default values
+        # Initialize CSV Sniffer with default values
         sniffer = csv.Sniffer()
         sniffer.preferred = self._delimiter_candidates
         delimiter: OptStr = None
 
         # Detect delimiter
-        with textfile.openx(self._fileref, mode='r') as fd:
-            size, probe = 0, ''
-            for line in fd:
-                # Check termination criteria
-                if size > self._delimiter_maxcount:
+        try:
+            with textfile.openx(self._file, mode='r') as fd:
+                size, probe = 0, ''
+                for line in fd:
+                    # Check termination criteria
+                    if size > self._delimiter_maxcount:
+                        break
+                    # Check exclusion criteria
+                    strip = line.strip()
+                    if not strip or strip.startswith('#'):
+                        continue
+                    # Increase probe size
+                    probe += line
+                    size += 1
+                    if size <= self._delimiter_mincount:
+                        continue
+                    # Try to detect delimiter from probe using csv.Sniffer
+                    try:
+                        dialect = sniffer.sniff(probe)
+                    except csv.Error:
+                        continue
+                    delimiter = dialect.delimiter
                     break
-                # Check exclusion criteria
-                strip = line.strip()
-                if not strip or strip.startswith('#'):
-                    continue
-                # Increase probe size
-                probe += line
-                size += 1
-                if size <= self._delimiter_mincount:
-                    continue
-                # Try to detect delimiter from probe using csv.Sniffer
-                try:
-                    dialect = sniffer.sniff(probe)
-                except csv.Error:
-                    continue
-                delimiter = dialect.delimiter
-                break
+        except FileNotFoundError:
+            return ','
 
         return delimiter
 
-    def _get_format(self) -> OptInt:
+    def _get_header(self) -> StrList:
         # Return value if set manually
-        if self._csvformat is not None:
-            return self._csvformat
+        if self._header is not None:
+            return self._header
 
-        # Get first and second content lines (non comment, non empty) of
-        # CSV-file and determine column label format
-        lines = textfile.get_content(self._fileref, lines=2)
-        if len(lines) == 2:
-            delimiter = self.delimiter
-            if lines[0].count(delimiter) == lines[1].count(delimiter):
-                return CSV_FORMAT_RFC4180
-            if lines[0].count(delimiter) == lines[1].count(delimiter) - 1:
-                return CSV_FORMAT_RLANG
-
-        raise FileFormatError(self._fileref, 'DSV')
-
-    def _get_colnames(self) -> StrList:
-        # Return value if set manually
-        if self._colnames is not None:
-            return self._colnames
-
-        # Get first content line (non comment, non empty) of CSV-file
-        lines = textfile.get_content(self._fileref, lines=1)
+        # Get first content line (non comment, non empty) of CSV file
+        lines = textfile.get_content(self._file, lines=1)
         if len(lines) != 1:
-            raise FileFormatError(self._fileref, 'DSV')
+            raise FileFormatError(self._file, 'CSV')
 
         # Read column names from first content line
         tokens = lines[0].split(self.delimiter)
         names = [col.strip('\"\'\n\r\t ') for col in tokens]
-        if self.format == CSV_FORMAT_RFC4180:
+        if self.hformat == CSV_HFORMAT_RFC4180:
             colnames = names
-        elif self.format == CSV_FORMAT_RLANG:
+        elif self.hformat == CSV_HFORMAT_RLANG:
             if not '_name' in names:
                 colnames = ['_name'] + names
             else:
@@ -574,7 +584,7 @@ class File(attrib.Container):
                     i += 1
                 colnames = [f'_name_{i}'] + names
         else:
-            raise FileFormatError(self._fileref, 'DSV')
+            raise FileFormatError(self._file, 'CSV')
 
         # Replace empty column names by unique identifier
         while '' in colnames:
@@ -590,10 +600,27 @@ class File(attrib.Container):
 
         return colnames
 
+    def _get_hformat(self) -> OptInt:
+        # Return value if it has been set manually
+        if self._hformat is not None:
+            return self._hformat
+
+        # Get first and second content lines (non comment, non empty) of
+        # CSV file and determine column label format
+        lines = textfile.get_content(self._file, lines=2)
+        if len(lines) == 2:
+            delimiter = self.delimiter
+            if lines[0].count(delimiter) == lines[1].count(delimiter):
+                return CSV_HFORMAT_RFC4180
+            if lines[0].count(delimiter) == lines[1].count(delimiter) - 1:
+                return CSV_HFORMAT_RLANG
+
+        raise FileFormatError(self._file, 'CSV')
+
     def _get_fields(self) -> Fields:
-        colnames = self.colnames
+        colnames = self.header
         delimiter = self.delimiter
-        lines = textfile.get_content(self._fileref, lines=3)
+        lines = textfile.get_content(self._file, lines=3)
 
         # By default estimate the column types from the values of two rows and
         # add the type if the estimations are identical
@@ -610,7 +637,7 @@ class File(attrib.Container):
                 fields.append((name, str))
             return fields
 
-        # If the DSV file only contains a single row of values, estimate the
+        # If the CSV file only contains a single row of values, estimate the
         # column tyoe from the values of this row
         if len(lines) == 2:
             row = lines[1].split(delimiter)
@@ -619,18 +646,17 @@ class File(attrib.Container):
                 fields.append((name, literal.estimate(text) or str))
             return fields
 
-        raise FileFormatError(self._fileref, 'DSV')
+        raise FileFormatError(self._file, 'CSV')
 
     def _get_rownames(self) -> OptList:
-        # TODO (patrick.michl@gmail.com): Reimplement without using numpy
         # Check type of 'cols'
         lblcol = self._get_namecol()
         if lblcol is None:
             return None
-        lbllbl = self.colnames[lblcol]
+        lbllbl = self.header[lblcol]
 
-        # Import CSV-file to Numpy ndarray
-        with textfile.openx(self._fileref, mode='r') as fh:
+        # Import CSV file to Numpy ndarray
+        with textfile.openx(self._file, mode='r') as fh:
             rownames = np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
                 delimiter=self._get_delimiter(),
@@ -641,7 +667,7 @@ class File(attrib.Container):
     def _get_skiprows(self) -> int:
         # Count how many 'comment' and 'blank' rows are to be skipped
         skiprows = 1
-        with textfile.openx(self._fileref, mode='r') as fd:
+        with textfile.openx(self._file, mode='r') as fd:
             for line in fd:
                 strip = line.strip()
                 if not strip or strip.startswith('#'):
@@ -655,15 +681,18 @@ class File(attrib.Container):
         if self._namecol is not None:
             return self._namecol
 
-        # In R-tables the first column is always used for record names
-        if self.format == CSV_FORMAT_RLANG:
+        # In R-language format the first column is used for row names
+        if self.hformat == CSV_HFORMAT_RLANG:
             return 0
 
+        # TODO: Do not estimate!
+        # return None
+
         # Get first and second content lines (non comment, non empty) of
-        # CSV-file.
-        lines = textfile.get_content(self._fileref, lines=2)
+        # CSV file.
+        lines = textfile.get_content(self._file, lines=2)
         if len(lines) != 2:
-            raise FileFormatError(self._fileref, 'DSV')
+            raise FileFormatError(self._file, 'CSV')
 
         # Determine annotation column id from first value in the second line,
         # which can not be converted to a float
@@ -678,7 +707,7 @@ class File(attrib.Container):
 
     def _get_usecols(self, columns: OptStrTuple = None) -> IntTuple:
         # Get column IDs for given column names
-        colnames = self._get_colnames()
+        colnames = self._get_header()
         if not columns:
             return tuple(range(len(colnames)))
         # Check if columns exist
@@ -695,13 +724,50 @@ class File(attrib.Container):
         usefields = [fields[colid] for colid in usecols]
         fmt = self._get_fmt_params()
         return Reader(
-            self._fileref, skiprows=skiprows, usecols=usecols, fields=usefields,
+            self._file, skiprows=skiprows, usecols=usecols, fields=usefields,
             **fmt)
 
     def _open_write(self, columns: OptStrTuple = None) -> Writer:
         fmt = self._get_fmt_params()
         return Writer(
-            self._fileref, header=self.colnames, comment=self.comment, **fmt)
+            self._file, header=self.header, comment=self.comment, **fmt)
+
+#
+# Constructors
+#
+
+def save_new(
+        file: FileRef, header: Header, values: Rows, comment: OptStr = None,
+        delimiter: OptStr = None, hformat: int = 0) -> None:
+    """Save data to CSV file.
+
+    Args:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            or writing mode.
+        header: Optional list (or arbitrary iterable) of strings, that specify
+            the column names within the CSV file. For an existing file, the
+            header by default is extracted from the first content line (not
+            blank and not starting with `#`). For a new file the header is
+            required and an error is raised if the header is not given.
+        comment: Optional string, which precedes the header and the rows of the
+            CSV file, e.g. to include metadata within the file. For an existing
+            file, the string by default is extracted from the initial comment
+            lines (starting with `#`). For a new file the comment by default is
+            empty.
+        hformat:
+        delimiter: Single character, which is used to separetate the column
+            values within the CSV file. For an existing file, the delimiter by
+            default is detected from it's appearance within the file. For a new
+            file the default value is `,`.
+
+    """
+    csvfile = File(
+        file, header=header, comment=comment, hformat=hformat,
+        delimiter=delimiter)
+    csvfile.write(values)
 
 #
 # DEPRECATED
@@ -710,19 +776,19 @@ class File(attrib.Container):
 def save(
         file: FileOrPathLike, data: NpArray, header: OptHeader = None,
         comment: OptStr = None, delimiter: str = ',') -> None:
-    """Save numpy array to CSV-file.
+    """Save numpy array to CSV file.
 
     Args:
         file: String, :term:`path-like object` or :term:`file object` that
-            points to a valid CSV-file in the directory structure of the system.
+            points to a valid CSV file in the directory structure of the system.
         data: :class:`numpy.ndarray` containing the data which is to be
-            exported to a CSV-file.
-        comment: String, which is included in the CSV-file whithin initial
+            exported to a CSV file.
+        comment: String, which is included in the CSV file whithin initial
             '#' lines. By default no initial lines are created.
         header: List (or arbitrary iterable) of column names, that specify the
-            header of the CSV-file. For an existing file, the header by default
+            header of the CSV file. For an existing file, the header by default
             is extracted from the first content line of the file.
-        delimiter: String containing DSV-delimiter. The default value is ','
+        delimiter: String containing CSV delimiter. The default value is ','
 
     Returns:
         True if no error occured.
