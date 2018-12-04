@@ -4,9 +4,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import numpy
-import nemoa
-from nemoa.base import entity
+import numpy as np
+from nemoa.base import array, entity
 
 class Evaluation:
 
@@ -193,7 +192,7 @@ class Evaluation:
                 from nemoa.math import matrix
                 src = getunits(layer=kwds['mapping'][0])
                 tgt = getunits(layer=kwds['mapping'][-1])
-                return matrix.as_dict(retval, labels=(src, tgt))
+                return array.as_dict(retval, labels=(src, tgt))
         elif category == 'relation':
             if algorithm['retfmt'] == 'scalar':
 
@@ -218,7 +217,7 @@ class Evaluation:
                     from nemoa.math import matrix
                     src = getunits(layer=kwds['mapping'][0])
                     tgt = getunits(layer=kwds['mapping'][-1])
-                    retval = matrix.as_dict(retval, labels=(src, tgt))
+                    retval = array.as_dict(retval, labels=(src, tgt))
                     if not evalstat:
                         return retval
 
@@ -230,11 +229,11 @@ class Evaluation:
                         if sunit == tunit:
                             continue
                         filtered.append(retval[(src, tgt)])
-                    array = numpy.array(filtered)
-                    retval['max'] = numpy.amax(array)
-                    retval['min'] = numpy.amin(array)
-                    retval['mean'] = numpy.mean(array)
-                    retval['std'] = numpy.std(array)
+                    arr = np.array(filtered)
+                    retval['max'] = np.amax(arr)
+                    retval['min'] = np.amin(arr)
+                    retval['mean'] = np.mean(arr)
+                    retval['std'] = np.std(arr)
                     return retval
 
         raise Warning(

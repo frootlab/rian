@@ -10,7 +10,6 @@ import networkx as nx
 import numpy as np
 from nemoa.math import curve, category, graph, matrix, regression, vector
 from nemoa.test import ModuleTestCase, MathTestCase
-from nemoa.types import NaN
 
 class TestCategory(ModuleTestCase):
     """Testcase for the module nemoa.math.category."""
@@ -237,19 +236,6 @@ class TestMatrix(MathTestCase, ModuleTestCase):
     """Testcase for the module nemoa.math.matrix."""
 
     module = 'nemoa.math.matrix'
-
-    def setUp(self) -> None:
-        self.x = np.array([[NaN, 1.], [NaN, NaN]])
-        self.d = {('a', 'b'): 1.}
-        self.labels = (['a', 'b'], ['a', 'b'])
-
-    def test_from_dict(self) -> None:
-        x = matrix.from_dict(self.d, labels=self.labels)
-        self.assertTrue(np.allclose(x, self.x, equal_nan=True))
-
-    def test_as_dict(self) -> None:
-        d = matrix.as_dict(self.x, labels=self.labels)
-        self.assertEqual(d, self.d)
 
     def test_norms(self) -> None:
         norms = matrix.norms()

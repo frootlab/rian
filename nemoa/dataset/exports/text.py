@@ -58,6 +58,8 @@ class Csv:
         delimiter = self.settings['delim']
         cols, data = dataset.get('data', output=('cols', 'recarray'))
 
+        # Convert recarray to list of tuples
+
         return csv.save_old(
             path, data, header=[''] + cols, comment=comment,
             delimiter=delimiter)

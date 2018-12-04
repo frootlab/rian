@@ -9,11 +9,12 @@ __docformat__ = 'google'
 import tempfile
 import datetime
 from pathlib import Path
-from nemoa.base import entity, binary, check, env, literal, this
+import numpy as np
+from nemoa.base import array, binary, check, entity, env, literal, this
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
-from nemoa.types import OrderedDict
+from nemoa.types import OrderedDict, NaN
 
 #
 # Module Variables
@@ -24,6 +25,24 @@ osname = env.get_osname()
 #
 # Test Cases
 #
+
+class TestArray(ModuleTestCase):
+    """Testcase for the module nemoa.base.array."""
+
+    module = 'nemoa.base.array'
+
+    def setUp(self) -> None:
+        self.x = np.array([[NaN, 1.], [NaN, NaN]])
+        self.d = {('a', 'b'): 1.}
+        self.labels = (['a', 'b'], ['a', 'b'])
+
+    def test_from_dict(self) -> None:
+        x = array.from_dict(self.d, labels=self.labels)
+        self.assertTrue(np.allclose(x, self.x, equal_nan=True))
+
+    def test_as_dict(self) -> None:
+        d = array.as_dict(self.x, labels=self.labels)
+        self.assertEqual(d, self.d)
 
 class TestEntity(ModuleTestCase):
     """Testcase for the module nemoa.base.entity."""
