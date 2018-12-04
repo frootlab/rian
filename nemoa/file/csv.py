@@ -81,14 +81,12 @@ class HandlerBase(ABC):
 
     """
 
-    _fileref: FileRef
     _mode: str
     _connector: stream.Connector
     _wrapper: stream.FileWrapper
     _file: FileLike
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
-        self._fileref = file
         self._mode = mode
 
         # In reading mode open file handler from a file connector
@@ -121,16 +119,14 @@ class HandlerBase(ABC):
 
     def close(self) -> None:
         """Close the CSV file handler."""
-        # In writing mode, when closing the file wrapper alsoe all opened file
-        # handlers to the temporary file are closed, the changes are written
-        # to the original file and the temporary file is removed.
+        # In writing mode, when closing the file wrapper, also all opened file
+        # handlers to the temporary file are closed and the changes are written
+        # to the original file.
         if 'w' in self._mode:
             self._wrapper.close()
-        # In reading mode close the file handler, if it has been openen by the
-        # connector and afterwards close the connector
+        # In reading mode, when closing the file connector, also all opened file
+        # handlers to the connected file are closed
         elif 'r' in self._mode:
-            if self._connector.opened:
-                self._file.close()
             self._connector.close()
 
     @abstractmethod

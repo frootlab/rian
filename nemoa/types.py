@@ -39,9 +39,9 @@ class FileAccessorBase(ABC):
     name: str
 
     @abstractmethod
-    def open(self, *args: Any, **kwds: Any) -> io.IOBase:
+    def open(self, *args: Any, **kwds: Any) -> IO[Any]:
         raise NotImplementedError(
-            f"'type(self).__name__' requires to implement 'open'")
+            f"'type(self).__name__' is required to implement the method 'open'")
 
 ################################################################################
 # Classes
@@ -205,14 +205,14 @@ IterFileLike = Iterator[FileLike]
 CManFileLike = ContextManager[FileLike]
 
 # Binary File Like
-BytesIOLike = IO[bytes]
-IterBytesIOLike = Iterator[BytesIOLike]
-CManBytesIOLike = ContextManager[BytesIOLike]
+BinaryFileLike = IO[bytes]
+IterBinaryFileLike = Iterator[BinaryFileLike]
+CManBinaryFileLike = ContextManager[BinaryFileLike]
 
 # Text File Like
-StringIOLike = IO[str]
-IterStringIOLike = Iterator[StringIOLike]
-CManStringIOLike = ContextManager[StringIOLike]
+TextFileLike = IO[str]
+IterTextFileLike = Iterator[TextFileLike]
+CManTextFileLike = ContextManager[TextFileLike]
 
 # File References
 FileOrPathLike = Union[FileLike, PathLike]

@@ -15,7 +15,7 @@ from pathlib import Path, PurePath
 from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
 from nemoa.file import ini
-from nemoa.types import BytesIOLike, BytesLike, ClassVar
+from nemoa.types import BinaryFileLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
 from nemoa.types import PathLike, PathLikeList, Traceback
 from nemoa.types import FileLike, StrList, OptPath, Optional, ExcType, Exc
@@ -693,7 +693,7 @@ class File(attrib.Container):
         for folder in self._default_dir_layout:
             self.mkdir(folder)
 
-    def _open_read(self, path: PathLike) -> BytesIOLike:
+    def _open_read(self, path: PathLike) -> BinaryFileLike:
         # Locate workspace member by it's path
         # and open file handler for reading the file
         matches = self._locate(path)
@@ -705,7 +705,7 @@ class File(attrib.Container):
         zinfo = matches[-1]
         return self._file.open(zinfo, pwd=self._pwd, mode='r')
 
-    def _open_write(self, path: PathLike, is_dir: bool = False) -> BytesIOLike:
+    def _open_write(self, path: PathLike, is_dir: bool = False) -> BinaryFileLike:
         # Determine workspace member name from path
         # and get ZipInfo with local time as date_time
         filename = PurePath(path).as_posix()

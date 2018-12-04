@@ -15,6 +15,7 @@ from nemoa.base import env
 from nemoa.errors import PullError, PushError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef
 from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase
+from nemoa.types import BinaryFileLike, TextFileLike, IterFileLike
 
 #
 # Stream Connector Class
@@ -23,19 +24,18 @@ from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase
 class Connector:
     """File Connector Class."""
 
-    opened: bool
-
     _ref: FileRef
-    _file: io.IOBase
     _args: tuple
     _kwds: dict
+    _children: list
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
         self._ref = file
         self._args = args
         self._kwds = kwds
+        self._children = []
 
-    def __enter__(self) -> io.IOBase:
+    def __enter__(self) -> FileLike:
         return self.open(self._ref, *self._args, **self._kwds)
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
@@ -44,33 +44,38 @@ class Connector:
     def __del__(self) -> None:
         self.close()
 
-    def open(self, *args: Any, **kwds: Any) -> io.IOBase:
+    def open(self, *args: Any, **kwds: Any) -> FileLike:
         """Open file reference as file object."""
-        file = self._ref
-        if isinstance(file, (str, Path)):
-            return self._open_from_path(file, *args, **kwds)
-        if isinstance(file, io.TextIOBase):
-            return self._open_from_textfile(file, *args, **kwds)
-        if isinstance(file, io.BufferedIOBase):
-            return self._open_from_binfile(file, *args, **kwds)
-        if isinstance(file, FileAccessorBase):
-            return self._open_from_ref(file, *args, **kwds)
+        # Get file handler, depending on the type of the given file reference
+        ref = self._ref
+        if isinstance(ref, (str, Path)):
+            return self._open_from_path(ref, *args, **kwds)
+        if isinstance(ref, io.TextIOBase):
+            return self._open_from_textfile(ref, *args, **kwds)
+        if isinstance(ref, io.BufferedIOBase):
+            return self._open_from_binfile(ref, *args, **kwds)
+        if isinstance(ref, FileAccessorBase):
+            return self._open_from_accessor(ref, *args, **kwds)
+
         raise TypeError(
-            "'file' is required to be a valid file reference, "
-            f"not '{type(file).__name__}'")
+            "the referenced file is has an invalid type "
+            f"'{type(ref).__name__}'")
 
     def close(self) -> None:
-        if hasattr(self, 'opened') and self.opened:
-            self._file.close()
+        for file in self._children:
+            with contextlib.suppress(ReferenceError):
+                file.close()
 
     def _open_from_path(
-            self, path: PathLike, *args: Any, **kwds: Any) -> io.IOBase:
-        self._file = open(env.expand(path), *args, **kwds) # type: ignore
-        self.opened = True
-        return self._file
+            self, path: PathLike, *args: Any, **kwds: Any) -> FileLike:
+        # Open file handler from given file path
+        file = open(env.expand(path), *args, **kwds)
+        # Store weak reference of file handler
+        self._children.append(weakref.proxy(file))
+        return file
 
     def _open_from_textfile(
-            self, file: io.TextIOBase, mode: str = 'r') -> io.IOBase:
+            self, file: TextFileLike, mode: str = 'r') -> FileLike:
         # Check reading / writing mode
         file_mode = getattr(file, 'mode', None)
         if file_mode and file_mode not in mode:
@@ -78,17 +83,14 @@ class Connector:
             raise RuntimeError(
                 f"file '{file_name}' in mode '{file_mode}' can not be"
                 f"reopened in mode '{mode}'")
-
         # Check text / binary mode
         if 'b' in mode:
             raise RuntimeError(
                 "wrapping text streams to byte streams is not supported")
-        self._file = file
-        self.opened = False
         return file
 
     def _open_from_binfile(
-            self, file: io.BufferedIOBase, mode: str = 'r') -> io.IOBase:
+            self, file: BinaryFileLike, mode: str = 'r') -> FileLike:
         # Check reading / writing mode
         file_mode = getattr(file, 'mode', None)
         if file_mode and file_mode not in mode:
@@ -96,23 +98,17 @@ class Connector:
             raise RuntimeError(
                 f"file '{file_name}' in mode '{file_mode}' can not be "
                 f"reopened in mode '{mode}'")
+        if 'b' in mode: # binary -> binary
+            return file
+        if 'w' in mode: # binary -> text (write)
+            return io.TextIOWrapper(file, write_through=True)
+        return io.TextIOWrapper(file) # binary -> text (read)
 
-        # Check text / binary mode
-        if 'b' in mode:
-            self._file = file
-        elif 'w' in mode:
-            self._file = io.TextIOWrapper( # type: ignore
-                file, write_through=True)
-        else:
-            self._file = io.TextIOWrapper(file) # type: ignore
-        self.opened = False
-        return self._file
-
-    def _open_from_ref(
-            self, ref: FileAccessorBase, *args: Any, **kwds: Any) -> io.IOBase:
-        self._file = ref.open(*args, **kwds)
-        self.opened = True
-        return self._file
+    def _open_from_accessor(
+            self, ref: FileAccessorBase, *args: Any, **kwds: Any) -> FileLike:
+        file = ref.open(*args, **kwds)
+        self._children.append(weakref.proxy(file))
+        return file
 
 #
 # File Wrapper Class
@@ -196,8 +192,9 @@ class FileWrapper:
         """Execute push request and release bound resources."""
         if not self.path.is_file():
             return
-        for fh in self._children: # Close all opened file handlers
-            fh.close()
+        for file in self._children: # Close all opened file handlers
+            with contextlib.suppress(ReferenceError):
+                file.close()
         if 'w' in self._mode: # Copy temporary file to referenced file
             self.push()
         self.path.unlink() # Remove temporary file
@@ -208,7 +205,7 @@ class FileWrapper:
 #
 
 @contextlib.contextmanager
-def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[io.IOBase]:
+def openx(file: FileRef, *args: Any, **kwds: Any) -> IterFileLike:
     """Open file reference.
 
     This context manager extends :py:func`open` by allowing the passed `file`

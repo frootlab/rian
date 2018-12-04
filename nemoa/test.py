@@ -14,7 +14,7 @@ from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
 from nemoa.base import entity, this
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
-from nemoa.types import StringIOLike, Tuple, Dict, List, Callable, NpArray
+from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
 ################################################################################
 # Global Setting
@@ -330,7 +330,7 @@ class MathTestCase(BaseTestCase):
 #
 
 def run(
-        classinfo: ClassInfo = TestCase, stream: StringIOLike = StringIO(),
+        classinfo: ClassInfo = TestCase, stream: TextFileLike = StringIO(),
         verbosity: int = 2) -> TestResult:
     """Run all tests if given type."""
     loader = TestLoader()
