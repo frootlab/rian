@@ -120,75 +120,118 @@ class TestCsv(ModuleTestCase):
     def setUp(self) -> None:
         self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
         self.comment = '-*- coding: utf-8 -*-'
-        self.header = ('name', 'x', 'y')
+        self.header = ('name', 'id', 'value')
         self.delimiter = ','
-        self.values = [('row1', 1, 1.), ('row2', 2, 2.), ('row3', 3, 3.)]
+        self.values = [('r1', 1, 1.), ('r2', 2, 2.), ('r3', 3, 3.)]
 
-        self.data = np.array(
-            [('row1', 1.1, 1.2), ('row2', 2.1, 2.2), ('row3', 3.1, 3.2)],
-            dtype=[('label', 'U8'), ('col1', 'f8'), ('col2', 'f8')])
-        self.rownames = list(self.data['label'].flat)
-        csv.save_old(
-            self.filepath, self.data, header=self.header,
-            comment=self.comment, delimiter=self.delimiter)
-        self.file = csv.File(self.filepath)
+        # Manually Write CSV-File
+        with self.filepath.open(mode='w') as file:
+            # Write Comment
+            file.writelines([f"# {self.comment}\n\n"])
+            # Write Header
+            file.writelines([self.delimiter.join(self.header) + "\n"])
+            # Write Data
+            for row in self.values:
+                strrow = [str(token) for token in row]
+                file.writelines([self.delimiter.join(strrow) + "\n"])
 
-    def test_File(self) -> None:
+    def test_load(self) -> None:
+        with csv.load(self.filepath) as file:
+            self.assertEqual(file.delimiter, self.delimiter)
+            self.assertEqual(file.header, self.header)
+            self.assertEqual(file.comment, self.comment)
+            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+            self.assertEqual(file.read(), self.values)
+
+    def test_save(self) -> None:
         filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
-        comment = '-*- coding: utf-8 -*-'
-        header = ('name', 'id', 'value')
-        delimiter = ','
-        values: List[tuple] = [('r1', 1, 1.), ('r2', 2, 2.), ('r3', 3, 3.)]
-
-        with self.subTest(method=csv.File.__init__):
-            file = csv.File(
-                filepath, header=header, comment=comment, delimiter=delimiter)
-            self.assertIsInstance(file, csv.File)
-        with self.subTest(method=csv.File.write):
-            file.write(values)
-            self.assertTrue(filepath.is_file())
-            file.close()
-            file = csv.File(filepath)
-        with self.subTest(method=csv.File.delimiter):
-            self.assertEqual(file.delimiter, delimiter)
-        with self.subTest(method=csv.File.header):
-            self.assertEqual(file.header, header)
-        with self.subTest(method=csv.File.comment):
-            self.assertEqual(file.comment, comment)
-            file.close()
+        csv.save(
+            filepath, header=self.header, values=self.values,
+            comment=self.comment, delimiter=self.delimiter)
+        with csv.File(filepath) as file:
+            self.assertEqual(file.delimiter, self.delimiter)
+            self.assertEqual(file.header, self.header)
+            self.assertEqual(file.comment, self.comment)
+            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+            self.assertEqual(file.read(), self.values)
         filepath.unlink()
 
+    def test_File(self) -> None:
+        # TODO: Test completeness of unittest with respect to the class
+        pass
+
     def test_Reader(self) -> None:
+        # TODO: Test completeness of unittest with respect to the class
         pass
 
     def test_Writer(self) -> None:
+        # TODO: Test completeness of unittest with respect to the class
         pass
 
-    def test_save(self) -> None:
-        self.assertTrue(self.filepath.is_file())
+    def test_File_init(self) -> None:
+        with csv.File(
+            self.filepath, header=self.header, comment=self.comment,
+            delimiter=self.delimiter) as file:
+            self.assertIsInstance(file, csv.File)
 
-    def test_comment(self) -> None:
-        self.assertEqual(self.file.comment, self.comment)
+    def test_File_delimiter(self) -> None:
+        with csv.File(self.filepath) as file:
+            self.assertEqual(file.delimiter, self.delimiter)
 
-    def test_delim(self) -> None:
-        self.assertEqual(self.file.delimiter, self.delimiter)
+    def test_File_header(self) -> None:
+        with csv.File(self.filepath) as file:
+            self.assertEqual(file.header, self.header)
 
-    def test_header(self) -> None:
-        self.assertEqual(self.file.header, self.header)
+    def test_File_comment(self) -> None:
+        with csv.File(self.filepath) as file:
+            self.assertEqual(file.comment, self.comment)
 
-    def test_hformat(self) -> None:
-        self.assertEqual(self.file.hformat, csv.CSV_HFORMAT_RFC4180)
+    def test_File_hformat(self) -> None:
+        with csv.File(self.filepath) as file:
+            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
 
-    def test_rownames(self) -> None:
-        self.assertEqual(self.file.rownames, self.rownames)
+    def test_File_read(self) -> None:
+        with csv.File(self.filepath) as file:
+            self.assertEqual(file.read(), self.values)
 
-    def test_namecol(self) -> None:
-        self.assertEqual(self.file.namecol, 0)
+    def test_File_write(self) -> None:
+        filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+        with csv.File(
+            filepath, header=self.header, comment=self.comment,
+            delimiter=self.delimiter) as file:
+            file.write(self.values) # type: ignore
+        with csv.File(filepath) as file:
+            self.assertEqual(file.delimiter, self.delimiter)
+            self.assertEqual(file.header, self.header)
+            self.assertEqual(file.comment, self.comment)
+            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+            self.assertEqual(file.read(), self.values)
+        filepath.unlink()
+
+    # def test_save(self) -> None:
+    #     self.assertTrue(self.filepath.is_file())
+    #
+    # def test_comment(self) -> None:
+    #     self.assertEqual(self.file.comment, self.comment)
+    #
+    # def test_delim(self) -> None:
+    #     self.assertEqual(self.file.delimiter, self.delimiter)
+    #
+    # def test_header(self) -> None:
+    #     self.assertEqual(self.file.header, self.header)
+    #
+    # def test_hformat(self) -> None:
+    #     self.assertEqual(self.file.hformat, csv.CSV_HFORMAT_RFC4180)
+    #
+    # def test_rownames(self) -> None:
+    #     self.assertEqual(self.file.rownames, self.rownames)
+    #
+    # def test_namecol(self) -> None:
+    #     self.assertEqual(self.file.namecol, 0)
 
     def tearDown(self) -> None:
         if self.filepath.is_file():
             self.filepath.unlink()
-        pass
 
 class TestInifile(ModuleTestCase):
     """Testcase for the module nemoa.file.ini."""

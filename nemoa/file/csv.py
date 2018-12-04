@@ -408,6 +408,12 @@ class File(attrib.Container):
 
         self._namecol = namecol
 
+    def __enter__(self) -> 'File':
+        return self
+
+    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+        self.close()
+
     #
     # Public Methods
     #
@@ -743,8 +749,8 @@ class File(attrib.Container):
 #
 
 def load(
-        file: FileRef, columns: OptColumns = None,
-        delimiter: OptStr = None, hformat: OptInt = None) -> dict:
+        file: FileRef, delimiter: OptStr = None,
+        hformat: OptInt = None) -> File:
     """Load CSV file.
 
     Args:
@@ -753,22 +759,16 @@ def load(
             to a valid entry in the file system, a :class:`file accessor
             <nemoa.types.FileAccessorBase>` or an opened file object in reading
             or writing mode.
-        columns: Specifies the columns, which are return from the CSV file by
-            their respective column name. By default all columns are returned.
         delimiter: Single character, which is used to separetate the column
             values within the CSV file. By default the delimiter is detected
             from it's appearance within the file.
         hformat:
 
     Returns:
-        Dictionary with items 'comment', 'header' and 'values'
+        Instance of class :class:`nemoa.csv.File`
 
     """
-    csvfile = File(file, delimiter=delimiter, hformat=hformat)
-    return {
-        'comment': csvfile.comment,
-        'header': csvfile.header,
-        'values': csvfile.read(columns)}
+    return File(file, delimiter=delimiter, hformat=hformat)
 
 def save(
         file: FileRef, header: Header, values: Rows, comment: OptStr = None,
