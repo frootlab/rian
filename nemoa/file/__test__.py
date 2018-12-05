@@ -92,6 +92,10 @@ class TestTextfile(ModuleTestCase):
                 if not file.closed:
                     file.close()
                     self.assertTrue(text == self.text)
+        if not file.closed:
+            file.close()
+        if filepath.is_file():
+            filepath.unlink()
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())
@@ -119,55 +123,84 @@ class TestCsv(ModuleTestCase):
 
     def setUp(self) -> None:
         path = Path(tempfile.NamedTemporaryFile().name)
-        self.path_rfc = path.with_suffix('.rfc.csv')
-        self.path_rlang = path.with_suffix('.rlang.csv')
+        self.rfc_path = path.with_suffix('.csv')
+        self.rfc_header = ('name', 'id', 'value')
+        self.rfc_sep = ','
+
+        self.rlang_path = path.with_suffix('.tsv')
+        self.rlang_header = tuple(list(self.rfc_header)[1:])
+        self.rlang_sep = '\t'
+
         self.comment = '-*- coding: utf-8 -*-'
-        self.header = ('name', 'id', 'value')
-        self.delimiter = ','
         self.values = [('r1', 1, 1.), ('r2', 2, 2.), ('r3', 3, 3.)]
 
         # Manually Write RFC compliant CSV-File
-        with self.path_rfc.open(mode='w') as file:
+        with self.rfc_path.open(mode='w') as file:
             # Write Comment
             file.writelines([f"# {self.comment}\n\n"])
             # Write Header
-            file.writelines([self.delimiter.join(self.header) + "\n"])
+            file.writelines([self.rfc_sep.join(self.rfc_header) + '\n'])
             # Write Data
             for row in self.values:
                 strrow = [str(token) for token in row]
-                file.writelines([self.delimiter.join(strrow) + "\n"])
+                file.writelines([self.rfc_sep.join(strrow) + '\n'])
 
-        # Manually Write R Language compliant CSV-File
-        with self.path_rlang.open(mode='w') as file:
+        # Manually Write R Language compliant TSV-File
+        with self.rlang_path.open(mode='w') as file:
             # Write Comment
             file.writelines([f"# {self.comment}\n\n"])
             # Write Header
-            file.writelines([self.delimiter.join(list(self.header)[1:]) + "\n"])
+            file.writelines([self.rlang_sep.join(self.rlang_header) + '\n'])
             # Write Data
             for row in self.values:
                 strrow = [str(token) for token in row]
-                file.writelines([self.delimiter.join(strrow) + "\n"])
+                file.writelines([self.rlang_sep.join(strrow) + '\n'])
 
     def test_load(self) -> None:
-        with csv.load(self.path_rfc) as file:
-            self.assertEqual(file.delimiter, self.delimiter)
-            self.assertEqual(file.header, self.header)
-            self.assertEqual(file.comment, self.comment)
-            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
-            self.assertEqual(file.read(), self.values)
+        with self.subTest(format='rfc'):
+            with csv.load(self.rfc_path) as file:
+                self.assertEqual(file.delimiter, self.rfc_sep)
+                self.assertEqual(file.header, self.rfc_header)
+                self.assertEqual(file.comment, self.comment)
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+                self.assertEqual(file.namecol, None)
+                self.assertEqual(file.read(), self.values)
+        with self.subTest(format='rlang'):
+            with csv.load(self.rlang_path) as file:
+                self.assertEqual(file.delimiter, self.rlang_sep)
+                self.assertEqual(list(file.header)[1:], list(self.rlang_header))
+                self.assertEqual(file.comment, self.comment)
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RLANG)
+                self.assertEqual(file.namecol, file.header[0])
+                self.assertEqual(file.read(), self.values)
 
     def test_save(self) -> None:
-        filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
-        csv.save( # type: ignore
-            filepath, header=self.header, values=self.values,
-            comment=self.comment, delimiter=self.delimiter)
-        with csv.File(filepath) as file:
-            self.assertEqual(file.delimiter, self.delimiter)
-            self.assertEqual(file.header, self.header)
-            self.assertEqual(file.comment, self.comment)
-            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
-            self.assertEqual(file.read(), self.values)
-        filepath.unlink()
+        with self.subTest(format='rfc'):
+            filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+            csv.save( # type: ignore
+                filepath, header=self.rfc_header, values=self.values,
+                comment=self.comment, delimiter=self.rfc_sep)
+            with csv.File(filepath) as file:
+                self.assertEqual(file.delimiter, self.rfc_sep)
+                self.assertEqual(file.header, self.rfc_header)
+                self.assertEqual(file.comment, self.comment)
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+                self.assertEqual(file.namecol, None)
+                self.assertEqual(file.read(), self.values)
+            filepath.unlink()
+        with self.subTest(format='rlang'):
+            filepath = Path(tempfile.NamedTemporaryFile().name + '.tsv')
+            csv.save( # type: ignore
+                filepath, header=self.rlang_header, values=self.values,
+                comment=self.comment, delimiter=self.rlang_sep)
+            with csv.File(filepath) as file:
+                self.assertEqual(file.delimiter, self.rlang_sep)
+                self.assertEqual(list(file.header)[1:], list(self.rlang_header))
+                self.assertEqual(file.comment, self.comment)
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RLANG)
+                self.assertEqual(file.namecol, file.header[0])
+                self.assertEqual(file.read(), self.values)
+            filepath.unlink()
 
     def test_File(self) -> None:
         # TODO: Test completeness of unittest with respect to the class
@@ -182,56 +215,104 @@ class TestCsv(ModuleTestCase):
         pass
 
     def test_File_init(self) -> None:
-        with csv.File(
-            self.path_rfc, header=self.header, comment=self.comment,
-            delimiter=self.delimiter) as file:
-            self.assertIsInstance(file, csv.File)
+        with self.subTest(format='rfc'):
+            with csv.File(
+                self.rfc_path, header=self.rfc_header, comment=self.comment,
+                delimiter=self.rfc_sep) as file:
+                self.assertIsInstance(file, csv.File)
+        with self.subTest(format='rlang'):
+            with csv.File(
+                self.rlang_path, header=self.rlang_header, comment=self.comment,
+                delimiter=self.rlang_sep) as file:
+                self.assertIsInstance(file, csv.File)
 
     def test_File_delimiter(self) -> None:
-        with csv.File(self.path_rfc) as file:
-            self.assertEqual(file.delimiter, self.delimiter)
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.delimiter, self.rfc_sep)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.delimiter, self.rlang_sep)
 
     def test_File_header(self) -> None:
-        with csv.File(self.path_rfc) as file:
-            self.assertEqual(file.header, self.header)
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.header, self.rfc_header)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(list(file.header)[1:], list(self.rlang_header))
 
     def test_File_comment(self) -> None:
-        with csv.File(self.path_rfc) as file:
-            self.assertEqual(file.comment, self.comment)
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.comment, self.comment)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.comment, self.comment)
 
     def test_File_hformat(self) -> None:
-        with csv.File(self.path_rfc) as file:
-            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RLANG)
+
+    def test_File_namecol(self) -> None:
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.namecol, None)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.namecol, file.header[0])
 
     def test_File_read(self) -> None:
-        with csv.File(self.path_rfc) as file:
-            self.assertEqual(file.read(), self.values)
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.read(), self.values)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.read(), self.values)
 
     def test_File_write(self) -> None:
-        filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
-        with csv.File(
-            filepath, header=self.header, comment=self.comment,
-            delimiter=self.delimiter) as file:
-            file.write(self.values) # type: ignore
-        with csv.File(filepath) as file:
-            self.assertEqual(file.delimiter, self.delimiter)
-            self.assertEqual(file.header, self.header)
-            self.assertEqual(file.comment, self.comment)
-            self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
-            self.assertEqual(file.read(), self.values)
-        filepath.unlink()
+        with self.subTest(format='rfc'):
+            filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+            with csv.File(
+                filepath, header=self.rfc_header, comment=self.comment,
+                delimiter=self.rfc_sep) as file:
+                file.write(self.values) # type: ignore
+            with csv.File(filepath) as file:
+                self.assertEqual(file.delimiter, self.rfc_sep)
+                self.assertEqual(file.header, self.rfc_header)
+                self.assertEqual(file.comment, self.comment)
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
+                self.assertEqual(file.namecol, None)
+                self.assertEqual(file.read(), self.values)
+            filepath.unlink()
+        with self.subTest(format='rlang'):
+            filepath = Path(tempfile.NamedTemporaryFile().name + '.tsv')
+            with csv.File(
+                filepath, header=self.rlang_header, comment=self.comment,
+                delimiter=self.rlang_sep) as file:
+                file.write(self.values) # type: ignore
+            with csv.File(filepath) as file:
+                self.assertEqual(file.delimiter, self.rlang_sep)
+                self.assertEqual(list(file.header)[1:], list(self.rlang_header))
+                self.assertEqual(file.comment, self.comment)
+                self.assertEqual(file.hformat, csv.CSV_HFORMAT_RLANG)
+                self.assertEqual(file.namecol, file.header[0])
+                self.assertEqual(file.read(), self.values)
+            filepath.unlink()
 
     # def test_rownames(self) -> None:
     #     self.assertEqual(self.file.rownames, self.rownames)
     #
-    # def test_namecol(self) -> None:
-    #     self.assertEqual(self.file.namecol, 0)
 
     def tearDown(self) -> None:
-        if self.path_rfc.is_file():
-            self.path_rfc.unlink()
-        if self.path_rlang.is_file():
-            self.path_rlang.unlink()
+        if self.rfc_path.is_file():
+            self.rfc_path.unlink()
+        if self.rlang_path.is_file():
+            self.rlang_path.unlink()
 
 class TestInifile(ModuleTestCase):
     """Testcase for the module nemoa.file.ini."""

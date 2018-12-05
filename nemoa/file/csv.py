@@ -470,7 +470,7 @@ class File(attrib.Container):
             return self._delimiter
 
         # Initialize CSV Sniffer with default values
-        mincount: int = 2
+        mincount: int = 1
         maxcount: int = 100
         candidates: StrList = [',', '\t', ';', ' ', ':', '|']
         sniffer = csv.Sniffer()
@@ -480,14 +480,20 @@ class File(attrib.Container):
         # Detect delimiter
         try:
             with textfile.openx(self._file, mode='r') as fd:
-                size, probe = 0, ''
+                size = 0
+                probe = ''
+                passed_header = False
                 for line in fd:
                     # Check termination criteria
                     if size > maxcount:
                         break
-                    # Check exclusion criteria
+                    # Skip blank and comment lines
                     strip = line.strip()
                     if not strip or strip.startswith('#'):
+                        continue
+                    # Skip header
+                    if not passed_header:
+                        passed_header = True
                         continue
                     # Increase probe size
                     probe += line
