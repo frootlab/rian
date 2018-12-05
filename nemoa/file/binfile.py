@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import contextlib
 import io
 from nemoa.base import binary
-from nemoa.file import stream
+from nemoa.file import Connector
 from nemoa.types import BytesLikeOrStr
 from nemoa.types import OptInt, OptStr, FileRef, Iterator
 
@@ -51,7 +51,7 @@ def openx(file: FileRef, mode: str = 'rb') -> IterBytesIO:
         :term:`binary file` in reading or writing mode.
 
     """
-    cman = stream.Connector(file)
+    cman = Connector(file)
     if 'b' not in mode:
         mode += 'b'
     fh = cman.open(mode=mode)

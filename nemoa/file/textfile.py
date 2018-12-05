@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import contextlib
 import io
-from nemoa.file import stream
+from nemoa.file import Connector
 from nemoa.types import StrList, Iterator, FileRef
 
 #
@@ -49,7 +49,7 @@ def openx(file: FileRef, mode: str = 'rt') -> IterTextIO:
         :term:`text file` in reading or writing mode.
 
     """
-    cman = stream.Connector(file)
+    cman = Connector(file)
     if 't' not in mode:
         mode += 't'
     fh = cman.open(mode=mode)

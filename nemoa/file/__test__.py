@@ -315,10 +315,6 @@ class TestCsv(ModuleTestCase):
                 self.assertEqual(file.read(), self.values)
             filepath.unlink()
 
-    # def test_rownames(self) -> None:
-    #     self.assertEqual(self.file.rownames, self.rownames)
-    #
-
     def tearDown(self) -> None:
         if self.rfc_path.is_file():
             self.rfc_path.unlink()

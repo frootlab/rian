@@ -26,14 +26,14 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from abc import ABC, abstractmethod
+import abc
 import csv
 import contextlib
 import io
 import weakref
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError, ColumnLookupError
-from nemoa.file import stream, textfile
+from nemoa.file import Connector, FileWrapper, textfile
 from nemoa.types import OptInt, OptIntTuple, OptStr, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
@@ -62,7 +62,7 @@ CSV_HFORMAT_RLANG = 1
 # CSV file I/O Handler Base Class
 #
 
-class HandlerBase(ABC):
+class HandlerBase(abc.ABC):
     """CSV file I/O Handler Base Class.
 
     Args:
@@ -80,8 +80,8 @@ class HandlerBase(ABC):
     """
 
     _mode: str
-    _connector: stream.Connector
-    _wrapper: stream.FileWrapper
+    _connector: Connector
+    _wrapper: FileWrapper
     _file: FileLike
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
@@ -89,12 +89,12 @@ class HandlerBase(ABC):
 
         # In reading mode open file handler from a file connector
         if 'r' in mode:
-            self._connector = stream.Connector(file)
+            self._connector = Connector(file)
             self._file = self._connector.open(mode)
 
         # In writing mode open file handler from a temporary file path
         elif 'w' in mode:
-            self._wrapper = stream.FileWrapper(file, mode='w')
+            self._wrapper = FileWrapper(file, mode='w')
             self._file = self._wrapper.open(mode='w', newline='')
 
         # Check file handler
@@ -123,29 +123,29 @@ class HandlerBase(ABC):
         # handlers to the connected file are closed
         if 'r' in self._mode:
             self._connector.close()
-            
+
         # In writing mode, when closing the file wrapper, also all opened file
         # handlers to the temporary file are closed and the changes are written
         # to the original file.
         elif 'w' in self._mode:
             self._wrapper.close()
 
-    @abstractmethod
+    @abc.abstractmethod
     def read_row(self) -> tuple:
         """Read a single row from the referenced file as a tuple."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def read_rows(self) -> Rows:
         """Read multiple rows from the referenced file as a list of tuples."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def write_row(self, row: Iterable) -> None:
         """Write a single row to the referenced file from a tuple."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def write_rows(self, rows: RowsLike) -> None:
         """Write multiple rows to the referenced file from a list of tuples."""
         raise NotImplementedError()
@@ -375,8 +375,7 @@ class File(attrib.Container):
     def __init__(
             self, file: FileRef, header: OptHeader = None,
             comment: OptStr = None, delimiter: OptStr = None,
-            hformat: OptInt = None, usecols: OptIntTuple = None,
-            namecol: OptInt = None) -> None:
+            hformat: OptInt = None, namecol: OptStr = None) -> None:
         super().__init__() # Initialize attribute container
         self._file = file
         self._header = header
