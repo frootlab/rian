@@ -5,14 +5,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import importlib
-
-import numpy
-
-from nemoa.file import nplot
+import numpy as np
+from nemoa.plot import Plot, network
 
 def filetypes():
     """Get supported image filetypes."""
-    return nplot.filetypes()
+    return Plot.filetypes()
 
 def show(network, plot=None, **kwds):
 
@@ -71,7 +69,7 @@ def save(network, path=None, filetype=None, plot=None, **kwds):
 
     return path
 
-class Graph(nplot.Graph):
+class Graph(network.Graph2D):
 
     def create(self, network):
         from nemoa.math import curve, graph
@@ -107,7 +105,7 @@ class Graph(nplot.Graph):
 
         # calculate mean weight for normalization (optional)
         if bool(normalize):
-            absmean = numpy.absolute(numpy.mean(
+            absmean = np.absolute(np.mean(
                 [data['params'].get(edgeattr, 0.) \
                 for (u, v, data) in G.edges(data=True)]))
             if absmean == 0.:
@@ -121,7 +119,7 @@ class Graph(nplot.Graph):
                 continue
 
             # threshold weights (optional)
-            if bool(threshold) and threshold > numpy.absolute(weight):
+            if bool(threshold) and threshold > np.absolute(weight):
                 G.remove_edge(u, v)
                 continue
 
@@ -153,8 +151,8 @@ class Graph(nplot.Graph):
         if self._config.get('edge_sign_normalize'):
             number_of_layers = len(G.graph['params']['layer'])
             if number_of_layers % 2 == 1:
-                sign_sum = numpy.sum(
-                    [numpy.sign(G.edges[edge].get('weight', 0.))
+                sign_sum = np.sum(
+                    [np.sign(G.edges[edge].get('weight', 0.))
                     for edge in G.edges()])
                 if sign_sum < 0.:
                     for edge in G.edges():
@@ -204,7 +202,7 @@ class Graph(nplot.Graph):
         for group in sorted(groups.keys()):
             if group == '':
                 continue
-            layout = graph.get_node_layout(group)
+            layout = self.get_node_layout(group)
             group_label = layout.get('label', {
                 True: str(groupby),
                 False: 'not ' + str(groupby)}[group] \

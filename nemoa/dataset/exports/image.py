@@ -4,15 +4,16 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+import networkx as nx
+import numpy as np
 import nemoa
-import numpy
 from nemoa.base import entity
-from nemoa.file import nplot
+from nemoa.plot import Plot, heatmap, histogram, network, scatter
 
 def filetypes():
     """Get supported image filetypes."""
 
-    return nplot.filetypes()
+    return Plot.filetypes()
 
 def get_plot(dataset, func=None, plot=None, **kwds):
 
@@ -76,7 +77,7 @@ def save(dataset, path = None, filetype = None, *args, **kwds):
 
     return True
 
-class Heatmap(nplot.Heatmap):
+class Heatmap(heatmap.Heatmap):
 
     def create(self, dataset):
 
@@ -94,7 +95,7 @@ class Heatmap(nplot.Heatmap):
         # check return value
         cols  = dataset.get('columns')
         shape = (len(cols), len(cols))
-        if not isinstance(array, numpy.ndarray) or not array.shape == shape:
+        if not isinstance(array, np.ndarray) or not array.shape == shape:
             raise Warning(
                 "representation of '%s' as heatmap "
                 "is not supported." % fname)
@@ -114,7 +115,7 @@ class Heatmap(nplot.Heatmap):
         # create plot
         return self.plot(array)
 
-class Histogram(nplot.Histogram):
+class Histogram(histogram.Histogram):
 
     def create(self, dataset):
 
@@ -130,7 +131,7 @@ class Histogram(nplot.Histogram):
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
-        if not isinstance(array, numpy.ndarray):
+        if not isinstance(array, np.ndarray):
             raise Warning(
                 "representation of '%s' as histogram "
                 "is not supported." % (fname))
@@ -149,7 +150,7 @@ class Histogram(nplot.Histogram):
         # create plot
         return self.plot(data)
 
-class Scatter2D(nplot.Scatter2D):
+class Scatter2D(scatter.Scatter2D):
 
     def create(self, dataset):
 
@@ -166,7 +167,7 @@ class Scatter2D(nplot.Scatter2D):
         array = dataset.evaluate(fname, **kwds)
 
         # check return value
-        if not isinstance(array, numpy.ndarray):
+        if not isinstance(array, np.ndarray):
             raise Warning(
                 "representation of '%s' as 2d scatter plot "
                 "is not supported." % fname)
@@ -182,16 +183,9 @@ class Scatter2D(nplot.Scatter2D):
         # create plot
         return self.plot(array)
 
-class Graph(nplot.Graph):
+class Graph(network.Graph2D):
 
     def create(self, dataset):
-
-        try:
-            import networkx as nx
-        except ImportError as err:
-            raise ImportError(
-                "requires package networkx: "
-                "https://networkx.github.io") from err
 
         # set plot defaults
         self.set_default({
@@ -212,7 +206,7 @@ class Graph(nplot.Graph):
         # check if evaluation yields valid relation
         cols  = dataset.get('columns')
         shape = (len(cols), len(cols))
-        if not isinstance(array, numpy.ndarray) or not array.shape == shape:
+        if not isinstance(array, np.ndarray) or not array.shape == shape:
             raise Warning(
                 "representation of '%s' as graph "
                 "is not supported." % fname)
@@ -221,7 +215,7 @@ class Graph(nplot.Graph):
         G = nx.DiGraph(name = fname)
 
         # graph is directed if and only if relation is unsymmetric
-        G.graph['directed'] = not numpy.allclose(array, array.T)
+        G.graph['directed'] = not np.allclose(array, array.T)
 
         # add nodes with attributes
         nodes = dataset.get('columns')

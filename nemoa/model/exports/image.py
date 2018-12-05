@@ -6,15 +6,15 @@ __license__ = 'GPLv3'
 
 import importlib
 import os
-import networkx
-import numpy
+import networkx as nx
+import numpy as np
 import nemoa
 from nemoa.base import entity
-from nemoa.file import nplot
+from nemoa.plot import Plot, network, heatmap, histogram
 
 def filetypes():
     """Get supported image filetypes."""
-    return nplot.filetypes()
+    return Plot.filetypes()
 
 def save(model, path = None, filetype = None, plot = None, **kwds):
     # test if filetype is supported
@@ -100,11 +100,9 @@ def show(model, plot = None, *args, **kwds):
 
     return True
 
-class Graph(nplot.Graph):
+class Graph(network.Graph2D):
 
     def create(self, model):
-        from nemoa.math import graph
-
         # set plot defaults
         self.set_default({
             'show_legend': True,
@@ -141,9 +139,10 @@ class Graph(nplot.Graph):
             measure = self._config['measure'],
             statistics = self._config['statistics'],
             transform = self._config['transform'])
-        if not isinstance(W, dict): raise ValueError(
-            "could not create relation graph: "
-            "invalid weight relation '%s'" % rel_name)
+        if not isinstance(W, dict):
+            raise ValueError(
+                "could not create relation graph: "
+                "invalid weight relation '%s'" % rel_name)
         rel_about = model.system.get('algorithm', rel_name,
             category = ('system', 'relation', 'evaluation'))
 
@@ -193,7 +192,7 @@ class Graph(nplot.Graph):
                 for edge in edges}
 
         # create graph and set attributes
-        G = networkx.DiGraph(name = rel_about.get('name'))
+        G = nx.DiGraph(name = rel_about.get('name'))
 
         # graph is directed if and only if relation is directed
         G.graph['directed'] = rel_about.get('directed')
@@ -221,14 +220,14 @@ class Graph(nplot.Graph):
             elif issrc and not istgt: node_type = 'source'
             elif not issrc and istgt: node_type = 'target'
             else: node_type = 'isolated'
-            layout = graph.get_node_layout(node_type)
+            layout = self.get_node_layout(node_type)
             G.node[node].update(layout)
 
         # add edges with attributes
         for (u, v) in edges:
             if u == v: continue
             value = W[(u, v)]
-            weight = numpy.absolute(value / W['std'] \
+            weight = np.absolute(value / W['std'] \
                 if normalize else value)
             if signed: color = \
                 {1: 'green', 0: 'black', -1: 'red'}[S.get((u, v))]
@@ -238,7 +237,7 @@ class Graph(nplot.Graph):
 
         # normalize weights (optional)
         if normalize:
-            mean = numpy.mean([data.get('weight', 0.) \
+            mean = np.mean([data.get('weight', 0.) \
                 for (u, v, data) in G.edges(data = True)])
             for (u, v, data) in G.edges(data = True):
                 G.edges[u, v]['weight'] = data['weight'] / mean
@@ -257,7 +256,7 @@ class Graph(nplot.Graph):
         # create plot
         return self.plot(G)
 
-class Heatmap(nplot.Heatmap):
+class Heatmap(heatmap.Heatmap):
 
     def create(self, model):
 
@@ -301,7 +300,7 @@ class Heatmap(nplot.Heatmap):
                 "invalid relation '%s'!" % self._config['relation'])
 
         # convert relation dictionary to matrix
-        matrix = numpy.zeros((len(units[0]), len(units[1])))
+        matrix = np.zeros((len(units[0]), len(units[1])))
         for ni, i in enumerate(units[0]):
             for no, o in enumerate(units[1]):
                 matrix[ni, no] = R[(i, o)]
@@ -317,7 +316,7 @@ class Heatmap(nplot.Heatmap):
         # create plot
         return self.plot(matrix)
 
-class Histogram(nplot.Histogram):
+class Histogram(histogram.Histogram):
 
     def create(self, model):
 
@@ -371,7 +370,7 @@ class Histogram(nplot.Histogram):
                 "invalid evaluation '%s'!" % self._config['evaluation'])
 
         # convert evaluation dictionary to data array
-        data = numpy.array([R[pair] for pair in pairs])
+        data = np.array([R[pair] for pair in pairs])
 
         # create plot
         return self.plot(data)

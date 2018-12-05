@@ -318,9 +318,6 @@ class TestGraph(ModuleTestCase):
         nx.set_edge_attributes(self.G, {
             (1, 3): {'weight': 0.1}, (1, 4): {'weight': 0.9},
             (2, 3): {'weight': 0.9}, (2, 4): {'weight': 0.1}})
-        self.pos1 = {1: (.0, .25), 2: (.0, .75), 4: (1., .25), 3: (1., .75)}
-        self.pos2 = {1: (.25, 1.), 2: (.75, 1.), 4: (.25, .0), 3: (.75, .0)}
-        self.pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
     def test_is_directed(self) -> None:
         self.assertTrue(graph.is_directed(self.G))
@@ -335,30 +332,3 @@ class TestGraph(ModuleTestCase):
     def test_get_groups(self) -> None:
         groups = graph.get_groups(self.G, attribute='layer')
         self.assertEqual(groups, {'': [], 'i': [1, 2], 'o': [3, 4]})
-
-    def test_get_layer_layout(self) -> None:
-        layout = graph.get_layer_layout(self.G, direction='right')
-        self.assertEqual(layout, self.pos1)
-        layout = graph.get_layer_layout(self.G, direction='down')
-        self.assertEqual(layout, self.pos2)
-
-    def test_rescale_layout(self) -> None:
-        layout = graph.rescale_layout(
-            self.pos1, size=(40, 20), padding=(.2, .2, .1, .1))
-        self.assertEqual(layout, self.pos3)
-
-    def test_get_scaling_factor(self) -> None:
-        scaling = int(graph.get_scaling_factor(self.pos3))
-        self.assertEqual(scaling, 9)
-
-    def test_get_layout_normsize(self) -> None:
-        normsize = graph.get_layout_normsize(self.pos3)
-        self.assertEqual(int(normsize['node_size']), 4)
-
-    def test_get_node_layout(self) -> None:
-        color = graph.get_node_layout('observable')['color']
-        self.assertIsInstance(color, str)
-
-    def test_get_layout(self) -> None:
-        layout = graph.get_layout(self.G, 'layer', direction='right')
-        self.assertEqual(layout, self.pos1)
