@@ -35,13 +35,16 @@ from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError, ColumnLookupError
 from nemoa.file import Connector, FileWrapper, textfile
 from nemoa.types import OptInt, OptIntTuple, OptStr, StrList, List, Tuple
-from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
+from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses, Union
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
 from nemoa.types import StrDict, FileRef, Optional, FileLike, StrTuple
 
 #
 # Stuctural Types
 #
+
+OptDialectLike = Optional[Union[str, csv.Dialect]]
+OptDialect = Optional[csv.Dialect]
 
 Header = Iterable[str]
 OptHeader = Optional[Header]
@@ -169,7 +172,8 @@ class Reader(HandlerBase):
             the given CSV file. By default all columns are imported.
         fields: List (or arbitrary iterable) of field descriptors, respectively
             given by a tuple, containing a column name and a column type.
-        **kwds: :ref:`Dialects and formatting parameters<csv-fmt-params>`
+        **kwds: Formatting parameters used by :mod:`csv`. See also
+            :ref:`Dialects and formatting parameters<csv-fmt-params>`
 
     """
 
@@ -222,7 +226,8 @@ class Writer(HandlerBase):
         header: List (or arbitrary iterable) of column names, that specify the
             header of the CSV file.
         comment: Initial comment of the CSV file.
-        **kwds: :ref:`Dialects and formatting parameters<csv-fmt-params>`
+        **kwds: Formatting parameters used by :mod:`csv`. See also
+            :ref:`Dialects and formatting parameters<csv-fmt-params>`
 
     """
 
@@ -287,6 +292,10 @@ class File(attrib.Container):
             file, the string by default is extracted from the initial comment
             lines (starting with `#`). For a new file the comment by default is
             empty.
+        dialect: Optional parameter, that indicates the used CSV dialect. The
+            parameter can be given as a dialect name from the list returned by
+            the function :func:`csv.list_dialects`, or an instance of the class
+            :class:`csv.Dialect`.
         delimiter: Single character, which is used to separetate the column
             values within the CSV file. For an existing file, the delimiter by
             default is detected from it's appearance within the file. For a new
@@ -298,12 +307,26 @@ class File(attrib.Container):
             default no row names are used. For a header as used in exports of
             the `R programming language`_ by default the first column is used to
             store row names.
+        hformat: Used CSV Header format. The following formats are supported:
+            0: :RFC:`4180`:
+                The column header represents the structure of the rows.
+            1: `R programming language`_:
+                The column header does not include the first column of the rows.
+                This follows by the convention, that in the R programming
+                language the CSV export adds an extra column with row names as
+                the first column, which is omitted within the CSV header.
 
     """
 
     #
     # Public Attributes
     #
+
+    dialect: property = attrib.Virtual(fget='_get_dialect')
+    dialect.__doc__ = """
+    Readonly attribute, that indicates the used CSV dialect. The attribute is
+    given as an instance of the class :class:`csv.Dialect`.
+    """
 
     comment: property = attrib.Virtual(fget='_get_comment')
     comment.__doc__ = """
@@ -364,6 +387,7 @@ class File(attrib.Container):
     _header: property = attrib.MetaData(classinfo=(list, tuple), default=None)
     _comment: property = attrib.MetaData(classinfo=str, default=None)
     _delimiter: property = attrib.MetaData(classinfo=str, default=None)
+    _dialect: property = attrib.MetaData(default=None)
     _hformat: property = attrib.MetaData(classinfo=int, default=None)
     _namecol: property = attrib.MetaData(classinfo=str, default=None)
     _children: property = attrib.Temporary(classinfo=list)
@@ -374,12 +398,14 @@ class File(attrib.Container):
 
     def __init__(
             self, file: FileRef, header: OptHeader = None,
-            comment: OptStr = None, delimiter: OptStr = None,
-            hformat: OptInt = None, namecol: OptStr = None) -> None:
+            comment: OptStr = None, dialect: OptDialectLike = None,
+            delimiter: OptStr = None, hformat: OptInt = None,
+            namecol: OptStr = None) -> None:
         super().__init__() # Initialize attribute container
         self._file = file
         self._header = header
         self._comment = comment
+        self._dialect = dialect
         self._delimiter = delimiter
         self._hformat = hformat
         self._namecol = namecol
@@ -641,23 +667,46 @@ class File(attrib.Container):
         check.is_subset("'columns'", set(columns), 'colnames', set(colnames))
         return tuple(colnames.index(col) for col in columns)
 
+    def _get_dialect(self) -> csv.Dialect:
+        # Get default format parameters from dialect
+        attr = self._dialect
+        if attr is None:
+            dialect = csv.get_dialect('excel') # Default dialect
+        elif isinstance(attr, csv.Dialect):
+            dialect = attr # type: ignore
+        elif attr in csv.list_dialects():
+            dialect = csv.get_dialect(attr)
+        else:
+            raise ValueError(f"unkown CSV-dialect '{attr}'")
+        return dialect # type: ignore
+
     def _get_fmt_params(self) -> StrDict:
-        return {'delimiter': self.delimiter}
+        params: StrDict = {}
+        # Copy format params from dialect object
+        dialect = self.dialect
+        keys = list(filter(lambda x: not x.startswith('_'), dialect.__dir__()))
+        for key in keys:
+            params[key] = getattr(dialect, key)
+        # Update params
+        if self.delimiter:
+            params['delimiter'] = self.delimiter
+        return params
 
     def _open_read(self, columns: OptColumns = None) -> Reader:
         usecols = self._get_usecols(columns)
         skiprows = self._get_skiprows()
         fields = self.fields
         usefields = [fields[colid] for colid in usecols]
-        fmt = self._get_fmt_params()
+        fmtparams = self._get_fmt_params()
         return Reader(
             self._file, skiprows=skiprows, usecols=usecols, fields=usefields,
-            **fmt)
+            **fmtparams)
 
     def _open_write(self, columns: OptColumns = None) -> Writer:
-        fmt = self._get_fmt_params()
+        fmtparams = self._get_fmt_params()
         handler = Writer(
-            self._file, header=self.header, comment=self.comment, **fmt)
+            self._file, header=self.header, comment=self.comment,
+            **fmtparams)
         self._children.append(weakref.proxy(handler))
         return handler
 
