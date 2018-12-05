@@ -15,17 +15,18 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from distutils import sysconfig
 import fnmatch
+import getpass
+import locale
 import os
+from pathlib import Path, PurePath
+import platform
+import re
 import shutil
 import string
 import sys
-import getpass
-import locale
-import platform
-import re
-from distutils import sysconfig
-from pathlib import Path, PurePath
+import tempfile
 
 try:
     from appdirs import AppDirs
@@ -55,12 +56,12 @@ NestPath = Union[PathLike, PathLikeSeq, PathLikeSeq2, PathLikeSeq3]
 #NestPath = Sequence[Union[str, Path, 'NestPath']]
 
 #
-# Constants
+# Module variables
 #
 
-_DEFAULT_APPNAME = 'nemoa'
-_DEFAULT_APPAUTHOR = 'frootlab'
-_RECURSION_LIMIT = sys.getrecursionlimit()
+_default_appname = 'nemoa'
+_default_appauthor = 'frootlab'
+_recursion_limit = sys.getrecursionlimit()
 
 #
 # Public Module Functions
@@ -164,7 +165,6 @@ def update_vars(filepath: OptPathLike = None) -> None:
     # module attributes. By default the file of the current top level module
     # is taken. If name is not given, then use the name of the current top level
     # module.
-
     filepath = filepath or this.get_root().__file__
     text = Path(filepath).read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
@@ -201,6 +201,7 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
             :site_config_dir: Site global configuration directory
             :site_data_dir: Site global data directory
             :site_package_dir: Site global package directory
+            :site_temp_dir: Site global directory for temporary files
             :package_dir: Current package directory
             :package_data_dir: Current package data directory
         *args: Optional arguments that specify the application, as required by
@@ -281,8 +282,8 @@ def update_dirs(
     dirs['cwd'] = get_cwd()
 
     # Get application directories from appdirs
-    appname = appname or get_var('name') or _DEFAULT_APPNAME
-    appauthor = appauthor or get_var('author') or _DEFAULT_APPAUTHOR
+    appname = appname or get_var('name') or _default_appname
+    appauthor = appauthor or get_var('author') or _default_appauthor
     appdirs = AppDirs(
         appname=appname, appauthor=appauthor, version=version, **kwds)
     dirnames = [
@@ -295,12 +296,36 @@ def update_dirs(
     path = Path(sysconfig.get_python_lib(), appname)
     dirs['site_package_dir'] = path
 
+    # Tempdir from module tempfile
+    tempdir = Path(tempfile.gettempdir())
+    dirs['site_temp_dir'] = tempdir
+
     # Get current package directories from top level module
     path = Path(this.get_root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
+    dirs['package_temp_dir'] = tempdir / appname
+
+    # Create package temp dir if it does not exist
+    dirs['package_temp_dir'].mkdir(parents=True, exist_ok=True) # type: ignore
 
     globals()['_dirs'] = dirs
+
+def get_temp_file(suffix: OptStr = None) -> Path:
+    """Get path to temporary file within the package temp directory."""
+    apptemp = get_dir('package_temp_dir')
+    pathname = tempfile.NamedTemporaryFile(dir=apptemp).name
+    filepath = Path(pathname)
+    if suffix:
+        return filepath.with_suffix(suffix)
+    return filepath
+
+def get_temp_dir() -> Path:
+    """Get path to temporary file within the package temp directory."""
+    apptemp = get_dir('package_temp_dir')
+    pathname = tempfile.TemporaryDirectory(dir=apptemp).name
+    dirpath = Path(pathname)
+    return dirpath
 
 def get_encoding() -> str:
     """Get preferred encoding used for text data.
@@ -512,7 +537,7 @@ def expand(
                 del pvars[key]
             update = True
         i += 1
-        if i > _RECURSION_LIMIT:
+        if i > _recursion_limit:
             raise RecursionError('cyclic dependency in variables detected')
         path = Path(path)
 

@@ -14,7 +14,6 @@ __docformat__ = 'google'
 import contextlib
 import importlib
 import logging
-import tempfile
 import warnings
 from pathlib import Path
 from nemoa.base import attrib, env
@@ -262,7 +261,7 @@ class Logger(attrib.Container):
                 return logfile
 
         # Get temporary logfile
-        logfile = Path(tempfile.NamedTemporaryFile().name + '.log')
+        logfile = env.get_temp_file(suffix='log')
         if env.touch(logfile):
             warnings.warn(
                 f"logfile '{filepath}' is not valid: "

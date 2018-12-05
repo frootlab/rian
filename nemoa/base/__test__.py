@@ -6,7 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import tempfile
 import datetime
 from pathlib import Path
 import numpy as np
@@ -370,7 +369,8 @@ class TestEnv(ModuleTestCase):
             'user_cache_dir', 'user_config_dir', 'user_data_dir',
             'user_log_dir', 'site_config_dir', 'site_data_dir']
         self.dist_dirs = ['site_package_dir']
-        self.pkg_dirs = ['package_dir', 'package_data_dir']
+        self.pkg_dirs = ['package_dir', 'package_data_dir', 'package_temp_dir']
+        self.site_dirs = ['site_temp_dir']
         self.app_vars = [
             'name', 'author', 'version', 'license', 'encoding', 'hostname',
             'username', 'osname']
@@ -390,11 +390,15 @@ class TestEnv(ModuleTestCase):
             # TODO (patrick.michl@gmail.com): Check if root package name is in
             # str(path)
             return True
+        if dirname in self.site_dirs:
+            # Site directories can be of arbitrary structure
+            return True
         return False
 
     def is_dirs_valid(self, d: dict, appname: str, appauthor: str) -> bool:
         keys = set(
-            self.sys_dirs + self.app_dirs + self.dist_dirs + self.pkg_dirs)
+            self.sys_dirs + self.app_dirs + self.dist_dirs
+            + self.pkg_dirs + self.site_dirs)
         if not d.keys() == keys:
             return False
         for key in keys:
@@ -434,6 +438,22 @@ class TestEnv(ModuleTestCase):
                 path = Path(env.get_dir(key))
                 is_valid = self.is_dir_valid(key, path, app_name, app_author)
                 self.assertTrue(is_valid)
+
+    def test_get_temp_dir(self) -> None:
+        path = env.get_temp_dir()
+        self.assertFalse(path.exists())
+        path.mkdir()
+        self.assertTrue(path.is_dir())
+        path.rmdir()
+        self.assertFalse(path.exists())
+
+    def test_get_temp_file(self) -> None:
+        path = env.get_temp_file()
+        self.assertFalse(path.exists())
+        path.touch()
+        self.assertTrue(path.is_file())
+        path.unlink()
+        self.assertFalse(path.exists())
 
     def test_update_vars(self) -> None:
         vars_exist = hasattr(env, '_vars')
@@ -522,20 +542,20 @@ class TestEnv(ModuleTestCase):
         self.assertEqual(val, 'ext')
 
     def test_mkdir(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath = env.get_temp_dir()
         env.mkdir(dirpath)
         self.assertTrue(dirpath.is_dir())
         dirpath.rmdir()
 
     def test_is_dir(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath = env.get_temp_dir()
         dirpath.mkdir()
         self.assertTrue(env.is_dir(dirpath))
         dirpath.rmdir()
         self.assertFalse(env.is_dir(dirpath))
 
     def test_touch(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath = env.get_temp_dir()
         filepath = dirpath / 'test'
         env.touch(filepath)
         self.assertTrue(filepath.is_file())
@@ -543,7 +563,7 @@ class TestEnv(ModuleTestCase):
         dirpath.rmdir()
 
     def test_copytree(self) -> None:
-        root = Path(tempfile.TemporaryDirectory().name)
+        root = env.get_temp_dir()
         root.mkdir()
         source = root / 'source'
         source.mkdir()
@@ -562,14 +582,14 @@ class TestEnv(ModuleTestCase):
         target.rmdir()
 
     def test_is_file(self) -> None:
-        file = Path(tempfile.NamedTemporaryFile().name)
+        file = env.get_temp_dir()
         file.touch()
         self.assertTrue(env.is_file(file))
         file.unlink()
         self.assertFalse(env.is_file(file))
 
     def test_rmdir(self) -> None:
-        dirpath = Path(tempfile.TemporaryDirectory().name)
+        dirpath = env.get_temp_dir()
         dirpath.mkdir()
         env.rmdir(dirpath)
         self.assertFalse(dirpath.is_dir())

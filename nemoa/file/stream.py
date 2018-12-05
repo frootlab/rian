@@ -9,7 +9,6 @@ __docformat__ = 'google'
 import contextlib
 import io
 from pathlib import Path
-import tempfile
 import weakref
 from nemoa.base import env
 from nemoa.errors import PullError, PushError
@@ -150,7 +149,7 @@ class FileWrapper:
         self._children = []
 
         # Create temporary file
-        self.path = Path(tempfile.NamedTemporaryFile().name)
+        self.path = env.get_temp_file()
         self.path.touch()
 
         # Copy referenced file object to temporary file

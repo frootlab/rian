@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from configparser import ConfigParser
-import tempfile
 from pathlib import Path
 import numpy as np
+from nemoa.base import env
 from nemoa.file import binfile, csv, ini, textfile
 from nemoa.test import ModuleTestCase
 from nemoa.types import List
@@ -20,12 +20,12 @@ class TestBinfile(ModuleTestCase):
     module = 'nemoa.file.binfile'
 
     def setUp(self) -> None:
-        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.gz')
+        self.filepath = env.get_temp_file(suffix='.gz')
         self.data = b'eJxrYK4tZDoiGBkGT0ZqotZJzt3/AbFpXoAgyI=='
         binfile.save(self.data, self.filepath)
 
     def test_openx(self) -> None:
-        filepath = Path(tempfile.NamedTemporaryFile().name)
+        filepath = env.get_temp_file(suffix='.gz')
         with self.subTest(file=filepath):
             with binfile.openx(filepath, mode='w') as fh:
                 fh.write(self.data)
@@ -64,14 +64,14 @@ class TestTextfile(ModuleTestCase):
     module = 'nemoa.file.textfile'
 
     def setUp(self) -> None:
-        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.txt')
+        self.filepath = env.get_temp_file(suffix='.txt')
         self.comment = "comment line"
         self.content = ['first content line', 'second content line']
         self.text = f"# {self.comment}\n\n" + '\n'.join(self.content)
         textfile.save(self.text, self.filepath)
 
     def test_openx(self) -> None:
-        filepath = Path(tempfile.NamedTemporaryFile().name + '.txt')
+        filepath = env.get_temp_file(suffix='.txt')
         with self.subTest(file=filepath):
             with textfile.openx(filepath, mode='w') as fh:
                 fh.write(self.text)
@@ -122,7 +122,7 @@ class TestCsv(ModuleTestCase):
     module = 'nemoa.file.csv'
 
     def setUp(self) -> None:
-        path = Path(tempfile.NamedTemporaryFile().name)
+        path = env.get_temp_file()
         self.rfc_path = path.with_suffix('.csv')
         self.rfc_header = ('name', 'id', 'value')
         self.rfc_sep = ','
@@ -177,7 +177,7 @@ class TestCsv(ModuleTestCase):
 
     def test_save(self) -> None:
         with self.subTest(format='rfc'):
-            filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+            filepath = env.get_temp_file(suffix='.csv')
             csv.save( # type: ignore
                 filepath, header=self.rfc_header, values=self.values,
                 comment=self.comment, delimiter=self.rfc_sep)
@@ -190,7 +190,7 @@ class TestCsv(ModuleTestCase):
                 self.assertEqual(file.read(), self.values)
             filepath.unlink()
         with self.subTest(format='rlang'):
-            filepath = Path(tempfile.NamedTemporaryFile().name + '.tsv')
+            filepath = env.get_temp_file(suffix='.tsv')
             csv.save( # type: ignore
                 filepath, header=self.rlang_header, values=self.values,
                 comment=self.comment, delimiter=self.rlang_sep)
@@ -287,7 +287,7 @@ class TestCsv(ModuleTestCase):
 
     def test_File_write(self) -> None:
         with self.subTest(format='rfc'):
-            filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+            filepath = env.get_temp_file(suffix='.csv')
             with csv.File(
                 filepath, header=self.rfc_header, comment=self.comment,
                 delimiter=self.rfc_sep) as file:
@@ -301,7 +301,7 @@ class TestCsv(ModuleTestCase):
                 self.assertEqual(file.read(), self.values)
             filepath.unlink()
         with self.subTest(format='rlang'):
-            filepath = Path(tempfile.NamedTemporaryFile().name + '.tsv')
+            filepath = env.get_temp_file(suffix='.tsv')
             with csv.File(
                 filepath, header=self.rlang_header, comment=self.comment,
                 delimiter=self.rlang_sep) as file:
@@ -331,7 +331,7 @@ class TestInifile(ModuleTestCase):
     module = 'nemoa.file.ini'
 
     def setUp(self) -> None:
-        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.ini')
+        self.filepath = env.get_temp_file(suffix='.ini')
         self.comment = '-*- coding: utf-8 -*-'
         self.obj = {
             'n': {'a': 's', 'b': True, 'c': 1},
