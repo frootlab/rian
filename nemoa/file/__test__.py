@@ -118,14 +118,16 @@ class TestCsv(ModuleTestCase):
     module = 'nemoa.file.csv'
 
     def setUp(self) -> None:
-        self.filepath = Path(tempfile.NamedTemporaryFile().name + '.csv')
+        path = Path(tempfile.NamedTemporaryFile().name)
+        self.path_rfc = path.with_suffix('.rfc.csv')
+        self.path_rlang = path.with_suffix('.rlang.csv')
         self.comment = '-*- coding: utf-8 -*-'
         self.header = ('name', 'id', 'value')
         self.delimiter = ','
         self.values = [('r1', 1, 1.), ('r2', 2, 2.), ('r3', 3, 3.)]
 
-        # Manually Write CSV-File
-        with self.filepath.open(mode='w') as file:
+        # Manually Write RFC compliant CSV-File
+        with self.path_rfc.open(mode='w') as file:
             # Write Comment
             file.writelines([f"# {self.comment}\n\n"])
             # Write Header
@@ -135,8 +137,19 @@ class TestCsv(ModuleTestCase):
                 strrow = [str(token) for token in row]
                 file.writelines([self.delimiter.join(strrow) + "\n"])
 
+        # Manually Write R Language compliant CSV-File
+        with self.path_rlang.open(mode='w') as file:
+            # Write Comment
+            file.writelines([f"# {self.comment}\n\n"])
+            # Write Header
+            file.writelines([self.delimiter.join(list(self.header)[1:]) + "\n"])
+            # Write Data
+            for row in self.values:
+                strrow = [str(token) for token in row]
+                file.writelines([self.delimiter.join(strrow) + "\n"])
+
     def test_load(self) -> None:
-        with csv.load(self.filepath) as file:
+        with csv.load(self.path_rfc) as file:
             self.assertEqual(file.delimiter, self.delimiter)
             self.assertEqual(file.header, self.header)
             self.assertEqual(file.comment, self.comment)
@@ -170,28 +183,28 @@ class TestCsv(ModuleTestCase):
 
     def test_File_init(self) -> None:
         with csv.File(
-            self.filepath, header=self.header, comment=self.comment,
+            self.path_rfc, header=self.header, comment=self.comment,
             delimiter=self.delimiter) as file:
             self.assertIsInstance(file, csv.File)
 
     def test_File_delimiter(self) -> None:
-        with csv.File(self.filepath) as file:
+        with csv.File(self.path_rfc) as file:
             self.assertEqual(file.delimiter, self.delimiter)
 
     def test_File_header(self) -> None:
-        with csv.File(self.filepath) as file:
+        with csv.File(self.path_rfc) as file:
             self.assertEqual(file.header, self.header)
 
     def test_File_comment(self) -> None:
-        with csv.File(self.filepath) as file:
+        with csv.File(self.path_rfc) as file:
             self.assertEqual(file.comment, self.comment)
 
     def test_File_hformat(self) -> None:
-        with csv.File(self.filepath) as file:
+        with csv.File(self.path_rfc) as file:
             self.assertEqual(file.hformat, csv.CSV_HFORMAT_RFC4180)
 
     def test_File_read(self) -> None:
-        with csv.File(self.filepath) as file:
+        with csv.File(self.path_rfc) as file:
             self.assertEqual(file.read(), self.values)
 
     def test_File_write(self) -> None:
@@ -215,8 +228,10 @@ class TestCsv(ModuleTestCase):
     #     self.assertEqual(self.file.namecol, 0)
 
     def tearDown(self) -> None:
-        if self.filepath.is_file():
-            self.filepath.unlink()
+        if self.path_rfc.is_file():
+            self.path_rfc.unlink()
+        if self.path_rlang.is_file():
+            self.path_rlang.unlink()
 
 class TestInifile(ModuleTestCase):
     """Testcase for the module nemoa.file.ini."""

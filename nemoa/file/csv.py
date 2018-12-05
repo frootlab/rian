@@ -10,7 +10,7 @@ and basically been addressed by :PEP:`305` and the standard library module
 :mod:`csv`. The current module extends the capabilities of the standard library
 by I/O handling of :term:`file references <file reference>`, support of
 non-standard CSV headers, as used in CSV exports of the `R programming
-language`_, and automation in CSV parameter detection.
+language`_, automation in CSV parameter detection and row names.
 
 .. _delimiter-separated values format:
     https://en.wikipedia.org/wiki/Delimiter-separated_values
@@ -31,7 +31,6 @@ import csv
 import contextlib
 import io
 import numpy as np
-import os
 import weakref
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError
@@ -242,9 +241,8 @@ class Writer(HandlerBase):
     def _write_comment(self, comment: str) -> None:
         if not comment:
             return
-        lb = os.linesep
         writelines = getattr(self._file, 'writelines')
-        writelines([f'# {line}{lb}' for line in comment.splitlines()] + [lb])
+        writelines([f'# {line}\n' for line in comment.splitlines()] + ['\n'])
 
     def _write_header(self, header: Header) -> None:
         self._writer.writerow(header)
@@ -292,11 +290,13 @@ class File(attrib.Container):
             values within the CSV file. For an existing file, the delimiter by
             default is detected from it's appearance within the file. For a new
             file the default value is `,`.
-
-        usecols: Tuple with column IDs of the columns, which are imported from
-            the given CSV file. By default all columns are imported.
-        namecol: Single column ID of a column, which is used to identify row
-            names. By default the first text column is used for row names.
+        namecol: Optional column name of a column, which contains row names. If
+            a valid column is given, then the readonly attribute *rownames*
+            returns this column as a list. By default the column is infered from
+            the used header format. For a :RFC:`4180` compliant header by
+            default no row names are used. For a header as used in exports of
+            the `R programming language`_ by default the first column is used to
+            store row names.
 
     """
 
@@ -327,7 +327,7 @@ class File(attrib.Container):
     CSV Header format. The following formats are supported:
         0: :RFC:`4180`:
             The column header represents the structure of the rows.
-        1: R-Language:
+        1: `R programming language`_:
             The column header does not include the first column of the rows.
             This follows by the convention, that in the R programming language
             the CSV export adds an extra column with row names as the first
@@ -336,20 +336,23 @@ class File(attrib.Container):
 
     fields: property = attrib.Virtual(fget='_get_fields')
     fields.__doc__ = """
-    List of pairs containing the column names and the estimated or given column
-    types of the CSV file.
+    Readonly list of pairs containing the column names and the estimated or
+    given column types of the CSV file.
     """
 
     rownames: property = attrib.Virtual(fget='_get_rownames')
     rownames.__doc__ = """
-    List of strings containing row names from column with id given by namecol or
-    None, if namecol is not given.
+    Readonly list of row names extracted from the name column, given by the
+    attribute *namecol* or None, if *namecol* is not given.
     """
 
     namecol: property = attrib.Virtual(fget='_get_namecol')
     namecol.__doc__ = """
-    Index of the column of a CSV file that contains the row names. The value
-    None is used for CSV files that do not contain row names.
+    Readonly name of column, that contains the row names. By default the By
+    default the column is infered from the used header format. For a :RFC:`4180`
+    compliant header by default no row names are used. For a header as used in
+    exports of the `R programming language`_ by default the name of the first
+    column is returned.
     """
 
     #
@@ -368,11 +371,12 @@ class File(attrib.Container):
     # Events
     #
 
-    def __init__(self, file: FileRef,
-            header: OptHeader = None, comment: OptStr = None,
-            delimiter: OptStr = None, hformat: OptInt = None,
-            usecols: OptIntTuple = None, namecol: OptInt = None) -> None:
-        super().__init__()
+    def __init__(
+            self, file: FileRef, header: OptHeader = None,
+            comment: OptStr = None, delimiter: OptStr = None,
+            hformat: OptInt = None, usecols: OptIntTuple = None,
+            namecol: OptInt = None) -> None:
+        super().__init__() # Initialize attribute container
         self._file = file
         self._header = header
         self._comment = comment
@@ -592,18 +596,18 @@ class File(attrib.Container):
 
     def _get_rownames(self) -> OptList:
         # Check type of 'cols'
-        lblcol = self._get_namecol()
-        if lblcol is None:
+        namecol = self._get_namecol()
+        if namecol is None:
             return None
-        lbllbl = self.header[lblcol]
+        colid = self.header.index(namecol)
 
-        # Import CSV file to Numpy ndarray
+        # Import CSV file
         with textfile.openx(self._file, mode='r') as fh:
             rownames = np.loadtxt(fh,
                 skiprows=self._get_skiprows(),
                 delimiter=self._get_delimiter(),
-                usecols=(lblcol, ),
-                dtype={'names': (lbllbl, ), 'formats': ('<U12', )})
+                usecols=(colid, ),
+                dtype={'names': (namecol, ), 'formats': ('<U12', )})
         return [name[0] for name in rownames.flat]
 
     def _get_skiprows(self) -> int:
@@ -618,34 +622,40 @@ class File(attrib.Container):
                 break
         return skiprows
 
-    def _get_namecol(self) -> OptInt:
+    def _get_namecol(self) -> OptStr:
         # Return value if set manually
         if self._namecol is not None:
             return self._namecol
 
-        # In R-language format the first column is used for row names
+        # In RFC4180 by default no row names are used
+        if self.hformat == CSV_HFORMAT_RFC4180:
+            return None
+
+        # In R-language format by default the first column name is returned
         if self.hformat == CSV_HFORMAT_RLANG:
-            return 0
+            return self.header[0]
 
-        # TODO: Do not estimate!
-        # return None
-
-        # Get first and second content lines (non comment, non empty) of
-        # CSV file.
-        lines = textfile.get_content(self._file, lines=2)
-        if len(lines) != 2:
-            raise FileFormatError(self._file, 'CSV')
-
-        # Determine annotation column id from first value in the second line,
-        # which can not be converted to a float
-        tokens = lines[1].split(self.delimiter)
-        values = [col.strip('\"\' \n') for col in tokens]
-        for cid, val in enumerate(values):
-            try:
-                float(val)
-            except ValueError:
-                return cid
         return None
+        #
+        # # TODO: Do not estimate!
+        # # return None
+        #
+        # # Get first and second content lines (non comment, non empty) of
+        # # CSV file.
+        # lines = textfile.get_content(self._file, lines=2)
+        # if len(lines) != 2:
+        #     raise FileFormatError(self._file, 'CSV')
+        #
+        # # Determine annotation column id from first value in the second line,
+        # # which can not be converted to a float
+        # tokens = lines[1].split(self.delimiter)
+        # values = [col.strip('\"\' \n') for col in tokens]
+        # for cid, val in enumerate(values):
+        #     try:
+        #         float(val)
+        #     except ValueError:
+        #         return cid
+        # return None
 
     def _get_usecols(self, columns: OptColumns = None) -> IntTuple:
         # Get column IDs for given column names
