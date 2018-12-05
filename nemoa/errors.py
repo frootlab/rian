@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import entity
-from nemoa.types import Any, Class, FileRef, Number, Sized
+from nemoa.types import Any, Class, FileRef, Number, Sized, OptStr
 
 ################################################################################
 # Generic Application Exceptions
@@ -207,6 +207,35 @@ class ExistsError(NemoaAssert, LookupError):
 
 class NotExistsError(NemoaAssert, LookupError):
     """Raise when a non existing singleton shall be destructed."""
+
+################################################################################
+# Table Errors
+################################################################################
+
+class TableError(NemoaError):
+    """Base Exception for Table Errors."""
+
+class RowLookupError(TableError, LookupError):
+    """Row Lookup Error."""
+
+    def __init__(self, rowid: int) -> None:
+        super().__init__(f"row index {rowid} is not valid")
+
+class ColumnLookupError(TableError, LookupError):
+    """Column Lookup Error."""
+
+    def __init__(self, colname: int) -> None:
+        super().__init__(f"column name '{colname}' is not valid")
+
+class CursorModeError(TableError, LookupError):
+    """Raise when a procedure is not supported by a cursor."""
+
+    def __init__(self, mode: str, operation: OptStr = None) -> None:
+        if not operation:
+            msg = f"unknown cursor mode '{mode}'"
+        else:
+            msg = f"{operation} is not supported by {mode} cursors"
+        super().__init__(msg)
 
 ################################################################################
 # Proxy Errors

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Array functions."""
+"""Numpy array functions."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,8 +7,10 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import numpy as np
+from numpy.lib import recfunctions as nprec
 from nemoa.base import check
-from nemoa.types import StrPairDict, StrListPair, NaN, NpArray, OptList
+from nemoa.types import NpArray, NpRecArray, NpFields
+from nemoa.types import StrPairDict, StrListPair, NaN, OptList
 from nemoa.types import Number, OptNumber, List, OptStrList
 
 #
@@ -142,3 +144,29 @@ def as_tuples(x: NpArray) -> List[tuple]:
     check.has_type("argument 'x'", x, np.ndarray)
 
     return x.tolist()
+
+def add_cols(
+        base: NpRecArray, data: NpRecArray,
+        cols: NpFields = None) -> NpRecArray:
+    """Add columns from source table to target table.
+
+    Wrapper function to numpy's `rec_append_fields`_.
+
+    Args:
+        base: Numpy record array with table like data
+        data: Numpy record array storing the fields to add to the base.
+        cols: String or sequence of strings corresponding to the names of the
+            new columns. If cols is None, then all columns of the data table
+            are appended. Default: None
+
+    Returns:
+        Numpy record array containing the base array, as well as the
+        appended columns.
+
+    """
+    cols = cols or getattr(data, 'dtype').names
+    check.has_type("'cols'", cols, (tuple, str))
+    cols = list(cols) # make cols mutable
+
+    # Append fields
+    return nprec.rec_append_fields(base, cols, [data[c] for c in cols])

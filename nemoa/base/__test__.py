@@ -56,6 +56,12 @@ class TestArray(ModuleTestCase):
         x = np.array(self.tuples, dtype=dtype)
         self.assertEqual(array.as_tuples(x), self.tuples)
 
+    def test_add_cols(self) -> None:
+        src = np.array([('a'), ('b')], dtype=[('z', 'U4')])
+        tgt = np.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
+        new = array.add_cols(tgt, src, 'z')
+        self.assertEqual(new['z'][0], 'a')
+
 class TestEntity(ModuleTestCase):
     """Testcase for the module nemoa.base.entity."""
 

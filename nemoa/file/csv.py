@@ -30,13 +30,11 @@ from abc import ABC, abstractmethod
 import csv
 import contextlib
 import io
-import numpy as np
 import weakref
 from nemoa.base import attrib, check, literal
-from nemoa.errors import FileFormatError
+from nemoa.errors import FileFormatError, ColumnLookupError
 from nemoa.file import stream, textfile
-from nemoa.types import FileOrPathLike, NpArray, OptInt, OptIntTuple, ClassVar
-from nemoa.types import OptNpArray, OptStr, StrList, List, Tuple
+from nemoa.types import OptInt, OptIntTuple, OptStr, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
 from nemoa.types import StrDict, FileRef, Optional, FileLike, StrTuple
@@ -93,10 +91,12 @@ class HandlerBase(ABC):
         if 'r' in mode:
             self._connector = stream.Connector(file)
             self._file = self._connector.open(mode)
+
         # In writing mode open file handler from a temporary file path
         elif 'w' in mode:
             self._wrapper = stream.FileWrapper(file, mode='w')
             self._file = self._wrapper.open(mode='w', newline='')
+
         # Check file handler
         if not isinstance(self._file, io.TextIOBase):
             self._connector.close()
@@ -123,6 +123,7 @@ class HandlerBase(ABC):
         # handlers to the connected file are closed
         if 'r' in self._mode:
             self._connector.close()
+            
         # In writing mode, when closing the file wrapper, also all opened file
         # handlers to the temporary file are closed and the changes are written
         # to the original file.
@@ -364,7 +365,7 @@ class File(attrib.Container):
     _comment: property = attrib.MetaData(classinfo=str, default=None)
     _delimiter: property = attrib.MetaData(classinfo=str, default=None)
     _hformat: property = attrib.MetaData(classinfo=int, default=None)
-    _namecol: property = attrib.MetaData(classinfo=int, default=None)
+    _namecol: property = attrib.MetaData(classinfo=str, default=None)
     _children: property = attrib.Temporary(classinfo=list)
 
     #
@@ -469,7 +470,7 @@ class File(attrib.Container):
         if self._delimiter is not None:
             return self._delimiter
 
-        # Initialize CSV Sniffer with default values
+        # Initialize CSV sniffer with default values
         mincount: int = 1
         maxcount: int = 100
         candidates: StrList = [',', '\t', ';', ' ', ':', '|']
@@ -549,7 +550,6 @@ class File(attrib.Container):
             while f'{colname}_{i}' in colnames:
                 i += 1
             colnames[colid] = f'{colname}_{i}'
-
         return tuple(colnames)
 
     def _get_hformat(self) -> OptInt:
@@ -566,7 +566,6 @@ class File(attrib.Container):
                 return CSV_HFORMAT_RFC4180
             if lines[0].count(delimiter) == lines[1].count(delimiter) - 1:
                 return CSV_HFORMAT_RLANG
-
         raise FileFormatError(self._file, 'CSV')
 
     def _get_fields(self) -> Fields:
@@ -597,24 +596,15 @@ class File(attrib.Container):
             for name, text in zip(colnames, row):
                 fields.append((name, literal.estimate(text) or str))
             return fields
-
         raise FileFormatError(self._file, 'CSV')
 
     def _get_rownames(self) -> OptList:
-        # Check type of 'cols'
-        namecol = self._get_namecol()
+        namecol = self.namecol
         if namecol is None:
             return None
-        colid = self.header.index(namecol)
-
-        # Import CSV file
-        with textfile.openx(self._file, mode='r') as fh:
-            rownames = np.loadtxt(fh,
-                skiprows=self._get_skiprows(),
-                delimiter=self._get_delimiter(),
-                usecols=(colid, ),
-                dtype={'names': (namecol, ), 'formats': ('<U12', )})
-        return [name[0] for name in rownames.flat]
+        if not namecol in self.header:
+            raise ColumnLookupError(namecol)
+        return [col[0] for col in self.read(columns=(namecol,))]
 
     def _get_skiprows(self) -> int:
         # Count how many 'comment' and 'blank' rows are to be skipped
@@ -640,34 +630,14 @@ class File(attrib.Container):
         # In R-language format by default the first column name is returned
         if self.hformat == CSV_HFORMAT_RLANG:
             return self.header[0]
-
         return None
-        #
-        # # TODO: Do not estimate!
-        # # return None
-        #
-        # # Get first and second content lines (non comment, non empty) of
-        # # CSV file.
-        # lines = textfile.get_content(self._file, lines=2)
-        # if len(lines) != 2:
-        #     raise FileFormatError(self._file, 'CSV')
-        #
-        # # Determine annotation column id from first value in the second line,
-        # # which can not be converted to a float
-        # tokens = lines[1].split(self.delimiter)
-        # values = [col.strip('\"\' \n') for col in tokens]
-        # for cid, val in enumerate(values):
-        #     try:
-        #         float(val)
-        #     except ValueError:
-        #         return cid
-        # return None
 
     def _get_usecols(self, columns: OptColumns = None) -> IntTuple:
         # Get column IDs for given column names
         colnames = self._get_header()
         if not columns:
             return tuple(range(len(colnames)))
+
         # Check if columns exist
         check.is_subset("'columns'", set(columns), 'colnames', set(colnames))
         return tuple(colnames.index(col) for col in columns)

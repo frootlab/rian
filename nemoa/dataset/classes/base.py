@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 from typing import Any, Dict, Optional
 import numpy as np
 import nemoa
-from nemoa.base import entity, nbase
+from nemoa.base import array, entity, nbase
 from nemoa.core import log, ui
 from nemoa.math import category
 
@@ -1121,9 +1121,7 @@ class Dataset(nbase.ObjectIP):
                 type = np.recarray, dtype = dtype)
 
             if labels:
-                from nemoa.data import table as modtable
-                table_colsel = modtable.addcols(
-                    arr, self._tables[table], 'label')
+                table_colsel = array.add_cols(arr, self._tables[table], 'label')
             else:
                 table_colsel = arr
 

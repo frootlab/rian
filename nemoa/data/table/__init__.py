@@ -9,9 +9,9 @@ __docformat__ = 'google'
 from abc import ABC, abstractmethod
 import dataclasses
 import random
-from numpy.lib import recfunctions as nprf
 from nemoa.base import attrib, check, this
-from nemoa.errors import NemoaError
+from nemoa.errors import TableError, RowLookupError, ColumnLookupError
+from nemoa.errors import CursorModeError
 from nemoa.types import NpFields, NpRecArray, Tuple, Iterable
 from nemoa.types import Union, Optional, StrDict, StrTuple, Iterator, Any
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
@@ -47,35 +47,6 @@ CURSOR_MODE_FLAG_RANDOM = 0b1000
 PROXY_MODE_FLAG_CACHE = 0b0001
 PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 PROXY_MODE_FLAG_READONLY = 0b0100
-
-#
-# Exceptions
-#
-
-class TableError(NemoaError):
-    """Base Exception for Table Errors."""
-
-class RowLookupError(TableError, LookupError):
-    """Row Lookup Error."""
-
-    def __init__(self, rowid: int) -> None:
-        super().__init__(f"row index {rowid} is not valid")
-
-class ColumnLookupError(TableError, LookupError):
-    """Column Lookup Error."""
-
-    def __init__(self, colname: int) -> None:
-        super().__init__(f"column name '{colname}' is not valid")
-
-class CursorModeError(TableError, LookupError):
-    """Raise when a procedure is not supported by a cursor."""
-
-    def __init__(self, mode: str, operation: OptStr = None) -> None:
-        if not operation:
-            msg = f"unknown cursor mode '{mode}'"
-        else:
-            msg = f"{operation} is not supported by {mode} cursors"
-        super().__init__(msg)
 
 #
 # Record Base Class
@@ -766,33 +737,3 @@ def connect(module: str, *args: Any, **kwds: Any) -> Proxy:
     if not hasattr(mref, 'Table'):
         raise ConnectError("module '{module}' does not contain a 'Table' class")
     return mref.Table(*args, **kwds) # type: ignore
-
-#
-# DEPRECATED
-#
-
-def addcols(
-        base: NpRecArray, data: NpRecArray,
-        cols: NpFields = None) -> NpRecArray:
-    """Add columns from source table to target table.
-
-    Wrapper function to numpy's `rec_append_fields`_.
-
-    Args:
-        base: Numpy record array with table like data
-        data: Numpy record array storing the fields to add to the base.
-        cols: String or sequence of strings corresponding to the names of the
-            new columns. If cols is None, then all columns of the data table
-            are appended. Default: None
-
-    Returns:
-        Numpy record array containing the base array, as well as the
-        appended columns.
-
-    """
-    cols = cols or getattr(data, 'dtype').names
-    check.has_type("'cols'", cols, (tuple, str))
-    cols = list(cols) # make cols mutable
-
-    # Append fields
-    return nprf.rec_append_fields(base, cols, [data[c] for c in cols])

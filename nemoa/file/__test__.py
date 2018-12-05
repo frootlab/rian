@@ -133,6 +133,7 @@ class TestCsv(ModuleTestCase):
 
         self.comment = '-*- coding: utf-8 -*-'
         self.values = [('r1', 1, 1.), ('r2', 2, 2.), ('r3', 3, 3.)]
+        self.rownames = [col[0] for col in self.values]
 
         # Manually Write RFC compliant CSV-File
         with self.rfc_path.open(mode='w') as file:
@@ -273,6 +274,16 @@ class TestCsv(ModuleTestCase):
         with self.subTest(format='rlang'):
             with csv.File(self.rlang_path) as file:
                 self.assertEqual(file.read(), self.values)
+
+    def test_File_rownames(self) -> None:
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.rownames, None)
+            with csv.File(self.rfc_path, namecol='name') as file:
+                self.assertEqual(file.rownames, self.rownames)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.rownames, self.rownames)
 
     def test_File_write(self) -> None:
         with self.subTest(format='rfc'):
