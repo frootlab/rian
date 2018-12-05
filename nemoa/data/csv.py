@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import attrib
-from nemoa.data import table
+from nemoa.data import Proxy
 from nemoa.file import csv
 from nemoa.types import FileRef, Any
 
@@ -15,7 +15,7 @@ from nemoa.types import FileRef, Any
 # Classes
 #
 
-class Table(table.Proxy):
+class Table(Proxy):
     """CSV-Table Proxy."""
 
     _file: property = attrib.Temporary(classinfo=csv.File)

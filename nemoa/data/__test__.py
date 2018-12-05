@@ -7,9 +7,3 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.test import ModuleTestCase
-from nemoa.data import table
-
-class TestTable(ModuleTestCase):
-    """Testcase for the module nemoa.data.table."""
-
-    module = 'nemoa.data.table'
