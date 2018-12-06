@@ -428,11 +428,11 @@ class Table(attrib.Container):
             self._name = name
         if fields:
             self._create_header(fields)
-        self._metadata = {}
-        self._metadata_proxy = MappingProxy(self._metadata)
         if metadata:
             check.has_type("'metadata'", metadata, Mapping)
-            self._metadata.update(metadata)
+            self._set_metadata(metadata)
+        else:
+            self._set_metadata({})
 
     def __iter__(self) -> Iterator:
         self._iter_index = iter(self._index)
@@ -491,6 +491,14 @@ class Table(attrib.Container):
 
         # Flush diff table
         self._diff = [None] * len(self._store)
+
+    def get_metadata(self, key: str) -> Any:
+        """ """
+        return self.metadata[key]
+
+    def set_metadata(self, key: str, val: Any) -> None:
+        """ """
+        self._metadata[key] = val
 
     def get_cursor(
             self, predicate: OptCallable = None, mapper: OptCallable = None,
@@ -663,6 +671,10 @@ class Table(attrib.Container):
 
     def _remove_row_id(self, rowid: int) -> None:
         self._index.remove(rowid)
+
+    def _set_metadata(self, mapping: Mapping) -> None:
+        self._metadata = mapping
+        self._metadata_proxy = MappingProxy(self._metadata)
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
         row = self.get_row(rowid)
