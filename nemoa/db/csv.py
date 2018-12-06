@@ -56,7 +56,7 @@ class Table(table.ProxyBase):
     def pull(self) -> None:
         """Pull all rows from CSV-File."""
         comment = self._file.comment
-        mapping = ini.decode(comment, flat=True)
+        mapping = ini.decode(comment, flat=True, autocast=True)
         self._metadata.update(mapping)
         self.name = self._file.name
         rows = self._file.read()
