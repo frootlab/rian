@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from nemoa.base import check
 from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
-from nemoa.types import Any, Date, OptClassInfo, Optional, OptCallable
+from nemoa.types import Any, Date, OptClassInfo, Optional
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 from nemoa.types import OptDict, OptBool, Union, Callable, CallableClasses
 
@@ -150,15 +150,15 @@ class Attribute(property):
         * Aggregation of attributes by *category* names
 
     Args:
-        fget: Callable or String, which points to a valid Method of the
-            underlying Attribute Group, which is used as the accessor method
-            of the attribute.
-        fset: Callable or String, which points to a valid Method of the
-            underlying Attribute Group, which is used as the mutator method
-            of the attribute.
-        fdel: Callable or String, which points to a valid Method of the
-            underlying Attribute Group, which is used as the destructor method
-            of the attribute.
+        fget: Accessor method of the attribute. If provided, it must be a
+            callable or a string, that references a valid Method of the
+            underlying Attribute Group.
+        fset: Mutator method of the attribute. If provided, it must be a
+            callable or a string, that references a valid Method of the
+            underlying Attribute Group.
+        fdel: Destructor method of the attribute. If provided, it must be a
+            callable or a string, that references a valid Method of the
+            underlying Attribute Group.
         doc: Docstring of the Attribute, which is retained throughout the
             runtime of the application. For more information and convention
             see :PEP:`257`.
@@ -169,10 +169,11 @@ class Attribute(property):
             type checking is disabed.
         default: Default value, which is returned for a get request to an unset
             field. By default None is returned.
-        default_factory: If provided, it must be a zero-argument callable that
-            will be called when a default value is needed for this field. Among
-            other purposes, this can be used to specify fields with mutable
-            default values.
+        factory: Default method of the attribute. If provided, it must be a
+            callable or a string, that references a valid method of the
+            underlying Attribute Group. This method is called, when a default
+            value is required for the field. Among other purposes, this can be
+            used to specify fields with mutable default values.
         binddict: Name of dictionary or other mapping object used to store
             the Attribute. By the default value None, the dictionary
             :py:attr:`~object.__dict__` is used.
@@ -211,7 +212,7 @@ class Attribute(property):
     classinfo: OptClassInfo
     readonly: bool
     default: Any
-    default_factory: OptCallable
+    factory: OptCallOrStr
     binddict: OptStr
     bindkey: OptStr
     inherit: bool
@@ -226,7 +227,7 @@ class Attribute(property):
             fget: OptCallOrStr = None, fset: OptCallOrStr = None,
             fdel: OptCallOrStr = None, doc: OptStr = None,
             classinfo: OptClassInfo = None, readonly: bool = False,
-            default: Any = None, default_factory: OptCallable = None,
+            default: Any = None, factory: OptCallOrStr = None,
             binddict: OptStr = None, bindkey: OptStr = None,
             remote: bool = False, inherit: bool = False,
             category: OptStr = None) -> None:
@@ -254,7 +255,7 @@ class Attribute(property):
         self.sdel = fdel if isinstance(fdel, str) else None
         self.classinfo = classinfo
         self.default = default
-        self.default_factory = default_factory
+        self.factory = factory
         self.readonly = readonly
         self.binddict = binddict
         self.bindkey = bindkey
@@ -276,8 +277,11 @@ class Attribute(property):
             return getattr(obj, self.sget, void)()
         binddict = self._get_bindict(obj)
         bindkey = self._get_bindkey(obj)
-        default = self._get_default(obj)
-        return binddict.get(bindkey, default)
+        try:
+            return binddict[bindkey]
+        except KeyError:
+            pass
+        return self._get_default(obj)
 
     def __set__(self, obj: Group, val: Any) -> None:
         """Bypass and type check set request."""
@@ -328,9 +332,12 @@ class Attribute(property):
             if parent and hasattr(parent, self.name):
                 return getattr(parent, self.name)
 
-        # Get default value from factory
-        if callable(self.default_factory):
-            return self.default_factory()
+        # Get default value from default factory
+        if isinstance(self.factory, str):
+            if hasattr(obj, self.factory):
+                return getattr(obj, self.factory)()
+        elif callable(self.factory):
+            return self.factory()
 
         return self.default
 
@@ -787,7 +794,7 @@ class DCGroup(Group):
     """
 
     date: property = DCAttr(
-        classinfo=Date, default_factory=Date.now, category='instantiation')
+        classinfo=Date, factory=Date.now, category='instantiation')
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of

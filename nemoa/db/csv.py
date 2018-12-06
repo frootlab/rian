@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from nemoa.base import attrib
 from nemoa.db import table
-from nemoa.io import csv
+from nemoa.io import csv, ini
 from nemoa.types import FileRef, Any
 
 #
@@ -33,6 +33,7 @@ class Table(table.ProxyBase):
         super().__init__() # Initialize table proxy
         self._file = csv.File(file, *args, **kwds) # Open CSV-formatted file
         self._create_header(self._file.fields) # Create header
+        self._name = self._file.name
         self._post_init() # Run post init hook
 
     def pull(self) -> None:
@@ -55,6 +56,9 @@ class Table(table.ProxyBase):
         #         'labelformat': str}
         #
         #     config = ini.decode(comment, flat=True, structure=structure)
+        comment = self._file.comment
+        mapping = ini.decode(comment, flat=True)
+        self._metadata.update(mapping)
         self.name = self._file.name
         rows = self._file.read()
         self.append_rows(rows)
@@ -62,6 +66,8 @@ class Table(table.ProxyBase):
     def push(self) -> None:
         """Push all rows to CSV-File."""
         # TODO: Also push metadata to file
+        comment = ini.encode(self.metadata, flat=True)
+        self._file.comment = comment
         rows = self.select()
         self._file.write(rows)
 

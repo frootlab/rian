@@ -29,8 +29,8 @@ __docformat__ = 'google'
 import abc
 import csv
 import contextlib
+import collections
 import io
-from pathlib import Path
 import weakref
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError, ColumnLookupError
@@ -50,6 +50,7 @@ mime = "text/csv"
 # Stuctural Types
 #
 
+IterableClass = collections.abc.Iterable
 OptDialectLike = Optional[Union[str, csv.Dialect]]
 OptDialect = Optional[csv.Dialect]
 Header = Iterable[str]
@@ -331,25 +332,36 @@ class File(attrib.Container):
     name: property = attrib.Virtual(fget='_get_name')
     name.__doc__ = "Name of the given CSV file."
 
-    comment: property = attrib.Virtual(fget='_get_comment')
+    # TODO: implement by default factory:
+    comment: property = attrib.MetaData(classinfo=str, factory='_get_comment')
     comment.__doc__ = """
     String containing the initial '#' lines of the CSV file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delimiter: property = attrib.Virtual(fget='_get_delimiter')
+    delimiter: property = attrib.MetaData(
+        classinfo=str, factory='_get_delimiter')
     delimiter.__doc__ = """
     Delimiter character of the CSV file or None, if for an existing file the
     delimiter could not be detected.
     """
 
-    header: property = attrib.Virtual(fget='_get_header')
+    namecol: property = attrib.MetaData(classinfo=str, factory='_get_namecol')
+    namecol.__doc__ = """
+    Readonly name of column, that contains the row names. By default the column
+    is infered from the used header format. For a :RFC:`4180` compliant header
+    by default no row names are used. For a header as used in exports of the `R
+    programming language`_ by default the name of the first column is returned.
+    """
+
+    header: property = attrib.MetaData(
+        classinfo=IterableClass, factory='_get_header')
     header.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV file.
     """
 
-    hformat: property = attrib.Virtual(fget='_get_hformat')
+    hformat: property = attrib.MetaData(classinfo=int, factory='_get_hformat')
     hformat.__doc__ = """
     CSV Header format. The following formats are supported:
         0: :RFC:`4180`:
@@ -363,23 +375,14 @@ class File(attrib.Container):
 
     fields: property = attrib.Virtual(fget='_get_fields')
     fields.__doc__ = """
-    Readonly list of pairs containing the column names and the estimated or
-    given column types of the CSV file.
+    Readonly list of pairs containing the column names and the estimated (or
+    given) column types of the CSV file.
     """
 
     rownames: property = attrib.Virtual(fget='_get_rownames')
     rownames.__doc__ = """
     Readonly list of row names extracted from the name column, given by the
     attribute *namecol* or None, if *namecol* is not given.
-    """
-
-    namecol: property = attrib.Virtual(fget='_get_namecol')
-    namecol.__doc__ = """
-    Readonly name of column, that contains the row names. By default the By
-    default the column is infered from the used header format. For a :RFC:`4180`
-    compliant header by default no row names are used. For a header as used in
-    exports of the `R programming language`_ by default the name of the first
-    column is returned.
     """
 
     dialect: property = attrib.Virtual(fget='_get_dialect')
@@ -392,14 +395,9 @@ class File(attrib.Container):
     # Protected Attributes
     #
 
-    _file: property = attrib.Content(classinfo=FileRefClasses)
-    _header: property = attrib.MetaData(classinfo=(list, tuple), default=None)
-    _comment: property = attrib.MetaData(classinfo=str, default=None)
-    _delimiter: property = attrib.MetaData(classinfo=str, default=None)
-    _dialect: property = attrib.MetaData(default=None)
-    _hformat: property = attrib.MetaData(classinfo=int, default=None)
-    _namecol: property = attrib.MetaData(classinfo=str, default=None)
+    _file: property = attrib.Temporary(classinfo=FileRefClasses)
     _children: property = attrib.Temporary(classinfo=list)
+    _dialect: property = attrib.MetaData(default=None)
 
     #
     # Events
@@ -408,16 +406,21 @@ class File(attrib.Container):
     def __init__(
             self, file: FileRef, header: OptHeader = None,
             comment: OptStr = None, dialect: OptDialectLike = None,
-            delimiter: OptStr = None, hformat: OptInt = None,
-            namecol: OptStr = None) -> None:
+            delimiter: OptStr = None, namecol: OptStr = None,
+            hformat: OptInt = None) -> None:
         super().__init__() # Initialize attribute container
         self._file = file
-        self._header = header
-        self._comment = comment
+        if header:
+            self.header = header
+        if comment:
+            self.comment = comment
+        if delimiter:
+            self.delimiter = delimiter
+        if namecol:
+            self.namecol = namecol
+        if hformat:
+            self.hformat = hformat
         self._dialect = dialect
-        self._delimiter = delimiter
-        self._hformat = hformat
-        self._namecol = namecol
         self._children = []
 
     def __enter__(self) -> 'File':
@@ -497,16 +500,9 @@ class File(attrib.Container):
         return plain.get_name(self._file)
 
     def _get_comment(self) -> str:
-        # Return comment if set manually
-        if self._comment is not None:
-            return self._comment
         return plain.get_comment(self._file)
 
     def _get_delimiter(self) -> OptStr:
-        # Return delimiter if set manually
-        if self._delimiter is not None:
-            return self._delimiter
-
         # Initialize CSV sniffer with default values
         mincount: int = 1
         maxcount: int = 100
@@ -551,10 +547,6 @@ class File(attrib.Container):
         return delimiter
 
     def _get_header(self) -> StrTuple:
-        # Return value if set manually
-        if self._header is not None:
-            return self._header
-
         # Get first content line (non comment, non empty) of CSV file
         lines = plain.get_content(self._file, lines=1)
         if len(lines) != 1:
@@ -590,10 +582,6 @@ class File(attrib.Container):
         return tuple(colnames)
 
     def _get_hformat(self) -> OptInt:
-        # Return value if it has been set manually
-        if self._hformat is not None:
-            return self._hformat
-
         # Get first and second content lines (non comment, non empty) of
         # CSV file and determine column label format
         lines = plain.get_content(self._file, lines=2)
@@ -656,10 +644,6 @@ class File(attrib.Container):
         return skiprows
 
     def _get_namecol(self) -> OptStr:
-        # Return value if set manually
-        if self._namecol is not None:
-            return self._namecol
-
         # In RFC4180 by default no row names are used
         if self.hformat == CSV_HFORMAT_RFC4180:
             return None
@@ -671,7 +655,7 @@ class File(attrib.Container):
 
     def _get_usecols(self, columns: OptColumns = None) -> IntTuple:
         # Get column IDs for given column names
-        colnames = self._get_header()
+        colnames = self.header
         if not columns:
             return tuple(range(len(colnames)))
 
