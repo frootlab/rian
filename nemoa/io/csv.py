@@ -34,7 +34,7 @@ from pathlib import Path
 import weakref
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError, ColumnLookupError
-from nemoa.io import FileConnector, FileBuffer, plain
+from nemoa.io import FileConnector, FileProxy, plain
 from nemoa.types import OptInt, OptIntTuple, OptStr, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses, Union
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
@@ -90,7 +90,7 @@ class HandlerBase(abc.ABC):
 
     _mode: str
     _connector: FileConnector
-    _buffer: FileBuffer
+    _proxy: FileProxy
     _file: FileLike
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
@@ -103,8 +103,8 @@ class HandlerBase(abc.ABC):
 
         # In writing mode use a buffer
         elif 'w' in mode:
-            self._buffer = FileBuffer(file, mode='w')
-            self._file = self._buffer.open(mode='w', newline='')
+            self._proxy = FileProxy(file, mode='w')
+            self._file = self._proxy.open(mode='w', newline='')
 
         # Check file handler
         if not isinstance(self._file, io.TextIOBase):
@@ -137,7 +137,7 @@ class HandlerBase(abc.ABC):
         # handlers to the temporary file are closed and the changes are written
         # to the original file.
         elif 'w' in self._mode:
-            self._buffer.close()
+            self._proxy.close()
 
     @abc.abstractmethod
     def read_row(self) -> tuple:

@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import abc
 import random
 import dataclasses
-from nemoa.base import attrib, check, this
+from nemoa.base import attrib, check, pattern, this
 from nemoa.errors import TableError, RowLookupError
 from nemoa.errors import CursorModeError, ProxyError, ConnectError
 from nemoa.types import Tuple, Iterable, Union, Optional, StrDict, StrTuple
@@ -662,10 +662,10 @@ class Table(attrib.Container):
         self._diff[rowid] = new_row
 
 #
-# Proxy Base Class
+# Table Proxy Base Class
 #
 
-class Proxy(Table, abc.ABC):
+class TableProxyBase(Table, pattern.Proxy, metaclass=abc.ABCMeta):
     """Table Proxy Base Class."""
 
     _proxy_mode: property = attrib.MetaData(classinfo=int, default=1)
@@ -709,21 +709,21 @@ class Proxy(Table, abc.ABC):
         super().commit()
         self.push()
 
-    @abc.abstractmethod
-    def pull(self) -> None:
-        """Pull rows from source table."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def push(self) -> None:
-        """Push changes to source table."""
-        raise NotImplementedError()
+    # @abc.abstractmethod
+    # def pull(self) -> None:
+    #     """Pull rows from source table."""
+    #     raise NotImplementedError()
+    #
+    # @abc.abstractmethod
+    # def push(self) -> None:
+    #     """Push changes to source table."""
+    #     raise NotImplementedError()
 
 #
 # Constructors
 #
 
-def connect(module: str, *args: Any, **kwds: Any) -> Proxy:
+def connect(module: str, *args: Any, **kwds: Any) -> TableProxyBase:
     """Connect Table Proxy
 
     Args:
@@ -737,6 +737,7 @@ def connect(module: str, *args: Any, **kwds: Any) -> Proxy:
     mref = this.get_submodule(module)
     if not isinstance(mref, Module):
         raise ConnectError("module '{module}' does not exist")
-    if not hasattr(mref, 'Table'):
-        raise ConnectError("module '{module}' does not contain a 'Table' class")
-    return mref.Table(*args, **kwds) # type: ignore
+    if not hasattr(mref, 'TableProxy'):
+        raise ConnectError(
+            "module '{module}' does not contain a 'TableProxy' class")
+    return mref.TableProxy(*args, **kwds) # type: ignore

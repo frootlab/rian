@@ -10,7 +10,7 @@ import contextlib
 import io
 from pathlib import Path
 import weakref
-from nemoa.base import env
+from nemoa.base import env, pattern
 from nemoa.errors import PullError, PushError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
 from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase
@@ -158,10 +158,10 @@ class FileConnector:
         return getattr(ref, 'name', None)
 
 #
-# File Wrapper Class
+# File Proxy Class
 #
 
-class FileBuffer:
+class FileProxy(pattern.Proxy):
     """File buffer for referenced files.
 
     Creates a temporary file within the :func:`tempdir <tempfile.gettempdir>` of
@@ -180,7 +180,7 @@ class FileBuffer:
             otherwise any pull-request raises a
             :class:`~nemoa.errors.PullError`. If mode contains the character
             'w', then a :meth:`.push`-request is executed when closing the
-            FileBuffer ibtance with :meth:`.close`, otherwise any push-request
+            FileProxy instance with :meth:`.close`, otherwise any push-request
             raises a :class:`~nemoa.errors.PushError`. The default mode is 'rw'.
 
     """
@@ -315,7 +315,7 @@ def tmpfile(file: FileRef) -> Iterator[Path]:
 
     """
     try:
-        buffer = FileBuffer(file)
-        yield buffer.path
+        proxy = FileProxy(file)
+        yield proxy.path
     finally:
-        buffer.close()
+        proxy.close()
