@@ -252,3 +252,6 @@ class PullError(ProxyError):
 
 class ConnectError(ProxyError):
     """Raises when a proxy connection can not be established."""
+
+class DisconnectError(ProxyError):
+    """Raises when a proxy connection can not be closed."""

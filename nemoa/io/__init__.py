@@ -11,7 +11,7 @@ import io
 from pathlib import Path
 import weakref
 from nemoa.base import env, pattern
-from nemoa.errors import PullError, PushError
+from nemoa.errors import PullError, PushError, ConnectError, DisconnectError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
 from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase
 from nemoa.types import BinaryFileLike, TextFileLike, IterFileLike
@@ -194,13 +194,16 @@ class FileProxy(pattern.Proxy):
         """Initialize temporary file."""
         super().__init__()
 
-        self._connector = FileConnector(file)
         self._mode = mode
         self._children = []
+        self._connected = False
 
         # Create temporary file
         self._path = env.get_temp_file()
         self._path.touch()
+
+        # Connect
+        self.connect(file)
 
         # Copy referenced file object to temporary file
         if 'r' in self._mode:
@@ -219,23 +222,19 @@ class FileProxy(pattern.Proxy):
         """Path to the temporary file in use."""
         return self._path
 
-    def open(self, *args: Any, **kwds: Any) -> FileLike:
-        """Open file handler to temporary file."""
-        # Open file handler to temporary file path
-        file = self.path.open(*args, **kwds)
-        # Store weak reference of file handler
-        self._children.append(weakref.proxy(file))
-        return file
+    def connect(self, file: FileRef) -> None: # type: ignore
+        """Connect to given file reference."""
+        if self._connected:
+            raise ConnectError("the connection already has been established")
+        self._connector = FileConnector(file)
+        self._connected = True
 
-    def pull(self) -> None:
-        """Copy referenced file object to temporary file."""
-        if 'r' not in self._mode:
-            raise PullError(
-                "file wrappers in writing mode do not support pull requests")
-        with self._connector.open(mode='r') as src:
-            lines = src.readlines()
-        with self.path.open(mode='w') as tgt:
-            tgt.writelines(lines)
+    def disconnect(self) -> None:
+        """Close connection to referenced file."""
+        if not self._connected:
+            raise DisconnectError("the proxy has not yet been connected")
+        self._connector.close()
+        self._connected = False
 
     def push(self) -> None:
         """Copy temporary file to referenced file object."""
@@ -247,6 +246,24 @@ class FileProxy(pattern.Proxy):
         with self._connector.open(mode='w') as tgt:
             tgt.writelines(lines)
 
+    def pull(self) -> None:
+        """Copy referenced file object to temporary file."""
+        if 'r' not in self._mode:
+            raise PullError(
+                "file wrappers in writing mode do not support pull requests")
+        with self._connector.open(mode='r') as src:
+            lines = src.readlines()
+        with self.path.open(mode='w') as tgt:
+            tgt.writelines(lines)
+
+    def open(self, *args: Any, **kwds: Any) -> FileLike:
+        """Open file handler to temporary file."""
+        # Open file handler to temporary file path
+        file = self.path.open(*args, **kwds)
+        # Store weak reference of file handler
+        self._children.append(weakref.proxy(file))
+        return file
+
     def close(self) -> None:
         """Execute push request and release bound resources."""
         if not self.path.is_file():
@@ -257,8 +274,7 @@ class FileProxy(pattern.Proxy):
         if 'w' in self._mode: # Copy temporary file to referenced file
             self.push()
         self.path.unlink() # Remove temporary file
-        self._connector.close() # Close connector
-
+        self.disconnect() # Close connection
 
 #
 # Constructors

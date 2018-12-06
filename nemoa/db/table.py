@@ -692,8 +692,8 @@ class ProxyBase(Table, pattern.Proxy):
             **kwds:
 
         """
-        # Initialize Table
-        super().__init__(*args, **kwds)
+        pattern.Proxy.__init__(self) # Init Proxy
+        Table.__init__(self, *args, **kwds) # Init Table
 
         # Set default proxy mode
         if proxy_mode is None:

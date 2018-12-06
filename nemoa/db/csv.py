@@ -9,7 +9,8 @@ __docformat__ = 'google'
 from nemoa.base import attrib
 from nemoa.db import table
 from nemoa.io import csv, ini
-from nemoa.types import FileRef, Any
+from nemoa.types import Any, FileRef, FileRefClasses
+from nemoa.errors import ConnectError, DisconnectError
 
 #
 # Classes
@@ -18,6 +19,7 @@ from nemoa.types import FileRef, Any
 class Table(table.ProxyBase):
     """CSV-Table Proxy."""
 
+    _fileref: property = attrib.Temporary(classinfo=FileRefClasses)
     _file: property = attrib.Temporary(classinfo=csv.File)
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
@@ -31,31 +33,28 @@ class Table(table.ProxyBase):
 
         """
         super().__init__() # Initialize table proxy
+        self.connect(file, *args, **kwds) # Connect CSV File
+        self._post_init() # Run post init hook
+
+    def connect( # type: ignore
+            self, file: FileRef, *args: Any, **kwds: Any) -> None:
+        """Connect to given file reference."""
+        if self._connected:
+            raise ConnectError("the connection already has been established")
         self._file = csv.File(file, *args, **kwds) # Open CSV-formatted file
         self._create_header(self._file.fields) # Create header
         self._name = self._file.name
-        self._post_init() # Run post init hook
+        self._connected = True
+
+    def disconnect(self) -> None:
+        """Close connection to referenced file."""
+        if not self._connected:
+            raise DisconnectError("the proxy has not yet been connected")
+        self._file.close()
+        self._connected = False
 
     def pull(self) -> None:
         """Pull all rows from CSV-File."""
-        # TODO: Also pull metadata from file
-        # comment = self._file.comment
-        # structure = self._get_attr_types(category='...')
-        #     structure = {
-        #         'name': str,
-        #         'branch': str,
-        #         'version': int,
-        #         'about': str,
-        #         'author': str,
-        #         'email': str,
-        #         'license': str,
-        #         'filetype': str,
-        #         'application': str,
-        #         'preprocessing': dict,
-        #         'type': str,
-        #         'labelformat': str}
-        #
-        #     config = ini.decode(comment, flat=True, structure=structure)
         comment = self._file.comment
         mapping = ini.decode(comment, flat=True)
         self._metadata.update(mapping)
@@ -70,66 +69,3 @@ class Table(table.ProxyBase):
         self._file.comment = comment
         rows = self.select()
         self._file.write(rows)
-
-    #
-    # def __init__(
-    #         self, file: FileOrPathLike, delim: OptStr = None,
-    #         labels: OptStrList = None, usecols: OptIntTuple = None,
-    #         namecol: OptInt = None) -> None:
-    #     """ """
-    #     # Get configuration from CSV header
-    #     comment = csv.File(file).comment
-    #
-    #     structure = {
-    #         'name': str,
-    #         'branch': str,
-    #         'version': int,
-    #         'about': str,
-    #         'author': str,
-    #         'email': str,
-    #         'license': str,
-    #         'filetype': str,
-    #         'application': str,
-    #         'preprocessing': dict,
-    #         'type': str,
-    #         'labelformat': str}
-    #
-    #     config = ini.decode(comment, flat=True, structure=structure)
-    #
-    #     if 'name' in config:
-    #         name = config['name']
-    #     elif isinstance(file, str):
-    #         name = Path(file).name
-    #     elif isinstance(file, Path):
-    #         name = file.name
-    #     else:
-    #         name = 'dataset'
-    #     config['name'] = name
-    #
-    #     if 'type' not in config:
-    #         config['type'] = 'base.Dataset'
-    #
-    #     # Add column and row filters
-    #     config['colfilter'] = {'*': ['*:*']}
-    #     config['rowfilter'] = {'*': ['*:*'], name: [name + ':*']}
-    #
-    #     data = csv.load(
-    #         file=file, delim=delim, labels=labels, usecols=usecols,
-    #         namecol=namecol).load_old()
-    #
-    #     config['table'] = {name: config.copy()}
-    #     config['table'][name]['fraction'] = 1.0
-    #     config['columns'] = tuple()
-    #     config['colmapping'] = {}
-    #     config['table'][name]['columns'] = []
-    #     for column in data.dtype.names:
-    #         if column == 'label': continue
-    #         config['columns'] += (('', column),)
-    #         config['colmapping'][column] = column
-    #         config['table'][name]['columns'].append(column)
-    #
-    #     # get data table from csv data
-    #     tables = {name: data}
-    #
-    #     self.config = config
-    #     self.tables = tables
