@@ -11,7 +11,7 @@ from io import StringIO
 import re
 from typing import cast
 from nemoa.base import literal, check
-from nemoa.file import textfile
+from nemoa.io import plain
 from nemoa.types import FileOrPathLike, OptBool, OptStr, StrDict
 from nemoa.types import Union, Optional, OptType, Dict
 
@@ -60,7 +60,7 @@ def load(
 
     """
     # Read configuration from file-like or path-like object
-    with textfile.openx(file, mode='r') as fh:
+    with plain.openx(file, mode='r') as fh:
         return decode(fh.read(), structure=structure, flat=flat)
 
 def decode(
@@ -154,7 +154,7 @@ def save(
         raise ValueError("dictionary is not valid") from err
 
     # Write text to file
-    with textfile.openx(file, mode='w') as fh:
+    with plain.openx(file, mode='w') as fh:
         fh.write(text)
 
 def encode(config: dict, flat: OptBool = None, comment: OptStr = None) -> str:
@@ -223,7 +223,7 @@ def get_comment(file: FileOrPathLike) -> str:
         string, if no initial comment lines could be detected.
 
     """
-    return textfile.get_comment(file)
+    return plain.get_comment(file)
 
 def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
     """Import configuration dictionary from INI formated text.

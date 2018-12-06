@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import os
 from nemoa.base import array
-from nemoa.file import csv, ini
+from nemoa.io import csv, ini
 
 def filetypes() -> dict:
     """Get supported text filetypes for dataset export."""

@@ -13,7 +13,7 @@ from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 from nemoa.types import OptDict, OptBool, Union, Callable, CallableClasses
 
 #
-# Types
+# Structural Types
 #
 
 OptCallOrStr = Optional[Union[Callable, str]]

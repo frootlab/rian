@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from nemoa.base import attrib
 from nemoa.data import Proxy
-from nemoa.file import csv
+from nemoa.io import csv
 from nemoa.types import FileRef, Any
 
 #
@@ -26,29 +26,42 @@ class Table(Proxy):
         Args:
             file:
             *args: Additional arguments, that are passed to
-                :class:`csv.File <nemoa.file.csv.File>`.
+                :class:`csv.File <nemoa.io.csv.File>`.
             **kwds: Additional keyword arguments, that are passed to csv.File.
 
         """
-        # Initialize table proxy
-        super().__init__()
-
-        # Open CSV-formatted file
-        self._file = csv.File(file, *args, **kwds)
-
-        # Create header
-        self._create_header(self._file.fields)
-
-        # Run post init hook
-        self._post_init()
+        super().__init__() # Initialize table proxy
+        self._file = csv.File(file, *args, **kwds) # Open CSV-formatted file
+        self._create_header(self._file.fields) # Create header
+        self._post_init() # Run post init hook
 
     def pull(self) -> None:
         """Pull all rows from CSV-File."""
+        # TODO: Also pull metadata from file
+        # comment = self._file.comment
+        # structure = self._get_attr_types(category='...')
+        #     structure = {
+        #         'name': str,
+        #         'branch': str,
+        #         'version': int,
+        #         'about': str,
+        #         'author': str,
+        #         'email': str,
+        #         'license': str,
+        #         'filetype': str,
+        #         'application': str,
+        #         'preprocessing': dict,
+        #         'type': str,
+        #         'labelformat': str}
+        #
+        #     config = ini.decode(comment, flat=True, structure=structure)
+        self.name = self._file.name
         rows = self._file.read()
         self.append_rows(rows)
 
     def push(self) -> None:
         """Push all rows to CSV-File."""
+        # TODO: Also push metadata to file
         rows = self.select()
         self._file.write(rows)
 

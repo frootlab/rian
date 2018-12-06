@@ -6,7 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from abc import ABC, abstractmethod
+import abc
 import array
 import collections
 import datetime
@@ -30,18 +30,24 @@ Infty = float('inf')
 void: Callable[..., None] = lambda *args, **kwds: None
 
 ################################################################################
-# Stub Classes
+# Class Stubs
 ################################################################################
 
-class FileAccessorBase(ABC):
+class FileAccessorBase(abc.ABC):
     """File Accessor/Opener Base Class."""
 
-    name: str
+    @property
+    @abc.abstractmethod
+    def name(self) -> Optional[str]:
+        raise NotImplementedError(
+            f"'type(self).__name__' is required "
+            "to implement a property with name 'name'")
 
-    @abstractmethod
+    @abc.abstractmethod
     def open(self, *args: Any, **kwds: Any) -> IO[Any]:
         raise NotImplementedError(
-            f"'type(self).__name__' is required to implement the method 'open'")
+            f"'type(self).__name__' is required "
+            "to implement a method with name 'open'")
 
 ################################################################################
 # Classes

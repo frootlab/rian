@@ -1,7 +1,7 @@
-nemoa.file.ws module
+nemoa.io.ws module
 ========================
 
-.. automodule:: nemoa.file.ws
+.. automodule:: nemoa.io.ws
     :members:
     :undoc-members:
     :show-inheritance:

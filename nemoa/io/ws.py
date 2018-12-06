@@ -14,7 +14,7 @@ import io
 from pathlib import Path, PurePath
 from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
-from nemoa.file import ini
+from nemoa.io import ini
 from nemoa.types import BinaryFileLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
 from nemoa.types import PathLike, PathLikeList, Traceback

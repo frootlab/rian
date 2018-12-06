@@ -389,7 +389,7 @@ class Table(attrib.Container):
     # Public Attributes
     #
 
-    name: property = attrib.Virtual(fget='_get_name')
+    name: property = attrib.Virtual(fget='_get_name', fset='_set_name')
     fields: property = attrib.Virtual(fget='_get_fields')
     colnames: property = attrib.Virtual(fget='_get_colnames')
 
@@ -642,6 +642,9 @@ class Table(attrib.Container):
 
     def _get_name(self) -> str:
         return self._name
+
+    def _set_name(self, name: str) -> None:
+        self._name = name
 
     def _remove_row_diff(self, rowid: int) -> None:
         self._diff[rowid] = None

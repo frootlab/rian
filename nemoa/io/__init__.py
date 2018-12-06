@@ -12,24 +12,61 @@ from pathlib import Path
 import weakref
 from nemoa.base import env
 from nemoa.errors import PullError, PushError
-from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef
+from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
 from nemoa.types import ExcType, Exc, Traceback, FileAccessorBase
 from nemoa.types import BinaryFileLike, TextFileLike, IterFileLike
 
 #
-# Stream Connector Class
+# File Info Class
 #
 
-class Connector:
+class FileInfo:
+    """File Info Class.
+
+    Args:
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            or writing mode.
+
+    """
+
+    _file: FileRef
+
+    def __init__(self, file: FileRef):
+        self._file = file
+
+    @property
+    def name(self) -> OptStr:
+        """Name of the referenced :term:`file object`."""
+        if isinstance(self._file, str):
+            return Path(self._file).name
+        if isinstance(self._file, io.IOBase):
+            pathstr = getattr(self._file, 'name', None)
+            if pathstr:
+                return Path(pathstr).name
+            return None
+        return getattr(self._file, 'name', None)
+
+#
+# File Connector Class
+#
+
+class FileConnector:
     """File Connector Class."""
 
     _ref: FileRef
+    _info: FileInfo
     _args: tuple
     _kwds: dict
     _children: list
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
+        super().__init__() # Initialize Container class
+
         self._ref = file
+        self._info = FileInfo(file)
         self._args = args
         self._kwds = kwds
         self._children = []
@@ -52,7 +89,7 @@ class Connector:
         if isinstance(ref, io.TextIOBase):
             return self._open_from_textfile(ref, *args, **kwds)
         if isinstance(ref, io.BufferedIOBase):
-            return self._open_from_binfile(ref, *args, **kwds)
+            return self._open_from_raw(ref, *args, **kwds)
         if isinstance(ref, FileAccessorBase):
             return self._open_from_accessor(ref, *args, **kwds)
 
@@ -64,6 +101,11 @@ class Connector:
         for file in self._children:
             with contextlib.suppress(ReferenceError):
                 file.close()
+
+    @property
+    def name(self) -> OptStr:
+        """Name of the referenced :term:`file object`."""
+        return self._info.name
 
     def _open_from_path(
             self, path: PathLike, *args: Any, **kwds: Any) -> FileLike:
@@ -88,7 +130,7 @@ class Connector:
                 "wrapping text streams to byte streams is not supported")
         return file
 
-    def _open_from_binfile(
+    def _open_from_raw(
             self, file: BinaryFileLike, mode: str = 'r') -> FileLike:
         # Check reading / writing mode
         file_mode = getattr(file, 'mode', None)
@@ -109,15 +151,22 @@ class Connector:
         self._children.append(weakref.proxy(file))
         return file
 
+    def _get_name(self) -> OptStr:
+        ref = self._ref
+        if isinstance(ref, str):
+            return Path(ref).name
+        return getattr(ref, 'name', None)
+
 #
 # File Wrapper Class
 #
 
-class FileWrapper:
-    """File wrapper for referenced streams.
+class FileBuffer:
+    """File buffer for referenced files.
 
     Creates a temporary file within the :func:`tempdir <tempfile.gettempdir>` of
-    the system which acts as a local proxy for a referenced file stream.
+    the system, which acts as a local proxy for a referenced :term:`file
+    object`.
 
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
@@ -131,26 +180,27 @@ class FileWrapper:
             otherwise any pull-request raises a
             :class:`~nemoa.errors.PullError`. If mode contains the character
             'w', then a :meth:`.push`-request is executed when closing the
-            FileWrapper ibtance with :meth:`.close`, otherwise any push-request
+            FileBuffer ibtance with :meth:`.close`, otherwise any push-request
             raises a :class:`~nemoa.errors.PushError`. The default mode is 'rw'.
 
     """
 
-    _connector: Connector
+    _connector: FileConnector
     _mode: str
     _children: list
-
-    path: Path
+    _path: Path
 
     def __init__(self, file: FileRef, mode: str = 'rw') -> None:
         """Initialize temporary file."""
-        self._connector = Connector(file)
+        super().__init__()
+
+        self._connector = FileConnector(file)
         self._mode = mode
         self._children = []
 
         # Create temporary file
-        self.path = env.get_temp_file()
-        self.path.touch()
+        self._path = env.get_temp_file()
+        self._path.touch()
 
         # Copy referenced file object to temporary file
         if 'r' in self._mode:
@@ -158,6 +208,16 @@ class FileWrapper:
 
     def __del__(self) -> None:
         self.close()
+
+    @property
+    def name(self) -> OptStr:
+        """Name of the referenced :term:`file object`"""
+        return self._connector.name
+
+    @property
+    def path(self) -> Path:
+        """Path to the temporary file in use."""
+        return self._path
 
     def open(self, *args: Any, **kwds: Any) -> FileLike:
         """Open file handler to temporary file."""
@@ -199,6 +259,7 @@ class FileWrapper:
         self.path.unlink() # Remove temporary file
         self._connector.close() # Close connector
 
+
 #
 # Constructors
 #
@@ -235,7 +296,7 @@ def openx(file: FileRef, *args: Any, **kwds: Any) -> IterFileLike:
     """
     # Define enter and exit of context manager
     try:
-        connector = Connector(file)
+        connector = FileConnector(file)
         yield connector.open(*args, **kwds)
     finally:
         connector.close()
@@ -254,7 +315,7 @@ def tmpfile(file: FileRef) -> Iterator[Path]:
 
     """
     try:
-        wrapper = FileWrapper(file)
-        yield wrapper.path
+        buffer = FileBuffer(file)
+        yield buffer.path
     finally:
-        wrapper.close()
+        buffer.close()

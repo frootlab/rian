@@ -1,7 +1,7 @@
-nemoa.file.binfile module
+nemoa.io.raw module
 =========================
 
-.. automodule:: nemoa.file.binfile
+.. automodule:: nemoa.io.raw
     :members:
     :undoc-members:
     :show-inheritance:

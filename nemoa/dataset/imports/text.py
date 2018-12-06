@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 from nemoa.base import array, env
-from nemoa.file import csv, ini
+from nemoa.io import csv, ini
 
 def filetypes():
     """Get supported text filetypes for dataset import."""

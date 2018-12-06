@@ -1,7 +1,7 @@
-nemoa.file.stream module
+nemoa.io.stream module
 ========================
 
-.. automodule:: nemoa.file.stream
+.. automodule:: nemoa.io.stream
     :members:
     :undoc-members:
     :show-inheritance:

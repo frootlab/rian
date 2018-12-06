@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Unittests for submodules of package 'nemoa.file'."""
+"""Unittests for submodules of package 'nemoa.io'."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -10,38 +10,38 @@ from configparser import ConfigParser
 from pathlib import Path
 import numpy as np
 from nemoa.base import env
-from nemoa.file import binfile, csv, ini, textfile
-from nemoa.test import ModuleTestCase
+from nemoa.io import csv, ini, plain, raw
+from nemoa.test import ModuleTestCase, Case
 from nemoa.types import List
 
-class TestBinfile(ModuleTestCase):
-    """Testcase for the module nemoa.file.binfile."""
+class TestRaw(ModuleTestCase):
+    """Testcase for the module nemoa.io.raw."""
 
-    module = 'nemoa.file.binfile'
+    module = 'nemoa.io.raw'
 
     def setUp(self) -> None:
         self.filepath = env.get_temp_file(suffix='.gz')
         self.data = b'eJxrYK4tZDoiGBkGT0ZqotZJzt3/AbFpXoAgyI=='
-        binfile.save(self.data, self.filepath)
+        raw.save(self.data, self.filepath)
 
     def test_openx(self) -> None:
         filepath = env.get_temp_file(suffix='.gz')
         with self.subTest(file=filepath):
-            with binfile.openx(filepath, mode='w') as fh:
+            with raw.openx(filepath, mode='w') as fh:
                 fh.write(self.data)
             if filepath.is_file():
-                with binfile.openx(filepath, mode='r') as fh:
+                with raw.openx(filepath, mode='r') as fh:
                     data = fh.read()
                 filepath.unlink()
                 self.assertTrue(data == self.data)
         file = filepath.open(mode='wb')
         with self.subTest(file=file):
-            with binfile.openx(file, mode='w') as fh:
+            with raw.openx(file, mode='w') as fh:
                 fh.write(self.data)
             if not file.closed:
                 file.close()
                 file = filepath.open(mode='rb')
-                with binfile.openx(file, mode='r') as fh:
+                with raw.openx(file, mode='r') as fh:
                     data = fh.read()
                 if not file.closed:
                     file.close()
@@ -51,43 +51,53 @@ class TestBinfile(ModuleTestCase):
         self.assertTrue(self.filepath.is_file())
 
     def test_load(self) -> None:
-        data = binfile.load(self.filepath)
+        data = raw.load(self.filepath)
         self.assertEqual(data, self.data)
 
     def tearDown(self) -> None:
         if self.filepath.is_file():
             self.filepath.unlink()
 
-class TestTextfile(ModuleTestCase):
-    """Testcase for the module nemoa.file.textfile."""
+class TestPlain(ModuleTestCase):
+    """Testcase for the module nemoa.io.plain."""
 
-    module = 'nemoa.file.textfile'
+    module = 'nemoa.io.plain'
 
     def setUp(self) -> None:
         self.filepath = env.get_temp_file(suffix='.txt')
         self.comment = "comment line"
         self.content = ['first content line', 'second content line']
         self.text = f"# {self.comment}\n\n" + '\n'.join(self.content)
-        textfile.save(self.text, self.filepath)
+        plain.save(self.text, self.filepath)
+
+    def test_get_name(self) -> None:
+        name = self.filepath.name
+        path = self.filepath
+        string = str(self.filepath)
+        fh = self.filepath.open(mode='r')
+        self.assertAllEqual(plain.get_name, [
+            Case(args=(path, ), value=name),
+            Case(args=(string, ), value=name),
+            Case(args=(fh, ), value=name)])
 
     def test_openx(self) -> None:
         filepath = env.get_temp_file(suffix='.txt')
         with self.subTest(file=filepath):
-            with textfile.openx(filepath, mode='w') as fh:
+            with plain.openx(filepath, mode='w') as fh:
                 fh.write(self.text)
             if filepath.is_file():
-                with textfile.openx(filepath, mode='r') as fh:
+                with plain.openx(filepath, mode='r') as fh:
                     text = fh.read()
                 filepath.unlink()
                 self.assertTrue(text == self.text)
         file = filepath.open(mode='w')
         with self.subTest(file=file):
-            with textfile.openx(file, mode='w') as fh:
+            with plain.openx(file, mode='w') as fh:
                 fh.write(self.text)
             if not file.closed:
                 file.close()
                 file = filepath.open(mode='r')
-                with textfile.openx(file, mode='r') as fh:
+                with plain.openx(file, mode='r') as fh:
                     text = fh.read()
                 if not file.closed:
                     file.close()
@@ -101,15 +111,15 @@ class TestTextfile(ModuleTestCase):
         self.assertTrue(self.filepath.is_file())
 
     def test_load(self) -> None:
-        text = textfile.load(self.filepath)
+        text = plain.load(self.filepath)
         self.assertEqual(text, self.text)
 
     def test_get_comment(self) -> None:
-        comment = textfile.get_comment(self.filepath)
+        comment = plain.get_comment(self.filepath)
         self.assertEqual(comment, self.comment)
 
     def test_get_content(self) -> None:
-        content = textfile.get_content(self.filepath)
+        content = plain.get_content(self.filepath)
         self.assertEqual(content, self.content)
 
     def tearDown(self) -> None:
@@ -117,9 +127,9 @@ class TestTextfile(ModuleTestCase):
             self.filepath.unlink()
 
 class TestCsv(ModuleTestCase):
-    """Testcase for the module nemoa.file.csv."""
+    """Testcase for the module nemoa.io.csv."""
 
-    module = 'nemoa.file.csv'
+    module = 'nemoa.io.csv'
 
     def setUp(self) -> None:
         path = env.get_temp_file()
@@ -227,6 +237,14 @@ class TestCsv(ModuleTestCase):
                 delimiter=self.rlang_sep) as file:
                 self.assertIsInstance(file, csv.File)
 
+    def test_File_name(self) -> None:
+        with self.subTest(format='rfc'):
+            with csv.File(self.rfc_path) as file:
+                self.assertEqual(file.name, self.rfc_path.name)
+        with self.subTest(format='rlang'):
+            with csv.File(self.rlang_path) as file:
+                self.assertEqual(file.name, self.rlang_path.name)
+
     def test_File_delimiter(self) -> None:
         with self.subTest(format='rfc'):
             with csv.File(self.rfc_path) as file:
@@ -322,9 +340,9 @@ class TestCsv(ModuleTestCase):
             self.rlang_path.unlink()
 
 class TestInifile(ModuleTestCase):
-    """Testcase for the module nemoa.file.ini."""
+    """Testcase for the module nemoa.io.ini."""
 
-    module = 'nemoa.file.ini'
+    module = 'nemoa.io.ini'
 
     def setUp(self) -> None:
         self.filepath = env.get_temp_file(suffix='.ini')

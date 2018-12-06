@@ -30,14 +30,21 @@ import abc
 import csv
 import contextlib
 import io
+from pathlib import Path
 import weakref
 from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError, ColumnLookupError
-from nemoa.file import Connector, FileWrapper, textfile
+from nemoa.io import FileConnector, FileBuffer, plain
 from nemoa.types import OptInt, OptIntTuple, OptStr, StrList, List, Tuple
 from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses, Union
 from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
 from nemoa.types import StrDict, FileRef, Optional, FileLike, StrTuple
+
+#
+# Attributes
+#
+
+mime = "text/csv"
 
 #
 # Stuctural Types
@@ -45,7 +52,6 @@ from nemoa.types import StrDict, FileRef, Optional, FileLike, StrTuple
 
 OptDialectLike = Optional[Union[str, csv.Dialect]]
 OptDialect = Optional[csv.Dialect]
-
 Header = Iterable[str]
 OptHeader = Optional[Header]
 Field = Tuple[str, type]
@@ -83,8 +89,8 @@ class HandlerBase(abc.ABC):
     """
 
     _mode: str
-    _connector: Connector
-    _wrapper: FileWrapper
+    _connector: FileConnector
+    _buffer: FileBuffer
     _file: FileLike
 
     def __init__(self, file: FileRef, mode: str = 'r') -> None:
@@ -92,13 +98,13 @@ class HandlerBase(abc.ABC):
 
         # In reading mode open file handler from a file connector
         if 'r' in mode:
-            self._connector = Connector(file)
-            self._file = self._connector.open(mode)
+            self._connector = FileConnector(file)
+            self._file = self._connector.open(mode=mode)
 
-        # In writing mode open file handler from a temporary file path
+        # In writing mode use a buffer
         elif 'w' in mode:
-            self._wrapper = FileWrapper(file, mode='w')
-            self._file = self._wrapper.open(mode='w', newline='')
+            self._buffer = FileBuffer(file, mode='w')
+            self._file = self._buffer.open(mode='w', newline='')
 
         # Check file handler
         if not isinstance(self._file, io.TextIOBase):
@@ -131,7 +137,7 @@ class HandlerBase(abc.ABC):
         # handlers to the temporary file are closed and the changes are written
         # to the original file.
         elif 'w' in self._mode:
-            self._wrapper.close()
+            self._buffer.close()
 
     @abc.abstractmethod
     def read_row(self) -> tuple:
@@ -322,11 +328,8 @@ class File(attrib.Container):
     # Public Attributes
     #
 
-    dialect: property = attrib.Virtual(fget='_get_dialect')
-    dialect.__doc__ = """
-    Readonly attribute, that indicates the used CSV dialect. The attribute is
-    given as an instance of the class :class:`csv.Dialect`.
-    """
+    name: property = attrib.Virtual(fget='_get_name')
+    name.__doc__ = "Name of the given CSV file."
 
     comment: property = attrib.Virtual(fget='_get_comment')
     comment.__doc__ = """
@@ -377,6 +380,12 @@ class File(attrib.Container):
     compliant header by default no row names are used. For a header as used in
     exports of the `R programming language`_ by default the name of the first
     column is returned.
+    """
+
+    dialect: property = attrib.Virtual(fget='_get_dialect')
+    dialect.__doc__ = """
+    Readonly attribute, that indicates the used CSV dialect. The attribute is
+    given as an instance of the class :class:`csv.Dialect`.
     """
 
     #
@@ -437,9 +446,9 @@ class File(attrib.Container):
 
         Returns:
             In *reading mode* (if mode contains the character `w`) an instance
-            of the class :class:`~nemoa.file.csv.Reader` is returned and in
+            of the class :class:`~nemoa.io.csv.Reader` is returned and in
             writing mode (if mode contains the character `r`) an instance of the
-            class :class:`~nemoa.file.csv.Writer` is returned.
+            class :class:`~nemoa.io.csv.Writer` is returned.
 
         """
         if 'w' in mode:
@@ -484,11 +493,14 @@ class File(attrib.Container):
     # Protected Methods
     #
 
+    def _get_name(self) -> OptStr:
+        return plain.get_name(self._file)
+
     def _get_comment(self) -> str:
         # Return comment if set manually
         if self._comment is not None:
             return self._comment
-        return textfile.get_comment(self._file)
+        return plain.get_comment(self._file)
 
     def _get_delimiter(self) -> OptStr:
         # Return delimiter if set manually
@@ -505,7 +517,7 @@ class File(attrib.Container):
 
         # Detect delimiter
         try:
-            with textfile.openx(self._file, mode='r') as fd:
+            with plain.openx(self._file, mode='r') as fd:
                 size = 0
                 probe = ''
                 passed_header = False
@@ -544,7 +556,7 @@ class File(attrib.Container):
             return self._header
 
         # Get first content line (non comment, non empty) of CSV file
-        lines = textfile.get_content(self._file, lines=1)
+        lines = plain.get_content(self._file, lines=1)
         if len(lines) != 1:
             raise FileFormatError(self._file, 'CSV')
 
@@ -584,7 +596,7 @@ class File(attrib.Container):
 
         # Get first and second content lines (non comment, non empty) of
         # CSV file and determine column label format
-        lines = textfile.get_content(self._file, lines=2)
+        lines = plain.get_content(self._file, lines=2)
         if len(lines) == 2:
             delimiter = self.delimiter
             if lines[0].count(delimiter) == lines[1].count(delimiter):
@@ -596,7 +608,7 @@ class File(attrib.Container):
     def _get_fields(self) -> Fields:
         colnames = self.header
         delimiter = self.delimiter
-        lines = textfile.get_content(self._file, lines=3)
+        lines = plain.get_content(self._file, lines=3)
 
         # By default estimate the column types from the values of two rows and
         # add the type if the estimations are identical
@@ -634,7 +646,7 @@ class File(attrib.Container):
     def _get_skiprows(self) -> int:
         # Count how many 'comment' and 'blank' rows are to be skipped
         skiprows = 1
-        with textfile.openx(self._file, mode='r') as fd:
+        with plain.openx(self._file, mode='r') as fd:
             for line in fd:
                 strip = line.strip()
                 if not strip or strip.startswith('#'):
