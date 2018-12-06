@@ -1,4 +1,4 @@
-nemoa.data package
+nemoa.db package
 ==================
 
 Subpackages
@@ -6,19 +6,19 @@ Subpackages
 
 .. toctree::
 
-    nemoa.data.table
+    nemoa.db.table
 
 Submodules
 ----------
 
 .. toctree::
 
-   nemoa.data.dbapi2
+   nemoa.db.dbapi2
 
 Module contents
 ---------------
 
-.. automodule:: nemoa.data
+.. automodule:: nemoa.db
     :members:
     :undoc-members:
     :show-inheritance:

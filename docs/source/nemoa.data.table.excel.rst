@@ -1,7 +1,7 @@
-nemoa.data.table.excel module
+nemoa.db.table.excel module
 =============================
 
-.. automodule:: nemoa.data.table.excel
+.. automodule:: nemoa.db.table.excel
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,7 +1,7 @@
-nemoa.data.table.sql module
+nemoa.db.table.sql module
 ===========================
 
-.. automodule:: nemoa.data.table.sql
+.. automodule:: nemoa.db.table.sql
     :members:
     :undoc-members:
     :show-inheritance:

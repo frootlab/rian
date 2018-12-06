@@ -8,7 +8,7 @@ Subpackages
 
     nemoa.base
     nemoa.core
-    nemoa.data
+    nemoa.db
     nemoa.dataset
     nemoa.io
     nemoa.math

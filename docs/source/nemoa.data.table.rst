@@ -1,4 +1,4 @@
-nemoa.data.table package
+nemoa.db.table package
 ========================
 
 Submodules
@@ -6,14 +6,14 @@ Submodules
 
 .. toctree::
 
-   nemoa.data.table.dsv
-   nemoa.data.table.excel
-   nemoa.data.table.sql
+   nemoa.db.table.dsv
+   nemoa.db.table.excel
+   nemoa.db.table.sql
 
 Module contents
 ---------------
 
-.. automodule:: nemoa.data.table
+.. automodule:: nemoa.db.table
     :members:
     :undoc-members:
     :show-inheritance:

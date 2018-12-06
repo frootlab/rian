@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import attrib
-from nemoa.data import Proxy
+from nemoa.db import Proxy
 from nemoa.io import csv
 from nemoa.types import FileRef, Any
 

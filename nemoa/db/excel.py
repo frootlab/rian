@@ -14,7 +14,7 @@ except ImportError as err:
         "https://pypi.org/project/openpyxl") from err
 
 from nemoa.base import attrib
-from nemoa.data import Proxy
+from nemoa.db import Proxy
 
 #
 # Classes
