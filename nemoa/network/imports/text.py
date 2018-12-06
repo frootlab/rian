@@ -25,7 +25,8 @@ def load(path, **kwds):
     if filetype not in filetypes():
         raise ValueError(f"filetype '{filetype}' is not supported")
 
-    if filetype in ['ini', 'txt']:  return Ini(**kwds).load(path)
+    if filetype in ['ini', 'txt']:
+        return Ini(**kwds).load(path)
 
     return False
 
@@ -48,10 +49,10 @@ class Ini:
         """
         from nemoa.io import ini
 
-        structure = {
+        scheme = {
             'network': {
                 'type': str}}
-        network = ini.load(path, structure)
+        network = ini.load(path, scheme=scheme)
         if not network \
             or not 'network' in network \
             or not 'type' in network['network']:
@@ -70,7 +71,7 @@ class Ini:
         from nemoa.base import env
         from nemoa.io import ini
 
-        structure = {
+        scheme = {
             'network': {
                 'name': str,
                 'description': str,
@@ -96,7 +97,7 @@ class Ini:
             'binding [0-9a-zA-Z]*-[0-9a-zA-Z]*': {
                 '[0-9a-zA-Z]*': list}}
 
-        ini_dict = ini.load(path, structure=structure)
+        ini_dict = ini.load(path, scheme=scheme)
         config = ini_dict['network'].copy()
 
         # layers
@@ -107,13 +108,16 @@ class Ini:
         del config['layers']
 
         # name
-        if 'name' not in config: config['name'] = env.basename(path)
+        if 'name' not in config:
+            config['name'] = env.basename(path)
 
         # directed
-        if 'directed' not in config: config['directed'] = True
+        if 'directed' not in config:
+            config['directed'] = True
 
         # node labelformat
-        if 'labelformat' not in config: config['labelformat'] = 'generic:string'
+        if 'labelformat' not in config:
+            config['labelformat'] = 'generic:string'
 
         # init network dictionary
         config['nodes'] = {}
@@ -180,7 +184,8 @@ class Ini:
             config['nodes'][layer] = []
             for node in node_list:
                 node = node.strip()
-                if node == '': continue
+                if node == '':
+                    continue
                 if node not in config['nodes'][layer]:
                     config['nodes'][layer].append(node)
 
@@ -204,14 +209,19 @@ class Ini:
             # get edges from '[binding *]' section
             for src_node in ini_dict[edge_section]:
                 src_node = src_node.strip()
-                if src_node == '': continue
-                if src_node not in config['nodes'][src_layer]: continue
+                if src_node == '':
+                    continue
+                if src_node not in config['nodes'][src_layer]:
+                    continue
                 for tgt_node in ini_dict[edge_section][src_node]:
                     tgt_node = tgt_node.strip()
-                    if tgt_node == '': continue
-                    if tgt_node not in config['nodes'][tgt_layer]: continue
+                    if tgt_node == '':
+                        continue
+                    if tgt_node not in config['nodes'][tgt_layer]:
+                        continue
                     edge = (src_node, tgt_node)
-                    if edge in config['edges'][edge_layer]: continue
+                    if edge in config['edges'][edge_layer]:
+                        continue
                     config['edges'][edge_layer].append(edge)
 
         # check network binding
@@ -225,4 +235,4 @@ class Ini:
                     layer '%s' are not connected!"""
                     % (src_layer, tgt_layer))
 
-        return { 'config': config }
+        return {'config': config}

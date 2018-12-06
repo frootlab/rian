@@ -80,7 +80,7 @@ class Session:
         configfile = self._get_path_expand(configfile)
 
         if os.path.exists(configfile):
-            ini_dict = ini.load(configfile, self._struct)
+            ini_dict = ini.load(configfile, scheme=self._struct)
 
             if 'folders' in ini_dict:
                 for key, val in ini_dict['folders'].items():

@@ -25,9 +25,7 @@ from nemoa.types import Any, AnyFunc
 # Structural Types
 #
 
-StrucDict = ini.StrucDict
 ConfigDict = ini.ConfigDict
-SecDict = ini.SecDict
 ZipInfoList = List[ZipInfo]
 
 #
@@ -176,12 +174,12 @@ class File(attrib.Container):
                     f"file '{self.path}' is not a valid ZIP file") from err
 
         # Try to open and load workspace configuration from buffer
-        structure = {
+        scheme = {
             'dc': self._get_attr_types(group='dc'),
             'hooks': self._get_attr_types(category='hooks')}
         try:
             with self.open(self._config_file) as file:
-                cfg = ini.load(file, structure=structure)
+                cfg = ini.load(file, scheme=scheme)
         except KeyError as err:
             raise FileFormatError(self.path, 'nemoa workspace') from err
 
@@ -705,7 +703,8 @@ class File(attrib.Container):
         zinfo = matches[-1]
         return self._file.open(zinfo, pwd=self._pwd, mode='r')
 
-    def _open_write(self, path: PathLike, is_dir: bool = False) -> BinaryFileLike:
+    def _open_write(
+            self, path: PathLike, is_dir: bool = False) -> BinaryFileLike:
         # Determine workspace member name from path
         # and get ZipInfo with local time as date_time
         filename = PurePath(path).as_posix()

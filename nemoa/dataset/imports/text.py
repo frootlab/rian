@@ -55,7 +55,7 @@ class Csv:
         # Get configuration from CSV comment lines
         comment = file.comment
 
-        structure = {
+        scheme = {
             'name': str,
             'branch': str,
             'version': int,
@@ -69,7 +69,7 @@ class Csv:
             'type': str,
             'labelformat': str}
 
-        config = ini.decode(comment, flat=True, structure=structure)
+        config = ini.decode(comment, flat=True, scheme=scheme)
 
         if 'name' in config:
             name = config['name']

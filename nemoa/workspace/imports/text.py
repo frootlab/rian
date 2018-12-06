@@ -4,8 +4,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa
-import os
+from nemoa.base import env
+from nemoa.io import ini
 
 def filetypes():
     """Get supported text filetypes for workspace import."""
@@ -14,8 +14,6 @@ def filetypes():
 
 def load(path, **kwds):
     """Import workspace from text file."""
-
-    from nemoa.base import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -47,9 +45,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.io import ini
-
-        structure = {
+        scheme = {
             'workspace': {
                 'description': str,
                 'maintainer': str,
@@ -62,7 +58,7 @@ class Ini:
                 'models': str,
                 'scripts': str}}
 
-        config = ini.load(path, structure)
+        config = ini.load(path, scheme=scheme)
         config['type'] = 'base.Workspace'
 
         return {'config': config}

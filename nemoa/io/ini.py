@@ -12,8 +12,8 @@ import re
 from typing import cast
 from nemoa.base import literal, check
 from nemoa.io import plain
-from nemoa.types import FileOrPathLike, OptBool, OptStr, StrDict
-from nemoa.types import Union, Optional, OptType, Dict
+from nemoa.types import OptBool, OptStr, StrDict
+from nemoa.types import Union, Optional, OptType, Dict, FileRef
 
 #
 # Structural Types
@@ -22,8 +22,8 @@ from nemoa.types import Union, Optional, OptType, Dict
 FlatDict = Dict[str, OptType]
 SecDict = Dict[str, FlatDict]
 OptSecDict = Optional[SecDict]
-StrucDict = Union[FlatDict, SecDict]
-OptStrucDict = Optional[StrucDict]
+Scheme = Union[FlatDict, SecDict]
+OptScheme = Optional[Scheme]
 ConfigDict = Dict[str, StrDict]
 
 #
@@ -31,18 +31,20 @@ ConfigDict = Dict[str, StrDict]
 #
 
 def load(
-        file: FileOrPathLike, structure: OptStrucDict = None,
-        flat: OptBool = None) -> StrucDict:
+        file: FileRef, scheme: OptScheme = None, autocast: bool = False,
+        flat: OptBool = None) -> Scheme:
     """Import configuration dictionary from INI file.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file
-            in the directory structure of the system, or a :term:`file object`
-            in read mode.
-        structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the INI-file is
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            mode.
+        scheme: Dictionary of dictionaries, which determines the structure of
+            the configuration dictionary. If scheme is None, the INI-file is
             completely imported and all values are interpreted as strings. If
-            the structure is a dictionary of dictionaries, the keys of the outer
+            the scheme is a dictionary of dictionaries, the keys of the outer
             dictionary describe valid section names by strings, that are
             interpreted as regular expressions. Therupon, the keys of the
             respective inner dictionaries describe valid parameter names as
@@ -50,7 +52,10 @@ def load(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            `literal.decode`_.
+            :func:`literal.decode <nemoa.base.literal.decode>`.
+        autocast: If no scheme is given autocast determines, if the values are
+            automatically converted to types, estimated by the function
+            :func:`literal.estimate <nemoa.base.literal.estimate>`
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non empty, non
             comment line in the string identifies a section.
@@ -61,19 +66,19 @@ def load(
     """
     # Read configuration from file-like or path-like object
     with plain.openx(file, mode='r') as fh:
-        return decode(fh.read(), structure=structure, flat=flat)
+        return decode(fh.read(), scheme=scheme, autocast=autocast, flat=flat)
 
 def decode(
-        text: str, structure: OptStrucDict = None,
-        flat: OptBool = None) -> StrucDict:
+        text: str, scheme: OptScheme = None, autocast: bool = False,
+        flat: OptBool = None) -> Scheme:
     """Load configuration dictionary from INI-formated text.
 
     Args:
         text: Text, that describes a configuration in INI-format.
-        structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the INI-file
+        scheme: Dictionary of dictionaries, which determines the structure of
+            the configuration dictionary. If scheme is None, the INI-file
             is completely imported and all values are interpreted as strings. If
-            the structure is a dictionary of dictionaries, the keys of the outer
+            the scheme is a dictionary of dictionaries, the keys of the outer
             dictionary describe valid section names by strings, that are
             interpreted as regular expressions. Therupon, the keys of the
             respective inner dictionaries describe valid parameter names as
@@ -81,9 +86,12 @@ def decode(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :func:`~nemoa.base.literal.decode`.
+            :func:`literal.decode <nemoa.base.literal.decode>`.
+        autocast: If no scheme is given autocast determines, if the values are
+            automatically converted to types, estimated by the function
+            :func:`literal.estimate <nemoa.base.literal.estimate>`
         flat: Determines if the desired INI format structure contains sections
-            or not. By default sections are used, if the first non empty, non
+            or not. By default sections are used, if the first non blank, non
             comment line in the string identifies a section.
 
     Return:
@@ -94,13 +102,13 @@ def decode(
     check.has_type("first argument", text, str)
 
     # If the usage of sections is not defined by the argument 'flat' their
-    # existence is determined from the given file structure. If the file
-    # structure also is not given, it is determined by the first not blank and
+    # existence is determined from the given file scheme. If the file
+    # scheme also is not given, it is determined by the first not blank and
     # non comment line in the text. If this line does not start with the
-    # character '[', then the file structure is considered to be flat.
+    # character '[', then the file scheme is considered to be flat.
     if flat is None:
-        if isinstance(structure, dict):
-            flat = not any(isinstance(val, dict) for val in structure.values())
+        if isinstance(scheme, dict):
+            flat = not any(isinstance(val, dict) for val in scheme.values())
         else:
             flat = True
             with StringIO(text) as fh:
@@ -112,34 +120,36 @@ def decode(
                 flat = not line.lstrip().startswith('[')
 
     # For flat structured files a temporary [root] section is created and the
-    # structure dictionary is embedded within the 'root' key of a wrapping
+    # scheme dictionary is embedded within the 'root' key of a wrapping
     # dictionary.
     if flat:
         text = '\n'.join(['[root]', text])
-        if isinstance(structure, dict):
-            structure = cast(SecDict, {'root': structure})
+        if isinstance(scheme, dict):
+            scheme = cast(SecDict, {'root': scheme})
 
     # Parse ini without literal decoding
     parser = ConfigParser()
     setattr(parser, 'optionxform', lambda key: key)
     parser.read_string(text)
 
-    # Decode literals by using the structure dictionary
-    config = parse(parser, structure=cast(SecDict, structure))
+    # Decode literals by using the scheme dictionary
+    config = parse(parser, scheme=cast(SecDict, scheme), autocast=autocast)
 
-    # If structure is flat collapse the 'root' key
+    # If scheme is flat collapse the 'root' key
     return config.get('root') or {} if flat else config
 
 def save(
-        config: dict, file: FileOrPathLike, flat: OptBool = None,
+        config: dict, file: FileRef, flat: OptBool = None,
         comment: OptStr = None) -> None:
     """Save configuration dictionary to INI-file.
 
     Args:
         config: Configuration dictionary
-        file: String or :term:`path-like object` that represents to a writeable
-            file in the directory structure of the system, or a :term:`file
-            object` in write mode.
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in writing
+            mode.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
             subdictionaries.
@@ -210,13 +220,15 @@ def encode(config: dict, flat: OptBool = None, comment: OptStr = None) -> str:
 
     return text
 
-def get_comment(file: FileOrPathLike) -> str:
+def get_comment(file: FileRef) -> str:
     """Read initial comment lines from INI-file.
 
     Args:
-        file: String or :term:`path-like object` that points to a readable file
-            in the directory structure of the system, or a :term:`file object`
-            in reading mode.
+        file: :term:`File reference` to a :term:`file object`. The reference can
+            ether be given as a String or :term:`path-like object`, that points
+            to a valid entry in the file system, a :class:`file accessor
+            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            or writing mode.
 
     Returns:
         String containing the initial comment lines of the INI-file or an empty
@@ -225,16 +237,18 @@ def get_comment(file: FileOrPathLike) -> str:
     """
     return plain.get_comment(file)
 
-def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
+def parse(
+        parser: ConfigParser, scheme: OptSecDict = None,
+        autocast: bool = False) -> ConfigDict:
     """Import configuration dictionary from INI formated text.
 
     Args:
         parser: ConfigParser instance that contains an unstructured
             configuration dictionary
-        structure: Dictionary of dictionaries, which determines the structure of
-            the configuration dictionary. If structure is None, the INI-file
+        scheme: Dictionary of dictionaries, which determines the structure of
+            the configuration dictionary. If scheme is None, the INI-file
             is completely imported and all values are interpreted as strings. If
-            the structure is a dictionary of dictionaries, the keys of the outer
+            the scheme is a dictionary of dictionaries, the keys of the outer
             dictionary describe valid section names by strings, that are
             interpreted as regular expressions. Therupon, the keys of the
             respective inner dictionaries describe valid parameter names as
@@ -242,28 +256,36 @@ def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :func:`~nemoa.base.literal.decode`.
+            :func:`literal.decode <nemoa.base.literal.decode>`.
+        autocast: If no scheme is given autocast determines, if the values are
+            automatically converted to types, estimated by the function
+            :func:`literal.estimate <nemoa.base.literal.estimate>`
 
     Return:
         Structured configuration dictionary.
 
     """
-    # Retrieve dictionary from INI parser, if no structure is given
-    if not isinstance(structure, dict):
-        config = {}
+    # Retrieve dictionary from INI parser, if no scheme is given
+    if not isinstance(scheme, dict):
+        config = {} # type: ignore
         for sec in parser.sections():
-            config[sec] = {
-                key: parser.get(sec, key) for key in parser.options(sec)}
+            config[sec] = {}
+            for key in parser.options(sec):
+                val = parser.get(sec, key)
+                if autocast:
+                    config[sec][key] = literal.decode(val)
+                else:
+                    config[sec][key] = val
         return config
 
-    # Use regular expression to match sections and keys, if a structure is given
+    # Use regular expression to match sections and keys, if a scheme is given
     config = {}
-    rsecs = {key: re.compile(r'\A' + str(key)) for key in structure.keys()}
+    rsecs = {key: re.compile(r'\A' + str(key)) for key in scheme.keys()}
     for sec in parser.sections():
 
         # Use regular expression to match sections
         rsec = None
-        for key in structure.keys():
+        for key in scheme.keys():
             if not rsecs[key].match(sec):
                 continue
             rsec = key
@@ -273,13 +295,13 @@ def parse(parser: ConfigParser, structure: OptSecDict = None) -> ConfigDict:
 
         # Use regular expression to match keys
         dsec = {}
-        for regexkey, cls in getattr(structure[rsec], 'items')():
+        for regexkey, tgttype in getattr(scheme[rsec], 'items')():
             rekey = re.compile(regexkey)
             for key in parser.options(sec):
                 if not rekey.match(key):
                     continue
                 string = parser.get(sec, key)
-                dsec[key] = literal.decode(string, cls)
+                dsec[key] = literal.decode(string, tgttype)
 
         config[sec] = dsec
 

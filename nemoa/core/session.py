@@ -453,7 +453,8 @@ class Session(attrib.Container):
     #
 
     def _load_config(self) -> None:
-        config = ini.load(self._config_file_path, self._config_file_struct)
+        config = ini.load(
+            self._config_file_path, scheme=self._config_file_struct)
         if 'session' in config and isinstance(config['session'], dict):
             for key, val in config['session'].items():
                 self.config[key] = val

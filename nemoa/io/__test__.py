@@ -350,7 +350,7 @@ class TestInifile(ModuleTestCase):
         self.obj = {
             'n': {'a': 's', 'b': True, 'c': 1},
             'l1': {'a': 1}, 'l2': {'a': 2}}
-        self.structure = {
+        self.scheme = {
             'n': {'a': str, 'b': bool, 'c': int},
             'l[0-9]*': {'a': int}}
         self.text = (
@@ -363,7 +363,9 @@ class TestInifile(ModuleTestCase):
         parser = ConfigParser()
         setattr(parser, 'optionxform', lambda key: key)
         parser.read_string(self.text)
-        obj = ini.parse(parser, structure=self.structure)
+        obj = ini.parse(parser, scheme=self.scheme) # type: ignore
+        self.assertEqual(obj, self.obj)
+        obj = ini.parse(parser, autocast=True)
         self.assertEqual(obj, self.obj)
 
     def test_encode(self) -> None:
@@ -371,14 +373,18 @@ class TestInifile(ModuleTestCase):
         self.assertEqual(text, self.text)
 
     def test_decode(self) -> None:
-        obj = ini.decode(self.text, structure=self.structure)
+        obj = ini.decode(self.text, scheme=self.scheme) # type: ignore
+        self.assertEqual(obj, self.obj)
+        obj = ini.decode(self.text, autocast=True)
         self.assertEqual(obj, self.obj)
 
     def test_save(self) -> None:
         self.assertTrue(self.filepath.is_file())
 
     def test_load(self) -> None:
-        obj = ini.load(self.filepath, structure=self.structure)
+        obj = ini.load(self.filepath, scheme=self.scheme) # type: ignore
+        self.assertEqual(obj, self.obj)
+        obj = ini.load(self.filepath, autocast=True)
         self.assertEqual(obj, self.obj)
 
     def test_get_comment(self) -> None:

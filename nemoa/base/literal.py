@@ -15,10 +15,13 @@ from nemoa.base import check, env, this
 from nemoa.types import Any, OptStr, Date, OptType
 
 def encode(obj: object, **kwds: Any) -> str:
-    """Encode simple object to literal text representation.
+    """Encode object to literal text representation.
 
     Args:
         obj: Simple object
+
+    Returns:
+        Literal text representation of given object.
 
     """
     source = type(obj)

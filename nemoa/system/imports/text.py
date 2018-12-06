@@ -53,7 +53,7 @@ class Ini:
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions
-        system = ini.load(path, {
+        system = ini.load(path, scheme={
             'system': {
                 'name': str,
                 'type': str},
