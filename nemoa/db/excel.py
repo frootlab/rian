@@ -14,13 +14,13 @@ except ImportError as err:
         "https://pypi.org/project/openpyxl") from err
 
 from nemoa.base import attrib
-from nemoa.db import TableProxyBase
+from nemoa.db import table
 
 #
 # Classes
 #
 
-class TableProxy(TableProxyBase):
+class Table(table.ProxyBase):
     """Excel-Table Proxy."""
 
     _file: property = attrib.Temporary()

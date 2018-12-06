@@ -56,6 +56,8 @@ class FileAccessorBase(abc.ABC):
 Array = array.ArrayType
 Date = datetime.datetime
 Function = types.FunctionType
+Mapping = collections.Mapping
+MappingProxy = types.MappingProxyType
 Method = types.MethodType
 Module = types.ModuleType
 OrderedDict = collections.OrderedDict
