@@ -328,14 +328,21 @@ class Cursor(attrib.Container):
             self._index = []
 
     def _create_buffer(self) -> None:
-        cur = self.__class__( # Create new dynamic cursor
-            index=self._index, getter=self._getter, predicate=self._filter,
-            mapper=self._mapper)
-        buffer = cur.fetch(-1) # Fetch all rows from result set
+
+        # Create result set from dynamic cursor
+        cur = self.__class__(
+            index=self._index, getter=self._getter, predicate=self._filter)
+        buffer = cur.fetch(-1)
+
+        # Sort result set
         if self._sorter:
-            self._buffer = self._sorter(buffer) # Sort rows using sorter
-        else:
-            self._buffer = buffer
+            buffer = self._sorter(buffer)
+
+        # Map result set
+        if self._mapper:
+            buffer = self._mapper(buffer)
+
+        self._buffer = buffer
 
     def _get_next_from_fixed_index(self) -> RowLike:
         is_random = self._mode & CURSOR_MODE_FLAG_RANDOM
@@ -351,7 +358,7 @@ class Cursor(attrib.Container):
             else:
                 matches = True
         if self._mapper:
-            return self._mapper(row)
+            return self._mapper([row])
         return row
 
     def _get_next_from_buffer(self) -> RowLike:
@@ -703,11 +710,27 @@ class Table(attrib.Container):
 
     def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
         if fmt == tuple:
-            return lambda row: tuple(getattr(row, col) for col in columns)
+            return self._get_mapper_tuple(columns)
         if fmt == dict:
-            return lambda row: {col: getattr(row, col) for col in columns}
+            return self._get_mapper_dict(columns)
         raise TableError(
             f"mapper with format '{fmt.__name__}' is not supported")
+
+    def _get_mapper_tuple(self,
+            columns: StrTuple) -> Callable[[RowList], List[tuple]]:
+        map_row: Callable[[Record], tuple] = (
+            lambda row: tuple(getattr(row, col) for col in columns))
+        map_rows: Callable[[RowList], List[tuple]] = (
+            lambda rows: [map_row(row) for row in rows])
+        return map_rows
+
+    def _get_mapper_dict(self,
+            columns: StrTuple) -> Callable[[RowList], List[dict]]:
+        map_row: Callable[[Record], dict] = (
+            lambda row: {col: getattr(row, col) for col in columns})
+        map_rows: Callable[[RowList], List[dict]] = (
+            lambda rows: [map_row(row) for row in rows])
+        return map_rows
 
     def _get_sorter(self, column: str, reverse: bool = False) -> Callable:
         key = lambda row: getattr(row, column)
