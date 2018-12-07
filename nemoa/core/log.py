@@ -103,7 +103,7 @@ class Logger(attrib.Container):
     _logger: property = attrib.Temporary(classinfo=logging.Logger)
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(self,

@@ -105,7 +105,7 @@ class File(attrib.Container):
     _changed: property = attrib.Temporary(classinfo=bool, default=False)
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(

@@ -75,7 +75,7 @@ class Session(attrib.Container):
     _ws: property = attrib.Content(classinfo=ws.File)
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(

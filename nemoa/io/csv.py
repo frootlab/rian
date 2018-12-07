@@ -400,7 +400,7 @@ class File(attrib.Container):
     _dialect: property = attrib.MetaData(default=None)
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(

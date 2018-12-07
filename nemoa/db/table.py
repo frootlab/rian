@@ -15,7 +15,7 @@ from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, Iterable, Union, Optional, StrDict, StrTuple
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
-from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
+from nemoa.types import OptStrTuple, OptInt, List, OptStr
 from nemoa.types import Iterator, Any, OptDict, Mapping, MappingProxy
 
 #
@@ -32,6 +32,7 @@ RowList = List['Record']
 RowLike = Union['Record', tuple, list, Mapping]
 RowLikeList = List[RowLike]
 OrderByType = Optional[Union[str, List[str], Tuple[str]]]
+OptContainer = Optional[attrib.Container]
 
 #
 # Constants
@@ -55,18 +56,26 @@ PROXY_MODE_FLAG_READONLY = 0b0100
 #
 
 class Record(abc.ABC):
-    """Abstract Base Class for Records."""
+    """Abstract base class for :mod:`dataclasses` based records.
+
+    Args:
+        *args: Arguments, that are valid w.r.t. the fields declaration of
+            the generated :mod:'dataclass <dataclasses>'.
+        **kwds: Keyword arguments, that are valid w.r.t. the fields declaration
+            of the generated :mod:'dataclass <dataclasses>'.
+
+    """
 
     _id: int
     state: int
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self.validate()
-        self._id = self._create_row_id()
+        self._id = self._create_rowid()
         self.state = RECORD_STATE_FLAG_CREATE
 
     def validate(self) -> None:
-        """Check types of fields."""
+        """Check validity of the field types."""
         fields = getattr(self, '__dataclass_fields__', {})
         for name, field in fields.items():
             value = getattr(self, name)
@@ -97,7 +106,7 @@ class Record(abc.ABC):
             self._revoke_hook(self._id)
 
     @abc.abstractmethod
-    def _create_row_id(self) -> int:
+    def _create_rowid(self) -> int:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -129,12 +138,25 @@ class Cursor(attrib.Container):
         mode: Named string identifier for the cursor :py:attr:`.mode`. The
             default cursor mode is 'forward-only indexed'. Note: After
             initializing the curser, it's mode can not be changed anymore.
-        batchsize:
-        getter:
-        predicate:
-        mapper:
-        sorter:
-        parent:
+        batchsize: Integer, that specifies the default number of rows which is
+            to be fetched by the method :meth:`.fetch`. It defaults to 1,
+            meaning to fetch a single row at a time. Whether and which batchsize
+            to use depends on the application and should be considered with
+            care. The batchsize can also be adapted during the lifetime of the
+            cursor, which allows dynamic performance optimization.
+        getter: Method which is used to fetch single rows by their row ID.
+        predicate: Optional filter operator, which determines, if a row is
+            included within the result set or not. By default all rows are
+            included within the result set
+        sorter: Optional sorting operator, which determines the order of the
+            rows withon the result set. By default the order is determined by
+            the creation of the rows.
+        mapper: Optional mapping operator, which determines the data format of
+            the result set. By default the result set is returned as a list
+            of tuples.
+        parent: Reference to parent :class:'attribute group
+            <nemoa.base.attrib.Group>', which is used for inheritance and
+            shared attributes. By default no parent is referenced.
 
     """
 
@@ -144,45 +166,8 @@ class Cursor(attrib.Container):
 
     mode: property = attrib.Virtual(fget='_get_mode')
     mode.__doc__ = """
-    The read-only attribute *cursor mode* specifies the *scrolling type* and the
-    *operation mode* of the cursor by space separated sctrings. Supported
-    scrolling types are:
-
-    :forward-only: The default scrolling type of cursors is called a
-        forward-only cursor and can move only forward through the result set. A
-        forward-only cursor does not support scrolling but only fetching rows
-        from the start to the end of the result set.
-    :scrollable: A scrollable cursor is commonly used in screen-based
-        interactive applications, like spreadsheets, in which users are allowed
-        to scroll back and forth through the result set. However, applications
-        should use scrollable cursors only when forward-only cursors will not do
-        the job, as scrollable cursors are generally more expensive, than
-        forward-only cursors.
-    :random: Random cursors move randomly through the result set. In difference
-        to a randomly sorted cursor, the rows are not unique and the number of
-        fetched rows is not limited to the size of the result set. If the method
-        :meth:`.fetch` is called with a zero value for size, a
-        CursorModeError is raised.
-
-    Supported operation modes are:
-
-    :dynamic: A **dynamic cursor** is built on-the-fly and therefore comprises
-        any changes made to the rows in the result set during it's traversal,
-        including new appended rows and the order of it's traversal. This
-        behaviour is regardless of whether the changes occur from inside the
-        cursor or by other users from outside the cursor. Dynamic cursors are
-        threadsafe but do not support counting filtered rows or sorting rows.
-    :indexed: Indexed cursors (aka Keyset-driven cursors) are built on-the-fly
-        with respect to an initial copy of the table index and therefore
-        comprise changes made to the rows in the result set during it's
-        traversal, but not new appended rows nor changes within their order.
-        Keyset driven cursors are threadsafe but do not support sorting rows or
-        counting filtered rows.
-    :static: Static cursors are buffered and built during it's creation time and
-        therfore always display the result set as it was when the cursor was
-        first opened. Static cursors are not threadsafe but support counting the
-        rows with respect to a given filter and sorting the rows.
-
+    The read-only attribute :term:`cursor mode` provides information about the
+    *scrolling type* and the *operation mode* of the cursor.
     """
 
     batchsize: property = attrib.MetaData(classinfo=int, default=1)
@@ -197,7 +182,7 @@ class Cursor(attrib.Container):
 
     rowcount: property = attrib.Virtual(fget='_get_rowcount')
     """
-    The read-only integer attribute *rowcount* specifies the current number of
+    The read-only integer attribute *rowcount* identifies the current number of
     rows within the cursor.
     """
 
@@ -215,17 +200,16 @@ class Cursor(attrib.Container):
     _buffer: property = attrib.Temporary(classinfo=list, default=[])
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(
             self, index: OptIntList = None, mode: OptStr = None,
-            batchsize: OptInt = None,
-            getter: OptCallable = None, predicate: OptCallable = None,
-            mapper: OptCallable = None, sorter: OptCallable = None,
-            parent: Optional[attrib.Container] = None) -> None:
-        """Initialize Cursor."""
-        super().__init__(parent=parent) # Initialize attrib.Container
+            batchsize: OptInt = None, getter: OptCallable = None,
+            predicate: OptCallable = None, mapper: OptCallable = None,
+            sorter: OptCallable = None, parent: OptContainer = None) -> None:
+        # Initialize Attribute Container with parent Attribute Group
+        super().__init__(parent=parent)
 
         # Get cursor parameters from arguments
         if index is not None:
@@ -239,10 +223,10 @@ class Cursor(attrib.Container):
         if batchsize:
             self.batchsize = batchsize
 
-        # Check validity of parameters
+        # Check validity of cursor parameters
         self._check_validity()
 
-        # Initialize
+        # Initialize cursor
         if self._mode & CURSOR_MODE_FLAG_INDEXED:
             self._create_index() # Initialize index
         if self._mode & CURSOR_MODE_FLAG_BUFFERED:
@@ -288,9 +272,12 @@ class Cursor(attrib.Container):
 
         Args:
             size: Integer value, which represents the number of rows, which is
-                fetched from the result set. For the given size 0 all remaining
+                fetched from the result set. For the given size -1 all remaining
                 rows from the result set are fetched. By default the number of
-                rows is given by the cursors batchsize.
+                rows is given by the cursors attribute :attr:`.batchsize`.
+
+        Returns:
+            Result set given by a list of :term:`row like` data.
 
         """
         if size is None:
@@ -354,10 +341,10 @@ class Cursor(attrib.Container):
         matches = False
         while not matches:
             if is_random:
-                row_id = random.randrange(len(self._index))
+                rowid = random.randrange(len(self._index))
             else:
-                row_id = next(self._iter_index)
-            row = self._getter(row_id)
+                rowid = next(self._iter_index)
+            row = self._getter(rowid)
             if self._filter:
                 matches = self._filter(row)
             else:
@@ -368,8 +355,8 @@ class Cursor(attrib.Container):
 
     def _get_next_from_buffer(self) -> RowLike:
         if self._mode & CURSOR_MODE_FLAG_RANDOM:
-            row_id = random.randrange(len(self._buffer))
-            return self._buffer[row_id]
+            rowid = random.randrange(len(self._buffer))
+            return self._buffer[rowid]
         return next(self._iter_buffer)
 
     def _get_mode(self) -> str:
@@ -421,16 +408,57 @@ class Cursor(attrib.Container):
 #
 
 class Table(attrib.Container):
-    """Table Class."""
+    """Table Class.
+
+    Args:
+        name: Optional table name. If given, the table name is required to be a
+            valid identifier as defined in [UAX31]_.
+        fields: Optional tuple of field declarations. All fields individually
+            can be given in one of the following formats: (1) Only the name of
+            the column by a string ``name``. Thereby ``name`` is required to be
+            a valid identifier (as defined in [UAX31]_). (2) The column name and
+            the data type of the field by a tuple ``(name, type)``. Thereby
+            ``type`` is required to be a standard Python type like :class:`str`,
+            :class:`int`, :class:`float` etc. (3) The column name, the data type
+            and supplementary field constraints by a tuple ``(name, type,
+            constraints)``: Thereby ``constraints`` is requeried to be a
+            dictionary. The items of this dictionary are documented in the
+            function :func:`dataclasses.fields`.
+        metadata: Optional dictionary, with supplementary metadata of the table.
+            This does not comprise metadata of the fields, which has to be
+            included within the field declarations.
+        parent: Reference to parent :class:`attribute group
+            <nemoa.base.attrib.Group>`, which is used for inheritance and
+            shared attributes. By default no parent is referenced.
+
+    """
 
     #
     # Public Attributes
     #
 
     name: property = attrib.Virtual(fget='_get_name', fset='_set_name')
+    name.__doc__ = "Name of the table."
+
     metadata: property = attrib.Virtual(fget='_get_metadata')
+    metadata.__doc__ = """
+    Read-only attribute, that provides an access to the tables metadata by a
+    mappingproxy. Individual entries can be accessed and changed by the methods
+    :meth:`.get_metadata` and :meth:`.set_metadata`.
+    """
+
     fields: property = attrib.Virtual(fget='_get_fields')
-    colnames: property = attrib.Virtual(fget='_get_colnames')
+    fields.__doc__ = """
+    Read-only attribute, that provides information about the fields of the
+    table, as returned by the function :func:`dataclasses.fields`.
+    """
+
+    columns: property = attrib.Virtual(fget='_get_columns')
+    columns.__doc__ = """
+    Read-only attribute containing a tuple with all column names of the table.
+    The order of the column names reflects the order of the corresponding fields
+    in the table.
+    """
 
     #
     # Protected Attributes
@@ -445,31 +473,18 @@ class Table(attrib.Container):
     _iter_index: property = attrib.Temporary()
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(
-            self, name: OptStr = None, metadata: OptDict = None,
-            fields: OptFieldLike = None) -> None:
-        """Initialize Table.
+            self, name: OptStr = None, fields: OptFieldLike = None,
+            metadata: OptDict = None, parent: OptContainer = None) -> None:
+        # Initialize Container Parameters
+        super().__init__(parent=parent)
 
-        Args:
-            name: Table name, given as a valid identifier, defined in [UAX31]_.
-            metadata: Optioanl dictinary with arbitrary metadata.
-            fields:
-
-        """
-        super().__init__()
-        if name:
-            check.is_identifier(f"'name'", name)
-            self._name = name
-        if fields:
-            self._create_header(fields)
-        if metadata:
-            check.has_type("'metadata'", metadata, Mapping)
-            self._set_metadata(metadata)
-        else:
-            self._set_metadata({})
+        # Initialize Table Parameters, if name and fields are given
+        if name and fields:
+            self.create(name, fields, metadata=metadata)
 
     def __iter__(self) -> Iterator:
         self._iter_index = iter(self._index)
@@ -487,6 +502,102 @@ class Table(attrib.Container):
     #
     # Public Methods
     #
+
+    def create(
+            self, name: str, fields: FieldLike,
+            metadata: OptDict = None) -> None:
+        """Create Table.
+
+        Args:
+            name: The table name is required to be a valid identifier as defined
+                in [UAX31]_.
+            fields: Tuple of field declarations. All fields individually can be
+                given in one of the following formats: (1) Only the name of the
+                column by a string ``name``. Thereby ``name`` is required to be
+                a valid identifier (as defined in [UAX31]_). (2) The column name
+                and the data type of the field by a tuple ``(name, type)``.
+                Thereby ``type`` is required to be a standard Python type like
+                :class:`str`, :class:`int`, :class:`float` etc. (3) The column
+                name, the data type and supplementary field constraints by a
+                tuple ``(name, type, constraints)``: Thereby ``constraints`` is
+                requeried to be a dictionary. The items of this dictionary are
+                documented in the function :func:`dataclasses.fields`.
+            metadata: Optional dictionary, with supplementary metadata of the
+                table. This does not comprise metadata of the fields, which has
+                to be included within the field declarations.
+
+        """
+        self._set_name(name) # Set name
+        self._create_header(fields) # Create table header
+        if metadata: # Set table metadata
+            self._set_metadata(metadata)
+        else:
+            self._set_metadata({})
+
+    def create_cursor(
+            self, predicate: OptCallable = None, sorter: OptCallable = None,
+            mapper: OptCallable = None, batchsize: OptInt = None,
+            mode: OptStr = None) -> Cursor:
+        """Create Cursor.
+
+        Args:
+            predicate: Optional filter operator, which determines, if a row is
+                included within the result set or not. By default all rows are
+                included within the result set.
+            sorter: Optional sorting operator, which determines the order of the
+                rows withon the result set. By default the order is determined
+                by the creation order of the rows.
+            mapper: Optional mapping operator, which determines the data format
+                of the result set. By default the result set is returned as a
+                list of tuples.
+            batchsize: Integer, that specifies the default number of rows which
+                is to be fetched by the method :meth:`Cursor.fetch
+                <nemoa.table.Cursor.fetch>`. It defaults to 1, meaning to fetch
+                a single row at a time. Whether and which batchsize to use
+                depends on the application and should be considered with care.
+                The batchsize can also be adapted during the lifetime of the
+                cursor, which allows dynamic performance optimization.
+            mode: Named string identifier for the cursor :py:attr:`.mode`. The
+                default cursor mode is 'forward-only indexed'. Note: After
+                initializing the curser, it's mode can not be changed anymore.
+
+        """
+        return Cursor(
+            getter=self.get_row, predicate=predicate, mapper=mapper,
+            sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
+
+    def create_record(self, data: RowLike) -> Record:
+        """Create Record.
+
+        Args:
+            data: :term:`Row like` data, that is valid w.r.t. the fields
+                declaration of table, as returned by the attribute
+                :attr:`.fields`.
+
+        Returns:
+            Representation of given data by a new instance of the :class:`Record
+            class <nemoa.db.table.Record>`.
+
+        """
+        if isinstance(data, (tuple, list)):
+            return self._create_record(*data) # pylint: disable=E0110
+        if isinstance(data, Mapping):
+            try:
+                data = tuple(data[col] for col in self.columns)
+            except KeyError as err:
+                raise ValueError(
+                    "the given mapping does not contain "
+                    "required fields") from err
+            return self._create_record(*data) # pylint: disable=E0110
+        if isinstance(data, Record):
+            try:
+                data = tuple(getattr(data, col) for col in self.columns)
+            except AttributeError as err:
+                raise ValueError(
+                    "the given record does not contain "
+                    "required fields") from err
+            return self._create_record(*data) # pylint: disable=E0110
+        raise InvalidTypeError("'data'", data, (tuple, list, Mapping, Record))
 
     def commit(self) -> None:
         """Apply changes to table."""
@@ -530,59 +641,28 @@ class Table(attrib.Container):
         self._diff = [None] * len(self._store)
 
     def get_metadata(self, key: str) -> Any:
-        """ """
+        """Get single entry from table metadata."""
         return self.metadata[key]
 
     def set_metadata(self, key: str, val: Any) -> None:
-        """ """
+        """Change entry within table metadata."""
         self._metadata[key] = val
 
-    def get_cursor(
-            self, predicate: OptCallable = None, mapper: OptCallable = None,
-            sorter: OptCallable = None, mode: OptStr = None) -> Cursor:
-        """ """
-        return Cursor(
-            getter=self.get_row, predicate=predicate, mapper=mapper,
-            sorter=sorter, mode=mode, parent=self)
-
     def get_row(self, rowid: int) -> OptRecord:
-        """ """
+        """Get single row by given row ID."""
         return self._diff[rowid] or self._store[rowid]
 
     def get_rows(
-            self, predicate: OptCallable = None,
-            mode: OptStr = None) -> Cursor:
-        """ """
-        return self.get_cursor(predicate=predicate, mode=mode)
-
-    def create_row(self, data: RowLike) -> Record:
-        """Create row from :term:`row like` data."""
-        if isinstance(data, (tuple, list)):
-            return self._create_row(*data) # pylint: disable=E0110
-        if isinstance(data, Mapping):
-            try:
-                data = tuple(data[col] for col in self.colnames)
-            except KeyError as err:
-                raise ValueError(
-                    "the given mapping does not contain "
-                    "required fields") from err
-            return self._create_row(*data) # pylint: disable=E0110
-        if isinstance(data, Record):
-            try:
-                data = tuple(getattr(data, col) for col in self.colnames)
-            except AttributeError as err:
-                raise ValueError(
-                    "the given record does not contain "
-                    "required fields") from err
-            return self._create_row(*data) # pylint: disable=E0110
-        raise TypeError()
+            self, predicate: OptCallable = None, mode: OptStr = None) -> Cursor:
+        """Get multiple rows by given predicate."""
+        return self.create_cursor(predicate=predicate, mode=mode)
 
     def append_row(self, row: RowLike) -> None:
-        """Append row from :term:`row like` data."""
-        rec = self.create_row(row)
+        """Append single row from :term:`row like` data."""
+        rec = self.create_record(row)
         self._store.append(None)
         self._diff.append(rec)
-        self._append_row_id(rec._id) # pylint: disable=W0212
+        self._append_rowid(rec._id) # pylint: disable=W0212
 
     def append_rows(self, rows: RowLikeList) -> None:
         """Append multiple rows."""
@@ -590,42 +670,79 @@ class Table(attrib.Container):
             self.append_row(row)
 
     def delete_row(self, rowid: int) -> None:
-        """ """
+        """Delete single row by given row ID."""
         row = self.get_row(rowid)
         if not row:
             raise RowLookupError(rowid)
         row.delete()
 
     def delete_rows(self, predicate: OptCallable = None) -> None:
-        """ """
+        """Delete multiple rows by given predicate."""
         for row in self.get_rows(predicate):
             row.delete()
 
     def update_row(self, rowid: int, **kwds: Any) -> None:
-        """ """
+        """Update values of single row by given row ID."""
         row = self.get_row(rowid)
         if not row:
             raise RowLookupError(rowid)
         row.update(**kwds)
 
     def update_rows(self, predicate: OptCallable = None, **kwds: Any) -> None:
-        """ """
+        """Update values of multiple rows by given predicate."""
         for row in self.get_rows(predicate):
             row.update(**kwds)
 
     def select(
             self, columns: OptStrTuple = None, predicate: OptCallable = None,
             orderby: OrderByType = None, reverse: bool = False,
-            mode: OptStr = None, dtype: type = tuple) -> RowLikeList:
-        """ """
+            dtype: type = tuple, batchsize: OptInt = None,
+            mode: OptStr = None) -> Cursor:
+        """Get cursor on a specified result set from the table.
+
+        Args:
+            columns: Optional list or tuple of column names, that are known to
+                the table. By default the columns are taken from the attribute
+                :attr:`.columns`.
+            predicate: Optional filter operator, which determines, if a row is
+                included within the result set or not. By default all rows are
+                included within the result set.
+            orderby: Optional column name or tuple of column names, which
+                determine(s) the order of the rows within the result set. By
+                default the order is determined by the creation order of the
+                rows.
+            reverse: Boolean value, which determines if the sorting order of the
+                rows is ascending or descending. For the default value ``False``
+                the sorting order is ascending, for ``True`` it is descending.
+            dtype: Format of the :term:`row like` data, which is used to
+                represent the returned values of the result set. By default
+                the result set is returned as a list of tuples.
+            batchsize: Integer, that specifies the default number of rows which
+                is to be fetched by the method :meth:`Cursor.fetch
+                <nemoa.table.Cursor.fetch>`. It defaults to 1, meaning to fetch
+                a single row at a time. Whether and which batchsize to use
+                depends on the application and should be considered with care.
+                The batchsize can also be adapted during the lifetime of the
+                cursor, which allows dynamic performance optimization.
+            mode: Named string identifier for the cursor :py:attr:`.mode`. The
+                default cursor mode is 'forward-only indexed'. Note: After
+                initializing the curser, it's mode can not be changed anymore.
+
+        Returns:
+            New instance of :class:`Cursor class <nemoa.db.table.Cursor>` on
+            on a specified result set from the table.
+
+        """
         # Create sorting operator w.r.t. 'orderby' and 'reverse'
         sorter = self._create_sorter(orderby, reverse=reverse)
 
         # Create mapping operator w.r.t. 'columns' and 'dtype'
         mapper = self._create_mapper(columns, dtype=dtype)
 
-        return self.get_cursor( # type: ignore
-            predicate=predicate, mapper=mapper, sorter=sorter, mode=mode)
+        # Create cursor on the specified result set
+        return self.create_cursor(
+            predicate=predicate, sorter=sorter, mapper=mapper,
+            batchsize=batchsize, mode=mode)
 
     def pack(self) -> None:
         """Remove empty records from storage table and rebuild table index."""
@@ -647,7 +764,7 @@ class Table(attrib.Container):
     # Protected Methods
     #
 
-    def _append_row_id(self, rowid: int) -> None:
+    def _append_rowid(self, rowid: int) -> None:
         self._index.append(rowid)
 
     def _create_header(self, columns: FieldLike) -> None:
@@ -674,19 +791,19 @@ class Table(attrib.Container):
 
         # Create record namespace with table hooks
         namespace = {
-            '_create_row_id': self._create_row_id,
-            '_delete_hook': self._remove_row_id,
-            '_restore_hook': self._append_row_id,
+            '_create_rowid': self._create_rowid,
+            '_delete_hook': self._remove_rowid,
+            '_restore_hook': self._append_rowid,
             '_update_hook': self._update_row_diff,
             '_revoke_hook': self._remove_row_diff}
 
         # Create row constructor
-        self._create_row = dataclasses.make_dataclass(
+        self._create_record = dataclasses.make_dataclass(
             'Row', fields, bases=(Record, ), namespace=namespace)
 
         # Create slots
-        self._create_row.__slots__ = ['id', 'state'] + [
-            field.name for field in dataclasses.fields(self._create_row)]
+        self._create_record.__slots__ = ['id', 'state'] + [
+            field.name for field in dataclasses.fields(self._create_record)]
 
         # Reset store, diff and index
         self._store = []
@@ -698,9 +815,8 @@ class Table(attrib.Container):
         if columns:
             check.is_subset(
                 "'columns'", set(columns),
-                "table column names", set(self.colnames))
-        else:
-            columns = self.colnames
+                "table column names", set(self.columns))
+        columns = columns or self.columns
         if dtype == tuple:
             return self._create_mapper_tuple(columns)
         if dtype == dict:
@@ -735,33 +851,35 @@ class Table(attrib.Container):
             raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
         return lambda rows: sorted(rows, key=key, reverse=reverse)
 
-    def _create_row_id(self) -> int:
+    def _create_rowid(self) -> int:
         return len(self._store)
 
-    def _get_colnames(self) -> StrTuple:
+    def _get_columns(self) -> StrTuple:
         return tuple(field.name for field in self.fields)
 
     def _get_fields(self) -> FieldTuple:
-        return dataclasses.fields(self._create_row)
+        return dataclasses.fields(self._create_record)
 
     def _get_name(self) -> str:
         return self._name
 
     def _set_name(self, name: str) -> None:
+        check.is_identifier(f"'name'", name)
         self._name = name
 
     def _get_metadata(self) -> MappingProxy:
         return self._metadata_proxy
 
+    def _set_metadata(self, mapping: Mapping) -> None:
+        check.has_type("'metadata'", mapping, Mapping)
+        self._metadata = mapping
+        self._metadata_proxy = MappingProxy(self._metadata)
+
     def _remove_row_diff(self, rowid: int) -> None:
         self._diff[rowid] = None
 
-    def _remove_row_id(self, rowid: int) -> None:
+    def _remove_rowid(self, rowid: int) -> None:
         self._index.remove(rowid)
-
-    def _set_metadata(self, mapping: Mapping) -> None:
-        self._metadata = mapping
-        self._metadata_proxy = MappingProxy(self._metadata)
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
         row = self.get_row(rowid)
@@ -777,32 +895,45 @@ class Table(attrib.Container):
 #
 
 class ProxyBase(Table, pattern.Proxy):
-    """Table Proxy Base Class."""
+    """Table Proxy Base Class.
+
+    Args:
+        proxy_mode: Optional Integer, that determines the operation mode of the
+            proxy.
+        parent: Reference to parent :class:`attribute group
+            <nemoa.base.attrib.Group>`, which is used for inheritance and
+            shared attributes. By default no parent is referenced.
+
+    """
 
     _proxy_mode: property = attrib.MetaData(classinfo=int, default=1)
 
+    #
+    # Special Methods
+    #
+
     def __init__(
-            self, *args: Any, proxy_mode: OptInt = None, **kwds: Any) -> None:
-        """Initialize Table Proxy.
+            self, proxy_mode: OptInt = None,
+            parent: OptContainer = None) -> None:
+        # Initialize Abstract Proxy
+        pattern.Proxy.__init__(self)
 
-        Args:
-            proxy_mode:
-            *args:
-            **kwds:
+        # Initialize Empty Table
+        Table.__init__(self, parent=parent)
 
-        """
-        pattern.Proxy.__init__(self) # Init Proxy
-        Table.__init__(self, *args, **kwds) # Init Table
-
-        # Set default proxy mode
+        # Initialize Table Proxy Parameters
         if proxy_mode is None:
-            proxy_mode = PROXY_MODE_FLAG_CACHE
+            proxy_mode = PROXY_MODE_FLAG_CACHE # Set default proxy mode
         self._proxy_mode = proxy_mode
 
     def _post_init(self) -> None:
         # Retrieve all rows from source if table is cached
         if self._proxy_mode & PROXY_MODE_FLAG_CACHE:
             self.pull()
+
+    #
+    # Public Methods
+    #
 
     def commit(self) -> None:
         """Push changes to source table and apply changes to local table."""

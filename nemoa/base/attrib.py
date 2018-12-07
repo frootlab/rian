@@ -31,8 +31,9 @@ class Group:
     control the group behaviour in different applications.
 
     Args:
-        parent: Reference to parent attribute group. By the default value None
-            no parent is referenced.
+        parent: Reference to parent :class:'attribute group
+            <nemoa.base.attrib.Group>', which is used for inheritance and
+            shared attributes. By default no parent is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -86,8 +87,9 @@ def create_group(
 
     Args:
         cls: Attribute Group Class
-        parent: Reference to parent attribute group. By the default value None
-            no parent is referenced.
+        parent: Reference to parent :class:'attribute group
+            <nemoa.base.attrib.Group>', which is used for inheritance and
+            shared attributes. By default no parent is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -220,7 +222,7 @@ class Attribute(property):
     category: OptStr
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(self,
@@ -416,8 +418,9 @@ class Container(Group):
     control it's contained Attributes and Attribute Groups.
 
     Args:
-        parent: Reference to parent attribute group. By the default value None
-            no parent is referenced.
+        parent: Reference to parent :class:'attribute group
+            <nemoa.base.attrib.Group>', which is used for inheritance and
+            shared attributes. By default no parent is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -455,7 +458,7 @@ class Container(Group):
     parent.__doc__ = """Reference to parent Attribute Group."""
 
     #
-    # Events
+    # Special Methods
     #
 
     def __init__(
