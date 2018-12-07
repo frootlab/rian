@@ -496,3 +496,11 @@ Types
         :term:`path-like objects <path-like object>`, that point to filenames in
         the directory structure of the system and instances of the class
         :class:`~nemoa.types.FileAccessorBase`.
+
+    Row Like
+
+        *Row like* data comprises different data formats, which can be used to
+        create a table row by the method :meth:`Table.create_row
+        <nemoa.db.table.Table.create_row>`. This includes tuples, lists,
+        mappings and instances of the :class:`Record class
+        <nemoa.db.table.Record>`
