@@ -8,10 +8,11 @@ __docformat__ = 'google'
 
 import abc
 import random
+import operator
 import dataclasses
 from nemoa.base import attrib, check, pattern
-from nemoa.errors import TableError, RowLookupError
-from nemoa.errors import CursorModeError, ProxyError
+from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
+from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, Iterable, Union, Optional, StrDict, StrTuple
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, ClassVar, List, OptStr
@@ -30,6 +31,7 @@ OptRecord = Optional['Record']
 RowList = List['Record']
 RowLike = Union['Record', tuple, list, Mapping]
 RowLikeList = List[RowLike]
+OrderByType = Optional[Union[str, List[str], Tuple[str]]]
 
 #
 # Constants
@@ -137,12 +139,6 @@ class Cursor(attrib.Container):
     """
 
     #
-    # Class Variables
-    #
-
-    _default_mode: ClassVar[int] = CURSOR_MODE_FLAG_INDEXED
-
-    #
     # Public Attributes
     #
 
@@ -209,7 +205,8 @@ class Cursor(attrib.Container):
     # Protected Attributes
     #
 
-    _mode: property = attrib.MetaData(classinfo=int, default=_default_mode)
+    _mode: property = attrib.MetaData(
+        classinfo=int, factory='_get_default_mode')
     _index: property = attrib.MetaData(classinfo=list, inherit=True)
     _getter: property = attrib.Temporary(classinfo=CallableClasses)
     _sorter: property = attrib.Temporary(classinfo=CallableClasses)
@@ -328,7 +325,6 @@ class Cursor(attrib.Container):
             self._index = []
 
     def _create_buffer(self) -> None:
-
         # Create result set from dynamic cursor
         cur = self.__class__(
             index=self._index, getter=self._getter, predicate=self._filter)
@@ -343,6 +339,15 @@ class Cursor(attrib.Container):
             buffer = self._mapper(buffer)
 
         self._buffer = buffer
+
+    #
+    # Class Variables
+    #
+
+    def _get_default_mode(self) -> int:
+        if self._sorter:
+            return CURSOR_MODE_FLAG_BUFFERED
+        return CURSOR_MODE_FLAG_INDEXED
 
     def _get_next_from_fixed_index(self) -> RowLike:
         is_random = self._mode & CURSOR_MODE_FLAG_RANDOM
@@ -610,23 +615,23 @@ class Table(attrib.Container):
 
     def select(
             self, columns: OptStrTuple = None, predicate: OptCallable = None,
-            sortby: OptStr = None, mode: OptStr = None,
-            fmt: type = tuple) -> RowLikeList:
+            orderby: OrderByType = None, reverse: bool = False,
+            mode: OptStr = None, dtype: type = tuple) -> RowLikeList:
         """ """
 
-        # Determine mapper by arguments 'column' and 'fmt'
+        # Determine mapper by arguments 'columns' and 'dtype'
         if not columns:
-            mapper = self._get_mapper(self.colnames, fmt=fmt)
+            mapper = self._get_mapper(self.colnames, dtype=dtype)
         else:
             check.is_subset(
                 "'columns'", set(columns),
                 "table column names", set(self.colnames))
-            mapper = self._get_mapper(columns, fmt=fmt)
+            mapper = self._get_mapper(columns, dtype=dtype)
 
-        # Determine sorter function by argument 'sortby'
+        # Determine sorter function by arguments 'orderby' and 'reverse'
         sorter: OptCallable
-        if sortby:
-            sorter = self._get_sorter(sortby)
+        if orderby:
+            sorter = self._get_sorter(orderby, reverse=reverse)
         else:
             sorter = None
 
@@ -708,13 +713,13 @@ class Table(attrib.Container):
     def _get_fields(self) -> FieldTuple:
         return dataclasses.fields(self._create_row)
 
-    def _get_mapper(self, columns: StrTuple, fmt: type = tuple) -> Callable:
-        if fmt == tuple:
+    def _get_mapper(self, columns: StrTuple, dtype: type = tuple) -> Callable:
+        if dtype == tuple:
             return self._get_mapper_tuple(columns)
-        if fmt == dict:
+        if dtype == dict:
             return self._get_mapper_dict(columns)
         raise TableError(
-            f"mapper with format '{fmt.__name__}' is not supported")
+            f"mapper with format '{dtype.__name__}' is not supported")
 
     def _get_mapper_tuple(self,
             columns: StrTuple) -> Callable[[RowList], List[tuple]]:
@@ -732,8 +737,15 @@ class Table(attrib.Container):
             lambda rows: [map_row(row) for row in rows])
         return map_rows
 
-    def _get_sorter(self, column: str, reverse: bool = False) -> Callable:
-        key = lambda row: getattr(row, column)
+    def _get_sorter(
+            self, orderby: OrderByType, reverse: bool = False) -> Callable:
+        # Use operator.attrgetter -> faster then getattr
+        if isinstance(orderby, str):
+            key = operator.attrgetter(orderby)
+        elif isinstance(orderby, (list, tuple)):
+            key = operator.attrgetter(*orderby)
+        else:
+            raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
         return lambda rows: sorted(rows, key=key, reverse=reverse)
 
     def _get_name(self) -> str:
