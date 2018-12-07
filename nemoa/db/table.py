@@ -618,22 +618,11 @@ class Table(attrib.Container):
             orderby: OrderByType = None, reverse: bool = False,
             mode: OptStr = None, dtype: type = tuple) -> RowLikeList:
         """ """
+        # Create sorting operator w.r.t. 'orderby' and 'reverse'
+        sorter = self._create_sorter(orderby, reverse=reverse)
 
-        # Determine mapper by arguments 'columns' and 'dtype'
-        if not columns:
-            mapper = self._get_mapper(self.colnames, dtype=dtype)
-        else:
-            check.is_subset(
-                "'columns'", set(columns),
-                "table column names", set(self.colnames))
-            mapper = self._get_mapper(columns, dtype=dtype)
-
-        # Determine sorter function by arguments 'orderby' and 'reverse'
-        sorter: OptCallable
-        if orderby:
-            sorter = self._get_sorter(orderby, reverse=reverse)
-        else:
-            sorter = None
+        # Create mapping operator w.r.t. 'columns' and 'dtype'
+        mapper = self._create_mapper(columns, dtype=dtype)
 
         return self.get_cursor( # type: ignore
             predicate=predicate, mapper=mapper, sorter=sorter, mode=mode)
@@ -704,6 +693,48 @@ class Table(attrib.Container):
         self._diff = []
         self._index = []
 
+    def _create_mapper(
+            self, columns: OptStrTuple, dtype: type = tuple) -> Callable:
+        if columns:
+            check.is_subset(
+                "'columns'", set(columns),
+                "table column names", set(self.colnames))
+        else:
+            columns = self.colnames
+        if dtype == tuple:
+            return self._create_mapper_tuple(columns)
+        if dtype == dict:
+            return self._create_mapper_dict(columns)
+        raise TableError(
+            f"mapper with format '{dtype.__name__}' is not supported")
+
+    def _create_mapper_tuple(self,
+            columns: StrTuple) -> Callable[[RowList], List[tuple]]:
+        return lambda rows: list(map(operator.attrgetter(*columns), rows))
+
+    def _create_mapper_dict(self,
+            columns: StrTuple) -> Callable[[RowList], List[dict]]:
+        map_row: Callable[[Record], dict] = (
+            lambda row: dict(zip(columns, operator.attrgetter(*columns)(row))))
+        map_rows: Callable[[RowList], List[dict]] = (
+            lambda rows: list(map(map_row, rows)))
+        return map_rows
+
+    def _create_sorter(
+            self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
+        # Use operator.attrgetter -> faster then getattr
+        if orderby is None:
+            if not reverse:
+                return None
+            key = None
+        elif isinstance(orderby, str):
+            key = operator.attrgetter(orderby)
+        elif isinstance(orderby, (list, tuple)):
+            key = operator.attrgetter(*orderby)
+        else:
+            raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
+        return lambda rows: sorted(rows, key=key, reverse=reverse)
+
     def _create_row_id(self) -> int:
         return len(self._store)
 
@@ -712,41 +743,6 @@ class Table(attrib.Container):
 
     def _get_fields(self) -> FieldTuple:
         return dataclasses.fields(self._create_row)
-
-    def _get_mapper(self, columns: StrTuple, dtype: type = tuple) -> Callable:
-        if dtype == tuple:
-            return self._get_mapper_tuple(columns)
-        if dtype == dict:
-            return self._get_mapper_dict(columns)
-        raise TableError(
-            f"mapper with format '{dtype.__name__}' is not supported")
-
-    def _get_mapper_tuple(self,
-            columns: StrTuple) -> Callable[[RowList], List[tuple]]:
-        map_row: Callable[[Record], tuple] = (
-            lambda row: tuple(getattr(row, col) for col in columns))
-        map_rows: Callable[[RowList], List[tuple]] = (
-            lambda rows: [map_row(row) for row in rows])
-        return map_rows
-
-    def _get_mapper_dict(self,
-            columns: StrTuple) -> Callable[[RowList], List[dict]]:
-        map_row: Callable[[Record], dict] = (
-            lambda row: {col: getattr(row, col) for col in columns})
-        map_rows: Callable[[RowList], List[dict]] = (
-            lambda rows: [map_row(row) for row in rows])
-        return map_rows
-
-    def _get_sorter(
-            self, orderby: OrderByType, reverse: bool = False) -> Callable:
-        # Use operator.attrgetter -> faster then getattr
-        if isinstance(orderby, str):
-            key = operator.attrgetter(orderby)
-        elif isinstance(orderby, (list, tuple)):
-            key = operator.attrgetter(*orderby)
-        else:
-            raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
-        return lambda rows: sorted(rows, key=key, reverse=reverse)
 
     def _get_name(self) -> str:
         return self._name
