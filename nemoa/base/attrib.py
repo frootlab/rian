@@ -270,7 +270,7 @@ class Attribute(property):
         self.name = name
 
     def __get__(self, obj: Group, cls: OptType = None) -> Any:
-        """Bypass get request."""
+        """Bypass get requests."""
         if self._is_remote(obj):
             return self._get_remote(obj)
         if callable(self.fget):
@@ -286,7 +286,7 @@ class Attribute(property):
         return self._get_default(obj)
 
     def __set__(self, obj: Group, val: Any) -> None:
-        """Bypass and type check set request."""
+        """Bypass and type check set requests."""
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):
@@ -304,6 +304,23 @@ class Attribute(property):
         binddict = self._get_bindict(obj)
         bindkey = self._get_bindkey(obj)
         binddict[bindkey] = val
+
+    def __delete__(self, obj: Group) -> None:
+        """Bypass delete requests."""
+        if self._get_readonly(obj):
+            raise ReadOnlyAttrError(obj, self.name)
+        if self._is_remote(obj):
+            self._del_remote(obj)
+            return
+        if callable(self.fdel):
+            self.fdel(obj) # type: ignore
+            return
+        if isinstance(self.sdel, str):
+            getattr(obj, self.sdel, void)()
+            return
+        binddict = self._get_bindict(obj)
+        bindkey = self._get_bindkey(obj)
+        del binddict[bindkey]
 
     #
     # Protected Methods
@@ -366,6 +383,12 @@ class Attribute(property):
         if not parent:
             raise ReferenceError() # TODO
         setattr(parent, self.name, val)
+
+    def _del_remote(self, obj: Group) -> None:
+        parent = obj._attr_group_parent # pylint: disable=W0212
+        if not parent:
+            raise ReferenceError() # TODO
+        delattr(parent, self.name)
 
 #
 # Attribute Container Base Class Standard Attribute Classes for Containers

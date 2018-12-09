@@ -557,8 +557,10 @@ class Table(attrib.Container):
             https://en.wikipedia.org/wiki/Drop_(SQL)
 
         """
-        self.truncate() # Remove all Table Data
-        self._delete_metadata() # Delete Table MetaData
+        self.truncate() # Delete Table Data
+        self._delete_header() # Delete Table Structure
+        self._delete_metadata() # Delete Table Metadata
+        self._delete_name() # Delete Table Identifier
 
     def truncate(self) -> None:
         """Delete all data from current table.
@@ -585,7 +587,7 @@ class Table(attrib.Container):
         This method is motivated by the SQL `COMMIT`_ statement and applies
         all data :meth:`updates <.update>`, :meth:`inserts <.insert>` and
         :meth:`deletions <.delete>` since the creation of the table or
-        the last :meth:`.commit`.
+        the last :meth:`.commit` and makes all changes visible to other users.
 
         .. _COMMIT:
             https://en.wikipedia.org/wiki/Commit_(SQL)
@@ -908,10 +910,13 @@ class Table(attrib.Container):
         return dataclasses.fields(self._record)
 
     def _get_name(self) -> str:
-        return self._name
+        return self._name or self._default_name()
 
     def _default_name(self) -> str:
         return 'unkown'
+
+    def _delete_name(self) -> None:
+        del self._name
 
     def _set_name(self, name: OptStr) -> None:
         if isinstance(name, str):
