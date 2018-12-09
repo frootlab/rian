@@ -13,7 +13,7 @@ from nemoa.types import Any, FileRef, FileRefClasses
 from nemoa.errors import ConnectError, DisconnectError
 
 #
-# Classes
+# CSV Table Proxy Class
 #
 
 class Table(table.ProxyBase):
@@ -21,6 +21,10 @@ class Table(table.ProxyBase):
 
     _fileref: property = attrib.Temporary(classinfo=FileRefClasses)
     _file: property = attrib.Temporary(classinfo=csv.File)
+
+    #
+    # Special Methods
+    #
 
     def __init__(self, file: FileRef, *args: Any, **kwds: Any) -> None:
         """Initialize CSV-Table Proxy.
@@ -36,14 +40,25 @@ class Table(table.ProxyBase):
         self.connect(file, *args, **kwds) # Connect CSV File
         self._post_init() # Run post init hook
 
+    #
+    # Public Methods
+    #
+
     def connect( # type: ignore
             self, file: FileRef, *args: Any, **kwds: Any) -> None:
         """Connect to given file reference."""
         if self._connected:
             raise ConnectError("the connection already has been established")
-        self._file = csv.File(file, *args, **kwds) # Open CSV-formatted file
-        self._create_header(self._file.fields) # Create header
-        self._name = self._file.name
+
+        # Create and reference CSV file
+        fh = csv.File(file, *args, **kwds)
+        self._file = fh
+
+        # Get metadata from CSV file
+        metadata = ini.decode(fh.comment, flat=True, autocast=True)
+
+        # Create table
+        self.create(fh.name, fh.fields, metadata=metadata)
         self._connected = True
 
     def disconnect(self) -> None:

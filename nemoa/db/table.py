@@ -15,8 +15,8 @@ from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, Iterable, Union, Optional, StrDict, StrTuple
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
-from nemoa.types import OptStrTuple, OptInt, List, OptStr
-from nemoa.types import Iterator, Any, OptDict, Mapping, MappingProxy
+from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
+from nemoa.types import Mapping, MappingProxy, OptMapping
 
 #
 # Structural Types
@@ -25,8 +25,8 @@ from nemoa.types import Iterator, Any, OptDict, Mapping, MappingProxy
 Field = dataclasses.Field
 FieldTuple = Tuple[Field, ...]
 Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
-FieldLike = Union[Fields, Tuple[str, type, StrDict]]
-OptFieldLike = Optional[FieldLike]
+FieldsLike = Union[Fields, Tuple[str, type, StrDict]]
+OptFieldsLike = Optional[FieldsLike]
 OptRecord = Optional['Record']
 RowList = List['Record']
 RowLike = Union['Record', tuple, list, Mapping]
@@ -78,6 +78,8 @@ class Record(abc.ABC):
         """Check validity of the field types."""
         fields = getattr(self, '__dataclass_fields__', {})
         for name, field in fields.items():
+            if isinstance(field.type, str):
+                continue # Do not type check structural types like 'typing.Any'
             value = getattr(self, name)
             check.has_type(f"field '{name}'", value, field.type)
 
@@ -464,10 +466,11 @@ class Table(attrib.Container):
     # Protected Attributes
     #
 
-    _store: property = attrib.Content(classinfo=list, default=[])
+    _data: property = attrib.Content(classinfo=list)
     _name: property = attrib.MetaData(classinfo=str)
     _metadata: property = attrib.MetaData(classinfo=Mapping)
     _metadata_proxy: property = attrib.Temporary(classinfo=MappingProxy)
+    _record: property = attrib.Temporary()
     _diff: property = attrib.Temporary(classinfo=list, default=[])
     _index: property = attrib.Temporary(classinfo=list, default=[])
     _iter_index: property = attrib.Temporary()
@@ -477,13 +480,12 @@ class Table(attrib.Container):
     #
 
     def __init__(
-            self, name: OptStr = None, fields: OptFieldLike = None,
-            metadata: OptDict = None, parent: OptContainer = None) -> None:
-        # Initialize Container Parameters
-        super().__init__(parent=parent)
+            self, name: OptStr = None, fields: OptFieldsLike = None,
+            metadata: OptMapping = None, parent: OptContainer = None) -> None:
+        super().__init__(parent=parent) # Initialize Container Parameters
 
-        # Initialize Table Parameters, if name and fields are given
-        if name and fields:
+        # Initialize Table Structure
+        if fields:
             self.create(name, fields, metadata=metadata)
 
     def __iter__(self) -> Iterator:
@@ -504,9 +506,15 @@ class Table(attrib.Container):
     #
 
     def create(
-            self, name: str, fields: FieldLike,
-            metadata: OptDict = None) -> None:
-        """Create Table.
+            self, name: OptStr, fields: FieldsLike,
+            metadata: OptMapping = None) -> None:
+        """Create new table.
+
+        This method is motivated by the The SQL `CREATE TABLE`_ statement and
+        used to declare and initialize the parameters of the table and it's
+        fields. This includes naming the table, declare and initialize the field
+        parameters by column names, types and further field properties, like
+        default values, and supplementary table metadata.
 
         Args:
             name: The table name is required to be a valid identifier as defined
@@ -520,111 +528,103 @@ class Table(attrib.Container):
                 :class:`str`, :class:`int`, :class:`float` etc. (3) The column
                 name, the data type and supplementary field constraints by a
                 tuple ``(name, type, constraints)``: Thereby ``constraints`` is
-                requeried to be a dictionary. The items of this dictionary are
-                documented in the function :func:`dataclasses.fields`.
-            metadata: Optional dictionary, with supplementary metadata of the
+                requeried to be a dictionary, as documented in the function
+                :func:`dataclasses.fields`.
+            metadata: Optional mapping, with supplementary metadata of the
                 table. This does not comprise metadata of the fields, which has
                 to be included within the field declarations.
 
-        """
-        self._set_name(name) # Set name
-        self._create_header(fields) # Create table header
-        if metadata: # Set table metadata
-            self._set_metadata(metadata)
-        else:
-            self._set_metadata({})
-
-    def create_cursor(
-            self, predicate: OptCallable = None, sorter: OptCallable = None,
-            mapper: OptCallable = None, batchsize: OptInt = None,
-            mode: OptStr = None) -> Cursor:
-        """Create Cursor.
-
-        Args:
-            predicate: Optional filter operator, which determines, if a row is
-                included within the result set or not. By default all rows are
-                included within the result set.
-            sorter: Optional sorting operator, which determines the order of the
-                rows withon the result set. By default the order is determined
-                by the creation order of the rows.
-            mapper: Optional mapping operator, which determines the data format
-                of the result set. By default the result set is returned as a
-                list of tuples.
-            batchsize: Integer, that specifies the default number of rows which
-                is to be fetched by the method :meth:`Cursor.fetch
-                <nemoa.table.Cursor.fetch>`. It defaults to 1, meaning to fetch
-                a single row at a time. Whether and which batchsize to use
-                depends on the application and should be considered with care.
-                The batchsize can also be adapted during the lifetime of the
-                cursor, which allows dynamic performance optimization.
-            mode: Named string identifier for the cursor :py:attr:`.mode`. The
-                default cursor mode is 'forward-only indexed'. Note: After
-                initializing the curser, it's mode can not be changed anymore.
+        .. _CREATE TABLE:
+            https://en.wikipedia.org/wiki/Create_(SQL)
 
         """
-        return Cursor(
-            getter=self.get_row, predicate=predicate, mapper=mapper,
-            sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
+        self._set_name(name) # Set Name of the Table
+        self._create_metadata(metadata) # Set supplementary Metadata of Table
+        self._create_header(fields) # Dynamically create a new Record Class
 
-    def create_record(self, data: RowLike) -> Record:
-        """Create Record.
+    def drop(self) -> None:
+        """Delete all data and structure from current table.
 
-        Args:
-            data: :term:`Row like` data, that is valid w.r.t. the fields
-                declaration of table, as returned by the attribute
-                :attr:`.fields`.
+        This method is motivated by the the `SQL DROP TABLE`_ statement and used
+        to delete the table data and the table structure, given by the field
+        declarations, the table metadata and the table identifier.
 
-        Returns:
-            Representation of given data by a new instance of the :class:`Record
-            class <nemoa.db.table.Record>`.
+        Warning:
+            This operation should be treated with caution as it can not be
+            reverted by calling :meth:`.rollback`.
+
+        .. _SQL DROP TABLE:
+            https://en.wikipedia.org/wiki/Drop_(SQL)
 
         """
-        if isinstance(data, (tuple, list)):
-            return self._create_record(*data) # pylint: disable=E0110
-        if isinstance(data, Mapping):
-            try:
-                data = tuple(data[col] for col in self.columns)
-            except KeyError as err:
-                raise ValueError(
-                    "the given mapping does not contain "
-                    "required fields") from err
-            return self._create_record(*data) # pylint: disable=E0110
-        if isinstance(data, Record):
-            try:
-                data = tuple(getattr(data, col) for col in self.columns)
-            except AttributeError as err:
-                raise ValueError(
-                    "the given record does not contain "
-                    "required fields") from err
-            return self._create_record(*data) # pylint: disable=E0110
-        raise InvalidTypeError("'data'", data, (tuple, list, Mapping, Record))
+        self.truncate() # Remove all Table Data
+        self._delete_metadata() # Delete Table MetaData
+
+    def truncate(self) -> None:
+        """Delete all data from current table.
+
+        This method is motivated by the SQL `TRUNCATE TABLE`_ statement and used
+        to delete the data inside a table, but not the table structure and
+        metadata.
+
+        Warning:
+            This operation should be treated with caution as it can not be
+            reverted by calling :meth:`.rollback`.
+
+        .. _TRUNCATE TABLE:
+            https://en.wikipedia.org/wiki/Truncate_(SQL)
+
+        """
+        self._data = [] # Initialize Storage Table
+        self._diff = [] # Initialize Diff Table
+        self._index = [] # Initialize Table Master Index
 
     def commit(self) -> None:
-        """Apply changes to table."""
+        """Apply data changes to table.
+
+        This method is motivated by the SQL `COMMIT`_ statement and applies
+        all data :meth:`updates <.update>`, :meth:`inserts <.insert>` and
+        :meth:`deletions <.delete>` since the creation of the table or
+        the last :meth:`.commit`.
+
+        .. _COMMIT:
+            https://en.wikipedia.org/wiki/Commit_(SQL)
+
+        """
         # Delete / Update rows in storage table
-        for rowid in list(range(len(self._store))):
+        for rowid in list(range(len(self._data))):
             row = self.get_row(rowid)
             if not row:
                 continue
             state = row.state
             if state & RECORD_STATE_FLAG_DELETE:
-                self._store[rowid] = None
+                self._data[rowid] = None
                 try:
                     self._index.remove(rowid)
                 except ValueError:
                     pass
             elif state & (RECORD_STATE_FLAG_CREATE | RECORD_STATE_FLAG_UPDATE):
-                self._store[rowid] = self._diff[rowid]
-                self._store[rowid].state = 0
+                self._data[rowid] = self._diff[rowid]
+                self._data[rowid].state = 0
 
-        # Flush diff table
-        self._diff = [None] * len(self._store)
+        # Initialize Diff Table
+        self._diff = [None] * len(self._data)
 
     def rollback(self) -> None:
-        """Revoke changes from table."""
+        """Revert data changes from table.
+
+        This method is motivated by the SQL `ROLLBACK`_ statement and reverts
+        all data :meth:`updates <.update>`, :meth:`inserts <.insert>` and
+        :meth:`deletions <.delete>` since the creation of the table or
+        the last :meth:`.commit`.
+
+        .. _ROLLBACK:
+            https://en.wikipedia.org/wiki/Rollback_(SQL)
+
+        """
         # Remove newly created rows from index and reset states of already
         # existing rows
-        for rowid in list(range(len(self._store))):
+        for rowid in list(range(len(self._data))):
             row = self.get_row(rowid)
             if not row:
                 continue
@@ -635,13 +635,15 @@ class Table(attrib.Container):
                 except ValueError:
                     pass
             else:
-                self._store[rowid].state = 0
+                self._data[rowid].state = 0
 
-        # Flush diff table
-        self._diff = [None] * len(self._store)
+        # Initialize Diff Table
+        self._diff = [None] * len(self._data)
 
-    def get_metadata(self, key: str) -> Any:
+    def get_metadata(self, key: OptStr) -> Any:
         """Get single entry from table metadata."""
+        if key is None:
+            return self._metadata_proxy
         return self.metadata[key]
 
     def set_metadata(self, key: str, val: Any) -> None:
@@ -650,17 +652,24 @@ class Table(attrib.Container):
 
     def get_row(self, rowid: int) -> OptRecord:
         """Get single row by given row ID."""
-        return self._diff[rowid] or self._store[rowid]
+        return self._diff[rowid] or self._data[rowid]
 
     def get_rows(
             self, predicate: OptCallable = None, mode: OptStr = None) -> Cursor:
         """Get multiple rows by given predicate."""
-        return self.create_cursor(predicate=predicate, mode=mode)
+        return self._create_cursor(predicate=predicate, mode=mode)
 
     def append_row(self, row: RowLike) -> None:
-        """Append single row from :term:`row like` data."""
-        rec = self.create_record(row)
-        self._store.append(None)
+        """Append single row from row like data.
+
+        Args:
+            data: :term:`Row like` data, which is valid with respect to the
+                field declaration of table, as returned by the attribute
+                :attr:`.fields`.
+
+        """
+        rec = self._create_record(row)
+        self._data.append(None)
         self._diff.append(rec)
         self._append_rowid(rec._id) # pylint: disable=W0212
 
@@ -740,7 +749,7 @@ class Table(attrib.Container):
         mapper = self._create_mapper(columns, dtype=dtype)
 
         # Create cursor on the specified result set
-        return self.create_cursor(
+        return self._create_cursor(
             predicate=predicate, sorter=sorter, mapper=mapper,
             batchsize=batchsize, mode=mode)
 
@@ -750,15 +759,15 @@ class Table(attrib.Container):
         self.commit()
 
         # Remove empty records
-        self._store = list(filter(None.__ne__, self._store))
+        self._data = list(filter(None.__ne__, self._data))
 
         # Rebuild table index
-        self._index = list(range(len(self._store)))
+        self._index = list(range(len(self._data)))
         for rowid in self._index:
-            self._store[rowid]._id = rowid # pylint: disable=W0212
+            self._data[rowid]._id = rowid # pylint: disable=W0212
 
         # Rebuild diff table
-        self._diff = [None] * len(self._store)
+        self._diff = [None] * len(self._data)
 
     #
     # Protected Methods
@@ -767,7 +776,25 @@ class Table(attrib.Container):
     def _append_rowid(self, rowid: int) -> None:
         self._index.append(rowid)
 
-    def _create_header(self, columns: FieldLike) -> None:
+    def _create_metadata(self, mapping: OptMapping = None) -> None:
+        check.has_opt_type("'metadata'", mapping, Mapping)
+        self._metadata = mapping or {}
+        self._metadata_proxy = MappingProxy(self._metadata)
+
+    def _delete_metadata(self) -> None:
+        del self._metadata_proxy
+        del self._metadata
+
+    def _create_cursor(
+            self, predicate: OptCallable = None, sorter: OptCallable = None,
+            mapper: OptCallable = None, batchsize: OptInt = None,
+            mode: OptStr = None) -> Cursor:
+
+        return Cursor(
+            getter=self.get_row, predicate=predicate, mapper=mapper,
+            sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
+
+    def _create_header(self, columns: FieldsLike) -> None:
         # Check types of fieldlike column descriptors and convert them to field
         # descriptors, that are accepted by dataclasses.make_dataclass()
         fields: list = []
@@ -797,18 +824,38 @@ class Table(attrib.Container):
             '_update_hook': self._update_row_diff,
             '_revoke_hook': self._remove_row_diff}
 
-        # Create row constructor
-        self._create_record = dataclasses.make_dataclass(
+        # Create row constructor and slots of constructor
+        self._record = dataclasses.make_dataclass(
             'Row', fields, bases=(Record, ), namespace=namespace)
+        self._record.__slots__ = ['id', 'state'] + [
+            field.name for field in dataclasses.fields(self._record)]
 
-        # Create slots
-        self._create_record.__slots__ = ['id', 'state'] + [
-            field.name for field in dataclasses.fields(self._create_record)]
+        self.truncate() # Initialize table data
 
-        # Reset store, diff and index
-        self._store = []
-        self._diff = []
-        self._index = []
+    def _create_record(self, data: RowLike) -> Record:
+        if isinstance(data, (tuple, list)):
+            return self._record(*data)
+        if isinstance(data, Mapping):
+            try:
+                data = tuple(data[col] for col in self.columns)
+            except KeyError as err:
+                raise ValueError(
+                    "the given mapping does not contain "
+                    "required fields") from err
+            return self._record(*data)
+        if isinstance(data, Record):
+            try:
+                data = tuple(getattr(data, col) for col in self.columns)
+            except AttributeError as err:
+                raise ValueError(
+                    "the given record does not contain "
+                    "required fields") from err
+            return self._record(*data)
+        raise InvalidTypeError("'data'", data, (tuple, list, Mapping, Record))
+
+    def _delete_header(self) -> None:
+        self.truncate() # Delete table data
+        del self._record # Delete record constructor
 
     def _create_mapper(
             self, columns: OptStrTuple, dtype: type = tuple) -> Callable:
@@ -852,28 +899,26 @@ class Table(attrib.Container):
         return lambda rows: sorted(rows, key=key, reverse=reverse)
 
     def _create_rowid(self) -> int:
-        return len(self._store)
+        return len(self._data)
 
     def _get_columns(self) -> StrTuple:
         return tuple(field.name for field in self.fields)
 
     def _get_fields(self) -> FieldTuple:
-        return dataclasses.fields(self._create_record)
+        return dataclasses.fields(self._record)
 
     def _get_name(self) -> str:
         return self._name
 
-    def _set_name(self, name: str) -> None:
-        check.is_identifier(f"'name'", name)
-        self._name = name
+    def _default_name(self) -> str:
+        return 'unkown'
 
-    def _get_metadata(self) -> MappingProxy:
-        return self._metadata_proxy
-
-    def _set_metadata(self, mapping: Mapping) -> None:
-        check.has_type("'metadata'", mapping, Mapping)
-        self._metadata = mapping
-        self._metadata_proxy = MappingProxy(self._metadata)
+    def _set_name(self, name: OptStr) -> None:
+        if isinstance(name, str):
+            check.is_identifier(f"'name'", name)
+            self._name = name
+        else:
+            self._name = self._default_name()
 
     def _remove_row_diff(self, rowid: int) -> None:
         self._diff[rowid] = None
