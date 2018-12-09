@@ -1,17 +1,15 @@
 nemoa.io package
-==================
+================
 
 Submodules
 ----------
 
 .. toctree::
 
-   nemoa.io.raw
-   nemoa.io.dsv
+   nemoa.io.csv
    nemoa.io.ini
-   nemoa.io.nplot
-   nemoa.io.stream
-   nemoa.io.textfile
+   nemoa.io.plain
+   nemoa.io.raw
    nemoa.io.ws
 
 Module contents
