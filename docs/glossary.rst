@@ -499,19 +499,18 @@ Types
 
     Row Like
 
-        *Row like* data comprises different data formats, which can be used to
-        represent table rows. This includes tuples, lists, mappings and
-        instances of the :class:`Record class <nemoa.db.table.Record>`.
-        The :class:`Table class <nemoa.db.table.Table>` accepts these data types
-        for appending rows by :meth:`~nemoa.db.table.Table.append_row` and
-        :meth:`~nemoa.db.table.Table.append_rows` and for retrieving rows by
+        *Row like* data comprises different data formats, which are used to
+        represent table records. This includes tuples, mappings and instances of
+        the :class:`Record class <nemoa.db.table.Record>`. The :class:`Table
+        class <nemoa.db.table.Table>` accepts these data types for appending
+        rows by :meth:`~nemoa.db.table.Table.insert` and for retrieving rows by
         :meth:`~nemoa.db.table.Table.select`.
 
     Cursor Mode
 
         The *cursor mode* defines the *scrolling type* and the *operation mode*
         of a cursor. Internally the respective parameters of the
-        :class:`cursor class <nemoa.db.table.Cursor>` are identified by binary
+        :class:`Cursor class <nemoa.db.table.Cursor>` are identified by binary
         flags. The public interface uses a string representation, given by
         the space separated names of the scrolling type and the the operation
         mode. Supported scrolling types are:

@@ -24,13 +24,15 @@ from nemoa.types import Mapping, MappingProxy, OptMapping
 
 Field = dataclasses.Field
 FieldTuple = Tuple[Field, ...]
+OptFieldTuple = Optional[FieldTuple]
 Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
 FieldsLike = Union[Fields, Tuple[str, type, StrDict]]
 OptFieldsLike = Optional[FieldsLike]
 OptRecord = Optional['Record']
 RowList = List['Record']
-RowLike = Union['Record', tuple, list, Mapping]
+RowLike = Union['Record', tuple, Mapping]
 RowLikeList = List[RowLike]
+ValuesType = Optional[Union[RowLike, RowLikeList]]
 OrderByType = Optional[Union[str, List[str], Tuple[str]]]
 OptContainer = Optional[attrib.Container]
 
@@ -508,7 +510,7 @@ class Table(attrib.Container):
     def create(
             self, name: OptStr, fields: FieldsLike,
             metadata: OptMapping = None) -> None:
-        """Create new table.
+        """Create table structure.
 
         This method is motivated by the The SQL `CREATE TABLE`_ statement and
         used to declare and initialize the parameters of the table and it's
@@ -534,8 +536,7 @@ class Table(attrib.Container):
                 table. This does not comprise metadata of the fields, which has
                 to be included within the field declarations.
 
-        .. _CREATE TABLE:
-            https://en.wikipedia.org/wiki/Create_(SQL)
+        .. _CREATE TABLE: https://en.wikipedia.org/wiki/Create_(SQL)
 
         """
         self._set_name(name) # Set Name of the Table
@@ -543,9 +544,9 @@ class Table(attrib.Container):
         self._create_header(fields) # Dynamically create a new Record Class
 
     def drop(self) -> None:
-        """Delete all data and structure from current table.
+        """Delete table data and table structure.
 
-        This method is motivated by the the `SQL DROP TABLE`_ statement and used
+        This method is motivated by the the SQL `DROP TABLE`_ statement and used
         to delete the table data and the table structure, given by the field
         declarations, the table metadata and the table identifier.
 
@@ -553,8 +554,7 @@ class Table(attrib.Container):
             This operation should be treated with caution as it can not be
             reverted by calling :meth:`.rollback`.
 
-        .. _SQL DROP TABLE:
-            https://en.wikipedia.org/wiki/Drop_(SQL)
+        .. _DROP TABLE: https://en.wikipedia.org/wiki/Drop_(SQL)
 
         """
         self.truncate() # Delete Table Data
@@ -563,7 +563,7 @@ class Table(attrib.Container):
         self._delete_name() # Delete Table Identifier
 
     def truncate(self) -> None:
-        """Delete all data from current table.
+        """Delete table data.
 
         This method is motivated by the SQL `TRUNCATE TABLE`_ statement and used
         to delete the data inside a table, but not the table structure and
@@ -573,8 +573,7 @@ class Table(attrib.Container):
             This operation should be treated with caution as it can not be
             reverted by calling :meth:`.rollback`.
 
-        .. _TRUNCATE TABLE:
-            https://en.wikipedia.org/wiki/Truncate_(SQL)
+        .. _TRUNCATE TABLE: https://en.wikipedia.org/wiki/Truncate_(SQL)
 
         """
         self._data = [] # Initialize Storage Table
@@ -589,11 +588,10 @@ class Table(attrib.Container):
         :meth:`deletions <.delete>` since the creation of the table or
         the last :meth:`.commit` and makes all changes visible to other users.
 
-        .. _COMMIT:
-            https://en.wikipedia.org/wiki/Commit_(SQL)
+        .. _COMMIT: https://en.wikipedia.org/wiki/Commit_(SQL)
 
         """
-        # Delete / Update rows in storage table
+        # Update data table and index
         for rowid in list(range(len(self._data))):
             row = self.get_row(rowid)
             if not row:
@@ -609,8 +607,7 @@ class Table(attrib.Container):
                 self._data[rowid] = self._diff[rowid]
                 self._data[rowid].state = 0
 
-        # Initialize Diff Table
-        self._diff = [None] * len(self._data)
+        self._diff = [None] * len(self._data) # Initialize Diff Table
 
     def rollback(self) -> None:
         """Revert data changes from table.
@@ -620,8 +617,7 @@ class Table(attrib.Container):
         :meth:`deletions <.delete>` since the creation of the table or
         the last :meth:`.commit`.
 
-        .. _ROLLBACK:
-            https://en.wikipedia.org/wiki/Rollback_(SQL)
+        .. _ROLLBACK: https://en.wikipedia.org/wiki/Rollback_(SQL)
 
         """
         # Remove newly created rows from index and reset states of already
@@ -639,83 +635,91 @@ class Table(attrib.Container):
             else:
                 self._data[rowid].state = 0
 
-        # Initialize Diff Table
-        self._diff = [None] * len(self._data)
+        self._diff = [None] * len(self._data) # Initialize Diff Table
 
-    def get_metadata(self, key: OptStr) -> Any:
-        """Get single entry from table metadata."""
-        if key is None:
-            return self._metadata_proxy
-        return self.metadata[key]
+    def insert(
+            self, columns: OptStrTuple = None,
+            values: ValuesType = None) -> None:
+        """Append one or more records to the table.
 
-    def set_metadata(self, key: str, val: Any) -> None:
-        """Change entry within table metadata."""
-        self._metadata[key] = val
-
-    def get_row(self, rowid: int) -> OptRecord:
-        """Get single row by given row ID."""
-        return self._diff[rowid] or self._data[rowid]
-
-    def get_rows(
-            self, predicate: OptCallable = None, mode: OptStr = None) -> Cursor:
-        """Get multiple rows by given predicate."""
-        return self._create_cursor(predicate=predicate, mode=mode)
-
-    def append_row(self, row: RowLike) -> None:
-        """Append single row from row like data.
+        This method is motivated by the SQL `INSERT`_ statement and appends one
+        ore more records to the table. The data changes can be organized in
+        transactions by :meth:`.commit` and :meth:`.rollback`.
 
         Args:
-            data: :term:`Row like` data, which is valid with respect to the
-                field declaration of table, as returned by the attribute
-                :attr:`.fields`.
+            columns: Optional tuple of valid column names. By default the
+                columns are equal to the attribute :attr:`.columns`.
+            values: Single record, given as :term:`row like` data or multiple
+                records given as list of row like data. If the records are given
+                as tuples, the corresponding column names are determined from
+                the argument *columns*.
+
+        .. _INSERT: https://en.wikipedia.org/wiki/Insert_(SQL)
 
         """
-        rec = self._create_record(row)
-        self._data.append(None)
-        self._diff.append(rec)
-        self._append_rowid(rec._id) # pylint: disable=W0212
+        values = values or tuple([]) # Get default value tuple
+        if not isinstance(values, list):
+            self._append_row(values, columns)
+            return
+        for row in values:
+            self._append_row(row, columns)
 
-    def append_rows(self, rows: RowLikeList) -> None:
-        """Append multiple rows."""
-        for row in rows:
-            self.append_row(row)
+    def update(self, where: OptCallable = None, **kwds: Any) -> None:
+        """Update values of one or more records from the table.
 
-    def delete_row(self, rowid: int) -> None:
-        """Delete single row by given row ID."""
-        row = self.get_row(rowid)
-        if not row:
-            raise RowLookupError(rowid)
-        row.delete()
+        This method is motivated by the SQL `UPDATE`_ statement and changes the
+        values of all records in the table, that satisfy the `WHERE`_ clause
+        given by the keyword argument 'where'. The data changes can be organized
+        in transactions by :meth:`.commit` and :meth:`.rollback`.
 
-    def delete_rows(self, predicate: OptCallable = None) -> None:
-        """Delete multiple rows by given predicate."""
-        for row in self.get_rows(predicate):
-            row.delete()
+        Args:
+            where: Optional filter operator, which determines, if a row is
+                included within the result set or not. By default all rows are
+                included within the result set.
+            **kwds: Items, which keys identify valid columns of the table, and
+                the values the new data, stored in the corresponding fields.
 
-    def update_row(self, rowid: int, **kwds: Any) -> None:
-        """Update values of single row by given row ID."""
-        row = self.get_row(rowid)
-        if not row:
-            raise RowLookupError(rowid)
-        row.update(**kwds)
+        .. _DELETE: https://en.wikipedia.org/wiki/Delete_(SQL)
+        .. _WHERE: https://en.wikipedia.org/wiki/Where_(SQL)
 
-    def update_rows(self, predicate: OptCallable = None, **kwds: Any) -> None:
-        """Update values of multiple rows by given predicate."""
-        for row in self.get_rows(predicate):
+        """
+        for row in self._create_cursor(predicate=where):
             row.update(**kwds)
 
+    def delete(self, where: OptCallable = None) -> None:
+        """Delete one or more records from the table.
+
+        This method is motivated by the SQL `DELETE`_ statement and marks all
+        records in the table as deleted, that satisfy the `WHERE`_ clause given
+        by the keyword argument 'where'. The data changes can be organized in
+        transactions by :meth:`.commit` and :meth:`.rollback`.
+
+        Args:
+            where: Optional filter operator, which determines, if a row is
+                included within the result set or not. By default all rows are
+                included within the result set.
+
+        .. _DELETE: https://en.wikipedia.org/wiki/Delete_(SQL)
+        .. _WHERE: https://en.wikipedia.org/wiki/Where_(SQL)
+
+        """
+        for row in self._create_cursor(predicate=where):
+            row.delete()
+
     def select(
-            self, columns: OptStrTuple = None, predicate: OptCallable = None,
+            self, columns: OptStrTuple = None, where: OptCallable = None,
             orderby: OrderByType = None, reverse: bool = False,
             dtype: type = tuple, batchsize: OptInt = None,
             mode: OptStr = None) -> Cursor:
-        """Get cursor on a specified result set from the table.
+        """Get cursor on a specified result set of records from table.
+
+        This method is motivated by the SQL `SELECT`_ statement and
 
         Args:
-            columns: Optional list or tuple of column names, that are known to
-                the table. By default the columns are taken from the attribute
+            columns: Optional tuple of column names, that are known to the
+                table. By default the columns are taken from the attribute
                 :attr:`.columns`.
-            predicate: Optional filter operator, which determines, if a row is
+            where: Optional filter operator, which determines, if a row is
                 included within the result set or not. By default all rows are
                 included within the result set.
             orderby: Optional column name or tuple of column names, which
@@ -743,6 +747,8 @@ class Table(attrib.Container):
             New instance of :class:`Cursor class <nemoa.db.table.Cursor>` on
             on a specified result set from the table.
 
+        .. _SELECT: https://en.wikipedia.org/wiki/Select_(SQL)
+
         """
         # Create sorting operator w.r.t. 'orderby' and 'reverse'
         sorter = self._create_sorter(orderby, reverse=reverse)
@@ -752,8 +758,54 @@ class Table(attrib.Container):
 
         # Create cursor on the specified result set
         return self._create_cursor(
-            predicate=predicate, sorter=sorter, mapper=mapper,
+            predicate=where, sorter=sorter, mapper=mapper,
             batchsize=batchsize, mode=mode)
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def get_metadata(self, key: OptStr) -> Any:
+        """Get single entry from table metadata."""
+        if key is None:
+            return self._metadata_proxy
+        return self.metadata[key]
+
+    def set_metadata(self, key: str, val: Any) -> None:
+        """Change entry within table metadata."""
+        self._metadata[key] = val
+
+    def get_row(self, rowid: int) -> OptRecord:
+        """Get single row by given row ID."""
+        return self._diff[rowid] or self._data[rowid]
+
+    # def get_rows(
+    #         self, predicate: OptCallable = None,
+    #         mode: OptStr = None) -> Cursor:
+    #     """Get multiple rows by given predicate."""
+    #     return self._create_cursor(predicate=predicate, mode=mode)
+
+    # def update_row(self, rowid: int, **kwds: Any) -> None:
+    #     """Update values of single row by given row ID."""
+    #     row = self.get_row(rowid)
+    #     if not row:
+    #         raise RowLookupError(rowid)
+    #     row.update(**kwds)
+
+    # def delete_row(self, rowid: int) -> None:
+    #     """Delete single row by given row ID."""
+    #     row = self.get_row(rowid)
+    #     if not row:
+    #         raise RowLookupError(rowid)
+    #     row.delete()
 
     def pack(self) -> None:
         """Remove empty records from storage table and rebuild table index."""
@@ -774,6 +826,19 @@ class Table(attrib.Container):
     #
     # Protected Methods
     #
+
+    def _append_row(self, row: RowLike, columns: OptStrTuple = None) -> None:
+        if columns:
+            if isinstance(row, tuple):
+                mapping = dict(zip(row, columns))
+                rec = self._create_record(**mapping) # type: ignore
+            else:
+                raise TypeError() # TODO
+        else:
+            rec = self._create_record(row)
+        self._data.append(None)
+        self._diff.append(rec)
+        self._append_rowid(rec._id) # pylint: disable=W0212
 
     def _append_rowid(self, rowid: int) -> None:
         self._index.append(rowid)
@@ -906,7 +971,7 @@ class Table(attrib.Container):
     def _get_columns(self) -> StrTuple:
         return tuple(field.name for field in self.fields)
 
-    def _get_fields(self) -> FieldTuple:
+    def _get_fields(self) -> OptFieldTuple:
         if not hasattr(self, '_record') or not self._record:
             return None
         return dataclasses.fields(self._record)

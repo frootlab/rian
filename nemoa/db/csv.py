@@ -75,7 +75,7 @@ class Table(table.ProxyBase):
         self._metadata.update(mapping)
         self.name = self._file.name
         rows = self._file.read()
-        self.append_rows(rows)
+        self.insert(rows)
 
     def push(self) -> None:
         """Push all rows to CSV-File."""
