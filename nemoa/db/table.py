@@ -907,6 +907,8 @@ class Table(attrib.Container):
         return tuple(field.name for field in self.fields)
 
     def _get_fields(self) -> FieldTuple:
+        if not hasattr(self, '_record') or not self._record:
+            return None
         return dataclasses.fields(self._record)
 
     def _get_name(self) -> str:
