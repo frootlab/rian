@@ -35,6 +35,7 @@ RowLikeList = List[RowLike]
 ValuesType = Optional[Union[RowLike, RowLikeList]]
 OrderByType = Optional[Union[str, List[str], Tuple[str]]]
 OptContainer = Optional[attrib.Container]
+OptMappingProxy = Optional[MappingProxy]
 
 #
 # Constants
@@ -444,7 +445,7 @@ class Table(attrib.Container):
     name: property = attrib.Virtual(fget='_get_name', fset='_set_name')
     name.__doc__ = "Name of the table."
 
-    metadata: property = attrib.Virtual(fget='_get_metadata')
+    metadata: property = attrib.Virtual(fget='_get_metadata_proxy')
     metadata.__doc__ = """
     Read-only attribute, that provides an access to the tables metadata by a
     mappingproxy. Individual entries can be accessed and changed by the methods
@@ -495,9 +496,9 @@ class Table(attrib.Container):
         return self
 
     def __next__(self) -> Record:
-        row = self.get_row(next(self._iter_index))
+        row = self.row(next(self._iter_index))
         while not row:
-            row = self.get_row(next(self._iter_index))
+            row = self.row(next(self._iter_index))
         return row
 
     def __len__(self) -> int:
@@ -593,7 +594,7 @@ class Table(attrib.Container):
         """
         # Update data table and index
         for rowid in list(range(len(self._data))):
-            row = self.get_row(rowid)
+            row = self.row(rowid)
             if not row:
                 continue
             state = row.state
@@ -623,7 +624,7 @@ class Table(attrib.Container):
         # Remove newly created rows from index and reset states of already
         # existing rows
         for rowid in list(range(len(self._data))):
-            row = self.get_row(rowid)
+            row = self.row(rowid)
             if not row:
                 continue
             state = row.state
@@ -638,8 +639,8 @@ class Table(attrib.Container):
         self._diff = [None] * len(self._data) # Initialize Diff Table
 
     def insert(
-            self, columns: OptStrTuple = None,
-            values: ValuesType = None) -> None:
+            self, values: ValuesType = None,
+            columns: OptStrTuple = None) -> None:
         """Append one or more records to the table.
 
         This method is motivated by the SQL `INSERT`_ statement and appends one
@@ -647,12 +648,12 @@ class Table(attrib.Container):
         transactions by :meth:`.commit` and :meth:`.rollback`.
 
         Args:
-            columns: Optional tuple of valid column names. By default the
-                columns are equal to the attribute :attr:`.columns`.
             values: Single record, given as :term:`row like` data or multiple
                 records given as list of row like data. If the records are given
                 as tuples, the corresponding column names are determined from
                 the argument *columns*.
+            columns: Optional tuple of known column names. By default the
+                columns are taken from the attribute :attr:`.columns`.
 
         .. _INSERT: https://en.wikipedia.org/wiki/Insert_(SQL)
 
@@ -713,7 +714,9 @@ class Table(attrib.Container):
             mode: OptStr = None) -> Cursor:
         """Get cursor on a specified result set of records from table.
 
-        This method is motivated by the SQL `SELECT`_ statement and
+        This method is motivated by the SQL `SELECT`_ statement and creates
+        a :class:`Cursor class <nemoa.db.table.Cursor>` instance with specified
+        properties.
 
         Args:
             columns: Optional tuple of column names, that are known to the
@@ -761,51 +764,17 @@ class Table(attrib.Container):
             predicate=where, sorter=sorter, mapper=mapper,
             batchsize=batchsize, mode=mode)
 
-
-
-
-
-
-
-
-
-
-
-
-
-    def get_metadata(self, key: OptStr) -> Any:
+    def get_metadata(self, key: str) -> Any:
         """Get single entry from table metadata."""
-        if key is None:
-            return self._metadata_proxy
-        return self.metadata[key]
+        return self._metadata[key]
 
     def set_metadata(self, key: str, val: Any) -> None:
         """Change entry within table metadata."""
         self._metadata[key] = val
 
-    def get_row(self, rowid: int) -> OptRecord:
+    def row(self, rowid: int) -> OptRecord:
         """Get single row by given row ID."""
         return self._diff[rowid] or self._data[rowid]
-
-    # def get_rows(
-    #         self, predicate: OptCallable = None,
-    #         mode: OptStr = None) -> Cursor:
-    #     """Get multiple rows by given predicate."""
-    #     return self._create_cursor(predicate=predicate, mode=mode)
-
-    # def update_row(self, rowid: int, **kwds: Any) -> None:
-    #     """Update values of single row by given row ID."""
-    #     row = self.get_row(rowid)
-    #     if not row:
-    #         raise RowLookupError(rowid)
-    #     row.update(**kwds)
-
-    # def delete_row(self, rowid: int) -> None:
-    #     """Delete single row by given row ID."""
-    #     row = self.get_row(rowid)
-    #     if not row:
-    #         raise RowLookupError(rowid)
-    #     row.delete()
 
     def pack(self) -> None:
         """Remove empty records from storage table and rebuild table index."""
@@ -828,9 +797,9 @@ class Table(attrib.Container):
     #
 
     def _append_row(self, row: RowLike, columns: OptStrTuple = None) -> None:
-        if columns:
+        if columns is not None:
             if isinstance(row, tuple):
-                mapping = dict(zip(row, columns))
+                mapping = dict(zip(columns, row))
                 rec = self._create_record(**mapping) # type: ignore
             else:
                 raise TypeError() # TODO
@@ -858,7 +827,7 @@ class Table(attrib.Container):
             mode: OptStr = None) -> Cursor:
 
         return Cursor(
-            getter=self.get_row, predicate=predicate, mapper=mapper,
+            getter=self.row, predicate=predicate, mapper=mapper,
             sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
 
     def _create_header(self, columns: FieldsLike) -> None:
@@ -992,6 +961,9 @@ class Table(attrib.Container):
         else:
             self._name = self._default_name()
 
+    def _get_metadata_proxy(self) -> OptMappingProxy:
+        return getattr(self, '_metadata_proxy', None)
+
     def _remove_row_diff(self, rowid: int) -> None:
         self._diff[rowid] = None
 
@@ -999,7 +971,7 @@ class Table(attrib.Container):
         self._index.remove(rowid)
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
-        row = self.get_row(rowid)
+        row = self.row(rowid)
         if not row:
             raise RowLookupError(rowid)
         new_row = dataclasses.replace(row, **kwds)

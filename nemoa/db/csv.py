@@ -19,6 +19,10 @@ from nemoa.errors import ConnectError, DisconnectError
 class Table(table.ProxyBase):
     """CSV-Table Proxy."""
 
+    # Remove setter from name, since the name is determined by the file name
+    name: property = attrib.Virtual(fget='_get_name')
+    name.__doc__ = "Name of the table."
+
     _fileref: property = attrib.Temporary(classinfo=FileRefClasses)
     _file: property = attrib.Temporary(classinfo=csv.File)
 
@@ -54,11 +58,13 @@ class Table(table.ProxyBase):
         fh = csv.File(file, *args, **kwds)
         self._file = fh
 
-        # Get metadata from CSV file
+        # Get table name, structure and and metadata from CSV file
+        name = fh.name.split('.', 1)[0]
+        fields = fh.fields
         metadata = ini.decode(fh.comment, flat=True, autocast=True)
 
         # Create table
-        self.create(fh.name, fh.fields, metadata=metadata)
+        self.create(name, fields, metadata=metadata)
         self._connected = True
 
     def disconnect(self) -> None:
@@ -73,13 +79,13 @@ class Table(table.ProxyBase):
         comment = self._file.comment
         mapping = ini.decode(comment, flat=True, autocast=True)
         self._metadata.update(mapping)
-        self.name = self._file.name
+        name = self._file.name.split('.', 1)[0] # Get name from filename
+        self._set_name(name)
         rows = self._file.read()
         self.insert(rows)
 
     def push(self) -> None:
         """Push all rows to CSV-File."""
-        # TODO: Also push metadata to file
         comment = ini.encode(self.metadata, flat=True)
         self._file.comment = comment
         rows = self.select()
