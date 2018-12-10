@@ -50,29 +50,29 @@ class Session(attrib.Container):
 
     dc: attrib.Group = attrib.create_group(attrib.DCGroup, remote=True)
 
-    config: property = attrib.MetaData(classinfo=dict)
+    config: property = attrib.MetaData(dtype=dict)
     config.__doc__ = """Session configuration."""
 
-    paths: property = attrib.MetaData(classinfo=list)
+    paths: property = attrib.MetaData(dtype=list)
     paths.__doc__ = """Search paths for workspaces."""
 
-    files: property = attrib.Virtual(fget='_get_files')
+    files: property = attrib.Virtual('_get_files')
     files.__doc__ = """Files within the current workspace."""
 
-    folders: property = attrib.Virtual(fget='_get_folders')
+    folders: property = attrib.Virtual('_get_folders')
     folders.__doc__ = """Folders within the current workspace."""
 
-    path: property = attrib.Virtual(fget='_get_path')
+    path: property = attrib.Virtual('_get_path')
     path.__doc__ = """Filepath of the current workspace."""
 
-    logger: property = attrib.Temporary(classinfo=log.Logger)
+    logger: property = attrib.Temporary(dtype=log.Logger)
     logger.__doc__ = """Logger instance."""
 
     #
     # Protected Attributes
     #
 
-    _ws: property = attrib.Content(classinfo=ws.File)
+    _ws: property = attrib.Content(dtype=ws.File)
 
     #
     # Special Methods
@@ -81,8 +81,7 @@ class Session(attrib.Container):
     def __init__(
             self, workspace: OptPathLike = None, basedir: OptPathLike = None,
             pwd: OptBytes = None) -> None:
-        """Initialize instance variables and load workspace from file."""
-        super().__init__()
+        super().__init__() # Initialize Attribute Container
 
         # Initialize instance variables with default values
         self.config = self._default_config.copy()
@@ -109,16 +108,11 @@ class Session(attrib.Container):
             self.load(workspace=filepath, basedir=basedir, pwd=pwd)
 
     def __enter__(self) -> 'Session':
-        """Enter with statement."""
         return self
 
     def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
-        """Exit with statement."""
         self.close() # Close Workspace
         self._save_config() # Save config
-
-    def __del__(self) -> None:
-        """Run destructor for instance."""
 
     #
     # Public Methods

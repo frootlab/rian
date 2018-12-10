@@ -329,24 +329,23 @@ class File(attrib.Container):
     # Public Attributes
     #
 
-    name: property = attrib.Virtual(fget='_get_name')
-    name.__doc__ = "Name of the given CSV file."
+    name: property = attrib.Virtual('_get_name')
+    name.__doc__ = "Filename of the given CSV file."
 
     # TODO: implement by default factory:
-    comment: property = attrib.MetaData(classinfo=str, factory='_get_comment')
+    comment: property = attrib.MetaData(dtype=str, factory='_get_comment')
     comment.__doc__ = """
     String containing the initial '#' lines of the CSV file or an empty string,
     if no initial comment lines could be detected.
     """
 
-    delimiter: property = attrib.MetaData(
-        classinfo=str, factory='_get_delimiter')
+    delimiter: property = attrib.MetaData(dtype=str, factory='_get_delimiter')
     delimiter.__doc__ = """
     Delimiter character of the CSV file or None, if for an existing file the
     delimiter could not be detected.
     """
 
-    namecol: property = attrib.MetaData(classinfo=str, factory='_get_namecol')
+    namecol: property = attrib.MetaData(dtype=str, factory='_get_namecol')
     namecol.__doc__ = """
     Readonly name of column, that contains the row names. By default the column
     is infered from the used header format. For a :RFC:`4180` compliant header
@@ -355,13 +354,13 @@ class File(attrib.Container):
     """
 
     header: property = attrib.MetaData(
-        classinfo=IterableClass, factory='_get_header')
+        dtype=IterableClass, factory='_get_header')
     header.__doc__ = """
     List of strings containing column names from first non comment, non empty
     line of CSV file.
     """
 
-    hformat: property = attrib.MetaData(classinfo=int, factory='_get_hformat')
+    hformat: property = attrib.MetaData(dtype=int, factory='_get_hformat')
     hformat.__doc__ = """
     CSV Header format. The following formats are supported:
         0: :RFC:`4180`:
@@ -395,8 +394,8 @@ class File(attrib.Container):
     # Protected Attributes
     #
 
-    _file: property = attrib.Temporary(classinfo=FileRefClasses)
-    _children: property = attrib.Temporary(classinfo=list)
+    _file: property = attrib.Temporary(dtype=FileRefClasses)
+    _children: property = attrib.Temporary(dtype=list)
     _dialect: property = attrib.MetaData(default=None)
 
     #

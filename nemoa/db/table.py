@@ -9,53 +9,69 @@ __docformat__ = 'google'
 import abc
 import random
 import operator
+from typing import NewType
 import dataclasses
 from nemoa.base import attrib, check, pattern
 from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Tuple, Iterable, Union, Optional, StrDict, StrTuple
+from nemoa.types import Tuple, StrDict, StrList, StrTuple
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
-from nemoa.types import Mapping, MappingProxy, OptMapping
+from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
 
 #
 # Structural Types
 #
 
+# Various
+OrderByType = Optional[Union[str, StrList, StrTuple]]
+OptContainer = Optional[attrib.Container]
+OptMappingProxy = Optional[MappingProxy]
+
+# Fields
 Field = dataclasses.Field
 FieldTuple = Tuple[Field, ...]
 OptFieldTuple = Optional[FieldTuple]
-Fields = Iterable[Union[str, Tuple[str, type], Tuple[str, type, Field]]]
-FieldsLike = Union[Fields, Tuple[str, type, StrDict]]
-OptFieldsLike = Optional[FieldsLike]
-OptRecord = Optional['Record']
-RowList = List['Record']
-RowLike = Union['Record', tuple, Mapping]
+
+# Columns
+ColDefA = str # Column name
+ColDefB = Tuple[str, type] # Column name and type
+ColDefC = Tuple[str, type, StrDict] # Column name, type and constraints
+ColDefD = Tuple[str, type, Field] # Column name, type and constraints
+ColDef = Union[ColDefA, ColDefB, ColDefC, ColDefD]
+ColsDef = Tuple[ColDef, ...]
+OptColsDef = Optional[ColsDef]
+
+# Rows
+Row = NewType('Row', 'Record')
+OptRow = Optional[Row]
+RowList = List[Row]
+RowLike = Union[tuple, Mapping, Row]
 RowLikeList = List[RowLike]
 ValuesType = Optional[Union[RowLike, RowLikeList]]
-OrderByType = Optional[Union[str, List[str], Tuple[str]]]
-OptContainer = Optional[attrib.Container]
-OptMappingProxy = Optional[MappingProxy]
 
 #
 # Constants
 #
 
+# Record State
 RECORD_STATE_FLAG_CREATE = 0b0001
 RECORD_STATE_FLAG_UPDATE = 0b0010
 RECORD_STATE_FLAG_DELETE = 0b0100
 
+# Cursor Mode
 CURSOR_MODE_FLAG_BUFFERED = 0b0001
 CURSOR_MODE_FLAG_INDEXED = 0b0010
 CURSOR_MODE_FLAG_SCROLLABLE = 0b0100
 CURSOR_MODE_FLAG_RANDOM = 0b1000
 
+# Proxy Mode
 PROXY_MODE_FLAG_CACHE = 0b0001
 PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 PROXY_MODE_FLAG_READONLY = 0b0100
 
 #
-# Record Base Class
+# Record Class
 #
 
 class Record(abc.ABC):
@@ -169,13 +185,13 @@ class Cursor(attrib.Container):
     # Public Attributes
     #
 
-    mode: property = attrib.Virtual(fget='_get_mode')
+    mode: property = attrib.Virtual('_get_mode')
     mode.__doc__ = """
     The read-only attribute :term:`cursor mode` provides information about the
     *scrolling type* and the *operation mode* of the cursor.
     """
 
-    batchsize: property = attrib.MetaData(classinfo=int, default=1)
+    batchsize: property = attrib.MetaData(dtype=int, default=1)
     """
     The read-writable integer attribute *batchsize* specifies the default number
     of rows which is to be fetched by the method :meth:`.fetch`. It defaults
@@ -185,7 +201,7 @@ class Cursor(attrib.Container):
     allows dynamic performance optimization.
     """
 
-    rowcount: property = attrib.Virtual(fget='_get_rowcount')
+    rowcount: property = attrib.Virtual('_get_rowcount')
     """
     The read-only integer attribute *rowcount* identifies the current number of
     rows within the cursor.
@@ -195,14 +211,13 @@ class Cursor(attrib.Container):
     # Protected Attributes
     #
 
-    _mode: property = attrib.MetaData(
-        classinfo=int, factory='_get_default_mode')
-    _index: property = attrib.MetaData(classinfo=list, inherit=True)
-    _getter: property = attrib.Temporary(classinfo=CallableClasses)
-    _sorter: property = attrib.Temporary(classinfo=CallableClasses)
-    _filter: property = attrib.Temporary(classinfo=CallableClasses)
-    _mapper: property = attrib.Temporary(classinfo=CallableClasses)
-    _buffer: property = attrib.Temporary(classinfo=list, default=[])
+    _mode: property = attrib.MetaData(dtype=int, factory='_default_mode')
+    _index: property = attrib.MetaData(dtype=list, inherit=True)
+    _getter: property = attrib.Temporary(dtype=CallableClasses)
+    _sorter: property = attrib.Temporary(dtype=CallableClasses)
+    _filter: property = attrib.Temporary(dtype=CallableClasses)
+    _mapper: property = attrib.Temporary(dtype=CallableClasses)
+    _buffer: property = attrib.Temporary(dtype=list, default=[])
 
     #
     # Special Methods
@@ -336,7 +351,7 @@ class Cursor(attrib.Container):
     # Class Variables
     #
 
-    def _get_default_mode(self) -> int:
+    def _default_mode(self) -> int:
         if self._sorter:
             return CURSOR_MODE_FLAG_BUFFERED
         return CURSOR_MODE_FLAG_INDEXED
@@ -469,13 +484,13 @@ class Table(attrib.Container):
     # Protected Attributes
     #
 
-    _data: property = attrib.Content(classinfo=list)
-    _name: property = attrib.MetaData(classinfo=str)
-    _metadata: property = attrib.MetaData(classinfo=Mapping)
-    _metadata_proxy: property = attrib.Temporary(classinfo=MappingProxy)
+    _data: property = attrib.Content(dtype=list)
+    _name: property = attrib.MetaData(dtype=str)
+    _metadata: property = attrib.MetaData(dtype=Mapping)
+    _metadata_proxy: property = attrib.Temporary(dtype=MappingProxy)
     _record: property = attrib.Temporary()
-    _diff: property = attrib.Temporary(classinfo=list, default=[])
-    _index: property = attrib.Temporary(classinfo=list, default=[])
+    _diff: property = attrib.Temporary(dtype=list, default=[])
+    _index: property = attrib.Temporary(dtype=list, default=[])
     _iter_index: property = attrib.Temporary()
 
     #
@@ -483,7 +498,7 @@ class Table(attrib.Container):
     #
 
     def __init__(
-            self, name: OptStr = None, fields: OptFieldsLike = None,
+            self, name: OptStr = None, fields: OptColsDef = None,
             metadata: OptMapping = None, parent: OptContainer = None) -> None:
         super().__init__(parent=parent) # Initialize Container Parameters
 
@@ -509,7 +524,7 @@ class Table(attrib.Container):
     #
 
     def create(
-            self, name: OptStr, fields: FieldsLike,
+            self, name: OptStr, fields: ColsDef,
             metadata: OptMapping = None) -> None:
         """Create table structure.
 
@@ -765,19 +780,27 @@ class Table(attrib.Container):
             batchsize=batchsize, mode=mode)
 
     def get_metadata(self, key: str) -> Any:
-        """Get single entry from table metadata."""
+        """Get single entry from table metadata.
+
+        Args:
+            key: Name of metadata entry
+
+        Returns:
+            Value of metadata entry.
+
+        """
         return self._metadata[key]
 
     def set_metadata(self, key: str, val: Any) -> None:
-        """Change entry within table metadata."""
+        """Change metadata entry of table."""
         self._metadata[key] = val
 
-    def row(self, rowid: int) -> OptRecord:
-        """Get single row by given row ID."""
+    def row(self, rowid: int) -> OptRow:
+        """Get single row by row ID."""
         return self._diff[rowid] or self._data[rowid]
 
     def pack(self) -> None:
-        """Remove empty records from storage table and rebuild table index."""
+        """Remove empty records from data and rebuild table index."""
         # Commit pending changes
         self.commit()
 
@@ -830,7 +853,7 @@ class Table(attrib.Container):
             getter=self.row, predicate=predicate, mapper=mapper,
             sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
 
-    def _create_header(self, columns: FieldsLike) -> None:
+    def _create_header(self, columns: ColsDef) -> None:
         # Check types of fieldlike column descriptors and convert them to field
         # descriptors, that are accepted by dataclasses.make_dataclass()
         fields: list = []
@@ -995,7 +1018,7 @@ class ProxyBase(Table, pattern.Proxy):
 
     """
 
-    _proxy_mode: property = attrib.MetaData(classinfo=int, default=1)
+    _proxy_mode: property = attrib.MetaData(dtype=int, default=1)
 
     #
     # Special Methods

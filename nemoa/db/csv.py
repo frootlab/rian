@@ -19,12 +19,20 @@ from nemoa.errors import ConnectError, DisconnectError
 class Table(table.ProxyBase):
     """CSV-Table Proxy."""
 
+    #
+    # Public Attributes
+    #
+
     # Remove setter from name, since the name is determined by the file name
-    name: property = attrib.Virtual(fget='_get_name')
+    name: property = attrib.Virtual('_get_name')
     name.__doc__ = "Name of the table."
 
-    _fileref: property = attrib.Temporary(classinfo=FileRefClasses)
-    _file: property = attrib.Temporary(classinfo=csv.File)
+    #
+    # Protected Attributes
+    #
+
+    _fileref: property = attrib.Temporary(dtype=FileRefClasses)
+    _file: property = attrib.Temporary(dtype=csv.File)
 
     #
     # Special Methods

@@ -64,10 +64,9 @@ class Logger(attrib.Container):
     #
 
     logger: property = attrib.Virtual(
-        fget='_get_logger', fset='_set_logger', classinfo=logging.Logger)
+        '_get_logger', '_set_logger', dtype=logging.Logger)
 
-    name: property = attrib.Virtual(
-        fget='_get_name', fset='_set_name', classinfo=str)
+    name: property = attrib.Virtual('_get_name', '_set_name', dtype=str)
     name.__doc__ = """
     String identifier of Logger, given as a period-separated hierarchical value
     like 'foo.bar.baz'. The name of a Logger also identifies respective parents
@@ -75,8 +74,7 @@ class Logger(attrib.Container):
     hierarchy.
     """
 
-    file: property = attrib.Virtual(
-        fget='_get_file', fset='_set_file', classinfo=(str, Path))
+    file: property = attrib.Virtual('_get_file', '_set_file', dtype=(str, Path))
     file.__doc__ = """
     String or :term:`path-like object` that identifies a valid filename in the
     directory structure of the operating system. If they do not exist, the
@@ -87,7 +85,7 @@ class Logger(attrib.Container):
     """
 
     level: property = attrib.Virtual(
-        fget='_get_level', fset='_set_level', classinfo=(str, int))
+        '_get_level', '_set_level', dtype=(str, int))
     level.__doc__ = """
     Integer value or string, which describes the minimum required severity of
     events, to be logged. Ordered by ascending severity, the allowed level names
@@ -100,29 +98,22 @@ class Logger(attrib.Container):
     # Protected Attributes
     #
 
-    _logger: property = attrib.Temporary(classinfo=logging.Logger)
+    _logger: property = attrib.Temporary(dtype=logging.Logger)
 
     #
     # Special Methods
     #
 
-    def __init__(self,
-            name: str = _default_name,
-            file: PathLike = _default_file,
+    def __init__(
+            self, name: str = _default_name, file: PathLike = _default_file,
             level: StrOrInt = _default_level) -> None:
-        """Initialize instance."""
-        # Initialize Attribute Container
-        super().__init__()
-
-        # Start logging
-        self._start_logging(name=name, file=file, level=level)
+        super().__init__() # Initialize Attribute Container
+        self._start_logging(name=name, file=file, level=level) # Start logging
 
     def __del__(self) -> None:
-        """Run destructor for instance."""
-        self._stop_logging()
+        self._stop_logging() # Stop logging
 
     def __str__(self) -> str:
-        """Represent instance as string."""
         return str(self.logger)
 
     #
@@ -158,11 +149,11 @@ class Logger(attrib.Container):
     def _start_logging(
             self, name: str = _default_name, file: PathLike = _default_file,
             level: StrOrInt = _default_level) -> bool:
-        logger = logging.getLogger(name) # Create new logger instance
-        self._set_logger(logger) # Bind new logger instance to global variable
+        logger = logging.getLogger(name) # Create new Logger instance
+        self._set_logger(logger) # Bind Logger instance to global variable
         self._set_level(level) # Set log level
         self._set_file(file) # Add file handler for logfile
-        if not self.file.is_file(): # If an error occured stop logging
+        if not self.file.is_file(): # Stop logging if an error occured
             self._stop_logging()
             return False
         return True

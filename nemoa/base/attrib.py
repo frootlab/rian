@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from nemoa.base import check
 from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
-from nemoa.types import Any, Date, OptClassInfo, Optional
+from nemoa.types import Any, Date, OptClassInfo, Optional, ClassInfoClasses
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 from nemoa.types import OptDict, OptBool, Union, Callable, CallableClasses
 
@@ -164,13 +164,17 @@ class Attribute(property):
         doc: Docstring of the Attribute, which is retained throughout the
             runtime of the application. For more information and convention
             see :PEP:`257`.
-        classinfo: Type or tuple of types, which is used to check the validity
-            of assignments to the attribute. If the passed value in an
-            assignment is not an instance of any of the given types in the
-            classinfo, then a TypeError is raised. For the default value None
-            type checking is disabed.
-        default: Default value, which is returned for a get request to an unset
-            field. By default None is returned.
+        dtype: Data type definition of the Attribute given as a type or a tuple
+            of types, which is used for type checking assignments to the
+            attribute. If the value passed to the setter method is not an
+            instance of any of the given types, a
+            :class:`~nemoa.errors.InvalidTypeError` is raised. By default type
+            checking is disabled.
+        default: Default value, which is returned by calling the getter method,
+            if the following conditions are met: (1) The attribute is not a
+            remote attribute of the parent, (2) the attribute is not inherited
+            by the parent, (3) the attribute has not yet been set, (4) the
+            attribute has no default factory.
         factory: Default method of the attribute. If provided, it must be a
             callable or a string, that references a valid method of the
             underlying Attribute Group. This method is called, when a default
@@ -178,7 +182,7 @@ class Attribute(property):
             used to specify fields with mutable default values.
         binddict: Name of dictionary or other mapping object used to store
             the Attribute. By the default value None, the dictionary
-            :py:attr:`~object.__dict__` is used.
+            :attr:`~object.__dict__` is used.
         bindkey: Key within bound dictionary used to store the Attribute. By
             default the name of the Attribute is used.
         remote: Boolean value which determines, if the accessor, mutator and
@@ -211,7 +215,7 @@ class Attribute(property):
     sget: OptStr
     sset: OptStr
     sdel: OptStr
-    classinfo: OptClassInfo
+    dtype: OptClassInfo
     readonly: bool
     default: Any
     factory: OptCallOrStr
@@ -228,7 +232,7 @@ class Attribute(property):
     def __init__(self,
             fget: OptCallOrStr = None, fset: OptCallOrStr = None,
             fdel: OptCallOrStr = None, doc: OptStr = None,
-            classinfo: OptClassInfo = None, readonly: bool = False,
+            dtype: OptClassInfo = None, readonly: bool = False,
             default: Any = None, factory: OptCallOrStr = None,
             binddict: OptStr = None, bindkey: OptStr = None,
             remote: bool = False, inherit: bool = False,
@@ -243,7 +247,7 @@ class Attribute(property):
         super().__init__(**super_kwds)
 
         # Check Types of Arguments
-        check.has_opt_type("argument 'classinfo'", classinfo, (type, tuple))
+        check.has_opt_type("argument 'dtype'", dtype, ClassInfoClasses)
         check.has_type("argument 'readonly'", readonly, bool)
         check.has_opt_type("argument 'binddict'", binddict, str)
         check.has_opt_type("argument 'bindkey'", bindkey, str)
@@ -255,7 +259,7 @@ class Attribute(property):
         self.sget = fget if isinstance(fget, str) else None
         self.sset = fset if isinstance(fset, str) else None
         self.sdel = fdel if isinstance(fdel, str) else None
-        self.classinfo = classinfo
+        self.dtype = dtype
         self.default = default
         self.factory = factory
         self.readonly = readonly
@@ -292,9 +296,9 @@ class Attribute(property):
         if self._is_remote(obj):
             self._set_remote(obj, val)
             return
-        classinfo = self.classinfo
-        if classinfo and not isinstance(val, type(self.default)):
-            check.has_type(f"attribute '{self.name}'", val, classinfo)
+        dtype = self.dtype
+        if dtype and not isinstance(val, type(self.default)):
+            check.has_type(f"attribute '{self.name}'", val, dtype)
         if callable(self.fset):
             self.fset(obj, val) # type: ignore
             return
@@ -476,8 +480,8 @@ class Container(Group):
     # Public Attributes
     #
 
-    parent: property = Virtual(classinfo=Group,
-        fget='_get_attr_group_parent', fset='_set_attr_group_parent')
+    parent: property = Virtual(fget='_get_attr_group_parent',
+        fset='_set_attr_group_parent', dtype=Group)
     parent.__doc__ = """Reference to parent Attribute Group."""
 
     #
@@ -690,7 +694,7 @@ class DCAttr(MetaData):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        self.classinfo = self.classinfo or str
+        self.dtype = self.dtype or str
         self.inherit = True
 
 class DCGroup(Group):
@@ -796,7 +800,7 @@ class DCGroup(Group):
     with the resource, including intellectual property rights.
     """
 
-    identifier: property = DCAttr(category='instantiation')
+    identifier: property = DCAttr(category='instance')
     identifier.__doc__ = """
     An unambiguous reference to the resource within a given context. Recommended
     best practice is to identify the resource by means of a string or number
@@ -806,21 +810,20 @@ class DCGroup(Group):
     (DOI) and the International Standard Book Number (ISBN).
     """
 
-    format: property = DCAttr(category='instantiation')
+    format: property = DCAttr(category='instance')
     format.__doc__ = """
     The file format, physical medium, or dimensions of the resource. Examples of
     dimensions include size and duration. Recommended best practice is to use a
     controlled vocabulary such as the list of Internet Media Types [MIME]_.
     """
 
-    language: property = DCAttr(category='instantiation')
+    language: property = DCAttr(category='instance')
     language.__doc__ = """
     A language of the resource. Recommended best practice is to use a controlled
     vocabulary such as :RFC:`4646`.
     """
 
-    date: property = DCAttr(
-        classinfo=Date, factory=Date.now, category='instantiation')
+    date: property = DCAttr(dtype=Date, factory=Date.now, category='instance')
     date.__doc__ = """
     A point or period of time associated with an event in the lifecycle of the
     resource. Date may be used to express temporal information at any level of

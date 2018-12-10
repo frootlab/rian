@@ -73,7 +73,7 @@ class File(attrib.Container):
 
     dc: attrib.Group = attrib.create_group(attrib.DCGroup)
 
-    startup: property = attrib.MetaData(classinfo=Path, category='hooks')
+    startup: property = attrib.MetaData(dtype=Path, category='hooks')
     startup.__doc__ = """
     The startup script is a path, that points to a python script inside the
     workspace, which is executed after loading the workspace.
@@ -98,11 +98,11 @@ class File(attrib.Container):
     # Protected Attributes
     #
 
-    _file: property = attrib.Content(classinfo=ZipFile)
-    _buffer: property = attrib.Content(classinfo=io.BufferedIOBase)
-    _path: property = attrib.Temporary(classinfo=Path)
-    _pwd: property = attrib.Temporary(classinfo=bytes)
-    _changed: property = attrib.Temporary(classinfo=bool, default=False)
+    _file: property = attrib.Content(dtype=ZipFile)
+    _buffer: property = attrib.Content(dtype=io.BufferedIOBase)
+    _path: property = attrib.Temporary(dtype=Path)
+    _pwd: property = attrib.Temporary(dtype=bytes)
+    _changed: property = attrib.Temporary(dtype=bool, default=False)
 
     #
     # Special Methods
