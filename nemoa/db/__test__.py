@@ -6,6 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import string
 from nemoa.db import table
 from nemoa.test import ModuleTestCase
 
@@ -16,14 +17,23 @@ class TestTable(ModuleTestCase):
 
     def setUp(self) -> None:
         # Create test table
-        self.tbl = table.Table('test', fields=(
-            ('id', int),
-            ('name', str, {'default': ''}),
-            ('type', type, {'default': type(None)}),
-            ('content', dict, {'default': {}})))
+        self.table = table.Table('test', fields=(
+            ('uid', int),
+            ('prename', str, {'default': ''}),
+            ('name', str, {'default': ''})))
+        # Create test data
+        letters = string.ascii_letters
+        size = len(letters)
+        self.table.insert([(i, letters[i], letters[-i]) for i in range(size)])
 
     def test_Cursor(self) -> None:
         pass
 
     def test_Table(self) -> None:
+        pass
+
+    def test_Table_create(self) -> None:
+        pass
+
+    def test_Table_drop(self) -> None:
         pass

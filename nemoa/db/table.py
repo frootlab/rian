@@ -16,7 +16,7 @@ from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, StrDict, StrList, StrTuple
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
-from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
+from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
 
 #
@@ -71,28 +71,29 @@ PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 PROXY_MODE_FLAG_READONLY = 0b0100
 
 #
-# Record Class
+# Record Base Class and Class Constructor
 #
 
-class Record:
+class Record(abc.ABC):
     """Abstract base class for :mod:`dataclasses` based records.
 
     Args:
-        *args: Arguments, that are valid w.r.t. the fields declaration of
-            the generated :mod:'dataclass <dataclasses>'.
-        **kwds: Keyword arguments, that are valid w.r.t. the fields declaration
-            of the generated :mod:'dataclass <dataclasses>'.
+        *args: Arguments, that are valid with respect to the column definitions
+            of derived :mod:'dataclasses'.
+        **kwds: Keyword arguments, that are valid with respect to the column
+            definitions of derived :mod:'dataclasses'.
 
     """
 
-    __slots__: StrTuple = ('_id', '_state')
+    __slots__: StrTuple = ('_id', '_name', '_state')
 
     _id: int
+    _name: str
     _state: int
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self._validate()
-        self._id = self._get_new_rowid()
+        self._id = self._get_newid()
         self._state = RECORD_STATE_FLAG_CREATE
 
     def _validate(self) -> None:
@@ -129,7 +130,7 @@ class Record:
             self._revoke_hook(self._id)
 
     @abc.abstractmethod
-    def _get_new_rowid(self) -> int:
+    def _get_newid(self) -> int:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -147,6 +148,75 @@ class Record:
     @abc.abstractmethod
     def _revoke_hook(self, rowid: int) -> None:
         raise NotImplementedError()
+
+def create_record_class(columns: ColsDef, **kwds: Any) -> Type[Record]:
+    """Create a new subclass of the Record class.
+
+    Args:
+        columns: Tuple of column definitions. All column definitions independent
+            from each other can be given in one of the following formats: (1)
+            Only the name of the column by a string ``name``. Thereby ``name``
+            is required to be a valid identifier (as defined in [UAX31]_). (2)
+            The column name and the data type of the field by a tuple ``(name,
+            type)``. Thereby ``type`` is required to be a standard Python type
+            like :class:`str`, :class:`int`, :class:`float` etc. (3) The column
+            name, the data type and supplementary field constraints by a tuple
+            ``(name, type, constraints)``: Thereby ``constraints`` is requeried
+            to be a dictionary, as documented in the function
+            :func:`dataclasses.fields`.
+        **kwds: Methods which are bound to specific events of the new Record
+            class. These events are: 'get_new_rowid', 'delete', 'restore',
+            'update', and 'revoke'. By default no events are hooked.
+
+    Returns:
+        New subclass of the Record class.
+
+    """
+    # Check column defnitions and convert them to field descriptors, as required
+    # by dataclasses.make_dataclass()
+    fields: list = []
+    names: StrList = []
+    for column in columns:
+        if isinstance(column, str):
+            fields.append(column)
+            names.append(column)
+            continue
+        check.has_type(f"column {column}", column, tuple)
+        check.has_size(f"column {column}", column, min_size=2, max_size=3)
+        check.has_type("first argument", column[0], str)
+        check.has_type("second argument", column[1], type)
+        if len(column) == 2:
+            fields.append(column)
+            names.append(column[0])
+            continue
+        check.has_type("third arg", column[2], (Field, dict))
+        if isinstance(column[2], Field):
+            fields.append(column)
+            names.append(column[0])
+            continue
+        field = dataclasses.field(**column[2])
+        names.append(column[0])
+        fields.append(column[:2] + (field,))
+
+    # Dynamically create a dataclass, which is inherited from Record class.
+    # Thereby create an ampty '__slots__' attribute to avoid collision with
+    # default values (which in dataclasses are stored as class variables),
+    # while avoiding the creation of a '__dict__' attribute
+    namespace = {}
+    mapping = {
+        'newid': '_get_newid', 'delete': '_delete_hook',
+        'restore': '_restore_hook', 'update': '_update_hook',
+        'revoke': '_revoke_hook'}
+    for key in mapping:
+        if key in kwds:
+            namespace[mapping[key]] = kwds[key]
+    namespace['__slots__'] = tuple()
+    dataclass = dataclasses.make_dataclass(
+        Record.__name__, fields, bases=(Record, ), namespace=namespace)
+
+    # Dynamically create a new class, which is inherited from dataclass,
+    # with corrected __slots__ attribute.
+    return type(dataclass.__name__, (dataclass,), {'__slots__': names})
 
 #
 # Cursor Class
@@ -349,10 +419,6 @@ class Cursor(attrib.Container):
 
         self._buffer = buffer
 
-    #
-    # Class Variables
-    #
-
     def _default_mode(self) -> int:
         if self._sorter:
             return CURSOR_MODE_FLAG_BUFFERED
@@ -523,6 +589,9 @@ class Table(attrib.Container):
 
     def __len__(self) -> int:
         return len(self._index)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(name='{self.name}')"
 
     #
     # Public Methods
@@ -773,10 +842,10 @@ class Table(attrib.Container):
         .. _SELECT: https://en.wikipedia.org/wiki/Select_(SQL)
 
         """
-        # Create sorting operator w.r.t. 'orderby' and 'reverse'
+        # Create sorting operator with respect to 'orderby' and 'reverse'
         sorter = self._create_sorter(orderby, reverse=reverse)
 
-        # Create mapping operator w.r.t. 'columns' and 'dtype'
+        # Create mapping operator with respect to 'columns' and 'dtype'
         mapper = self._create_mapper(columns, dtype=dtype)
 
         # Create cursor on the specified result set
@@ -859,56 +928,13 @@ class Table(attrib.Container):
             sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
 
     def _create_header(self, columns: ColsDef) -> None:
-        # Check types of fieldlike column descriptors and convert them to field
-        # descriptors, that are accepted by dataclasses.make_dataclass()
-        fields: list = []
-        colnames: StrList = []
-        for column in columns:
-            if isinstance(column, str):
-                fields.append(column)
-                colnames.append(column)
-                continue
-            check.has_type(f"column {column}", column, tuple)
-            check.has_size(f"column {column}", column, min_size=2, max_size=3)
-            check.has_type("first argument", column[0], str)
-            check.has_type("second argument", column[1], type)
-            if len(column) == 2:
-                fields.append(column)
-                colnames.append(column[0])
-                continue
-            check.has_type("third arg", column[2], (Field, dict))
-            if isinstance(column[2], Field):
-                fields.append(column)
-                colnames.append(column[0])
-                continue
-            field = dataclasses.field(**column[2])
-            colnames.append(column[0])
-            fields.append(column[:2] + (field,))
-
-        # Dynamically create a new Record base class with corrected slots
-        # to avoid collision with default values
-        slots = tuple(colnames)
-        newrec = type(Record.__name__, (Record,), {'__slots__': slots})
-
-        # Dynamically create a dataclass, which is inherited from Record class.
-        # Thereby create empty __slots__ to (1) avoid collision with default
-        # values, which in dataclasses are stored as class variables and (2) to
-        # avoid the creation of a __dict__ attribute
-        namespace = {
-            '_get_new_rowid': self._get_new_rowid,
-            '_delete_hook': self._remove_rowid,
-            '_restore_hook': self._append_rowid,
-            '_update_hook': self._update_row_diff,
-            '_revoke_hook': self._remove_row_diff,
-            '__slots__': tuple()}
-        dataclass = dataclasses.make_dataclass(
-            'Row', fields, bases=(Record, ), namespace=namespace)
-
-        # Dynamically create a new class, which is inherited from dataclass,
-        # with corrected __slots__ attribute.
-        self._record = type(dataclass.__name__, (dataclass,), {
-            '__slots__': slots})
-
+        # Dynamically create a new record class
+        self._record = create_record_class(columns,
+            newid=self._get_new_rowid,
+            delete=self._remove_rowid,
+            restore=self._append_rowid,
+            update=self._update_row_diff,
+            revoke=self._remove_row_diff)
         self.truncate() # Initialize table data
 
     def _create_record(self, data: RowLike) -> Record:
