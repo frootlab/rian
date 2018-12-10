@@ -1,7 +1,7 @@
-nemoa.io.ini module
+nemoa.base.pattern module
 =========================
 
-.. automodule:: nemoa.io.ini
+.. automodule:: nemoa.base.pattern
     :members:
     :undoc-members:
     :show-inheritance:

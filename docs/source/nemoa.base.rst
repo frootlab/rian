@@ -6,6 +6,7 @@ Submodules
 
 .. toctree::
 
+   nemoa.base.array
    nemoa.base.attrib
    nemoa.base.binary
    nemoa.base.check
@@ -14,6 +15,7 @@ Submodules
    nemoa.base.literal
    nemoa.base.nbase
    nemoa.base.ndict
+   nemoa.base.pattern
    nemoa.base.this
    nemoa.base.thread
 

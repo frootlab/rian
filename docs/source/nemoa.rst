@@ -8,12 +8,13 @@ Subpackages
 
     nemoa.base
     nemoa.core
-    nemoa.db
     nemoa.dataset
+    nemoa.db
     nemoa.io
     nemoa.math
     nemoa.model
     nemoa.network
+    nemoa.plot
     nemoa.session
     nemoa.system
     nemoa.workspace

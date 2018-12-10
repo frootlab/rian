@@ -1,7 +1,7 @@
-nemoa.io.dsv module
+nemoa.db.table module
 =====================
 
-.. automodule:: nemoa.io.dsv
+.. automodule:: nemoa.db.table
     :members:
     :undoc-members:
     :show-inheritance:

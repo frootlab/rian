@@ -1,7 +1,7 @@
-nemoa.db.table.dsv module
+nemoa.plot.histogram module
 ===========================
 
-.. automodule:: nemoa.db.table.dsv
+.. automodule:: nemoa.plot.histogram
     :members:
     :undoc-members:
     :show-inheritance:
