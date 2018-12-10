@@ -25,7 +25,7 @@ from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
 #
 
 # Various
-OrderByType = Optional[Union[str, StrList, StrTuple]]
+OrderByType = Optional[Union[str, StrList, StrTuple, Callable]]
 OptContainer = Optional[attrib.Container]
 OptMappingProxy = Optional[MappingProxy]
 
@@ -48,7 +48,7 @@ Row = NewType('Row', 'Record')
 OptRow = Optional[Row]
 RowList = List[Row]
 RowLike = Union[tuple, Mapping, Row]
-RowLikeList = List[RowLike]
+RowLikeList = Union[RowList, List[tuple], List[Mapping]]
 ValuesType = Optional[Union[RowLike, RowLikeList]]
 
 #
@@ -170,9 +170,9 @@ def create_record_class(
         newid: Optional reference to a method, which returns the current ID of
             a new instance of the Record class. By default the Record class
             uses an internal Iterator.
-        **kwds: Methods which are bound to specific events of the new Record
-            class. These events are: 'get_new_rowid', 'delete', 'restore',
-            'update', and 'revoke'. By default no events are hooked.
+        **kwds: Optional references to methods, which are bound to specific
+            events of the new Record class. These events are: 'delete',
+            'restore', 'update' and 'revoke'. By default no events are hooked.
 
     Returns:
         New subclass of the Record class.
@@ -297,7 +297,7 @@ class Cursor(attrib.Container):
     _getter: property = attrib.Temporary(dtype=CallableClasses)
     _sorter: property = attrib.Temporary(dtype=CallableClasses)
     _filter: property = attrib.Temporary(dtype=CallableClasses)
-    _mapper: property = attrib.Temporary(dtype=CallableClasses)
+    _mapper: property = attrib.Temporary() # TODO: dtype='typing.Callable'
     _buffer: property = attrib.Temporary(dtype=list, default=[])
 
     #
@@ -338,7 +338,7 @@ class Cursor(attrib.Container):
         self.reset()
         return self
 
-    def __next__(self) -> RowLike:
+    def __next__(self) -> Row:
         return self.next()
 
     def __len__(self) -> int:
@@ -347,26 +347,6 @@ class Cursor(attrib.Container):
     #
     # Public Methods
     #
-
-    def reset(self) -> None:
-        """Reset cursor position before the first record."""
-        mode = self._mode
-        if mode & CURSOR_MODE_FLAG_BUFFERED: # Iterate over fixed result set
-            self._iter_buffer = iter(self._buffer)
-        elif mode & CURSOR_MODE_FLAG_INDEXED: # Iterate over fixed index
-            self._iter_index = iter(self._index)
-        else: # TODO: handle case for dynamic cursors by self._iter_table
-            self._iter_index = iter(self._index)
-
-    def next(self) -> RowLike:
-        """Return next row that matches the given filter."""
-        mode = self._mode
-        if mode & CURSOR_MODE_FLAG_BUFFERED:
-            return self._get_next_from_buffer()
-        if mode & CURSOR_MODE_FLAG_INDEXED:
-            return self._get_next_from_fixed_index()
-        # TODO: For dynamic cursors implement _get_next_from_dynamic_index()
-        return self._get_next_from_fixed_index()
 
     def fetch(self, size: OptInt = None) -> RowLikeList:
         """Fetch rows from the result set.
@@ -386,15 +366,37 @@ class Cursor(attrib.Container):
         if self._mode & CURSOR_MODE_FLAG_RANDOM and size <= 0:
             raise CursorModeError(self.mode, 'fetching all rows')
         finished = False
-        results: RowLikeList = []
+        rows: RowList = []
         while not finished:
             try:
-                results.append(self.next())
+                rows.append(self.next())
             except StopIteration:
                 finished = True
             else:
-                finished = 0 < size <= len(results)
-        return results
+                finished = 0 < size <= len(rows)
+        if not self._mapper:
+            return rows
+        return list(map(self._mapper, rows)) # Map result set
+
+    def next(self) -> Row:
+        """Return next row that matches the given filter."""
+        mode = self._mode
+        if mode & CURSOR_MODE_FLAG_BUFFERED:
+            return self._get_next_from_buffer()
+        if mode & CURSOR_MODE_FLAG_INDEXED:
+            return self._get_next_from_fixed_index()
+        # TODO: For dynamic cursors implement _get_next_from_dynamic_index()
+        return self._get_next_from_fixed_index()
+
+    def reset(self) -> None:
+        """Reset cursor position before the first record."""
+        mode = self._mode
+        if mode & CURSOR_MODE_FLAG_BUFFERED: # Iterate over fixed result set
+            self._iter_buffer = iter(self._buffer)
+        elif mode & CURSOR_MODE_FLAG_INDEXED: # Iterate over fixed index
+            self._iter_index = iter(self._index)
+        else: # TODO: handle case for dynamic cursors by self._iter_table
+            self._iter_index = iter(self._index)
 
     #
     # Protected Methods
@@ -402,8 +404,13 @@ class Cursor(attrib.Container):
 
     def _check_validity(self) -> None:
         mode = self._mode
+
         # Sorting rows requires a buffered cursor
         if self._sorter and not mode & CURSOR_MODE_FLAG_BUFFERED:
+            raise CursorModeError(self.mode, 'sorting rows')
+
+        # Sorting rows is not supported by random cursors
+        if self._sorter and mode & CURSOR_MODE_FLAG_RANDOM:
             raise CursorModeError(self.mode, 'sorting rows')
 
     def _create_index(self) -> None:
@@ -413,19 +420,11 @@ class Cursor(attrib.Container):
             self._index = []
 
     def _create_buffer(self) -> None:
-        # Create result set from dynamic cursor
         cur = self.__class__(
             index=self._index, getter=self._getter, predicate=self._filter)
-        buffer = cur.fetch(-1)
-
-        # Sort result set
+        buffer = cur.fetch(-1) # Create result set from dynamic cursor
         if self._sorter:
-            buffer = self._sorter(buffer)
-
-        # Map result set
-        if self._mapper:
-            buffer = self._mapper(buffer)
-
+            buffer = self._sorter(buffer) # Sort result set
         self._buffer = buffer
 
     def _default_mode(self) -> int:
@@ -433,7 +432,7 @@ class Cursor(attrib.Container):
             return CURSOR_MODE_FLAG_BUFFERED
         return CURSOR_MODE_FLAG_INDEXED
 
-    def _get_next_from_fixed_index(self) -> RowLike:
+    def _get_next_from_fixed_index(self) -> Row:
         is_random = self._mode & CURSOR_MODE_FLAG_RANDOM
         matches = False
         while not matches:
@@ -446,11 +445,9 @@ class Cursor(attrib.Container):
                 matches = self._filter(row)
             else:
                 matches = True
-        if self._mapper:
-            return self._mapper([row])
         return row
 
-    def _get_next_from_buffer(self) -> RowLike:
+    def _get_next_from_buffer(self) -> Row:
         if self._mode & CURSOR_MODE_FLAG_RANDOM:
             rowid = random.randrange(len(self._buffer))
             return self._buffer[rowid]
@@ -459,11 +456,13 @@ class Cursor(attrib.Container):
     def _get_mode(self) -> str:
         mode = self._mode
         tokens = []
+
         # Add name of traversal mode
         if mode & CURSOR_MODE_FLAG_RANDOM:
             tokens.append('random')
         elif mode & CURSOR_MODE_FLAG_SCROLLABLE:
             tokens.append('scrollable')
+
         # Add name of operation mode
         if mode & CURSOR_MODE_FLAG_BUFFERED:
             tokens.append('static')
@@ -471,6 +470,7 @@ class Cursor(attrib.Container):
             tokens.append('indexed')
         else:
             tokens.append('dynamic')
+
         return ' '.join(tokens)
 
     def _set_mode(self, name: str) -> None:
@@ -488,6 +488,7 @@ class Cursor(attrib.Container):
             mode |= CURSOR_MODE_FLAG_BUFFERED | CURSOR_MODE_FLAG_INDEXED
         elif 'indexed' in name:
             mode |= CURSOR_MODE_FLAG_INDEXED
+
         self._mode = mode
 
     def _get_rowcount(self) -> int:
@@ -823,13 +824,15 @@ class Table(attrib.Container):
             where: Optional filter operator, which determines, if a row is
                 included within the result set or not. By default all rows are
                 included within the result set.
-            orderby: Optional column name or tuple of column names, which
-                determine(s) the order of the rows within the result set. By
-                default the order is determined by the creation order of the
-                rows.
+            orderby: Optional parameter, that determine(s) the order of the rows
+                within the result set. If provided, the parameter may be given
+                as a column name, a tuple of column names or a callable sorting
+                function. By default the order is determined by the creation
+                order of the rows.
             reverse: Boolean value, which determines if the sorting order of the
-                rows is ascending or descending. For the default value ``False``
-                the sorting order is ascending, for ``True`` it is descending.
+                rows is reversed. For the default value ``False`` the sorting
+                order is ascending with respect to given column names in the
+                orderby parameter, for ``True`` it is descending.
             dtype: Format of the :term:`row like` data, which is used to
                 represent the returned values of the result set. By default
                 the result set is returned as a list of tuples.
@@ -931,7 +934,6 @@ class Table(attrib.Container):
             self, predicate: OptCallable = None, sorter: OptCallable = None,
             mapper: OptCallable = None, batchsize: OptInt = None,
             mode: OptStr = None) -> Cursor:
-
         return Cursor(
             getter=self.row, predicate=predicate, mapper=mapper,
             sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
@@ -986,20 +988,20 @@ class Table(attrib.Container):
             f"mapper with format '{dtype.__name__}' is not supported")
 
     def _create_mapper_tuple(self,
-            columns: StrTuple) -> Callable[[RowList], List[tuple]]:
-        return lambda rows: list(map(operator.attrgetter(*columns), rows))
+            columns: StrTuple) -> Callable[[Row], tuple]:
+        return operator.attrgetter(*columns)
 
     def _create_mapper_dict(self,
-            columns: StrTuple) -> Callable[[RowList], List[dict]]:
-        map_row: Callable[[Record], dict] = (
-            lambda row: dict(zip(columns, operator.attrgetter(*columns)(row))))
-        map_rows: Callable[[RowList], List[dict]] = (
-            lambda rows: list(map(map_row, rows)))
-        return map_rows
+            columns: StrTuple) -> Callable[[Row], dict]:
+        attrgetter = operator.attrgetter(*columns)
+        return lambda row: dict(zip(columns, attrgetter(row)))
 
     def _create_sorter(
             self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
         # Use operator.attrgetter -> faster then lambda with getattr
+        if callable(orderby):
+            # TODO: check if orderby is a valid sorter
+            return orderby
         if orderby is None:
             if not reverse:
                 return None
