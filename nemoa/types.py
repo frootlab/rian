@@ -25,15 +25,16 @@ T = TypeVar('T')
 # Constants
 ################################################################################
 
-NaN = float('nan')
-Infty = float('inf')
+NA = object() # Create Singleton for the representation of missing values
+NaN = float('nan') # Standard Constant for the representation of "Not a Number"
+Infty = float('inf') # Standard Constant for the representation of infinity
 void: Callable[..., None] = lambda *args, **kwds: None
 
 ################################################################################
 # Class Stubs
 ################################################################################
 
-class FileAccessorBase(abc.ABC):
+class FileAccessor(abc.ABC):
     """File Accessor/Opener Base Class."""
 
     @property
@@ -73,7 +74,7 @@ CallableClasses = (Function, Method)
 FileClasses = (io.BufferedIOBase, io.TextIOBase)
 PathLikeClasses = (str, Path)
 ClassInfoClasses = (type, tuple)
-FileRefClasses = PathLikeClasses + FileClasses + (FileAccessorBase, )
+FileRefClasses = PathLikeClasses + FileClasses + (FileAccessor, )
 
 ################################################################################
 # Structural Types for Literals and Collections of Literals
@@ -225,7 +226,7 @@ CManTextFileLike = ContextManager[TextFileLike]
 
 # File References
 FileOrPathLike = Union[FileLike, PathLike]
-FileRef = Union[FileOrPathLike, FileAccessorBase]
+FileRef = Union[FileOrPathLike, FileAccessor]
 
 ################################################################################
 # Structural Types for external Packages

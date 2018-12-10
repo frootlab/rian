@@ -16,7 +16,11 @@ class TestTable(ModuleTestCase):
 
     def setUp(self) -> None:
         # Create test table
-        pass
+        self.tbl = table.Table('test', fields=(
+            ('id', int),
+            ('name', str, {'default': ''}),
+            ('type', type, {'default': type(None)}),
+            ('content', dict, {'default': {}})))
 
     def test_Cursor(self) -> None:
         pass

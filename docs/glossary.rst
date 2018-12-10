@@ -495,7 +495,7 @@ Types
         including: :term:`File objects <file object>`, Strings and
         :term:`path-like objects <path-like object>`, that point to filenames in
         the directory structure of the system and instances of the class
-        :class:`~nemoa.types.FileAccessorBase`.
+        :class:`~nemoa.types.FileAccessor`.
 
     Row Like
 

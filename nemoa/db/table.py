@@ -74,7 +74,7 @@ PROXY_MODE_FLAG_READONLY = 0b0100
 # Record Class
 #
 
-class Record(abc.ABC):
+class Record:
     """Abstract base class for :mod:`dataclasses` based records.
 
     Args:
@@ -85,12 +85,14 @@ class Record(abc.ABC):
 
     """
 
+    __slots__: StrTuple = ('_id', '_state')
+
     _id: int
     _state: int
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self._validate()
-        self._id = self._create_rowid()
+        self._id = self._get_new_rowid()
         self._state = RECORD_STATE_FLAG_CREATE
 
     def _validate(self) -> None:
@@ -127,7 +129,7 @@ class Record(abc.ABC):
             self._revoke_hook(self._id)
 
     @abc.abstractmethod
-    def _create_rowid(self) -> int:
+    def _get_new_rowid(self) -> int:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -463,8 +465,11 @@ class Table(attrib.Container):
     metadata: property = attrib.Virtual(fget='_get_metadata_proxy')
     metadata.__doc__ = """
     Read-only attribute, that provides an access to the tables metadata by a
-    mappingproxy. Individual entries can be accessed and changed by the methods
-    :meth:`.get_metadata` and :meth:`.set_metadata`.
+    :class:`MappingProxy <types.MappingProxyType>`. Individual entries can be
+    accessed and changed by the methods :meth:`.get_metadata` and
+    :meth:`.set_metadata`. This attribute is not used by the :class:`Table class
+    <nemoa.db.table.Table>` itself, but intended for data integration by
+    third-party extensions.
     """
 
     fields: property = attrib.Virtual(fget='_get_fields')
@@ -857,37 +862,52 @@ class Table(attrib.Container):
         # Check types of fieldlike column descriptors and convert them to field
         # descriptors, that are accepted by dataclasses.make_dataclass()
         fields: list = []
-        for each in columns:
-            if isinstance(each, str):
-                fields.append(each)
+        colnames: StrList = []
+        for column in columns:
+            if isinstance(column, str):
+                fields.append(column)
+                colnames.append(column)
                 continue
-            check.has_type(f"field {each}", each, tuple)
-            check.has_size(f"field {each}", each, min_size=2, max_size=3)
-            check.has_type("first arg", each[0], str)
-            check.has_type("second arg", each[1], type)
-            if len(each) == 2:
-                fields.append(each)
+            check.has_type(f"column {column}", column, tuple)
+            check.has_size(f"column {column}", column, min_size=2, max_size=3)
+            check.has_type("first argument", column[0], str)
+            check.has_type("second argument", column[1], type)
+            if len(column) == 2:
+                fields.append(column)
+                colnames.append(column[0])
                 continue
-            check.has_type("third arg", each[2], (Field, dict))
-            if isinstance(each[2], Field):
-                fields.append(each)
+            check.has_type("third arg", column[2], (Field, dict))
+            if isinstance(column[2], Field):
+                fields.append(column)
+                colnames.append(column[0])
                 continue
-            field = dataclasses.field(**each[2])
-            fields.append(each[:2] + (field,))
+            field = dataclasses.field(**column[2])
+            colnames.append(column[0])
+            fields.append(column[:2] + (field,))
 
-        # Create record namespace with table hooks
+        # Dynamically create a new Record base class with corrected slots
+        # to avoid collision with default values
+        slots = tuple(colnames)
+        newrec = type(Record.__name__, (Record,), {'__slots__': slots})
+
+        # Dynamically create a dataclass, which is inherited from Record class.
+        # Thereby create empty __slots__ to (1) avoid collision with default
+        # values, which in dataclasses are stored as class variables and (2) to
+        # avoid the creation of a __dict__ attribute
         namespace = {
-            '_create_rowid': self._create_rowid,
+            '_get_new_rowid': self._get_new_rowid,
             '_delete_hook': self._remove_rowid,
             '_restore_hook': self._append_rowid,
             '_update_hook': self._update_row_diff,
-            '_revoke_hook': self._remove_row_diff}
-
-        # Create row constructor and slots of constructor
-        self._record = dataclasses.make_dataclass(
+            '_revoke_hook': self._remove_row_diff,
+            '__slots__': tuple()}
+        dataclass = dataclasses.make_dataclass(
             'Row', fields, bases=(Record, ), namespace=namespace)
-        self._record.__slots__ = ['id', 'state'] + [
-            field.name for field in dataclasses.fields(self._record)]
+
+        # Dynamically create a new class, which is inherited from dataclass,
+        # with corrected __slots__ attribute.
+        self._record = type(dataclass.__name__, (dataclass,), {
+            '__slots__': slots})
 
         self.truncate() # Initialize table data
 
@@ -944,7 +964,7 @@ class Table(attrib.Container):
 
     def _create_sorter(
             self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
-        # Use operator.attrgetter -> faster then getattr
+        # Use operator.attrgetter -> faster then lambda with getattr
         if orderby is None:
             if not reverse:
                 return None
@@ -957,8 +977,14 @@ class Table(attrib.Container):
             raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
         return lambda rows: sorted(rows, key=key, reverse=reverse)
 
-    def _create_rowid(self) -> int:
+    def _get_new_rowid(self) -> int:
         return len(self._data)
+
+    def _get_last_row(self, column: str) -> OptRow:
+        try:
+            return self._data[-1]
+        except IndexError:
+            return None
 
     def _get_columns(self) -> StrTuple:
         return tuple(field.name for field in self.fields)

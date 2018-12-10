@@ -16,7 +16,7 @@ from nemoa.base import attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
 from nemoa.io import ini
 from nemoa.types import BinaryFileLike, BytesLike, ClassVar
-from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessorBase
+from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessor
 from nemoa.types import PathLike, PathLikeList, Traceback
 from nemoa.types import FileLike, StrList, OptPath, Optional, ExcType, Exc
 from nemoa.types import Any, AnyFunc
@@ -236,7 +236,7 @@ class File(attrib.Container):
         # Reload saved workpace from file
         self.load(path, pwd=self._pwd)
 
-    def get_file_accessor(self, path: PathLike) -> FileAccessorBase:
+    def get_file_accessor(self, path: PathLike) -> FileAccessor:
         """Get file accessor to workspace member.
 
         Args:
@@ -248,18 +248,18 @@ class File(attrib.Container):
                 True.
 
         Returns:
-            :class:`File accessor <nemoa.types.FileAccessorBase>` to workspace
+            :class:`File accessor <nemoa.types.FileAccessor>` to workspace
             member.
 
         """
         def wrap_open(path: PathLike) -> AnyFunc:
             def wrapped_open(
-                    obj: FileAccessorBase, *args: Any, **kwds: Any) -> FileLike:
+                    obj: FileAccessor, *args: Any, **kwds: Any) -> FileLike:
                 return self.open(path, *args, **kwds)
             return wrapped_open
 
         return type( # pylint: disable=E0110
-            'FileAccessor', (FileAccessorBase,), {
+            'FileAccessor', (FileAccessor,), {
             'name': str(path),
             'open': wrap_open(path)})()
 

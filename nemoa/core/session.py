@@ -16,7 +16,7 @@ from nemoa.core import log
 from nemoa.io import ini, ws
 from nemoa.types import Any, BytesLike, FileLike, ClassVar, Exc, ExcType
 from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
-from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessorBase
+from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessor
 
 #
 # Structural Types
@@ -154,7 +154,7 @@ class Session(attrib.Container):
         if hasattr(self._ws, 'close'):
             self._ws.close()
 
-    def get_file_accessor(self, path: PathLike) -> FileAccessorBase:
+    def get_file_accessor(self, path: PathLike) -> FileAccessor:
         """Get file accessor to workspace member.
 
         Args:
@@ -166,7 +166,7 @@ class Session(attrib.Container):
                 True.
 
         Returns:
-            :class:`File accessor <nemoa.types.FileAccessorBase>` to workspace
+            :class:`File accessor <nemoa.types.FileAccessor>` to workspace
             member.
 
         """

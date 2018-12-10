@@ -79,7 +79,7 @@ class HandlerBase(abc.ABC):
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            <nemoa.types.FileAccessor>` or an opened file object in reading
             mode.
         mode: String, which characters specify the mode in which the file is to
             be opened. The default mode is *reading mode*, which is indicated by
@@ -171,7 +171,7 @@ class Reader(HandlerBase):
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            <nemoa.types.FileAccessor>` or an opened file object in reading
             mode.
         skiprows: Number of initial lines within the given CSV file before the
             CSV Header. By default no lines are skipped.
@@ -228,7 +228,7 @@ class Writer(HandlerBase):
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessorBase>` or an opened file object in writing
+            <nemoa.types.FileAccessor>` or an opened file object in writing
             mode.
         header: List (or arbitrary iterable) of column names, that specify the
             header of the CSV file.
@@ -287,7 +287,7 @@ class File(attrib.Container):
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            <nemoa.types.FileAccessor>` or an opened file object in reading
             or writing mode.
         header: Optional list (or arbitrary iterable) of strings, that specify
             the column names within the CSV file. For an existing file, the
@@ -718,7 +718,7 @@ def load(
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            <nemoa.types.FileAccessor>` or an opened file object in reading
             or writing mode.
         delimiter: Single character, which is used to separetate the column
             values within the CSV file. By default the delimiter is detected
@@ -740,7 +740,7 @@ def save(
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessorBase>` or an opened file object in reading
+            <nemoa.types.FileAccessor>` or an opened file object in reading
             or writing mode.
         header: Optional list (or arbitrary iterable) of strings, that specify
             the column names within the CSV file. For an existing file, the
