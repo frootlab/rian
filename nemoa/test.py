@@ -16,8 +16,14 @@ from nemoa.base import entity, this
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
+#
+# Structural Types
+#
+
+Cases = List['Case']
+
 ################################################################################
-# Global Setting
+# Global Test Setting
 ################################################################################
 
 skip_completeness_test: bool = False
@@ -33,8 +39,6 @@ class Case(NamedTuple):
     kwds: Dict[Any, Any] = {}
     value: Any = None
 
-Cases = List[Case]
-
 ################################################################################
 # Test Cases
 ################################################################################
@@ -45,6 +49,13 @@ class BaseTestCase(TestCase):
     def assertIsSubclass(self, cls: type, supercls: type) -> None:
         """Assert that a class is a subclass of another."""
         self.assertTrue(issubclass(cls, supercls))
+
+    def assertAllSubclass(
+            self, func: AnyFunc, supercls: type, cases: Cases) -> None:
+        """Assert outcome type of a class constructor."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertIsSubclass(func(*case.args, **case.kwds), supercls)
 
     def assertAllIn(self, func: AnyFunc, cases: Cases) -> None:
         """Assert that all function evaluations are in the given values."""

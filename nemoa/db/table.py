@@ -7,14 +7,15 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import abc
-import random
+import itertools
 import operator
+import random
 from typing import NewType
 import dataclasses
 from nemoa.base import attrib, check, pattern
 from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Tuple, StrDict, StrList, StrTuple
+from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
@@ -149,7 +150,9 @@ class Record(abc.ABC):
     def _revoke_hook(self, rowid: int) -> None:
         raise NotImplementedError()
 
-def create_record_class(columns: ColsDef, **kwds: Any) -> Type[Record]:
+def create_record_class(
+        columns: ColsDef, newid: OptCallable = None,
+        **kwds: Any) -> Type[Record]:
     """Create a new subclass of the Record class.
 
     Args:
@@ -164,6 +167,9 @@ def create_record_class(columns: ColsDef, **kwds: Any) -> Type[Record]:
             ``(name, type, constraints)``: Thereby ``constraints`` is requeried
             to be a dictionary, as documented in the function
             :func:`dataclasses.fields`.
+        newid: Optional reference to a method, which returns the current ID of
+            a new instance of the Record class. By default the Record class
+            uses an internal Iterator.
         **kwds: Methods which are bound to specific events of the new Record
             class. These events are: 'get_new_rowid', 'delete', 'restore',
             'update', and 'revoke'. By default no events are hooked.
@@ -202,14 +208,17 @@ def create_record_class(columns: ColsDef, **kwds: Any) -> Type[Record]:
     # Thereby create an ampty '__slots__' attribute to avoid collision with
     # default values (which in dataclasses are stored as class variables),
     # while avoiding the creation of a '__dict__' attribute
-    namespace = {}
-    mapping = {
-        'newid': '_get_newid', 'delete': '_delete_hook',
-        'restore': '_restore_hook', 'update': '_update_hook',
-        'revoke': '_revoke_hook'}
-    for key in mapping:
-        if key in kwds:
-            namespace[mapping[key]] = kwds[key]
+    namespace: StrDict = {}
+    if newid and callable(newid):
+        namespace['_get_newid'] = newid
+    else:
+        counter = itertools.count() # Infinite iterator
+        namespace['_get_newid'] = lambda obj: next(counter)
+    hooks = {
+        'delete': '_delete_hook', 'restore': '_restore_hook',
+        'update': '_update_hook', 'revoke': '_revoke_hook'}
+    for key in hooks:
+        namespace[hooks[key]] = kwds.get(key, void)
     namespace['__slots__'] = tuple()
     dataclass = dataclasses.make_dataclass(
         Record.__name__, fields, bases=(Record, ), namespace=namespace)
