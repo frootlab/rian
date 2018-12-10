@@ -12,6 +12,6 @@ from nemoa.db import table
 # Classes
 #
 
-class Table(table.ProxyBase):
+class Table(table.Proxy):
     """SQL-Table Proxy."""
     pass

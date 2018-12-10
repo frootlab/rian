@@ -86,14 +86,14 @@ class Record(abc.ABC):
     """
 
     _id: int
-    state: int
+    _state: int
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
-        self.validate()
+        self._validate()
         self._id = self._create_rowid()
-        self.state = RECORD_STATE_FLAG_CREATE
+        self._state = RECORD_STATE_FLAG_CREATE
 
-    def validate(self) -> None:
+    def _validate(self) -> None:
         """Check validity of the field types."""
         fields = getattr(self, '__dataclass_fields__', {})
         for name, field in fields.items():
@@ -102,28 +102,28 @@ class Record(abc.ABC):
             value = getattr(self, name)
             check.has_type(f"field '{name}'", value, field.type)
 
-    def delete(self) -> None:
+    def _delete(self) -> None:
         """Mark record as deleted and remove it's ID from index."""
-        if not self.state & RECORD_STATE_FLAG_DELETE:
-            self.state |= RECORD_STATE_FLAG_DELETE
+        if not self._state & RECORD_STATE_FLAG_DELETE:
+            self._state |= RECORD_STATE_FLAG_DELETE
             self._delete_hook(self._id)
 
-    def restore(self) -> None:
-        """Mark record as not deleted and append it's ID to index."""
-        if self.state & RECORD_STATE_FLAG_DELETE:
-            self.state &= ~RECORD_STATE_FLAG_DELETE
-            self._restore_hook(self._id)
-
-    def update(self, **kwds: Any) -> None:
+    def _update(self, **kwds: Any) -> None:
         """Mark record as updated and write the update to diff table."""
-        if not self.state & RECORD_STATE_FLAG_UPDATE:
-            self.state |= RECORD_STATE_FLAG_UPDATE
+        if not self._state & RECORD_STATE_FLAG_UPDATE:
+            self._state |= RECORD_STATE_FLAG_UPDATE
             self._update_hook(self._id, **kwds)
 
-    def revoke(self) -> None:
+    def _restore(self) -> None:
+        """Mark record as not deleted and append it's ID to index."""
+        if self._state & RECORD_STATE_FLAG_DELETE:
+            self._state &= ~RECORD_STATE_FLAG_DELETE
+            self._restore_hook(self._id)
+
+    def _revoke(self) -> None:
         """Mark record as not updated and remove the update from diff table."""
-        if self.state & RECORD_STATE_FLAG_UPDATE:
-            self.state &= ~RECORD_STATE_FLAG_UPDATE
+        if self._state & RECORD_STATE_FLAG_UPDATE:
+            self._state &= ~RECORD_STATE_FLAG_UPDATE
             self._revoke_hook(self._id)
 
     @abc.abstractmethod
@@ -612,7 +612,7 @@ class Table(attrib.Container):
             row = self.row(rowid)
             if not row:
                 continue
-            state = row.state
+            state = row._state # pylint: disable=W0212
             if state & RECORD_STATE_FLAG_DELETE:
                 self._data[rowid] = None
                 try:
@@ -621,7 +621,7 @@ class Table(attrib.Container):
                     pass
             elif state & (RECORD_STATE_FLAG_CREATE | RECORD_STATE_FLAG_UPDATE):
                 self._data[rowid] = self._diff[rowid]
-                self._data[rowid].state = 0
+                self._data[rowid]._state = 0 # pylint: disable=W0212
 
         self._diff = [None] * len(self._data) # Initialize Diff Table
 
@@ -642,14 +642,14 @@ class Table(attrib.Container):
             row = self.row(rowid)
             if not row:
                 continue
-            state = row.state
+            state = row._state # pylint: disable=W0212
             if state & RECORD_STATE_FLAG_CREATE:
                 try:
                     self._index.remove(rowid)
                 except ValueError:
                     pass
             else:
-                self._data[rowid].state = 0
+                self._data[rowid]._state = 0 # pylint: disable=W0212
 
         self._diff = [None] * len(self._data) # Initialize Diff Table
 
@@ -700,7 +700,7 @@ class Table(attrib.Container):
 
         """
         for row in self._create_cursor(predicate=where):
-            row.update(**kwds)
+            row._update(**kwds) # pylint: disable=W0212
 
     def delete(self, where: OptCallable = None) -> None:
         """Delete one or more records from the table.
@@ -720,7 +720,7 @@ class Table(attrib.Container):
 
         """
         for row in self._create_cursor(predicate=where):
-            row.delete()
+            row._delete() # pylint: disable=W0212
 
     def select(
             self, columns: OptStrTuple = None, where: OptCallable = None,
@@ -999,15 +999,15 @@ class Table(attrib.Container):
             raise RowLookupError(rowid)
         new_row = dataclasses.replace(row, **kwds)
         new_row._id = rowid # pylint: disable=W0212
-        new_row.state = row.state
+        new_row._state = row._state # pylint: disable=W0212
         self._diff[rowid] = new_row
 
 #
-# Table Proxy Base Class
+# Proxy Class
 #
 
-class ProxyBase(Table, pattern.Proxy):
-    """Table Proxy Base Class.
+class Proxy(Table, pattern.Proxy):
+    """Abstract Base Class for Table Proxies.
 
     Args:
         proxy_mode: Optional Integer, that determines the operation mode of the

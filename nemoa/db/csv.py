@@ -16,7 +16,7 @@ from nemoa.errors import ConnectError, DisconnectError
 # CSV Table Proxy Class
 #
 
-class Table(table.ProxyBase):
+class Table(table.Proxy):
     """CSV-Table Proxy."""
 
     #

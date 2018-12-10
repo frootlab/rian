@@ -15,7 +15,7 @@ from nemoa.types import Any, Module
 # Constructors
 #
 
-def connect(module: str, *args: Any, **kwds: Any) -> table.ProxyBase:
+def connect(module: str, *args: Any, **kwds: Any) -> table.Proxy:
     """Connect Table Proxy
 
     Args:

@@ -17,9 +17,10 @@ from nemoa.types import OptDict, OptBool, Union, Callable, CallableClasses
 #
 
 OptCallOrStr = Optional[Union[Callable, str]]
+OptGroup = Optional['Group']
 
 #
-# Attribute Group Base Class and Constructor
+# Group Class and Constructor
 #
 
 class Group:
@@ -58,11 +59,15 @@ class Group:
 
     _attr_group_name: str
     _attr_group_prefix: str
-    _attr_group_parent: Optional['Group']
+    _attr_group_parent: OptGroup
     _attr_group_defaults: dict
 
+    #
+    # Special Methods
+    #
+
     def __init__(
-            self, parent: Optional['Group'] = None, readonly: OptBool = None,
+            self, parent: OptGroup = None, readonly: OptBool = None,
             remote: OptBool = None, inherit: OptBool = None) -> None:
         self._attr_group_name = ''
         self._attr_group_prefix = ''
@@ -86,10 +91,12 @@ def create_group(
     created per instance.
 
     Args:
-        cls: Attribute Group Class
-        parent: Reference to parent :class:'attribute group
-            <nemoa.base.attrib.Group>', which is used for inheritance and
-            shared attributes. By default no parent is referenced.
+        cls: Subclass of the :class:'Group class <nemoa.base.attrib.Group>'
+        parent: Reference to parent object, which is used for attribute
+            inheritance and remote/shared attributes. If provided, the parent
+            object is required to by an instance of a subclass of the
+            :class:'Group class <nemoa.base.attrib.Group>'. By default no parent
+            object is referenced.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -120,7 +127,7 @@ def create_group(
     return new_obj
 
 #
-# Attribute Base Class
+# Attribute Class
 #
 
 class Attribute(property):
@@ -132,78 +139,83 @@ class Attribute(property):
     (i.e. a method), then the data descriptor class defines the accessor,
     mutator and manager methods of the respective attribute.
 
-    A succinct way of building data descriptors is given by the class
-    :class:`property`, which automatically creates a getter, a setters and a
-    deleter method from it's passed arguments. Thereupon the `Attribute` class
-    extends the options to control the behaviour of the Attribute by the
-    following amplifications:
+    A succinct way of building data descriptors is given by the :class:`property
+    class <property>`, which automatically creates an accessor, a mutator and a
+    destructor method from it's passed arguments. The `Attribute` class extends
+    this automation by additional options for managing and controlling the
+    behaviour of the attribute:
 
-        * Declaration of accessor and mutator by *forward references*
-        * *Type checking* against given classinfo
-        * *Read-only* attributes
-        * *Default values* by a fixed value, a factory function or by
-          inheritance from a parent attribute group
-        * Binding of fields to a *different dictionary or mapping*, e.g. to
-          allow an aggregation of the fields by their respective attribute type
-        * Binding of fields to *different keys*, then the attributes name, e.g.
-          to provide different accessors for the same key
-        * *Remote attribute* handling of a parent attribute, to allow shared
-          attributes
-        * Aggregation of attributes by *category* names
+        * Declaration of accessor, mutator and destructor methods by *forward
+          references*
+        * Automatic *type checking* against given data type(s)
+        * Restriction to *read-only* attributes
+        * Setting of *default values*, ether as a fixed value, a factory
+          function or by inheritance from a parental object
+        * Binding to *arbitrary mappings*, to allow a namespace aggregation of
+          the attributes data e.g. by their logical attribute type.
+        * Binding to *arbitrary keys*, e.g. to provide different accessors to
+          identical attribute data
+        * Handling of *remote attributes* of a parent object, to allow sharing
+          of attributes between different objects
+        * Locical aggregation of attributes by *categories*
 
     Args:
         fget: Accessor method of the attribute. If provided, it must be a
-            callable or a string, that references a valid Method of the
-            underlying Attribute Group.
+            callable or a string, that references a valid method of the owner
+            instance.
         fset: Mutator method of the attribute. If provided, it must be a
-            callable or a string, that references a valid Method of the
-            underlying Attribute Group.
+            callable or a string, that references a valid method of the owner
+            instance.
         fdel: Destructor method of the attribute. If provided, it must be a
-            callable or a string, that references a valid Method of the
-            underlying Attribute Group.
-        doc: Docstring of the Attribute, which is retained throughout the
-            runtime of the application. For more information and convention
-            see :PEP:`257`.
-        dtype: Data type definition of the Attribute given as a type or a tuple
+            callable or a string, that references a valid method of the owner
+            instance.
+        doc: Docstring of the attribute, which is retained throughout the
+            runtime of the application. For more information and doctring
+            convention see :PEP:`257`.
+        dtype: Data type definition of the attribute given as a type or a tuple
             of types, which is used for type checking assignments to the
-            attribute. If the value passed to the setter method is not an
+            attribute. If the value passed to the mutator method is not an
             instance of any of the given types, a
             :class:`~nemoa.errors.InvalidTypeError` is raised. By default type
             checking is disabled.
         default: Default value, which is returned by calling the getter method,
             if the following conditions are met: (1) The attribute is not a
             remote attribute of the parent, (2) the attribute is not inherited
-            by the parent, (3) the attribute has not yet been set, (4) the
+            from the parent, (3) the attribute has not yet been set, (4) the
             attribute has no default factory.
-        factory: Default method of the attribute. If provided, it must be a
-            callable or a string, that references a valid method of the
-            underlying Attribute Group. This method is called, when a default
-            value is required for the field. Among other purposes, this can be
-            used to specify fields with mutable default values.
-        binddict: Name of dictionary or other mapping object used to store
-            the Attribute. By the default value None, the dictionary
+        factory: Default method, which is called if a default value is required.
+            If provided, it must be a callable or a string, that references a
+            valid method of the owner instance. This method is called, if the
+            following conditions are met: (1) The attribute is not a remote
+            attribute of the parent, (2) the attribute is not inherited from the
+            parent, (3) the attribute has not yet been set.
+        binddict: Name of the dictionary (or arbitrary mapping), which comprises
+            the key, which is used to store the attribute data. If provided, it
+            must be a string, that references an attribute of the owner
+            instance, with type mapping. By default, the special attribute
             :attr:`~object.__dict__` is used.
-        bindkey: Key within bound dictionary used to store the Attribute. By
-            default the name of the Attribute is used.
+        bindkey: Name of key within the bound dictionary, which is used to store
+            the attribute data. By default the name of the attribute is used.
         remote: Boolean value which determines, if the accessor, mutator and
             destructor methods are bypassed to the currently referenced parent
             attribute group. If no attribute group is referenced or the
             referenced attribute group, does not contain an attribute of the
             same name, a ReferenceError is raised on any request to the
             Attribute.
-        inherit: Boolean value which determines, if the default value is
-            retrieved from the current value of the currently referenced parent
-            attribute group. If no attribute group is referenced or the
-            referenced attribute group, does not contain an attribute of the
-            same name, the default value is retrieved from the default factory,
-            or if not given, from the default value.
+        inherit: Boolean value which determines if the default value is
+            inherited from the (current) value of a referenced parent object. If
+            no parent object is referenced or the referenced object, does not
+            contain an attribute of the same name, then the default value is
+            retrieved from the default factory, or if not given, from the
+            default value. By default the default value is not inherited from
+            the parent.
         readonly: Boolean value which determines, if the attribute is a
             read-only attribute. For read-only attributes the mutator method
-            raises an AttributeError on requests to assign a different value
-            to the attribute. By the default value None, the attribute is
-            read-writable.
-        category: Attribute categories allow a free aggregation of attributes by
-            their respective category values.
+            raises an AttributeError on requests to the mutator method. By
+            default the attribute is read-writable.
+        category: Optional name of category, which allows a logical aggregation
+            of attributes. If given, that category has to be a string. By
+            default not category is set.
 
     """
 
@@ -237,14 +249,13 @@ class Attribute(property):
             binddict: OptStr = None, bindkey: OptStr = None,
             remote: bool = False, inherit: bool = False,
             category: OptStr = None) -> None:
-        """Initialize Attribute Descriptor."""
+
         # Initialize Property Class
-        super_kwds: dict = {
-            'fget': fget if callable(fget) else None,
-            'fset': fget if callable(fset) else None,
-            'fdel': fdel if callable(fdel) else None,
-            'doc': doc}
-        super().__init__(**super_kwds)
+        super().__init__( # type: ignore
+            fget=fget if callable(fget) else None,
+            fset=fget if callable(fset) else None,
+            fdel=fdel if callable(fdel) else None,
+            doc=doc)
 
         # Check Types of Arguments
         check.has_opt_type("argument 'dtype'", dtype, ClassInfoClasses)
@@ -255,7 +266,7 @@ class Attribute(property):
         check.has_type("argument 'inherit'", inherit, bool)
         check.has_opt_type("argument 'category'", category, str)
 
-        # Set Instance Attributes to Argument Values
+        # Bind Instance Attributes to Argument Values
         self.sget = fget if isinstance(fget, str) else None
         self.sset = fset if isinstance(fset, str) else None
         self.sdel = fdel if isinstance(fdel, str) else None
@@ -270,11 +281,10 @@ class Attribute(property):
         self.category = category
 
     def __set_name__(self, cls: type, name: str) -> None:
-        """Set name of the Attribute."""
-        self.name = name
+        self.name = name # Set name of the Attribute
 
     def __get__(self, obj: Group, cls: OptType = None) -> Any:
-        """Bypass get requests."""
+        # Bypass get requests
         if self._is_remote(obj):
             return self._get_remote(obj)
         if callable(self.fget):
@@ -290,7 +300,7 @@ class Attribute(property):
         return self._get_default(obj)
 
     def __set__(self, obj: Group, val: Any) -> None:
-        """Bypass and type check set requests."""
+        # Bypass and type check set requests
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):
@@ -310,7 +320,7 @@ class Attribute(property):
         binddict[bindkey] = val
 
     def __delete__(self, obj: Group) -> None:
-        """Bypass delete requests."""
+        # Bypass delete requests
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):

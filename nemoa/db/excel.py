@@ -20,7 +20,7 @@ from nemoa.db import table
 # Classes
 #
 
-class Table(table.ProxyBase):
+class Table(table.Proxy):
     """Excel-Table Proxy."""
 
     _file: property = attrib.Temporary()
