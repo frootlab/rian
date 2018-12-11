@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import datetime
 from pathlib import Path
 import numpy as np
-from nemoa.base import array, binary, check, entity, env, literal, this
+from nemoa.base import array, binary, check, env, literal, this, tree
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -62,26 +62,26 @@ class TestArray(ModuleTestCase):
         self.assertEqual(new['z'][0], 'a')
 
 class TestEntity(ModuleTestCase):
-    """Testcase for the module nemoa.base.entity."""
+    """Testcase for the module nemoa.base.tree."""
 
-    module = 'nemoa.base.entity'
+    module = 'nemoa.base.tree'
 
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @entity.wrap_attr(name='a', group=1)
+            @tree.wrap_attr(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @entity.wrap_attr(name='b', group=2)
+            @tree.wrap_attr(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @entity.wrap_attr(name='b', group=2)
+            @tree.wrap_attr(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()
 
     def test_has_base(self) -> None:
-        self.assertAllEqual(entity.has_base, [
+        self.assertAllEqual(tree.has_base, [
             Case(args=(object, object), value=True),
             Case(args=(object, 'object'), value=True),
             Case(args=('object', object), value=True),
@@ -91,61 +91,61 @@ class TestEntity(ModuleTestCase):
             Case(args=('object', type), value=False)])
 
     def test_get_members(self) -> None:
-        self.assertAllComprise(entity.get_members, [
+        self.assertAllComprise(tree.get_members, [
             Case(args=(object, ), value='__class__'),
-            Case(args=(entity, ), value='get_members'),
-            Case(args=(entity, ), kwds={'classinfo': Function},
+            Case(args=(tree, ), value='get_members'),
+            Case(args=(tree, ), kwds={'classinfo': Function},
                 value='get_members'),
-            Case(args=(entity, ), kwds={'name': 'get_members'},
+            Case(args=(tree, ), kwds={'name': 'get_members'},
                 value='get_members'),
-            Case(args=(entity, ), kwds={
+            Case(args=(tree, ), kwds={
                 'rules': {'about': lambda arg, attr: arg in attr},
                 'about': 'members'}, value='get_members')])
-        self.assertNoneComprise(entity.get_members, [
+        self.assertNoneComprise(tree.get_members, [
             Case(args=(object, '*dummy*'), value='__class__'),
-            Case(args=(entity, ), kwds={'classinfo': str},
+            Case(args=(tree, ), kwds={'classinfo': str},
                 value='get_members'),
-            Case(args=(entity, '*dummy*'), value='get_members'),
-            Case(args=(entity, ), kwds={'name': 'dummy'},
+            Case(args=(tree, '*dummy*'), value='get_members'),
+            Case(args=(tree, ), kwds={'name': 'dummy'},
                 value='get_members'),
-            Case(args=(entity, ), kwds={
+            Case(args=(tree, ), kwds={
                 'rules': {'about': lambda arg, attr: arg == attr},
                 'about': 'members'}, value='get_members')])
 
     def test_get_members_dict(self) -> None:
-        self.assertAllComprise(entity.get_members_dict, [
+        self.assertAllComprise(tree.get_members_dict, [
             Case(args=(object, ), value='object.__class__'),
-            Case(args=(entity, ), value='nemoa.base.entity.get_members'),
-            Case(args=(entity, ), kwds={'classinfo': Function},
-                value='nemoa.base.entity.get_members'),
-            Case(args=(entity, ), kwds={'name': 'get_members'},
-                value='nemoa.base.entity.get_members'),
-            Case(args=(entity, ), kwds={
+            Case(args=(tree, ), value='nemoa.base.tree.get_members'),
+            Case(args=(tree, ), kwds={'classinfo': Function},
+                value='nemoa.base.tree.get_members'),
+            Case(args=(tree, ), kwds={'name': 'get_members'},
+                value='nemoa.base.tree.get_members'),
+            Case(args=(tree, ), kwds={
                 'rules': {'about': lambda arg, attr: arg in attr},
-                'about': 'members'}, value='nemoa.base.entity.get_members')])
-        self.assertNoneComprise(entity.get_members_dict, [
+                'about': 'members'}, value='nemoa.base.tree.get_members')])
+        self.assertNoneComprise(tree.get_members_dict, [
             Case(args=(object, '*dummy*'), value='object.__class__'),
-            Case(args=(entity, ), kwds={'classinfo': str},
-                value='nemoa.base.entity.get_members'),
-            Case(args=(entity, '*dummy*'),
-                value='nemoa.base.entity.get_members'),
-            Case(args=(entity, ), kwds={'name': 'dummy'},
-                value='nemoa.base.entity.get_members'),
-            Case(args=(entity, ), kwds={
+            Case(args=(tree, ), kwds={'classinfo': str},
+                value='nemoa.base.tree.get_members'),
+            Case(args=(tree, '*dummy*'),
+                value='nemoa.base.tree.get_members'),
+            Case(args=(tree, ), kwds={'name': 'dummy'},
+                value='nemoa.base.tree.get_members'),
+            Case(args=(tree, ), kwds={
                 'rules': {'about': lambda arg, attr: arg == attr},
-                'about': 'members'}, value='nemoa.base.entity.get_members')])
+                'about': 'members'}, value='nemoa.base.tree.get_members')])
 
     def test_get_name(self) -> None:
-        self.assertAllEqual(entity.get_name, [
+        self.assertAllEqual(tree.get_name, [
             Case(args=('', ), value='str'),
             Case(args=(0, ), value='int'),
             Case(args=(object, ), value='object'),
             Case(args=(object(), ), value='object'),
-            Case(args=(entity.get_name, ), value='get_name'),
-            Case(args=(entity, ), value='nemoa.base.entity')])
+            Case(args=(tree.get_name, ), value='get_name'),
+            Case(args=(tree, ), value='nemoa.base.tree')])
 
     def test_get_lang_repr(self) -> None:
-        self.assertAllEqual(entity.get_lang_repr, [
+        self.assertAllEqual(tree.get_lang_repr, [
             Case(args=(set(), ), value='no elements'),
             Case(args=([], ), value='no items'),
             Case(args=(['a'], ), value="item 'a'"),
@@ -153,54 +153,54 @@ class TestEntity(ModuleTestCase):
             Case(args=(['a', 'b'], 'or'), value="items 'a' or 'b'")])
 
     def test_get_summary(self) -> None:
-        self.assertAllEqual(entity.get_summary, [
-            Case(args=(object, ), value=entity.get_summary(object())),
+        self.assertAllEqual(tree.get_summary, [
+            Case(args=(object, ), value=tree.get_summary(object())),
             Case(args=('summary.\n', ), value='summary')])
 
     def test_get_module(self) -> None:
-        ref = entity.get_module(__name__)
+        ref = tree.get_module(__name__)
         self.assertIsInstance(ref, Module)
         self.assertEqual(getattr(ref, '__name__'), __name__)
 
     def test_get_submodules(self) -> None:
-        parent = entity.get_module('nemoa.base')
+        parent = tree.get_module('nemoa.base')
         subs: StrList = []
         if isinstance(parent, Module):
-            subs = entity.get_submodules(ref=parent)
+            subs = tree.get_submodules(ref=parent)
         self.assertIn(__name__, subs)
 
     def test_get_function(self) -> None:
-        func = entity.get_function(entity.__name__ + '.get_function')
+        func = tree.get_function(tree.__name__ + '.get_function')
         self.assertIsInstance(func, Function)
 
     def test_split_args(self) -> None:
         self.assertEqual(
-            entity.split_args("f(1., 'a', b = 2)"),
+            tree.split_args("f(1., 'a', b = 2)"),
             ('f', (1.0, 'a'), {'b': 2}))
 
     def test_get_parameters(self) -> None:
-        self.assertAllEqual(entity.get_parameters, [
-            Case(args=(entity.get_parameters, ),
+        self.assertAllEqual(tree.get_parameters, [
+            Case(args=(tree.get_parameters, ),
                 value=OrderedDict()),
-            Case(args=(entity.get_parameters, list),
+            Case(args=(tree.get_parameters, list),
                 value=OrderedDict([('obj', list)])),
-            Case(args=(entity.get_parameters, list),
+            Case(args=(tree.get_parameters, list),
                 kwds={'test': True},
                 value=OrderedDict([('obj', list), ('test', True)]))])
 
     def test_call_attr(self) -> None:
-        self.assertAllEqual(entity.call_attr, [
-            Case(args=(entity, 'get_name', list),
+        self.assertAllEqual(tree.call_attr, [
+            Case(args=(tree, 'get_name', list),
                 value='list'),
-            Case(args=(entity, 'get_name', list),
+            Case(args=(tree, 'get_name', list),
                 kwds={'test': True},
                 value='list')])
 
     def test_get_methods(self) -> None:
         obj = self.get_test_object()
-        names = entity.get_methods(obj, pattern='get*').keys()
+        names = tree.get_methods(obj, pattern='get*').keys()
         self.assertEqual(names, {'geta', 'getb'})
-        names = entity.get_methods(obj, pattern='*b').keys()
+        names = tree.get_methods(obj, pattern='*b').keys()
         self.assertEqual(names, {'getb', 'setb'})
 
     def test_wrap_attr(self) -> None:
@@ -209,7 +209,7 @@ class TestEntity(ModuleTestCase):
         self.assertEqual(getattr(obj.getb, 'name', None), 'b')
 
     def test_search(self) -> None:
-        count = len(entity.search(ref=entity, name='search'))
+        count = len(tree.search(ref=tree, name='search'))
         self.assertEqual(count, 1)
 
 class TestCheck(ModuleTestCase):
@@ -782,7 +782,7 @@ class TestThis(ModuleTestCase):
         pass # Function is testet in this.get_module
 
     def test_call_attr(self) -> None:
-        pass # Function is testet in entity.call_attr
+        pass # Function is testet in tree.call_attr
 
     def test_get_attr(self) -> None:
         self.assertEqual(this.get_attr('__name__'), __name__)

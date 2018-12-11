@@ -10,7 +10,7 @@ Submodules
    nemoa.base.attrib
    nemoa.base.binary
    nemoa.base.check
-   nemoa.base.entity
+   nemoa.base.tree
    nemoa.base.env
    nemoa.base.literal
    nemoa.base.nbase

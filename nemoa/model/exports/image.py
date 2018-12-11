@@ -9,7 +9,7 @@ import os
 import networkx as nx
 import numpy as np
 import nemoa
-from nemoa.base import entity
+from nemoa.base import tree
 from nemoa.plot import Plot, network, heatmap, histogram
 
 def filetypes():
@@ -46,7 +46,7 @@ def save(model, path = None, filetype = None, plot = None, **kwds):
 
     # get information about relation
     if plot._config['show_title']:
-        rel_id = entity.split_args(plot._config['relation'])[0]
+        rel_id = tree.split_args(plot._config['relation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
         rel_name = rel_dict['name']
@@ -307,7 +307,7 @@ class Heatmap(heatmap.Heatmap):
 
         # update title by evaluated relation
         if self._config['show_title']:
-            rel_id = entity.split_args(self._config['relation'])[0]
+            rel_id = tree.split_args(self._config['relation'])[0]
             rel_dict = model.system.get('algorithm', rel_id,
                 category = ('system', 'relation', 'evaluation'))
             rel_name = rel_dict['name']
@@ -330,7 +330,7 @@ class Histogram(histogram.Histogram):
             'transform': '' })
 
         # get information about evaluation algorithm
-        rel_id = entity.split_args(self._config['evaluation'])[0]
+        rel_id = tree.split_args(self._config['evaluation'])[0]
         rel_dict = model.system.get('algorithm', rel_id,
             category = ('system', 'relation', 'evaluation'))
 

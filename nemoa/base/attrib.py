@@ -786,21 +786,21 @@ class DCGroup(Group):
     creator.__doc__ = """
     An entity primarily responsible for making the resource. Examples of a
     Creator include a person, an organization, or a service. Typically, the name
-    of a Creator should be used to indicate the entity.
+    of a Creator should be used to indicate the tree.
     """
 
     publisher: property = DCAttr(category='property')
     publisher.__doc__ = """
     An entity responsible for making the resource available. Examples of a
     Publisher include a person, an organization, or a service. Typically, the
-    name of a Publisher should be used to indicate the entity.
+    name of a Publisher should be used to indicate the tree.
     """
 
     contributor: property = DCAttr(category='property')
     contributor.__doc__ = """
     An entity responsible for making contributions to the resource. Examples of
     a Contributor include a person, an organization, or a service. Typically,
-    the name of a Contributor should be used to indicate the entity.
+    the name of a Contributor should be used to indicate the tree.
     """
 
     rights: property = DCAttr(category='property')

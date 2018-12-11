@@ -12,7 +12,7 @@ from typing import NamedTuple
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
-from nemoa.base import entity, this
+from nemoa.base import this, tree
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
@@ -141,14 +141,14 @@ class ModuleTestCase(BaseTestCase):
             return
 
         # Get reference to module
-        ref = entity.get_module(self.module)
+        ref = tree.get_module(self.module)
         if not ref:
             raise AssertionError(f"module {self.module} does not exist")
 
         # Get module members
         members = set()
         for name in getattr(ref, '__all__',
-            entity.get_members(ref, classinfo=(type, Function))):
+            tree.get_members(ref, classinfo=(type, Function))):
             if name.startswith('_'):
                 continue # Filter protected members
             obj = getattr(ref, name)
@@ -161,7 +161,7 @@ class ModuleTestCase(BaseTestCase):
             members.add(name)
 
         # Get tested module members
-        tested = set(name[5:] for name in entity.get_members(
+        tested = set(name[5:] for name in tree.get_members(
             self, classinfo=Method, pattern='test_*'))
 
         # Get untested module members
@@ -347,7 +347,7 @@ def run(
     loader = TestLoader()
     suite = TestSuite()
     root = this.get_root()
-    cases = entity.search(root, classinfo=classinfo, val='reference')
+    cases = tree.search(root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return TextTestRunner(stream=stream, verbosity=verbosity).run(suite)

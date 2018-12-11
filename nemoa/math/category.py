@@ -12,7 +12,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import entity, this
+from nemoa.base import tree, this
 from nemoa.types import Any, FuncWrapper, OptModule, OptStr, OptStrList
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
@@ -37,7 +37,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
     # Search for algorithms
-    return entity.search(ref=module, rules=rules, **kwds)
+    return tree.search(ref=module, rules=rules, **kwds)
 
 #
 # Functors

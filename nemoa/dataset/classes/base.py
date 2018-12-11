@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 from typing import Any, Dict, Optional
 import numpy as np
 import nemoa
-from nemoa.base import array, entity, nbase
+from nemoa.base import array, nbase, tree
 from nemoa.core import log, ui
 from nemoa.math import category
 
@@ -278,7 +278,7 @@ class Dataset(nbase.ObjectIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if entity.has_base(system, 'System'):
+        if tree.has_base(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -525,7 +525,7 @@ class Dataset(nbase.ObjectIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not entity.has_base(system, 'System'):
+        if not tree.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         ui.info("transform data using model '%s'." % system.name)
@@ -609,17 +609,21 @@ class Dataset(nbase.ObjectIP):
         if key == 'value': return self._get_value(*args, **kwds)
 
         # direct access
-        if key == 'copy': return self._get_copy(*args, **kwds)
-        if key == 'config': return self._get_config(*args, **kwds)
-        if key == 'tables': return self._get_table(*args, **kwds)
+        if key == 'copy':
+            return self._get_copy(*args, **kwds)
+        if key == 'config':
+            return self._get_config(*args, **kwds)
+        if key == 'tables':
+            return self._get_table(*args, **kwds)
 
         raise KeyError(f"unknown key '{key}'")
 
-    def _get_algorithms(self, category = None, attribute = None, tree = False):
+    def _get_algorithms(
+            self, category = None, attribute = None, astree = False):
         """Get algorithms provided by dataset."""
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = entity.get_methods(self, pattern = '_get_*', val = 'name')
+        methods = tree.get_methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:
@@ -627,9 +631,9 @@ class Dataset(nbase.ObjectIP):
                 if val.get('category', None) != category:
                     del methods[key]
 
-        # create flat structure if category is given or tree is False
+        # create flat structure if category is given or astree is False
         structured = {}
-        if category or not tree:
+        if category or not astree:
             for ukey, udata in methods.items():
                 if attribute: structured[udata['name']] = \
                     udata[attribute]

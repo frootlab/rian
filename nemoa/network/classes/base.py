@@ -6,7 +6,7 @@ __license__ = 'GPLv3'
 
 import importlib
 import networkx
-from nemoa.base import entity, nbase
+from nemoa.base import tree, nbase
 from nemoa.core import log
 from nemoa.types import Any, Dict, Function
 import nemoa
@@ -87,7 +87,7 @@ class Network(nbase.ObjectIP):
         """Configure network to dataset."""
 
         # check if dataset instance is available
-        if not entity.has_base(dataset, 'Dataset'):
+        if not tree.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is required to be of type dataset")
 
         log.info("configure network: '%s'" % (self._config['name']))
@@ -358,7 +358,7 @@ class Network(nbase.ObjectIP):
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
-        funcs = entity.get_members_dict(
+        funcs = tree.get_members_dict(
             networkx.algorithms, classinfo=Function)
 
         if attribute is None:
@@ -661,7 +661,7 @@ class Network(nbase.ObjectIP):
     def initialize(self, system = None):
         if not system:
             return False
-        if not entity.has_base(system, 'System'):
+        if not tree.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         # get edge parameters from system links

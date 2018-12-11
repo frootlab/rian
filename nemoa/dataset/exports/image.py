@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import networkx as nx
 import numpy as np
 import nemoa
-from nemoa.base import entity
+from nemoa.base import tree
 from nemoa.plot import Plot, heatmap, histogram, network, scatter
 
 def filetypes():
@@ -89,7 +89,7 @@ class Heatmap(heatmap.Heatmap):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = entity.get_parameters(func, default = self._config)
+        kwds = tree.get_parameters(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -127,7 +127,7 @@ class Histogram(histogram.Histogram):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = entity.get_parameters(func, default=self._config)
+        kwds = tree.get_parameters(func, default=self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -163,7 +163,7 @@ class Scatter2D(scatter.Scatter2D):
         fname = self._config.get('func')
         fdict = dataset.get('algorithm', fname)
         func = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = entity.get_parameters(func, default = self._config)
+        kwds = tree.get_parameters(func, default = self._config)
         array = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -200,7 +200,7 @@ class Graph(network.Graph2D):
         fname  = self._config.get('func')
         fdict  = dataset.get('algorithm', fname)
         func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = entity.get_parameters(func, default = self._config)
+        kwds = tree.get_parameters(func, default = self._config)
         array  = dataset.evaluate(fname, **kwds)
 
         # check if evaluation yields valid relation

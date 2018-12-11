@@ -1,7 +1,7 @@
-nemoa.base.entity module
+nemoa.base.tree module
 ========================
 
-.. automodule:: nemoa.base.entity
+.. automodule:: nemoa.base.tree
     :members:
     :undoc-members:
     :show-inheritance:
