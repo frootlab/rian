@@ -16,6 +16,7 @@ import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized
+from typing import _SpecialForm as StrucType # pylint: disable=E0611
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')
@@ -67,7 +68,7 @@ Path = os.PathLike
 Traceback = types.TracebackType
 
 ################################################################################
-# ClassInfos
+# Class Information
 ################################################################################
 
 CallableClasses = (Function, Method)
@@ -75,6 +76,7 @@ FileClasses = (io.BufferedIOBase, io.TextIOBase)
 PathLikeClasses = (str, Path)
 ClassInfoClasses = (type, tuple)
 FileRefClasses = PathLikeClasses + FileClasses + (FileAccessor, )
+TypeInfoClasses = ClassInfoClasses + (StrucType, )
 
 ################################################################################
 # Structural Types for Literals and Collections of Literals

@@ -8,6 +8,7 @@ __docformat__ = 'google'
 
 import datetime
 from pathlib import Path
+import typing
 import numpy as np
 from nemoa.base import array, binary, check, env, literal, this, tree
 from nemoa.base import nbase, ndict
@@ -222,12 +223,15 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 0, int)),
             Case(args=('', '', str)),
             Case(args=('', list(), list)),
-            Case(args=('', dict(), dict))])
+            Case(args=('', dict(), dict)),
+            Case(args=('', object, typing.Callable)),
+            Case(args=('', object, typing.Any))])
         self.assertAllRaises(TypeError, check.has_type, [
             Case(args=('', '', int)),
             Case(args=('', 1., int)),
             Case(args=('', 1, float)),
-            Case(args=('', dict(), list))])
+            Case(args=('', dict(), list)),
+            Case(args=('', None, typing.Callable))])
 
     def test_is_identifier(self) -> None:
         self.assertNoneRaises(ValueError, check.is_identifier, [

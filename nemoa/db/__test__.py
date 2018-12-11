@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import string
 from nemoa.db import table
 from nemoa.test import Case, ModuleTestCase
-from nemoa.types import StrList
+from nemoa.types import Any, StrList
 
 class TestTable(ModuleTestCase):
     """Testcase for the module nemoa.db.table."""
@@ -23,11 +23,11 @@ class TestTable(ModuleTestCase):
             for omode in ['dynamic', 'indexed', 'static']:
                 self.cursor_modes.append(' '.join([tmode, omode]))
         # Create test table
-        self.fields = (
+        self.columns = (
             ('uid', int),
             ('prename', str, {'default': ''}),
             ('name', str, {'default': ''}))
-        self.table = table.Table('test', fields=self.fields)
+        self.table = table.Table('test', columns=self.columns)
         # Create test data
         letters = string.ascii_letters
         self.size = len(letters)
@@ -151,7 +151,38 @@ class TestTable(ModuleTestCase):
         pass
 
     def test_Table_create(self) -> None:
-        pass
+        kwds: dict
+
+        kwds = {'columns': ('a', )}
+        with self.subTest(**kwds):
+            tbl = table.Table()
+            tbl.create(None, **kwds)
+            self.assertEqual(tbl.fields[0].name, 'a')
+            self.assertEqual(tbl.fields[0].type, 'typing.Any')
+            self.assertEqual(len(tbl.fields[0].metadata), 0)
+
+        kwds = {'columns': (('a', str), )}
+        with self.subTest(**kwds):
+            tbl = table.Table()
+            tbl.create(None, **kwds)
+            self.assertEqual(tbl.fields[0].name, 'a')
+            self.assertEqual(tbl.fields[0].type, str)
+
+        kwds = {'columns': (('b', int, {'default': ''}), )}
+        with self.subTest(**kwds):
+            tbl = table.Table()
+            tbl.create(None, **kwds)
+            self.assertEqual(tbl.fields[0].name, 'b')
+            self.assertEqual(tbl.fields[0].type, int)
+            self.assertEqual(tbl.fields[0].default, '')
+
+        kwds = {'columns': (('_a', Any, {'metadata': {1: 1, 2: 2}}), )}
+        with self.subTest(**kwds):
+            tbl = table.Table()
+            tbl.create(None, **kwds)
+            self.assertEqual(tbl.fields[0].name, '_a')
+            self.assertEqual(tbl.fields[0].type, Any)
+            self.assertEqual(len(tbl.fields[0].metadata), 2)
 
     def test_Table_drop(self) -> None:
         pass

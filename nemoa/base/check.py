@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
+import typing
 from nemoa.errors import IsPositiveError, IsNegativeError, SizeError
 from nemoa.errors import InvalidTypeError, InvalidClassError, NotClassError
 from nemoa.errors import NotCallableError, InvalidAttrError, NoSubsetError
@@ -21,11 +22,24 @@ from nemoa.types import ClassInfoClasses
 
 def has_type(name: str, obj: object, classinfo: ClassInfo) -> None:
     """Check type of object."""
-    if not isinstance(classinfo, ClassInfoClasses):
-        if hasattr(classinfo, '__origin__'):
-            classinfo = classinfo.__origin__
-    if not isinstance(obj, classinfo):
+
+    # Check against ClassInfo
+    if isinstance(classinfo, ClassInfoClasses):
+        if isinstance(obj, classinfo):
+            return
         raise InvalidTypeError(name, obj, classinfo)
+
+    # Check against assorted Structural Types
+    if classinfo == typing.Any:
+        return
+    if classinfo == typing.Callable:
+        try:
+            is_callable(name, obj)
+        except NotCallableError as err:
+            raise InvalidTypeError(name, obj, classinfo) from err
+        return
+    if hasattr(classinfo, '__origin__'):
+        has_type(name, obj, getattr(classinfo, '__origin__'))
 
 def has_opt_type(name: str, obj: object, classinfo: ClassInfo) -> None:
     """Check type of optional object."""

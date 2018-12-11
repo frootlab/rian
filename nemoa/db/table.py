@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Table and Table Proxy Class for Data Integration."""
+"""Table and Table Proxy for Data Integration."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -19,6 +19,7 @@ from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
+from nemoa.types import TypeInfoClasses
 
 #
 # Structural Types
@@ -156,17 +157,21 @@ def create_record_class(
     """Create a new subclass of the Record class.
 
     Args:
-        columns: Tuple of column definitions. All column definitions independent
-            from each other can be given in one of the following formats: (1)
-            Only the name of the column by a string ``name``. Thereby ``name``
-            is required to be a valid identifier (as defined in [UAX31]_). (2)
-            The column name and the data type of the field by a tuple ``(name,
-            type)``. Thereby ``type`` is required to be a standard Python type
-            like :class:`str`, :class:`int`, :class:`float` etc. (3) The column
-            name, the data type and supplementary field constraints by a tuple
-            ``(name, type, constraints)``: Thereby ``constraints`` is requeried
-            to be a dictionary, as documented in the function
-            :func:`dataclasses.fields`.
+        columns: Tuple of *column definitions*. All column definitions
+            independent from each other can be given in one of the following
+            formats: (1) In order to only specify the name of the column,
+            without further information, the colum definition has to be given as
+            a string `<name>`. Thereby the choice of `<name>` is restricted to
+            valid identifiers, described by [UAX31]_. (2) If, additionally to
+            the name, also the data type of the column shall be specified, then
+            the column definition has to be given as a tuple `(<name>, <type>)`.
+            Thereby `<type>` is required to by a valid :class:`type`, like
+            like :class:`str`, :class:`int`, :class:`float` or :class:`Date
+            <datetime.datetime>`. (3) Finally the column definition may also
+            contain supplementary constraints and metadata. In this case the
+            definition has to be given as a tuple `(<name>, <type>, <dict>)`,
+            where `<dict>` is dictionary which comprises any items, documented
+            by the function :func:`dataclasses.fields`.
         newid: Optional reference to a method, which returns the current ID of
             a new instance of the Record class. By default the Record class
             uses an internal Iterator.
@@ -180,6 +185,7 @@ def create_record_class(
     """
     # Check column defnitions and convert them to field descriptors, as required
     # by dataclasses.make_dataclass()
+    check.has_type("'columns'", columns, tuple)
     fields: list = []
     names: StrList = []
     for column in columns:
@@ -187,15 +193,15 @@ def create_record_class(
             fields.append(column)
             names.append(column)
             continue
-        check.has_type(f"column {column}", column, tuple)
-        check.has_size(f"column {column}", column, min_size=2, max_size=3)
-        check.has_type("first argument", column[0], str)
-        check.has_type("second argument", column[1], type)
+        check.has_type(f'column {column}', column, tuple)
+        check.has_size(f'column {column}', column, min_size=2, max_size=3)
+        check.has_type('first argument', column[0], str)
+        check.has_type('second argument', column[1], TypeInfoClasses)
         if len(column) == 2:
             fields.append(column)
             names.append(column[0])
             continue
-        check.has_type("third arg", column[2], (Field, dict))
+        check.has_type('third argument', column[2], (Field, dict))
         if isinstance(column[2], Field):
             fields.append(column)
             names.append(column[0])
@@ -509,19 +515,23 @@ class Table(attrib.Container):
     """Table Class.
 
     Args:
-        name: Optional table name. If given, the table name is required to be a
-            valid identifier as defined in [UAX31]_.
-        fields: Optional tuple of field declarations. All fields individually
-            can be given in one of the following formats: (1) Only the name of
-            the column by a string ``name``. Thereby ``name`` is required to be
-            a valid identifier (as defined in [UAX31]_). (2) The column name and
-            the data type of the field by a tuple ``(name, type)``. Thereby
-            ``type`` is required to be a standard Python type like :class:`str`,
-            :class:`int`, :class:`float` etc. (3) The column name, the data type
-            and supplementary field constraints by a tuple ``(name, type,
-            constraints)``: Thereby ``constraints`` is requeried to be a
-            dictionary. The items of this dictionary are documented in the
-            function :func:`dataclasses.fields`.
+        name: Optional table name. If provided, the choice of the table name is
+            restricted to valid identifiers, described by [UAX31]_.
+        columns: Optionl tuple of *column definitions*. All column definitions
+            independent from each other can be given in one of the following
+            formats: (1) In order to only specify the name of the column,
+            without further information, the colum definition has to be given as
+            a string `<name>`. Thereby the choice of `<name>` is restricted to
+            valid identifiers, described by [UAX31]_. (2) If, additionally to
+            the name, also the data type of the column shall be specified, then
+            the column definition has to be given as a tuple `(<name>, <type>)`.
+            Thereby `<type>` is required to by a valid :class:`type`, like
+            like :class:`str`, :class:`int`, :class:`float` or :class:`Date
+            <datetime.datetime>`. (3) Finally the column definition may also
+            contain supplementary constraints and metadata. In this case the
+            definition has to be given as a tuple `(<name>, <type>, <dict>)`,
+            where `<dict>` is dictionary which comprises any items, documented
+            by the function :func:`dataclasses.fields`.
         metadata: Optional dictionary, with supplementary metadata of the table.
             This does not comprise metadata of the fields, which has to be
             included within the field declarations.
@@ -579,13 +589,13 @@ class Table(attrib.Container):
     #
 
     def __init__(
-            self, name: OptStr = None, fields: OptColsDef = None,
+            self, name: OptStr = None, columns: OptColsDef = None,
             metadata: OptMapping = None, parent: OptContainer = None) -> None:
         super().__init__(parent=parent) # Initialize Container Parameters
 
         # Initialize Table Structure
-        if fields:
-            self.create(name, fields, metadata=metadata)
+        if columns:
+            self.create(name, columns, metadata=metadata)
 
     def __iter__(self) -> Iterator:
         self._iter_index = iter(self._index)
@@ -608,40 +618,45 @@ class Table(attrib.Container):
     #
 
     def create(
-            self, name: OptStr, fields: ColsDef,
+            self, name: OptStr, columns: ColsDef,
             metadata: OptMapping = None) -> None:
         """Create table structure.
 
         This method is motivated by the The SQL `CREATE TABLE`_ statement and
-        used to declare and initialize the parameters of the table and it's
-        fields. This includes naming the table, declare and initialize the field
-        parameters by column names, types and further field properties, like
+        used to define and initialize the structure of the table and it's
+        fields. This includes naming the table, defining and initializing the
+        field parameters by column names, types and further constraints, like
         default values, and supplementary table metadata.
 
         Args:
             name: The table name is required to be a valid identifier as defined
                 in [UAX31]_.
-            fields: Tuple of field declarations. All fields individually can be
-                given in one of the following formats: (1) Only the name of the
-                column by a string ``name``. Thereby ``name`` is required to be
-                a valid identifier (as defined in [UAX31]_). (2) The column name
-                and the data type of the field by a tuple ``(name, type)``.
-                Thereby ``type`` is required to be a standard Python type like
-                :class:`str`, :class:`int`, :class:`float` etc. (3) The column
-                name, the data type and supplementary field constraints by a
-                tuple ``(name, type, constraints)``: Thereby ``constraints`` is
-                requeried to be a dictionary, as documented in the function
+            columns: Tuple of *column definitions*. All column definitions
+                independent from each other can be given in one of the following
+                formats: (1) In order to only specify the name of the column,
+                without further information, the colum definition has to be
+                given as a string `<name>`. Thereby the choice of `<name>` is
+                restricted to valid identifiers, described by [UAX31]_. (2) If,
+                additionally to the name, also the data type of the column shall
+                be specified, then the column definition has to be given as a
+                tuple `(<name>, <type>)`. Thereby `<type>` is required to by a
+                valid :class:`type`, like like :class:`str`, :class:`int`,
+                :class:`float` or :class:`Date <datetime.datetime>`. (3) Finally
+                the column definition may also contain supplementary constraints
+                and metadata. In this case the definition has to be given as a
+                tuple `(<name>, <type>, <dict>)`, where `<dict>` is dictionary
+                which comprises any items, documented by the function
                 :func:`dataclasses.fields`.
             metadata: Optional mapping, with supplementary metadata of the
-                table. This does not comprise metadata of the fields, which has
-                to be included within the field declarations.
+                table. This does not comprise metadata of the columns, which has
+                to be included within the column definitions.
 
         .. _CREATE TABLE: https://en.wikipedia.org/wiki/Create_(SQL)
 
         """
         self._set_name(name) # Set Name of the Table
         self._create_metadata(metadata) # Set supplementary Metadata of Table
-        self._create_header(fields) # Dynamically create a new Record Class
+        self._create_header(columns) # Dynamically create a new Record Class
 
     def drop(self) -> None:
         """Delete table data and table structure.
@@ -776,7 +791,7 @@ class Table(attrib.Container):
             where: Optional filter operator, which determines, if a row is
                 included within the result set or not. By default all rows are
                 included within the result set.
-            **kwds: Items, which keys identify valid columns of the table, and
+            **kwds: Items, which keys are valid column names of the table, and
                 the values the new data, stored in the corresponding fields.
 
         .. _DELETE: https://en.wikipedia.org/wiki/Delete_(SQL)
@@ -906,12 +921,10 @@ class Table(attrib.Container):
     #
 
     def _append_row(self, row: RowLike, columns: OptStrTuple = None) -> None:
-        if columns is not None:
-            if isinstance(row, tuple):
-                mapping = dict(zip(columns, row))
-                rec = self._create_record(**mapping) # type: ignore
-            else:
+        if columns:
+            if not isinstance(row, tuple):
                 raise TypeError() # TODO
+            rec = self._create_record(**dict(zip(columns, row)))
         else:
             rec = self._create_record(row)
         self._data.append(None)
@@ -949,24 +962,14 @@ class Table(attrib.Container):
         self.truncate() # Initialize table data
 
     def _create_record(self, data: RowLike) -> Record:
-        if isinstance(data, (tuple, list)):
+        if isinstance(data, tuple):
             return self._record(*data)
         if isinstance(data, Mapping):
-            try:
-                data = tuple(data[col] for col in self.columns)
-            except KeyError as err:
-                raise ValueError(
-                    "the given mapping does not contain "
-                    "required fields") from err
-            return self._record(*data)
+            return self._record(**data)
         if isinstance(data, Record):
-            try:
-                data = tuple(getattr(data, col) for col in self.columns)
-            except AttributeError as err:
-                raise ValueError(
-                    "the given record does not contain "
-                    "required fields") from err
-            return self._record(*data)
+            keys = self.columns
+            vals = tuple(getattr(data, key, None) for key in keys)
+            return self._record(**dict(zip(keys, vals)))
         raise InvalidTypeError("'data'", data, (tuple, list, Mapping, Record))
 
     def _delete_header(self) -> None:
