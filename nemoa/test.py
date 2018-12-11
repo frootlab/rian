@@ -350,4 +350,5 @@ def run(
     cases = tree.search(root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
-    return TextTestRunner(stream=stream, verbosity=verbosity).run(suite)
+    return TextTestRunner( # type: ignore
+        stream=stream, verbosity=verbosity).run(suite)
