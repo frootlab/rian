@@ -29,7 +29,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
 
     """
     # Set default value of 'module' to module of caller
-    module = module or pkg.get_caller_module()
+    module = module or stack.get_caller_module()
 
     # Create filter rules for algorithm attributes
     rules = {

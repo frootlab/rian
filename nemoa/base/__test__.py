@@ -10,7 +10,7 @@ import datetime
 from pathlib import Path
 import typing
 import numpy as np
-from nemoa.base import array, binary, check, env, literal, pkg, otree
+from nemoa.base import array, binary, check, env, literal, otree, pkg, stack
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -757,6 +757,24 @@ class TestLiteral(ModuleTestCase):
             Case(args=(repr(1.), ), value=float),
             Case(args=(repr(1j), ), value=complex)])
 
+class TestStack(ModuleTestCase):
+    """Testcase for the module nemoa.base.stack."""
+
+    module = stack.__name__
+
+    def test_get_caller_module_name(self) -> None:
+        name = stack.get_caller_module_name()
+        self.assertEqual(name, __name__)
+
+    def test_get_caller_module(self) -> None:
+        module = stack.get_caller_module()
+        self.assertIsInstance(module, Module)
+
+    def test_get_caller_name(self) -> None:
+        thisname = stack.get_caller_name()
+        self.assertEqual(thisname, __name__ + '.test_get_caller_name')
+
+
 class TestPkg(ModuleTestCase):
     """Testcase for the module nemoa.base.pkg."""
 
@@ -771,18 +789,6 @@ class TestPkg(ModuleTestCase):
     def test_get_attr(self) -> None:
         attr = pkg.get_attr('__name__')
         self.assertEqual(attr, __name__)
-
-    def test_get_caller_module_name(self) -> None:
-        name = pkg.get_caller_module_name()
-        self.assertEqual(name, __name__)
-
-    def test_get_caller_module(self) -> None:
-        module = pkg.get_caller_module()
-        self.assertIsInstance(module, Module)
-
-    def test_get_caller_name(self) -> None:
-        thisname = pkg.get_caller_name()
-        self.assertEqual(thisname, __name__ + '.test_get_caller_name')
 
     def test_get_submodule(self) -> None:
         parent = pkg.get_parent(pkg)
