@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-from nemoa.base import tree
+from nemoa.base import otree
 
 def types():
     """Get supported layer network types for network building."""
@@ -46,7 +46,7 @@ class AutoEncoder:
 
         # columns
         if 'columns' in self.settings: columns = self.settings['columns']
-        elif tree.has_base(dataset, 'Dataset'): columns = dataset.columns
+        elif otree.has_base(dataset, 'Dataset'): columns = dataset.columns
         else: columns = ['i1', 'i2', 'i3', 'i4', 'o1', 'o2']
 
         self.settings['inputs'] = columns

@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy as np
-from nemoa.base import array, tree
+from nemoa.base import array, otree
 
 class Evaluation:
 
@@ -45,7 +45,7 @@ class Evaluation:
             self._buffer['algorithms'] = {}
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = tree.get_methods(
+            algorithms = otree.get_methods(
                 self, key='name', val=attribute, groupby='category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
@@ -98,13 +98,13 @@ class Evaluation:
         """
 
         # test type of model instance and subclasses
-        if not tree.has_base(model, 'Model'):
+        if not otree.has_base(model, 'Model'):
             return False
-        if not tree.has_base(model.dataset, 'Dataset'):
+        if not otree.has_base(model.dataset, 'Dataset'):
             return False
-        if not tree.has_base(model.network, 'Network'):
+        if not otree.has_base(model.network, 'Network'):
             return False
-        if not tree.has_base(model.system, 'System'):
+        if not otree.has_base(model.system, 'System'):
             return False
 
         # check dataset

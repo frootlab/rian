@@ -12,7 +12,7 @@ from typing import NamedTuple
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
-from nemoa.base import pkg, tree
+from nemoa.base import pkg, otree
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
@@ -148,7 +148,7 @@ class ModuleTestCase(BaseTestCase):
         # Get module members
         members = set()
         for name in getattr(ref, '__all__',
-            tree.get_members(ref, classinfo=(type, Function))):
+            otree.get_members(ref, classinfo=(type, Function))):
             if name.startswith('_'):
                 continue # Filter protected members
             obj = getattr(ref, name)
@@ -161,7 +161,7 @@ class ModuleTestCase(BaseTestCase):
             members.add(name)
 
         # Get tested module members
-        tested = set(name[5:] for name in tree.get_members(
+        tested = set(name[5:] for name in otree.get_members(
             self, classinfo=Method, pattern='test_*'))
 
         # Get untested module members
@@ -347,9 +347,7 @@ def run(
     loader = TestLoader()
     suite = TestSuite()
     root = pkg.get_root()
-    print(root)
     cases = pkg.search(module=root, classinfo=classinfo, val='reference')
-    print(cases)
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return TextTestRunner( # type: ignore

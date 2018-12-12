@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import time
 import numpy
 import nemoa
-from nemoa.base import tree
+from nemoa.base import otree
 from nemoa.core import ui
 
 class Optimizer:
@@ -48,7 +48,7 @@ class Optimizer:
         """Get optimization algorithms."""
         algorithms = self._buffer['algorithms'].get(attribute, None)
         if not algorithms:
-            algorithms = tree.get_methods(self, key = 'name', val = attribute,
+            algorithms = otree.get_methods(self, key = 'name', val = attribute,
                 groupby = 'category')
             self._buffer['algorithms'][attribute] = algorithms
         if category:
@@ -199,10 +199,10 @@ class Optimizer:
         """
 
         # test type of model instance and subclasses
-        if not tree.has_base(model, 'Model'): return False
-        if not tree.has_base(model.dataset, 'Dataset'): return False
-        if not tree.has_base(model.network, 'Network'): return False
-        if not tree.has_base(model.system, 'System'): return False
+        if not otree.has_base(model, 'Model'): return False
+        if not otree.has_base(model.dataset, 'Dataset'): return False
+        if not otree.has_base(model.network, 'Network'): return False
+        if not otree.has_base(model.system, 'System'): return False
 
         # check dataset
         if (not 'check_dataset' in model.system._default['init']

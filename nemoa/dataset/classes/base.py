@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 from typing import Any, Dict, Optional
 import numpy as np
 import nemoa
-from nemoa.base import array, nbase, tree
+from nemoa.base import array, nbase, otree
 from nemoa.core import log, ui
 from nemoa.math import category
 
@@ -278,7 +278,7 @@ class Dataset(nbase.ObjectIP):
                 transform = preprocessing['transform']
 
         # get preprocessing parameters from system
-        if tree.has_base(system, 'System'):
+        if otree.has_base(system, 'System'):
             input_layer = system.get('layers')[0]
             distribution = system.get('layer', input_layer)['class']
             if distribution == 'gauss': normalize = 'gauss'
@@ -525,7 +525,7 @@ class Dataset(nbase.ObjectIP):
         mapping = None, func: str = 'expect'):
         """ """
 
-        if not tree.has_base(system, 'System'):
+        if not otree.has_base(system, 'System'):
             raise ValueError("system is not valid")
 
         ui.info("transform data using model '%s'." % system.name)
@@ -623,7 +623,7 @@ class Dataset(nbase.ObjectIP):
         """Get algorithms provided by dataset."""
         # get dictionary with all methods
         # with prefix '_get_' and attribute 'name'
-        methods = tree.get_methods(self, pattern = '_get_*', val = 'name')
+        methods = otree.get_methods(self, pattern = '_get_*', val = 'name')
 
         # filter algorithms by given category
         if category is not None:

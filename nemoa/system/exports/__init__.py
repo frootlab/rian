@@ -38,9 +38,9 @@ def save(system, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.base import tree
+    from nemoa.base import otree
 
-    if not tree.has_base(system, 'System'):
+    if not otree.has_base(system, 'System'):
         raise ValueError("system is not valid")
 
     from nemoa.base import env

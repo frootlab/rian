@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import tree
+from nemoa.base import otree
 from nemoa.dataset.exports import archive, text, image
 
 def filetypes(filetype = None):
@@ -50,7 +50,7 @@ def save(
 
     """
 
-    if not tree.has_base(dataset, 'Dataset'):
+    if not otree.has_base(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
     from nemoa.base import env

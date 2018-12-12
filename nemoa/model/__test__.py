@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-from nemoa.base import tree
+from nemoa.base import otree
 from nemoa.test import BaseTestCase
 
 class TestCase(BaseTestCase):
@@ -25,13 +25,13 @@ class TestCase(BaseTestCase):
     def test_model_import(self):
         with self.subTest(filetype='npz'):
             model = nemoa.model.open('test', workspace='testsuite')
-            self.assertTrue(tree.has_base(model, 'Model'))
+            self.assertTrue(otree.has_base(model, 'Model'))
 
     def test_model_ann(self):
         with self.subTest(step='create shallow ann'):
             model = nemoa.model.create(
                 dataset='linear', network='shallow', system='ann')
-            self.assertTrue(tree.has_base(model, 'Model'))
+            self.assertTrue(otree.has_base(model, 'Model'))
 
         with self.subTest(step='optimize shallow ann'):
             model.optimize()
@@ -42,7 +42,7 @@ class TestCase(BaseTestCase):
         with self.subTest(step='create dbn'):
             model = nemoa.model.create(
                 dataset='linear', network='deep', system='dbn')
-            self.assertTrue(tree.has_base(model, 'Model'))
+            self.assertTrue(otree.has_base(model, 'Model'))
 
         with self.subTest(step='optimize dbn'):
             model.optimize()

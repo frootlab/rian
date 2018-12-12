@@ -6,12 +6,12 @@ __license__ = 'GPLv3'
 
 import nemoa
 
-from nemoa.base import tree
+from nemoa.base import otree
 from nemoa.test import BaseTestCase
 
 class TestCase(BaseTestCase):
     def test_system_import(self):
         with self.subTest(filetype="ini"):
             system = nemoa.system.open('dbn', workspace='testsuite')
-            test = tree.has_base(system, 'System')
+            test = otree.has_base(system, 'System')
             self.assertTrue(test)

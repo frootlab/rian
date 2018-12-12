@@ -10,7 +10,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import tree
+from nemoa.base import otree
 import nemoa.system.classes.ann
 
 class RBM(nemoa.system.classes.ann.ANN):
@@ -93,7 +93,7 @@ class RBM(nemoa.system.classes.ann.ANN):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains only binary values."""
-        if not tree.has_base(dataset, 'Dataset'):
+        if not otree.has_base(dataset, 'Dataset'):
             raise ValueError("""could not test dataset:
                 invalid dataset instance given.""")
         if not dataset._get_test_binary():
@@ -174,7 +174,7 @@ class GRBM(RBM):
 
     def _check_dataset(self, dataset):
         """Check if dataset contains gauss normalized values."""
-        if not tree.has_base(dataset, 'Dataset'):
+        if not otree.has_base(dataset, 'Dataset'):
             raise TypeError("dataset is not valid")
         if not dataset.evaluate('test_gauss'):
             raise ValueError("""dataset '%s' is not valid:
