@@ -8,12 +8,11 @@ __docformat__ = 'google'
 
 import abc
 import itertools
-import operator
 import random
 from typing import NewType
 import dataclasses
-from nemoa.base import attrib, check, pattern
-from nemoa.errors import TableError, RowLookupError, CursorModeError, ProxyError
+from nemoa.base import attrib, check, operator, pattern
+from nemoa.errors import RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
 from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
@@ -983,25 +982,10 @@ class Table(attrib.Container):
                 "'columns'", set(columns),
                 "table column names", set(self.columns))
         columns = columns or self.columns
-        if dtype == tuple:
-            return self._create_mapper_tuple(columns)
-        if dtype == dict:
-            return self._create_mapper_dict(columns)
-        raise TableError(
-            f"mapper with format '{dtype.__name__}' is not supported")
-
-    def _create_mapper_tuple(self,
-            columns: StrTuple) -> Callable[[Row], tuple]:
-        return operator.attrgetter(*columns)
-
-    def _create_mapper_dict(self,
-            columns: StrTuple) -> Callable[[Row], dict]:
-        attrgetter = operator.attrgetter(*columns)
-        return lambda row: dict(zip(columns, attrgetter(row)))
+        return operator.getattrs(*columns, dtype=dtype)
 
     def _create_sorter(
             self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
-        # Use operator.attrgetter -> faster then lambda with getattr
         if callable(orderby):
             # TODO: check if orderby is a valid sorter
             return orderby
@@ -1010,9 +994,9 @@ class Table(attrib.Container):
                 return None
             key = None
         elif isinstance(orderby, str):
-            key = operator.attrgetter(orderby)
+            key = operator.getattrs(orderby, dtype=tuple)
         elif isinstance(orderby, (list, tuple)):
-            key = operator.attrgetter(*orderby)
+            key = operator.getattrs(*orderby, dtype=tuple)
         else:
             raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
         return lambda rows: sorted(rows, key=key, reverse=reverse)

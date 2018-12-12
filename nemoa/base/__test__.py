@@ -10,7 +10,8 @@ import datetime
 from pathlib import Path
 import typing
 import numpy as np
-from nemoa.base import array, binary, check, env, literal, otree, pkg, stack
+from nemoa.base import array, binary, check, env, literal, operator, otree, pkg
+from nemoa.base import stack
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -62,6 +63,49 @@ class TestArray(ModuleTestCase):
         new = array.add_cols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
 
+class TestOperator(ModuleTestCase):
+    """Testcase for the module nemoa.base.operator."""
+
+    module = operator.__name__
+
+    def test_getattrs(self) -> Any:
+        attrs = {'name': 'test', 'group': 1}
+        setter = operator.setattrs(**attrs)
+        getter = operator.getattrs(*attrs.keys())
+        self.assertEqual(getter(setter(list)), attrs)
+
+    def test_setattrs(self) -> None:
+        attrs = {'name': 'test', 'group': 1}
+        setter = operator.setattrs(**attrs)
+        op = lambda x: x # identity operator
+        self.assertEqual(getattr(setter(op), 'name'), 'test')
+        self.assertEqual(getattr(setter(op), 'group'), 1)
+
+    def test_evaluate(self) -> None:
+        func = operator.get_parameters
+        self.assertAllEqual(operator.evaluate, [
+            Case(args=(func, list), value=OrderedDict()),
+            Case(args=(func, list), kwds={'test': True}, value=OrderedDict())])
+
+    def test_compose(self) -> None:
+        f = lambda x: x + 1
+        g = lambda x: x - 1
+        fg = operator.compose(f, g)
+        self.assertEqual(operator.evaluate(fg, 1), 1)
+
+    def test_get_parameters(self) -> None:
+        func = operator.get_parameters
+        self.assertAllEqual(func, [
+            Case(args=(func, ), value=OrderedDict()),
+            Case(args=(func, list), value=OrderedDict([('op', list)])),
+            Case(args=(func, list), kwds={'test': True},
+                value=OrderedDict([('op', list), ('test', True)]))])
+
+    def test_parse_call(self) -> None:
+        self.assertEqual(
+            operator.parse_call("f(1., 'a', b = 2)"),
+            ('f', (1.0, 'a'), {'b': 2}))
+
 class TestOtree(ModuleTestCase):
     """Testcase for the module nemoa.base.otree."""
 
@@ -70,13 +114,13 @@ class TestOtree(ModuleTestCase):
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @otree.wrap_attr(name='a', group=1)
+            @operator.setattrs(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @otree.wrap_attr(name='b', group=2)
+            @operator.setattrs(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @otree.wrap_attr(name='b', group=2)
+            @operator.setattrs(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()
@@ -158,21 +202,6 @@ class TestOtree(ModuleTestCase):
             Case(args=(object, ), value=otree.get_summary(object())),
             Case(args=('summary.\n', ), value='summary')])
 
-    def test_split_args(self) -> None:
-        self.assertEqual(
-            otree.split_args("f(1., 'a', b = 2)"),
-            ('f', (1.0, 'a'), {'b': 2}))
-
-    def test_get_parameters(self) -> None:
-        self.assertAllEqual(otree.get_parameters, [
-            Case(args=(otree.get_parameters, ),
-                value=OrderedDict()),
-            Case(args=(otree.get_parameters, list),
-                value=OrderedDict([('obj', list)])),
-            Case(args=(otree.get_parameters, list),
-                kwds={'test': True},
-                value=OrderedDict([('obj', list), ('test', True)]))])
-
     def test_call_attr(self) -> None:
         self.assertAllEqual(otree.call_attr, [
             Case(args=(otree, 'get_name', list),
@@ -187,11 +216,6 @@ class TestOtree(ModuleTestCase):
         self.assertEqual(names, {'geta', 'getb'})
         names = otree.get_methods(obj, pattern='*b').keys()
         self.assertEqual(names, {'getb', 'setb'})
-
-    def test_wrap_attr(self) -> None:
-        obj = self.get_test_object()
-        self.assertEqual(getattr(obj.geta, 'name', None), 'a')
-        self.assertEqual(getattr(obj.getb, 'name', None), 'b')
 
 class TestCheck(ModuleTestCase):
     """Testcase for the module nemoa.base.check."""

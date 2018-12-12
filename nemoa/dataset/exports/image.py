@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import networkx as nx
 import numpy as np
 import nemoa
-from nemoa.base import otree
+from nemoa.base import operator, otree
 from nemoa.plot import Plot, heatmap, histogram, network, scatter
 
 def filetypes():
@@ -86,11 +86,11 @@ class Heatmap(heatmap.Heatmap):
             'func': 'correlation' })
 
         # evaluate function
-        fname  = self._config.get('func')
-        fdict  = dataset.get('algorithm', fname)
-        func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = otree.get_parameters(func, default = self._config)
-        array  = dataset.evaluate(fname, **kwds)
+        fname = self._config.get('func')
+        fdict = dataset.get('algorithm', fname)
+        func = fdict.get('func', None) or fdict.get('reference', None)
+        kwds = operator.get_parameters(func, default = self._config)
+        array = dataset.evaluate(fname, **kwds)
 
         # check return value
         cols  = dataset.get('columns')
@@ -124,11 +124,11 @@ class Histogram(histogram.Histogram):
             'func': 'correlation' })
 
         # evaluate function
-        fname  = self._config.get('func')
-        fdict  = dataset.get('algorithm', fname)
-        func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = otree.get_parameters(func, default=self._config)
-        array  = dataset.evaluate(fname, **kwds)
+        fname = self._config.get('func')
+        fdict = dataset.get('algorithm', fname)
+        func = fdict.get('func', None) or fdict.get('reference', None)
+        kwds = operator.get_parameters(func, default=self._config)
+        array = dataset.evaluate(fname, **kwds)
 
         # check return value
         if not isinstance(array, np.ndarray):
@@ -163,7 +163,7 @@ class Scatter2D(scatter.Scatter2D):
         fname = self._config.get('func')
         fdict = dataset.get('algorithm', fname)
         func = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = otree.get_parameters(func, default = self._config)
+        kwds = operator.get_parameters(func, default = self._config)
         array = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -197,11 +197,11 @@ class Graph(network.Graph2D):
             'show_legend': False })
 
         # evaluate function
-        fname  = self._config.get('func')
-        fdict  = dataset.get('algorithm', fname)
-        func   = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = otree.get_parameters(func, default = self._config)
-        array  = dataset.evaluate(fname, **kwds)
+        fname = self._config.get('func')
+        fdict = dataset.get('algorithm', fname)
+        func = fdict.get('func', None) or fdict.get('reference', None)
+        kwds = operator.get_parameters(func, default = self._config)
+        array = dataset.evaluate(fname, **kwds)
 
         # check if evaluation yields valid relation
         cols  = dataset.get('columns')
