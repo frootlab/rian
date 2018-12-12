@@ -152,7 +152,6 @@ class TestTable(ModuleTestCase):
 
     def test_Table_create(self) -> None:
         kwds: dict
-
         kwds = {'columns': ('a', )}
         with self.subTest(**kwds):
             tbl = table.Table()
@@ -160,14 +159,12 @@ class TestTable(ModuleTestCase):
             self.assertEqual(tbl.fields[0].name, 'a')
             self.assertEqual(tbl.fields[0].type, 'typing.Any')
             self.assertEqual(len(tbl.fields[0].metadata), 0)
-
         kwds = {'columns': (('a', str), )}
         with self.subTest(**kwds):
             tbl = table.Table()
             tbl.create(None, **kwds)
             self.assertEqual(tbl.fields[0].name, 'a')
             self.assertEqual(tbl.fields[0].type, str)
-
         kwds = {'columns': (('b', int, {'default': ''}), )}
         with self.subTest(**kwds):
             tbl = table.Table()
@@ -175,7 +172,6 @@ class TestTable(ModuleTestCase):
             self.assertEqual(tbl.fields[0].name, 'b')
             self.assertEqual(tbl.fields[0].type, int)
             self.assertEqual(tbl.fields[0].default, '')
-
         kwds = {'columns': (('_a', Any, {'metadata': {1: 1, 2: 2}}), )}
         with self.subTest(**kwds):
             tbl = table.Table()
@@ -183,6 +179,3 @@ class TestTable(ModuleTestCase):
             self.assertEqual(tbl.fields[0].name, '_a')
             self.assertEqual(tbl.fields[0].type, Any)
             self.assertEqual(len(tbl.fields[0].metadata), 2)
-
-    def test_Table_drop(self) -> None:
-        pass

@@ -12,7 +12,7 @@ from typing import NamedTuple
 from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
-from nemoa.base import this, tree
+from nemoa.base import pkg, tree
 from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
@@ -141,7 +141,7 @@ class ModuleTestCase(BaseTestCase):
             return
 
         # Get reference to module
-        ref = tree.get_module(self.module)
+        ref = pkg.get_module(self.module)
         if not ref:
             raise AssertionError(f"module {self.module} does not exist")
 
@@ -346,8 +346,10 @@ def run(
     """Run all tests if given type."""
     loader = TestLoader()
     suite = TestSuite()
-    root = this.get_root()
-    cases = tree.search(root, classinfo=classinfo, val='reference')
+    root = pkg.get_root()
+    print(root)
+    cases = pkg.search(module=root, classinfo=classinfo, val='reference')
+    print(cases)
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return TextTestRunner( # type: ignore

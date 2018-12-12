@@ -10,7 +10,7 @@ import datetime
 from pathlib import Path
 import typing
 import numpy as np
-from nemoa.base import array, binary, check, env, literal, this, tree
+from nemoa.base import array, binary, check, env, literal, pkg, tree
 from nemoa.base import nbase, ndict
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
@@ -158,21 +158,9 @@ class TestEntity(ModuleTestCase):
             Case(args=(object, ), value=tree.get_summary(object())),
             Case(args=('summary.\n', ), value='summary')])
 
-    def test_get_module(self) -> None:
-        ref = tree.get_module(__name__)
-        self.assertIsInstance(ref, Module)
-        self.assertEqual(getattr(ref, '__name__'), __name__)
-
-    def test_get_submodules(self) -> None:
-        parent = tree.get_module('nemoa.base')
-        subs: StrList = []
-        if isinstance(parent, Module):
-            subs = tree.get_submodules(ref=parent)
-        self.assertIn(__name__, subs)
-
-    def test_get_function(self) -> None:
-        func = tree.get_function(tree.__name__ + '.get_function')
-        self.assertIsInstance(func, Function)
+    # def test_get_function(self) -> None:
+    #     func = tree.get_function(tree.__name__ + '.get_function')
+    #     self.assertIsInstance(func, Function)
 
     def test_split_args(self) -> None:
         self.assertEqual(
@@ -208,10 +196,6 @@ class TestEntity(ModuleTestCase):
         obj = self.get_test_object()
         self.assertEqual(getattr(obj.geta, 'name', None), 'a')
         self.assertEqual(getattr(obj.getb, 'name', None), 'b')
-
-    def test_search(self) -> None:
-        count = len(tree.search(ref=tree, name='search'))
-        self.assertEqual(count, 1)
 
 class TestCheck(ModuleTestCase):
     """Testcase for the module nemoa.base.check."""
@@ -777,46 +761,61 @@ class TestLiteral(ModuleTestCase):
             Case(args=(repr(1.), ), value=float),
             Case(args=(repr(1j), ), value=complex)])
 
-class TestThis(ModuleTestCase):
-    """Testcase for the module nemoa.base.this."""
+class TestPkg(ModuleTestCase):
+    """Testcase for the module nemoa.base.pkg."""
 
-    module = 'nemoa.base.this'
+    module = 'nemoa.base.pkg'
 
     def test_has_attr(self) -> None:
-        pass # Function is testet in this.get_module
+        pass # Function is testet in tree.get_module
 
     def test_call_attr(self) -> None:
         pass # Function is testet in tree.call_attr
 
     def test_get_attr(self) -> None:
-        self.assertEqual(this.get_attr('__name__'), __name__)
+        attr = pkg.get_attr('__name__')
+        self.assertEqual(attr, __name__)
 
-    def test_get_module_name(self) -> None:
-        self.assertEqual(this.get_module_name(), __name__)
+    def test_get_caller_module_name(self) -> None:
+        name = pkg.get_caller_module_name()
+        self.assertEqual(name, __name__)
 
     def test_get_caller_module(self) -> None:
-        ref = this.get_caller_module()
-        self.assertIsInstance(ref, Module)
+        module = pkg.get_caller_module()
+        self.assertIsInstance(module, Module)
 
     def test_get_caller_name(self) -> None:
-        self.assertEqual(
-            this.get_caller_name(), __name__ + '.test_get_caller_name')
+        thisname = pkg.get_caller_name()
+        self.assertEqual(thisname, __name__ + '.test_get_caller_name')
 
     def test_get_submodule(self) -> None:
-        self.assertIsInstance(
-            this.get_submodule('this', ref=this.get_parent(ref=this)), Module)
+        parent = pkg.get_parent(pkg)
+        this = pkg.get_submodule(name='pkg', parent=parent)
+        self.assertIsInstance(this, Module)
 
-    def test_get_parent(self) -> None:
-        self.assertEqual(this.get_parent().__name__, 'nemoa.base')
+    def test_get_submodules(self) -> None:
+        parent = pkg.get_parent(pkg)
+        submodules = pkg.get_submodules(parent=parent)
+        self.assertIn(__name__, submodules)
 
     def test_get_root(self) -> None:
-        self.assertEqual(this.get_root().__name__, 'nemoa')
+        root = pkg.get_root()
+        self.assertEqual(root.__name__, 'nemoa')
+
+    def test_get_parent(self) -> None:
+        parent = pkg.get_parent(pkg)
+        self.assertEqual(parent.__name__, 'nemoa.base')
 
     def test_get_module(self) -> None:
-        self.assertEqual(this.get_module().__name__, __name__)
+        this = pkg.get_module()
+        self.assertEqual(this.__name__, __name__) # type: ignore
 
     def test_crop_functions(self) -> None:
-        name = this.crop_functions.__name__
-        fullname = this.crop_functions.__module__ + '.' + name
-        cropped = this.crop_functions(prefix='crop_', ref=this)
+        name = pkg.crop_functions.__name__
+        fullname = pkg.crop_functions.__module__ + '.' + name
+        cropped = pkg.crop_functions(prefix='crop_', module=pkg)
         self.assertIn('functions', cropped)
+
+    def test_search(self) -> None:
+        count = len(pkg.search(module=pkg, name='search'))
+        self.assertEqual(count, 1)

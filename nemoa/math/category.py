@@ -12,7 +12,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import tree, this
+from nemoa.base import pkg
 from nemoa.types import Any, FuncWrapper, OptModule, OptStr, OptStrList
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
@@ -29,7 +29,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
 
     """
     # Set default value of 'module' to module of caller
-    module = module or this.get_caller_module()
+    module = module or pkg.get_caller_module()
 
     # Create filter rules for algorithm attributes
     rules = {
@@ -37,7 +37,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any
 
     # Search for algorithms
-    return tree.search(ref=module, rules=rules, **kwds)
+    return pkg.search(module=module, rules=rules, **kwds)
 
 #
 # Functors

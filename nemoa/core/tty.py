@@ -18,7 +18,7 @@ import time
 from abc import ABC, abstractmethod
 from queue import Empty, Queue
 from threading import Thread
-from nemoa.base import env, tree
+from nemoa.base import env, pkg
 from nemoa.types import Any, Module, ClassVar, Exc, ExcType, Traceback, Method
 from nemoa.types import OptStr
 
@@ -235,7 +235,7 @@ def get_lib() -> Module:
     """
     libs = ['msvcrt', 'termios']
     for name in libs:
-        module = tree.get_module(name)
+        module = pkg.get_module(name)
         if module:
             return module
     raise ImportError("no module for TTY I/O could be imported")

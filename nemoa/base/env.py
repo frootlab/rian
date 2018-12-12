@@ -35,7 +35,7 @@ except ImportError as err:
         "requires package appdirs: "
         "https://pypi.org/project/appdirs/") from err
 
-from nemoa.base import check, this
+from nemoa.base import check, pkg
 from nemoa.types import Any, Iterable, IterAny, OptStrDict
 from nemoa.types import PathLikeList, OptStr, OptStrOrBool, OptPathLike
 from nemoa.types import PathLike, StrDict, Sequence, StrDictOfPaths, Union
@@ -165,7 +165,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     # module attributes. By default the file of the current top level module
     # is taken. If name is not given, then use the name of the current top level
     # module.
-    filepath = filepath or this.get_root().__file__
+    filepath = filepath or pkg.get_root().__file__
     text = Path(filepath).read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
@@ -173,7 +173,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     info = {}
     for match in re.finditer(pattern, text, re.M):
         info[str(match.group(1))] = str(match.group(2))
-    info['name'] = info.get('name', this.get_module_name().split('.', 1)[0])
+    info['name'] = info.get('name', pkg.get_root().__name__)
 
     # Get plattform specific environment variables
     info['encoding'] = get_encoding()
@@ -301,7 +301,7 @@ def update_dirs(
     dirs['site_temp_dir'] = tempdir
 
     # Get current package directories from top level module
-    path = Path(this.get_root().__file__).parent
+    path = Path(pkg.get_root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
     dirs['package_temp_dir'] = tempdir / appname
@@ -314,7 +314,7 @@ def update_dirs(
 def get_temp_file(suffix: OptStr = None) -> Path:
     """Get path to temporary file within the package temp directory."""
     apptemp = get_dir('package_temp_dir')
-    pathname = tempfile.NamedTemporaryFile(dir=apptemp).name
+    pathname = tempfile.NamedTemporaryFile(dir=apptemp).name # type: ignore
     filepath = Path(pathname)
     if suffix:
         return filepath.with_suffix(suffix)
@@ -323,7 +323,7 @@ def get_temp_file(suffix: OptStr = None) -> Path:
 def get_temp_dir() -> Path:
     """Get path to temporary file within the package temp directory."""
     apptemp = get_dir('package_temp_dir')
-    pathname = tempfile.TemporaryDirectory(dir=apptemp).name
+    pathname = tempfile.TemporaryDirectory(dir=apptemp).name # type: ignore
     dirpath = Path(pathname)
     return dirpath
 

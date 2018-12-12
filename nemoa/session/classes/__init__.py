@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import this
+from nemoa.base import pkg
 
 def new(*args, **kwds):
     """Create new session instance."""
@@ -15,7 +15,7 @@ def new(*args, **kwds):
         raise ValueError("configuration is not valid")
 
     mname, cname = tuple(kwds['config']['type'].split('.'))
-    module = this.get_submodule(mname)
+    module = pkg.get_submodule(name=mname)
     if not hasattr(module, cname):
         raise NameError(f"class '{mname}.{cname}' is not known")
     cinst = getattr(module, cname)(**kwds)

@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import functools
 import os
 import sys
-from nemoa.base import this
+from nemoa.base import pkg
 from nemoa.core import log
 from nemoa.types import Any, AnyFunc, ExcType, Exc, Traceback, OptVoidFunc
 
@@ -49,7 +49,7 @@ def get_notification_hook(ntype: str) -> OptVoidFunc:
     if not ntype in _NOTIFICATION_TYPES:
         raise ValueError(
             f"notification type '{ntype}' is not valid")
-    return this.get_attr('hook_' + ntype.lower(), None)
+    return pkg.get_attr('hook_' + ntype.lower(), None)
 
 def notify(ntype: str, msg: str, *args: Any, **kwds: Any) -> None:
     """Notify user."""

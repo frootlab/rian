@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import contextlib
 import numpy as np
-from nemoa.base import check, this
+from nemoa.base import check, pkg
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
 _NORM_PREFIX = 'norm_'
@@ -25,7 +25,7 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    return this.crop_functions(prefix=_NORM_PREFIX)
+    return pkg.crop_functions(prefix=_NORM_PREFIX)
 
 def length(
         x: NpArrayLike, norm: str = 'euclid', axes: NpAxes = 0,
@@ -76,7 +76,7 @@ def length(
 
     # Evaluate function
     fname = _NORM_PREFIX + norm.lower()
-    return this.call_attr(fname, x, axes=axes, **kwds)
+    return pkg.call_attr(fname, x, axes=axes, **kwds)
 
 def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`p-Norm` of an array along given axes.
@@ -258,7 +258,7 @@ def distances() -> StrList:
         distances, that are implemented within the module.
 
     """
-    return this.crop_functions(prefix=_DIST_PREFIX)
+    return pkg.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'euclid',
@@ -321,7 +321,7 @@ def distance(
 
     # Evaluate function
     fname = _DIST_PREFIX + name.lower()
-    return this.call_attr(fname, x, y, axes=axes, **kwds)
+    return pkg.call_attr(fname, x, y, axes=axes, **kwds)
 
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:

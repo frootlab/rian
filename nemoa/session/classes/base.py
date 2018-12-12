@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import logging
 import traceback
 import nemoa
-from nemoa.base import env, this
+from nemoa.base import env, pkg
 from nemoa.core import tty
 
 class Session:
@@ -483,9 +483,9 @@ class Session:
             else:
                 key = 'error'
             if mode == 'shell':
-                clr = this.get_caller_name(-5)
+                clr = pkg.get_caller_name(-5)
             else:
-                clr = this.get_caller_name(-4)
+                clr = pkg.get_caller_name(-4)
             if mode == 'debug':
                 msg = ('').join(traceback.format_exception(etype, value, tb))
             else:
@@ -495,13 +495,13 @@ class Session:
         # in this case the arguments are (msg)
         elif isinstance(obj, str) and len(args) == 1:
             key, msg = 'info', args[0].capitalize()
-            clr = this.get_caller_name(-3)
+            clr = pkg.get_caller_name(-3)
 
         # test if args are given as a message of given type
         # in this case the arguments are (type, msg)
         elif isinstance(obj, str) and len(args) == 2:
             key, msg = args[0], args[1].capitalize()
-            clr = this.get_caller_name(-3)
+            clr = pkg.get_caller_name(-3)
 
         else: return True
 

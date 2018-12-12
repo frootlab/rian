@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import contextlib
 import numpy as np
-from nemoa.base import check, this
+from nemoa.base import check, pkg
 from nemoa.math import vector
 from nemoa.types import Any, IntPair, NpArray, NpArrayLike, StrList
 from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
@@ -27,7 +27,7 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    return this.crop_functions(prefix=_NORM_PREFIX)
+    return pkg.crop_functions(prefix=_NORM_PREFIX)
 
 def norm(
         x: NpArrayLike, name: str = 'frobenius', axes: IntPair = (0, 1),
@@ -78,7 +78,7 @@ def norm(
 
     # Evaluate function
     fname = _NORM_PREFIX + name.lower()
-    return this.call_attr(fname, x=x, axes=axes, **kwds)
+    return pkg.call_attr(fname, x=x, axes=axes, **kwds)
 
 def norm_pq(x: NpArray,
         p: float = 2., q: float = 2., axes: IntPair = (0, 1)) -> NpArray:
@@ -152,7 +152,7 @@ def distances() -> StrList:
         module.
 
     """
-    return this.crop_functions(prefix=_DIST_PREFIX)
+    return pkg.crop_functions(prefix=_DIST_PREFIX)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
@@ -211,7 +211,7 @@ def distance(
 
     # Evaluate function
     fname = _DIST_PREFIX + name.lower()
-    return this.call_attr(fname, x=x, y=y, axes=axes, **kwds)
+    return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
 def dist_frobenius(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius distance` of two arrays along given axes.

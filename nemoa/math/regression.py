@@ -13,7 +13,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import this
+from nemoa.base import pkg
 from nemoa.math import vector
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
@@ -31,7 +31,7 @@ def errors() -> StrList:
         the module.
 
     """
-    return this.crop_functions(prefix=_ERROR_PREFIX)
+    return pkg.crop_functions(prefix=_ERROR_PREFIX)
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, axes: NpAxes = 0,
@@ -84,7 +84,7 @@ def error(
 
     # Evaluate function
     fname = _ERROR_PREFIX + name.lower()
-    return this.call_attr(fname, x=x, y=y, axes=axes, **kwds)
+    return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
 def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Sum of Absolute Differences` along given axes.

@@ -11,7 +11,7 @@ import datetime
 import string
 from pathlib import Path
 import pyparsing as pp
-from nemoa.base import check, env, this
+from nemoa.base import check, env, pkg
 from nemoa.types import Any, OptStr, Date, OptType
 
 def encode(obj: object, **kwds: Any) -> str:
@@ -26,8 +26,8 @@ def encode(obj: object, **kwds: Any) -> str:
     """
     source = type(obj)
     fname = 'from_' + source.__name__.lower()
-    if this.has_attr(fname):
-        return this.call_attr(fname, obj, **kwds)
+    if pkg.has_attr(fname):
+        return pkg.call_attr(fname, obj, **kwds)
     return repr(obj)
 
 def from_str(text: str, charset: OptStr = None) -> str:
@@ -105,7 +105,7 @@ def decode(
         return target(text, **kwds)
 
     fname = 'as_' + target.__name__.lower()
-    return this.call_attr(fname, text, **kwds)
+    return pkg.call_attr(fname, text, **kwds)
 
 def as_list(text: str, delim: str = ',') -> list:
     """Convert text into list.

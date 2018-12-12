@@ -28,7 +28,7 @@ except ImportError as err:
         "requires package numpy: "
         "https://pypi.org/project/numpy") from err
 
-from nemoa.base import this
+from nemoa.base import pkg
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 _SIGM_PREFIX = 'sigm_'
@@ -46,7 +46,7 @@ def sigmoids() -> StrList:
         module.
 
     """
-    return this.crop_functions(prefix=_SIGM_PREFIX)
+    return pkg.crop_functions(prefix=_SIGM_PREFIX)
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
     """Evaluate sigmoidal shaped function.
@@ -71,7 +71,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
 
     # Evaluate function
     fname = _SIGM_PREFIX + name.lower()
-    return this.call_attr(fname, x=x, **kwds)
+    return pkg.call_attr(fname, x=x, **kwds)
 
 def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
@@ -193,7 +193,7 @@ def bells() -> StrList:
         the module.
 
     """
-    return this.crop_functions(prefix=_BELL_PREFIX)
+    return pkg.crop_functions(prefix=_BELL_PREFIX)
 
 def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
     """Evaluate bell shaped function.
@@ -218,7 +218,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
 
     # Evaluate function
     fname = _BELL_PREFIX + name.lower()
-    return this.call_attr(fname, x=x, **kwds)
+    return pkg.call_attr(fname, x=x, **kwds)
 
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.
