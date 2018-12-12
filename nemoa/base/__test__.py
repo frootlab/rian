@@ -68,18 +68,31 @@ class TestOperator(ModuleTestCase):
 
     module = operator.__name__
 
-    def test_getattrs(self) -> Any:
+    def test_attrgetter(self) -> Any:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.setattrs(**attrs)
-        getter = operator.getattrs(*attrs.keys())
+        setter = operator.attrsetter(**attrs)
+        getter = operator.attrgetter(*attrs.keys(), dtype=dict)
         self.assertEqual(getter(setter(list)), attrs)
 
-    def test_setattrs(self) -> None:
+    def test_attrsetter(self) -> None:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.setattrs(**attrs)
+        setter = operator.attrsetter(**attrs)
         op = lambda x: x # identity operator
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
+
+    def test_attrsorter(self) -> None:
+        class Obj:
+            pass
+        objs = [Obj() for i in range(10)]
+        for i in range(10):
+            objs[i].x = i # type: ignore
+            objs[i].y = -i # type: ignore
+        getx = operator.attrgetter('x')
+        sortx = operator.attrsorter('x')
+        sorty = operator.attrsorter('y', reverse=True)
+        self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
+        self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
 
     def test_evaluate(self) -> None:
         func = operator.get_parameters
@@ -114,13 +127,13 @@ class TestOtree(ModuleTestCase):
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @operator.setattrs(name='a', group=1)
+            @operator.attrsetter(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @operator.setattrs(name='b', group=2)
+            @operator.attrsetter(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @operator.setattrs(name='b', group=2)
+            @operator.attrsetter(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()

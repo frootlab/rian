@@ -982,24 +982,22 @@ class Table(attrib.Container):
                 "'columns'", set(columns),
                 "table column names", set(self.columns))
         columns = columns or self.columns
-        return operator.getattrs(*columns, dtype=dtype)
+        return operator.attrgetter(*columns, dtype=dtype)
 
     def _create_sorter(
             self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
         if callable(orderby):
             # TODO: check if orderby is a valid sorter
             return orderby
-        if orderby is None:
-            if not reverse:
-                return None
-            key = None
-        elif isinstance(orderby, str):
-            key = operator.getattrs(orderby, dtype=tuple)
+        if orderby is None and not reverse:
+            return None
+        if isinstance(orderby, str):
+            attrs = [orderby]
         elif isinstance(orderby, (list, tuple)):
-            key = operator.getattrs(*orderby, dtype=tuple)
+            attrs = list(orderby)
         else:
-            raise InvalidTypeError("'orderby'", orderby, (str, list, tuple))
-        return lambda rows: sorted(rows, key=key, reverse=reverse)
+            attrs = []
+        return operator.attrsorter(*attrs, reverse=reverse)
 
     def _get_new_rowid(self) -> int:
         return len(self._data)
