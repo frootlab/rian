@@ -8,9 +8,9 @@ __docformat__ = 'google'
 
 from nemoa.base import check
 from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
-from nemoa.types import Any, Date, OptClassInfo, Optional, ClassInfoClasses
+from nemoa.types import Any, Date, OptClassInfo, Optional, TypeInfoClasses
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
-from nemoa.types import OptDict, OptBool, Union, Callable, CallableClasses
+from nemoa.types import OptDict, OptBool, Union, Callable
 
 #
 # Structural Types
@@ -258,13 +258,13 @@ class Attribute(property):
             doc=doc)
 
         # Check Types of Arguments
-        check.has_opt_type("argument 'dtype'", dtype, ClassInfoClasses)
-        check.has_type("argument 'readonly'", readonly, bool)
-        check.has_opt_type("argument 'binddict'", binddict, str)
-        check.has_opt_type("argument 'bindkey'", bindkey, str)
-        check.has_type("argument 'remote'", inherit, bool)
-        check.has_type("argument 'inherit'", inherit, bool)
-        check.has_opt_type("argument 'category'", category, str)
+        check.has_opt_type("'dtype'", dtype, TypeInfoClasses)
+        check.has_type("'readonly'", readonly, bool)
+        check.has_opt_type("'binddict'", binddict, str)
+        check.has_opt_type("'bindkey'", bindkey, str)
+        check.has_type("'remote'", inherit, bool)
+        check.has_type("'inherit'", inherit, bool)
+        check.has_opt_type("'category'", category, str)
 
         # Bind Instance Attributes to Argument Values
         self.sget = fget if isinstance(fget, str) else None
@@ -439,12 +439,10 @@ class Virtual(Attribute):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        if not isinstance(self.fget, CallableClasses):
+        if not callable(self.fget):
             if not isinstance(self.sget, str):
                 raise MissingKwError('fget', self)
-        self.readonly = not (
-            isinstance(self.fset, CallableClasses)
-            or isinstance(self.sget, str))
+        self.readonly = not (callable(self.fset) or isinstance(self.sget, str))
 
 class Container(Group):
     """Base class for Attribute Containers.

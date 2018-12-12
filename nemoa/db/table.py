@@ -15,7 +15,7 @@ from nemoa.base import attrib, check, operator, pattern
 from nemoa.errors import RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
-from nemoa.types import OptIntList, OptCallable, CallableClasses, Callable
+from nemoa.types import OptIntList, OptCallable, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
 from nemoa.types import TypeInfoClasses
@@ -299,10 +299,10 @@ class Cursor(attrib.Container):
 
     _mode: property = attrib.MetaData(dtype=int, factory='_default_mode')
     _index: property = attrib.MetaData(dtype=list, inherit=True)
-    _getter: property = attrib.Temporary(dtype=CallableClasses)
-    _sorter: property = attrib.Temporary(dtype=CallableClasses)
-    _filter: property = attrib.Temporary(dtype=CallableClasses)
-    _mapper: property = attrib.Temporary() # TODO: dtype='typing.Callable'
+    _getter: property = attrib.Temporary(dtype=Callable)
+    _sorter: property = attrib.Temporary(dtype=Callable)
+    _filter: property = attrib.Temporary(dtype=Callable)
+    _mapper: property = attrib.Temporary(dtype=Callable)
     _buffer: property = attrib.Temporary(dtype=list, default=[])
 
     #
