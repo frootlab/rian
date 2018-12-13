@@ -7,43 +7,48 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
-import typing
 from nemoa.errors import IsPositiveError, IsNegativeError, SizeError
 from nemoa.errors import InvalidTypeError, InvalidClassError, NotClassError
 from nemoa.errors import NotCallableError, InvalidAttrError, NoSubsetError
 from nemoa.errors import NotPositiveError, NotNegativeError, MinSizeError
 from nemoa.errors import MaxSizeError, InvalidFormatError
-from nemoa.types import Class, ClassInfo, Sized, RealNumber, OptInt
+from nemoa.types import Any, Callable, Class, Sized, RealNumber
+from nemoa.types import OptInt, TypeHint
 
 #
 # Check Type of Objects
 #
 
-def has_type(name: str, obj: object, classinfo: ClassInfo) -> None:
+def has_type(name: str, obj: object, hint: TypeHint) -> None:
     """Check type of object."""
-
-    # Check against ClassInfo
-    if isinstance(classinfo, (type, tuple)):
-        if isinstance(obj, classinfo):
+    # Check instance against classinfo
+    if isinstance(hint, (type, tuple)):
+        if isinstance(obj, hint):
             return
-        raise InvalidTypeError(name, obj, classinfo)
-
+        raise InvalidTypeError(name, obj, hint)
     # Check against assorted Structural Types
-    if classinfo == typing.Any:
+    if hint == Any:
         return
-    if classinfo == typing.Callable:
+    if hint == TypeHint:
+        try:
+            is_typehint(name, obj)
+        except InvalidTypeError as err:
+            raise InvalidTypeError(name, obj, hint) from err
+        return
+    if hint == Callable:
         try:
             is_callable(name, obj)
         except NotCallableError as err:
-            raise InvalidTypeError(name, obj, classinfo) from err
+            raise InvalidTypeError(name, obj, hint) from err
         return
-    if hasattr(classinfo, '__origin__'):
-        has_type(name, obj, getattr(classinfo, '__origin__'))
+    if hasattr(hint, '__origin__'):
+        has_type(name, obj, getattr(hint, '__origin__'))
 
-def has_opt_type(name: str, obj: object, classinfo: ClassInfo) -> None:
+def has_opt_type(name: str, obj: object, hint: TypeHint) -> None:
     """Check type of optional object."""
-    if obj is not None and not isinstance(obj, classinfo):
-        raise InvalidTypeError(name, obj, classinfo)
+    if obj is None:
+        return
+    has_type(name, obj, hint)
 
 def is_callable(name: str, obj: object) -> None:
     """Check if object is callable."""
@@ -59,6 +64,22 @@ def is_subclass(name: str, obj: object, ref: Class) -> None:
     """Check if object is a subclass of given class."""
     if not inspect.isclass(obj) or not issubclass(obj, ref): # type: ignore
         raise InvalidClassError(name, obj, ref)
+
+def is_typehint(name: str, obj: object) -> None:
+    """Check if object is a supported typeinfo object."""
+    if isinstance(obj, tuple):
+        for i, token in enumerate(obj):
+            is_typehint(f'{name}[{i}]', token)
+            return
+    # Allow any class with metaclass 'type'
+    if isinstance(obj, type):
+        return
+    # Allow assorted structural types
+    if obj in [TypeHint, Any, Callable]:
+        return
+    if hasattr(obj, '__origin__'):
+        return
+    raise InvalidTypeError(name, obj, 'typeinfo')
 
 #
 # Check Value of Objects

@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from nemoa.base import check
 from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
-from nemoa.types import Any, Date, OptClassInfo, Optional, TypeInfoClasses
+from nemoa.types import Any, Date, OptClassInfo, Optional, TypeHint
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 from nemoa.types import OptDict, OptBool, Union, Callable
 
@@ -258,7 +258,7 @@ class Attribute(property):
             doc=doc)
 
         # Check Types of Arguments
-        check.has_opt_type("'dtype'", dtype, TypeInfoClasses)
+        check.has_opt_type("'dtype'", dtype, TypeHint)
         check.has_type("'readonly'", readonly, bool)
         check.has_opt_type("'binddict'", binddict, str)
         check.has_opt_type("'bindkey'", bindkey, str)

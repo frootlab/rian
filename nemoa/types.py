@@ -15,12 +15,14 @@ import os
 import types
 from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
-from typing import Type, TypeVar, Union, Container, Sized
-from typing import _Final as StrucType # pylint: disable=E0611
+from typing import Type, TypeVar, Union, Container, Sized, Generic
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')
 T = TypeVar('T')
+
+# Type-Surrogates
+TypeHint = Generic[T]
 
 ################################################################################
 # Constants
@@ -74,7 +76,6 @@ Traceback = types.TracebackType
 FileClasses = (io.BufferedIOBase, io.TextIOBase)
 PathLikeClasses = (str, Path)
 FileRefClasses = PathLikeClasses + FileClasses + (FileAccessor, )
-TypeInfoClasses = (type, tuple, StrucType)
 
 ################################################################################
 # Structural Types for Literals and Collections of Literals
@@ -154,8 +155,11 @@ ClassDict = ClassVar[AnyDict]
 ClassStrDict = ClassVar[StrDict]
 
 ################################################################################
-# Structural Types for Callables and Collections of Callables
+# Structural Types for Operators and Operator Collections
 ################################################################################
+
+#
+SeqHom = Callable[[Sequence[object]], Sequence[object]]
 
 # Elementary Callables
 AnyFunc = Callable[..., Any]

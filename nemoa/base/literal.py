@@ -125,7 +125,7 @@ def as_list(text: str, delim: str = ',') -> list:
     """
     # Check types of Arguments
     check.has_type("first argument 'text'", text, str)
-    check.has_type("argument 'delim'", delim, str)
+    check.has_type("'delim'", delim, str)
 
     # Return empty list if the string is blank
     if not text or not text.strip():
@@ -162,7 +162,7 @@ def as_tuple(text: str, delim: str = ',') -> tuple:
     """
     # Check types of Arguments
     check.has_type("first argument 'text'", text, str)
-    check.has_type("argument 'delim'", delim, str)
+    check.has_type("'delim'", delim, str)
 
     # Return empty tuple if the string is blank
     if not text or not text.strip():
@@ -199,7 +199,7 @@ def as_set(text: str, delim: str = ',') -> set:
     """
     # Check types of Arguments
     check.has_type("first argument 'text'", text, str)
-    check.has_type("argument 'delim'", delim, str)
+    check.has_type("'delim'", delim, str)
 
     # Return empty set if the string is blank
     if not text or not text.strip():
@@ -301,7 +301,7 @@ def as_path(text: str, expand: bool = True) -> Path:
     """
     # Check types of Arguments
     check.has_type("first argument 'text'", text, str)
-    check.has_type("argument 'expand'", expand, bool)
+    check.has_type("'expand'", expand, bool)
 
     if expand:
         return env.expand(text)

@@ -18,7 +18,7 @@ from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
 from nemoa.types import OptIntList, OptCallable, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
-from nemoa.types import TypeInfoClasses
+from nemoa.types import TypeHint
 
 #
 # Structural Types
@@ -195,7 +195,7 @@ def create_record_class(
         check.has_type(f'column {column}', column, tuple)
         check.has_size(f'column {column}', column, min_size=2, max_size=3)
         check.has_type('first argument', column[0], str)
-        check.has_type('second argument', column[1], TypeInfoClasses)
+        check.has_type('second argument', column[1], TypeHint)
         if len(column) == 2:
             fields.append(column)
             names.append(column[0])
@@ -982,7 +982,7 @@ class Table(attrib.Container):
                 "'columns'", set(columns),
                 "table column names", set(self.columns))
         columns = columns or self.columns
-        return operator.attrgetter(*columns, dtype=dtype)
+        return operator.getattrs(*columns, dtype=dtype)
 
     def _create_sorter(
             self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
@@ -997,7 +997,7 @@ class Table(attrib.Container):
             attrs = list(orderby)
         else:
             attrs = []
-        return operator.attrsorter(*attrs, reverse=reverse)
+        return operator.orderbyattrs(*attrs, reverse=reverse)
 
     def _get_new_rowid(self) -> int:
         return len(self._data)

@@ -215,7 +215,7 @@ def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
 
     """
     # Check type of 'dirname'
-    check.has_type("argument 'dirname'", dirname, str)
+    check.has_type("'dirname'", dirname, str)
 
     # Update derectories if not present or if any optional arguments are given
     if not '_dirs' in globals() or args or kwds:

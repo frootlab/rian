@@ -68,29 +68,29 @@ class TestOperator(ModuleTestCase):
 
     module = operator.__name__
 
-    def test_attrgetter(self) -> Any:
+    def test_getattrs(self) -> Any:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.attrsetter(**attrs)
-        getter = operator.attrgetter(*attrs.keys(), dtype=dict)
+        setter = operator.setattrs(**attrs)
+        getter = operator.getattrs(*attrs.keys(), dtype=dict)
         self.assertEqual(getter(setter(list)), attrs)
 
-    def test_attrsetter(self) -> None:
+    def test_setattrs(self) -> None:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.attrsetter(**attrs)
+        setter = operator.setattrs(**attrs)
         op = lambda x: x # identity operator
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
-    def test_attrsorter(self) -> None:
+    def test_orderbyattrs(self) -> None:
         class Obj:
             pass
         objs = [Obj() for i in range(10)]
         for i in range(10):
             objs[i].x = i # type: ignore
             objs[i].y = -i # type: ignore
-        getx = operator.attrgetter('x')
-        sortx = operator.attrsorter('x')
-        sorty = operator.attrsorter('y', reverse=True)
+        getx = operator.getattrs('x')
+        sortx = operator.orderbyattrs('x')
+        sorty = operator.orderbyattrs('y', reverse=True)
         self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
         self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
 
@@ -127,13 +127,13 @@ class TestOtree(ModuleTestCase):
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @operator.attrsetter(name='a', group=1)
+            @operator.setattrs(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @operator.attrsetter(name='b', group=2)
+            @operator.setattrs(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @operator.attrsetter(name='b', group=2)
+            @operator.setattrs(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()
@@ -285,6 +285,18 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 0)),
             Case(args=('', '')),
             Case(args=('', set()))])
+
+    def test_is_typehint(self) -> None:
+        self.assertNoneRaises(TypeError, check.is_typehint, [
+            Case(args=('', str)),
+            Case(args=('', (int, float))),
+            Case(args=('', typing.Any)),
+            Case(args=('', typing.Callable))])
+        self.assertAllRaises(TypeError, check.is_typehint, [
+            Case(args=('', None)),
+            Case(args=('', 0)),
+            Case(args=('', '')),
+            Case(args=('', typing.Union))])
 
     def test_is_class(self) -> None:
         self.assertNoneRaises(TypeError, check.is_class, [

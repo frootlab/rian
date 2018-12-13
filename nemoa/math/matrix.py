@@ -63,8 +63,8 @@ def norm(
             x = np.array(x)
 
     # Check types of 'x' and 'axes'
-    check.has_type("argument 'x'", x, np.ndarray)
-    check.has_type("argument 'axes'", axes, tuple)
+    check.has_type("'x'", x, np.ndarray)
+    check.has_type("'axes'", axes, tuple)
 
     # Check dimension of 'x'
     if x.ndim < 2:
@@ -194,9 +194,9 @@ def distance(
             y = np.array(y)
 
     # Check types of 'x', 'y' and 'axes'
-    check.has_type("argument 'x'", x, np.ndarray)
-    check.has_type("argument 'y'", y, np.ndarray)
-    check.has_type("argument 'axes'", axes, tuple)
+    check.has_type("'x'", x, np.ndarray)
+    check.has_type("'y'", y, np.ndarray)
+    check.has_type("'axes'", axes, tuple)
 
     # Check dimensions of 'x' and 'y'
     if x.shape != y.shape:

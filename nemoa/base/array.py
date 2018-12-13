@@ -38,7 +38,7 @@ def from_dict(
 
     """
     # Check type of 'd'
-    check.has_type("argument 'd'", d, dict)
+    check.has_type("'d'", d, dict)
 
     # Declare and initialize return value
     x: NpArray = np.empty(shape=(len(labels[0]), len(labels[1])))
@@ -73,7 +73,7 @@ def as_dict(
 
     """
     # Check type of 'x'
-    check.has_type("argument 'x'", x, np.ndarray)
+    check.has_type("'x'", x, np.ndarray)
 
     # Check dimension of 'x'
     if x.ndim != 2:
@@ -141,7 +141,7 @@ def as_tuples(x: NpArray) -> List[tuple]:
 
     """
     # Check type of 'x'
-    check.has_type("argument 'x'", x, np.ndarray)
+    check.has_type("'x'", x, np.ndarray)
 
     return x.tolist()
 
