@@ -258,9 +258,6 @@ class Cursor(attrib.Container):
         sorter: Optional sorting operator, which determines the order of the
             rows withon the result set. By default the order is determined by
             the creation of the rows.
-        mapper: Optional mapping operator, which determines the data format of
-            the result set. By default the result set is returned as a list
-            of tuples.
         parent: Reference to parent :class:'attribute group
             <nemoa.base.attrib.Group>', which is used for inheritance and
             shared attributes. By default no parent is referenced.
@@ -302,7 +299,6 @@ class Cursor(attrib.Container):
     _getter: property = attrib.Temporary(dtype=Callable)
     _sorter: property = attrib.Temporary(dtype=Callable)
     _filter: property = attrib.Temporary(dtype=Callable)
-    _mapper: property = attrib.Temporary(dtype=Callable)
     _buffer: property = attrib.Temporary(dtype=list, default=[])
 
     #
@@ -312,8 +308,8 @@ class Cursor(attrib.Container):
     def __init__(
             self, index: OptIntList = None, mode: OptStr = None,
             batchsize: OptInt = None, getter: OptOp = None,
-            predicate: OptOp = None, mapper: OptOp = None,
-            sorter: OptOp = None, parent: OptContainer = None) -> None:
+            predicate: OptOp = None, sorter: OptOp = None,
+            parent: OptContainer = None) -> None:
         # Initialize Attribute Container with parent Attribute Group
         super().__init__(parent=parent)
 
@@ -322,7 +318,6 @@ class Cursor(attrib.Container):
             self._index = index
         self._getter = getter
         self._filter = predicate
-        self._mapper = mapper
         self._sorter = sorter
         if mode:
             self._set_mode(mode)
@@ -353,7 +348,7 @@ class Cursor(attrib.Container):
     # Public Methods
     #
 
-    def fetch(self, size: OptInt = None) -> RowLikeList:
+    def fetch(self, size: OptInt = None) -> RowList:
         """Fetch rows from the result set.
 
         Args:
@@ -366,6 +361,9 @@ class Cursor(attrib.Container):
             Result set given by a list of :term:`row like` data.
 
         """
+        # TODO: Scrollable cursors are defined on sequences not on iterables:
+        # the cursor can use operations, such as FIRST, LAST, PRIOR, NEXT,
+        # RELATIVE n, ABSOLUTE n to navigate the results
         if size is None:
             size = self.batchsize
         if self._mode & CURSOR_MODE_FLAG_RANDOM and size <= 0:
@@ -379,9 +377,7 @@ class Cursor(attrib.Container):
                 finished = True
             else:
                 finished = 0 < size <= len(rows)
-        if not self._mapper:
-            return rows
-        return list(map(self._mapper, rows)) # Map result set
+        return rows
 
     def next(self) -> Row:
         """Return next row that matches the given filter."""
@@ -646,9 +642,10 @@ class Table(attrib.Container):
                 tuple `(<name>, <type>, <dict>)`, where `<dict>` is dictionary
                 which comprises any items, documented by the function
                 :func:`dataclasses.fields`.
-            metadata: Optional mapping, with supplementary metadata of the
-                table. This does not comprise metadata of the columns, which has
-                to be included within the column definitions.
+            metadata: Optional dictionary (or arbitrary mapping), with
+                supplementary metadata of the table. This does not comprise
+                metadata of the columns, which has to be included within the
+                column definitions.
 
         .. _CREATE TABLE: https://en.wikipedia.org/wiki/Create_(SQL)
 
@@ -824,7 +821,7 @@ class Table(attrib.Container):
             self, columns: OptStrTuple = None, where: OptOp = None,
             orderby: OrderByType = None, reverse: bool = False,
             dtype: type = tuple, batchsize: OptInt = None,
-            mode: OptStr = None) -> Cursor:
+            mode: OptStr = None) -> RowLikeList:
         """Get cursor on a specified result set of records from table.
 
         This method is motivated by the SQL `SELECT`_ statement and creates
@@ -868,16 +865,19 @@ class Table(attrib.Container):
         .. _SELECT: https://en.wikipedia.org/wiki/Select_(SQL)
 
         """
-        # Create sorting operator with respect to 'orderby' and 'reverse'
+        # Create sorting operator for parameters 'orderby' and 'reverse'
         sorter = self._create_sorter(orderby, reverse=reverse)
+
+        # Create cursor, which specifies the result set
+        cursor = self._create_cursor(
+            predicate=where, sorter=sorter, batchsize=batchsize, mode=mode)
+
+        # Create grouping operator for parameter 'groupby'
 
         # Create mapping operator with respect to 'columns' and 'dtype'
         mapper = self._create_mapper(columns, dtype=dtype)
 
-        # Create cursor on the specified result set
-        return self._create_cursor(
-            predicate=where, sorter=sorter, mapper=mapper,
-            batchsize=batchsize, mode=mode)
+        return list(map(mapper, cursor)) # Map result set
 
     def get_metadata(self, key: str) -> Any:
         """Get single entry from table metadata.
@@ -944,11 +944,11 @@ class Table(attrib.Container):
 
     def _create_cursor(
             self, predicate: OptOp = None, sorter: OptOp = None,
-            mapper: OptOp = None, batchsize: OptInt = None,
+            batchsize: OptInt = None,
             mode: OptStr = None) -> Cursor:
         return Cursor(
-            getter=self.row, predicate=predicate, mapper=mapper,
-            sorter=sorter, batchsize=batchsize, mode=mode, parent=self)
+            getter=self.row, predicate=predicate, sorter=sorter,
+            batchsize=batchsize, mode=mode, parent=self)
 
     def _create_header(self, columns: ColsDef) -> None:
         # Dynamically create a new record class
@@ -982,7 +982,7 @@ class Table(attrib.Container):
                 "'columns'", set(columns),
                 "table column names", set(self.columns))
         columns = columns or self.columns
-        return operator.getattrs(*columns, dtype=dtype)
+        return operator.get_attrs(*columns, dtype=dtype)
 
     def _create_sorter(
             self, orderby: OrderByType, reverse: bool = False) -> OptOp:

@@ -68,15 +68,15 @@ class TestOperator(ModuleTestCase):
 
     module = operator.__name__
 
-    def test_getattrs(self) -> Any:
+    def test_get_attrs(self) -> Any:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.setattrs(**attrs)
-        getter = operator.getattrs(*attrs.keys(), dtype=dict)
+        setter = operator.set_attrs(**attrs)
+        getter = operator.get_attrs(*attrs.keys(), dtype=dict)
         self.assertEqual(getter(setter(list)), attrs)
 
-    def test_setattrs(self) -> None:
+    def test_set_attrs(self) -> None:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.setattrs(**attrs)
+        setter = operator.set_attrs(**attrs)
         op = lambda x: x # identity operator
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
@@ -115,7 +115,7 @@ class TestOperator(ModuleTestCase):
         for i in range(10):
             objs[i].x = i # type: ignore
             objs[i].y = -i # type: ignore
-        getx = operator.getattrs('x')
+        getx = operator.get_attrs('x')
         sortx = operator.orderby_attrs('x')
         sorty = operator.orderby_attrs('y', reverse=True)
         self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
@@ -154,13 +154,13 @@ class TestOtree(ModuleTestCase):
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @operator.setattrs(name='a', group=1)
+            @operator.set_attrs(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @operator.setattrs(name='b', group=2)
+            @operator.set_attrs(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @operator.setattrs(name='b', group=2)
+            @operator.set_attrs(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()

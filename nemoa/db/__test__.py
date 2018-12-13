@@ -116,17 +116,6 @@ class TestTable(ModuleTestCase):
                 else:
                     self.assertEqual(size, 3)
 
-    def test_Cursor_mapper(self) -> None:
-        for dtype in [tuple, dict]:
-            mapper = self.table._create_mapper( # pylint: disable=W0212
-                None, dtype=dtype)
-            for mode in self.cursor_modes:
-                with self.subTest(mode=mode, dtype=dtype):
-                    cur = self.table._create_cursor( # pylint: disable=W0212
-                        mode=mode, mapper=mapper)
-                    row = cur.fetch()[0]
-                    self.assertEqual(type(row), dtype)
-
     def test_Cursor_sorter(self) -> None:
         for column in self.table.columns:
             sorter = self.table._create_sorter( # pylint: disable=W0212
@@ -149,6 +138,17 @@ class TestTable(ModuleTestCase):
 
     def test_Table(self) -> None:
         pass
+
+    # def test_Table_select(self) -> None:
+    #     for dtype in [tuple, dict]:
+    #         mapper = self.table._create_mapper( # pylint: disable=W0212
+    #             None, dtype=dtype)
+    #         for mode in self.cursor_modes:
+    #             with self.subTest(mode=mode, dtype=dtype):
+    #                 cur = self.table._create_cursor( # pylint: disable=W0212
+    #                     mode=mode, mapper=mapper)
+    #                 row = cur.fetch()[0]
+    #                 self.assertEqual(type(row), dtype)
 
     def test_Table_create(self) -> None:
         kwds: dict
