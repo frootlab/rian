@@ -18,7 +18,7 @@ from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
 from nemoa.types import OptIntList, OptOp, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
-from nemoa.types import TypeHint
+from nemoa.types import TypeHint, AnyOp, SeqOp, OptType
 
 #
 # Structural Types
@@ -28,6 +28,7 @@ from nemoa.types import TypeHint
 OrderByType = Optional[Union[str, StrList, StrTuple, Callable]]
 OptContainer = Optional[attrib.Container]
 OptMappingProxy = Optional[MappingProxy]
+AggAttr = Union[str, Tuple[str, AnyOp]]
 
 # Fields
 Field = dataclasses.Field
@@ -974,6 +975,36 @@ class Table(attrib.Container):
     def _delete_header(self) -> None:
         self.truncate() # Delete table data
         del self._record # Delete record constructor
+
+    def _create_grouper(self, *attrs: AggAttr, dtype: OptType = tuple) -> SeqOp:
+        names: StrList = []
+        groupby: StrList = []
+        aggop: list = []
+        atrepr: StrList = []
+        for attr in attrs:
+            if isinstance(attr, str):
+                groupby.append(attr)
+                names.append(attr)
+                aggop.append(lambda seq: seq[0])
+                atrepr.append(attr)
+            elif isinstance(attr, tuple):
+                names.append(attr[0])
+                aggop.append(attr[1])
+                atrepr.append(f'{attr[1].__name__}({attr[0]})')
+        if not names:
+            return lambda seq: seq
+        trans: SeqOp = lambda mat: tuple(list(seq) for seq in zip(*mat))
+        apply: SeqOp = lambda mat: tuple(op(seq) for op, seq in zip(aggop, mat))
+        getter: SeqOp = operator.get_attrs(*names, dtype=tuple)
+        rowagg: SeqOp = lambda seq: apply(trans(list(map(getter, seq))))
+        grouper: SeqOp = operator.groupby_attrs(*groupby)
+        aggreg: SeqOp = lambda seq: list(map(rowagg, grouper(seq)))
+        if dtype == tuple:
+            return aggreg
+        if dtype == dict:
+            return lambda seq: \
+                list(dict(zip(atrepr, row)) for row in aggreg(seq))
+        raise ValueError()
 
     def _create_mapper(
             self, columns: OptStrTuple, dtype: type = tuple) -> Callable:
