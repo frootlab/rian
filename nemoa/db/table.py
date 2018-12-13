@@ -997,7 +997,7 @@ class Table(attrib.Container):
             attrs = list(orderby)
         else:
             attrs = []
-        return operator.orderbyattrs(*attrs, reverse=reverse)
+        return operator.orderby_attrs(*attrs, reverse=reverse)
 
     def _get_new_rowid(self) -> int:
         return len(self._data)

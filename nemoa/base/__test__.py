@@ -81,7 +81,34 @@ class TestOperator(ModuleTestCase):
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
-    def test_orderbyattrs(self) -> None:
+    def test_groupby_attrs(self) -> None:
+        class Obj:
+            def __init__(self, i: int, name: str) -> None:
+                self.id = i
+                self.name = name
+        seq = list(Obj(i, f'{i>5}') for i in range(10))
+        attrs: tuple = tuple()
+        with self.subTest(attrs=attrs):
+            group = operator.groupby_attrs(*attrs)
+            self.assertEqual(len(group(seq)), 1)
+            self.assertEqual(len(group(seq)[0]), 10)
+        attrs = ('name', )
+        with self.subTest(attrs=attrs):
+            group = operator.groupby_attrs(*attrs)
+            self.assertEqual(len(group(seq)), 2)
+            self.assertEqual(len(group(seq)[0]), 6)
+        attrs = ('id', )
+        with self.subTest(attrs=attrs):
+            group = operator.groupby_attrs(*attrs)
+            self.assertEqual(len(group(seq)), 10)
+            self.assertEqual(len(group(seq)[0]), 1)
+        attrs = ('name', 'id')
+        with self.subTest(attrs=attrs):
+            group = operator.groupby_attrs(*attrs)
+            self.assertEqual(len(group(seq)), 10)
+            self.assertEqual(len(group(seq)[0]), 1)
+
+    def test_orderby_attrs(self) -> None:
         class Obj:
             pass
         objs = [Obj() for i in range(10)]
@@ -89,8 +116,8 @@ class TestOperator(ModuleTestCase):
             objs[i].x = i # type: ignore
             objs[i].y = -i # type: ignore
         getx = operator.getattrs('x')
-        sortx = operator.orderbyattrs('x')
-        sorty = operator.orderbyattrs('y', reverse=True)
+        sortx = operator.orderby_attrs('x')
+        sorty = operator.orderby_attrs('y', reverse=True)
         self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
         self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
 
