@@ -18,8 +18,8 @@ import warnings
 from pathlib import Path
 from nemoa.base import attrib, env
 from nemoa.errors import ExistsError, NotExistsError
-from nemoa.types import void, Any, AnyFunc, ClassVar, PathLike, StrList
-from nemoa.types import StrOrInt, OptPath, VoidFunc
+from nemoa.types import void, Any, AnyOp, ClassVar, PathLike, StrList
+from nemoa.types import StrOrInt, OptPath, Void
 
 #
 # Logger Class
@@ -270,7 +270,7 @@ def get_instance() -> Logger:
         globals()['_logger'] = Logger()
     return globals()['_logger']
 
-def get_method(name: str) -> AnyFunc:
+def get_method(name: str) -> AnyOp:
     """Get method of current logger instance."""
     def wrapper(*args: Any, **kwds: Any) -> Any:
         self = get_instance()
@@ -278,20 +278,20 @@ def get_method(name: str) -> AnyFunc:
         return method(*args, **kwds)
     return wrapper
 
-debug: VoidFunc = get_method('debug')
+debug: Void = get_method('debug')
 """Call :meth:`~logging.Logger.debug` of current Logger instance."""
 
-info: VoidFunc = get_method('info')
+info: Void = get_method('info')
 """Call :meth:`~logging.Logger.info` of current Logger instance."""
 
-warning: VoidFunc = get_method('warning')
+warning: Void = get_method('warning')
 """Call :meth:`~logging.Logger.warning` of current Logger instance."""
 
-error: VoidFunc = get_method('error')
+error: Void = get_method('error')
 """Call :meth:`~logging.Logger.error` of current Logger instance."""
 
-critical: VoidFunc = get_method('critical')
+critical: Void = get_method('critical')
 """Call :meth:`~logging.Logger.critical` of current Logger instance."""
 
-exception: VoidFunc = get_method('exception')
+exception: Void = get_method('exception')
 """Call :meth:`~logging.Logger.exceptions` of current Logger instance."""

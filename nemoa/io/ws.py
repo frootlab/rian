@@ -19,7 +19,7 @@ from nemoa.types import BinaryFileLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessor
 from nemoa.types import PathLike, PathLikeList, Traceback
 from nemoa.types import FileLike, StrList, OptPath, Optional, ExcType, Exc
-from nemoa.types import Any, AnyFunc
+from nemoa.types import Any, AnyOp
 
 #
 # Structural Types
@@ -252,7 +252,7 @@ class File(attrib.Container):
             member.
 
         """
-        def wrap_open(path: PathLike) -> AnyFunc:
+        def wrap_open(path: PathLike) -> AnyOp:
             def wrapped_open(
                     obj: FileAccessor, *args: Any, **kwds: Any) -> FileLike:
                 return self.open(path, *args, **kwds)

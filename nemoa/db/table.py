@@ -15,7 +15,7 @@ from nemoa.base import attrib, check, operator, pattern
 from nemoa.errors import RowLookupError, CursorModeError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
-from nemoa.types import OptIntList, OptCallable, Callable
+from nemoa.types import OptIntList, OptOp, Callable
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
 from nemoa.types import TypeHint
@@ -151,7 +151,7 @@ class Record(abc.ABC):
         raise NotImplementedError()
 
 def create_record_class(
-        columns: ColsDef, newid: OptCallable = None,
+        columns: ColsDef, newid: OptOp = None,
         **kwds: Any) -> Type[Record]:
     """Create a new subclass of the Record class.
 
@@ -311,9 +311,9 @@ class Cursor(attrib.Container):
 
     def __init__(
             self, index: OptIntList = None, mode: OptStr = None,
-            batchsize: OptInt = None, getter: OptCallable = None,
-            predicate: OptCallable = None, mapper: OptCallable = None,
-            sorter: OptCallable = None, parent: OptContainer = None) -> None:
+            batchsize: OptInt = None, getter: OptOp = None,
+            predicate: OptOp = None, mapper: OptOp = None,
+            sorter: OptOp = None, parent: OptContainer = None) -> None:
         # Initialize Attribute Container with parent Attribute Group
         super().__init__(parent=parent)
 
@@ -778,7 +778,7 @@ class Table(attrib.Container):
         for row in values:
             self._append_row(row, columns)
 
-    def update(self, where: OptCallable = None, **kwds: Any) -> None:
+    def update(self, where: OptOp = None, **kwds: Any) -> None:
         """Update values of one or more records from the table.
 
         This method is motivated by the SQL `UPDATE`_ statement and changes the
@@ -800,7 +800,7 @@ class Table(attrib.Container):
         for row in self._create_cursor(predicate=where):
             row._update(**kwds) # pylint: disable=W0212
 
-    def delete(self, where: OptCallable = None) -> None:
+    def delete(self, where: OptOp = None) -> None:
         """Delete one or more records from the table.
 
         This method is motivated by the SQL `DELETE`_ statement and marks all
@@ -821,7 +821,7 @@ class Table(attrib.Container):
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, columns: OptStrTuple = None, where: OptCallable = None,
+            self, columns: OptStrTuple = None, where: OptOp = None,
             orderby: OrderByType = None, reverse: bool = False,
             dtype: type = tuple, batchsize: OptInt = None,
             mode: OptStr = None) -> Cursor:
@@ -943,8 +943,8 @@ class Table(attrib.Container):
         del self._metadata
 
     def _create_cursor(
-            self, predicate: OptCallable = None, sorter: OptCallable = None,
-            mapper: OptCallable = None, batchsize: OptInt = None,
+            self, predicate: OptOp = None, sorter: OptOp = None,
+            mapper: OptOp = None, batchsize: OptInt = None,
             mode: OptStr = None) -> Cursor:
         return Cursor(
             getter=self.row, predicate=predicate, mapper=mapper,
@@ -985,7 +985,7 @@ class Table(attrib.Container):
         return operator.getattrs(*columns, dtype=dtype)
 
     def _create_sorter(
-            self, orderby: OrderByType, reverse: bool = False) -> OptCallable:
+            self, orderby: OrderByType, reverse: bool = False) -> OptOp:
         if callable(orderby):
             # TODO: check if orderby is a valid sorter
             return orderby

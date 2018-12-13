@@ -12,8 +12,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import pkg
-from nemoa.types import Any, FuncWrapper, OptModule, OptStr, OptStrList
+from nemoa.base import pkg, stack
+from nemoa.types import Any, Callable, OptModule, OptStr, OptStrList
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
@@ -40,13 +40,13 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
     return pkg.search(module=module, rules=rules, **kwds)
 
 #
-# Functors
+# Operator Decorators
 #
 
 def custom(
         name: OptStr = None, category: OptStr = None,
         classes: OptStrList = None, tags: OptStrList = None,
-        plot: OptStr = None, **attr: Any) -> FuncWrapper:
+        plot: OptStr = None, **attr: Any) -> Callable:
     """Attribute decorator for custom algorithms.
 
     For the case, that an algorithm does not fit into the builtin categories
@@ -96,7 +96,7 @@ def custom(
 def objective(
         name: OptStr = None, classes: OptStrList = None,
         tags: OptStrList = None, optimum: str = 'min', scope: str = 'local',
-        plot: OptStr = None, **attr: Any) -> FuncWrapper:
+        plot: OptStr = None, **attr: Any) -> Callable:
     """Attribute decorator for objective functions.
 
     `Objective functions` are scalar functions, thet specify the goal of an
@@ -150,7 +150,7 @@ def objective(
 def sampler(
         name: OptStr = None, classes: OptStrList = None,
         tags: OptStrList = None, plot: OptStr = 'Histogram',
-        **attr: Any) -> FuncWrapper:
+        **attr: Any) -> Callable:
     """Attribute decorator for statistical samplers.
 
     Statistical samplers are random functions, that generate samples from
@@ -201,7 +201,7 @@ def sampler(
 def statistic(
         name: OptStr = None, classes: OptStrList = None,
         tags: OptStrList = None, plot: OptStr = 'Histogram',
-        **attr: Any) -> FuncWrapper:
+        **attr: Any) -> Callable:
     """Attribute decorator for sample statistics.
 
     Sample statistics are measures of some attribute of the individual columns
@@ -251,7 +251,7 @@ def association(
         name: OptStr = None, tags: OptStrList = None,
         classes: OptStrList = None, plot: OptStr = 'Histogram',
         directed: bool = True, signed: bool = True, normal: bool = False,
-        **attr: Any) -> FuncWrapper:
+        **attr: Any) -> Callable:
     """Attribute decorator for :term:`association measure`.
 
     Args:

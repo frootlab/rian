@@ -7,9 +7,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import threading
-from nemoa.types import Any, AnyFunc
+from nemoa.types import Any, AnyOp
 
-def create(func: AnyFunc, *args: Any, **kwds: Any) -> object:
+def create(func: AnyOp, *args: Any, **kwds: Any) -> object:
     """Create and start thread for given callable and arguments."""
     thr = threading.Thread(
         target=(lambda func, args, kwds: func(*args, **kwds)),

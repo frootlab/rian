@@ -14,7 +14,7 @@ from nemoa.base import env, pattern
 from nemoa.errors import PullError, PushError, ConnectError, DisconnectError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
 from nemoa.types import ExcType, Exc, Traceback, FileAccessor
-from nemoa.types import BinaryFileLike, TextFileLike, IterFileLike
+from nemoa.types import BinaryFileLike, TextFileLike
 
 #
 # File Info Class
@@ -281,7 +281,7 @@ class FileProxy(pattern.Proxy):
 #
 
 @contextlib.contextmanager
-def openx(file: FileRef, *args: Any, **kwds: Any) -> IterFileLike:
+def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[FileLike]:
     """Open file reference.
 
     This context manager extends :py:func`open` by allowing the passed `file`

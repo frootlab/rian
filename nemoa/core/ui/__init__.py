@@ -11,7 +11,7 @@ import os
 import sys
 from nemoa.base import pkg
 from nemoa.core import log
-from nemoa.types import Any, AnyFunc, ExcType, Exc, Traceback, OptVoidFunc
+from nemoa.types import Any, AnyOp, ExcType, Exc, Traceback, OptVoid
 
 #
 # Module Variables
@@ -44,7 +44,7 @@ def is_above_level(ntype: str) -> bool:
     level = globals().get('level', _DEFAULT_NOTIFICATION_LEVEL)
     return _NOTIFICATION_TYPES.index(ntype) >= level
 
-def get_notification_hook(ntype: str) -> OptVoidFunc:
+def get_notification_hook(ntype: str) -> OptVoid:
     """Get hook for given notification type."""
     if not ntype in _NOTIFICATION_TYPES:
         raise ValueError(
@@ -125,7 +125,7 @@ def hook_exception(Error: ExcType, value: Exc, tb: Traceback) -> None:
     log.exception(str(value), exc_info=(Error, value, tb))
 
 def bypass_exceptions(
-        func: AnyFunc, hook: AnyFunc, interrupt: bool = False) -> AnyFunc:
+        func: AnyOp, hook: AnyOp, interrupt: bool = False) -> AnyOp:
     """Bypass exceptions from given function."""
     @functools.wraps(func)
     def wrapper(*args: Any, **kwds: Any) -> Any:

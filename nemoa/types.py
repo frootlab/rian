@@ -13,7 +13,7 @@ import datetime
 import io
 import os
 import types
-from typing import Any, Callable, ClassVar, ContextManager, Dict, Hashable, IO
+from typing import Any, Callable, ClassVar, Dict, Hashable, IO
 from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized, Generic
 
@@ -28,7 +28,6 @@ TypeHint = Generic[T]
 # Constants
 ################################################################################
 
-NA = object() # Create Singleton for the representation of missing values
 NaN = float('nan') # Standard Constant for the representation of "Not a Number"
 Infty = float('inf') # Standard Constant for the representation of infinity
 void: Callable[..., None] = lambda *args, **kwds: None
@@ -158,47 +157,47 @@ ClassStrDict = ClassVar[StrDict]
 # Structural Types for Operators and Operator Collections
 ################################################################################
 
-#
-SeqHom = Callable[[Sequence[object]], Sequence[object]]
+# Operator Types
+AnyOp = Callable[..., Any]
+Void = Callable[..., None]
+KeyOp = Callable[[Any, Any], bool]
+SeqOp = Callable[[Sequence[Any]], Any]
+SeqHom = Callable[[Sequence[Any]], Sequence[Any]]
 
-# Elementary Callables
-AnyFunc = Callable[..., Any]
-VoidFunc = Callable[..., None]
-BoolFunc = Callable[..., bool]
-RealFunc = Callable[..., RealNumber]
-ScalarFunc = Callable[..., Number]
-VectorFunc = Callable[..., Vector]
-UnaryFunc = Callable[[Any], Any]
-BinaryFunc = Callable[[Any, Any], Any]
-TernaryFunc = Callable[[Any, Any, Any], Any]
-TestFunc = Callable[[Any, Any], bool]
-
-# Unions of Callables and Literals
-OptVoidFunc = Optional[VoidFunc]
-OptCallable = Optional[AnyFunc]
+# Unions of Operators and Literals
+OptOp = Optional[AnyOp]
+OptVoid = Optional[Void]
 OptFunction = Optional[Function]
+OptMethod = Optional[Method]
 OptModule = Optional[Module]
 
-# Collections of Callables
-StrDictOfFuncs = Dict[str, AnyFunc]
-StrDictOfTestFuncs = Dict[str, TestFunc]
+# Operator Collections
+DictOfOps = Dict[str, AnyOp]
+DictOfKeyOps = Dict[str, KeyOp]
 
-# Unions of Collections of Callables and Literals
-OptStrDictOfFuncs = Optional[StrDictOfFuncs]
-OptStrDictOfTestFuncs = Optional[StrDictOfTestFuncs]
-
-# Compounds of Collables and Literals
-FuncWrapper = Callable[[Callable[..., T]], Callable[..., T]]
+# Unions of Operator Collections and Literals
+OptDictOfOps = Optional[DictOfOps]
+OptDictOfKeyOps = Optional[DictOfKeyOps]
 
 ################################################################################
 # Structural Types for standard library packages
 ################################################################################
 
-# Generic Collections
+# Collections
 IterAny = Iterator[Any]
 IterNone = Iterator[None]
 OptContainer = Optional[Container]
 OptSized = Optional[Sized]
+
+# Exceptions
+Exc = BaseException
+ExcType = Type[Exc]
+ExcInfo = Union[ExcType, Tuple[ExcType, ...]]
+
+# File Like
+FileLike = IO[Any]
+BinaryFileLike = IO[bytes]
+TextFileLike = IO[str]
 
 # Path Like
 OptPath = Optional[Path]
@@ -208,29 +207,8 @@ PathLike = Union[str, Path]
 PathLikeList = List[PathLike]
 OptPathLike = Optional[PathLike]
 
-# Exceptions
-Exc = BaseException
-ExcType = Type[Exc]
-ExcInfo = Union[ExcType, Tuple[ExcType, ...]]
-
-# File Like
-FileLike = IO[Any]
-IterFileLike = Iterator[FileLike]
-CManFileLike = ContextManager[FileLike]
-
-# Binary File Like
-BinaryFileLike = IO[bytes]
-IterBinaryFileLike = Iterator[BinaryFileLike]
-CManBinaryFileLike = ContextManager[BinaryFileLike]
-
-# Text File Like
-TextFileLike = IO[str]
-IterTextFileLike = Iterator[TextFileLike]
-CManTextFileLike = ContextManager[TextFileLike]
-
 # File References
-FileOrPathLike = Union[FileLike, PathLike]
-FileRef = Union[FileOrPathLike, FileAccessor]
+FileRef = Union[FileLike, PathLike, FileAccessor]
 
 ################################################################################
 # Structural Types for external Packages

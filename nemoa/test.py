@@ -13,7 +13,7 @@ from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
 from nemoa.base import pkg, otree
-from nemoa.types import Any, AnyFunc, ClassInfo, ExcType, Function, Method
+from nemoa.types import Any, AnyOp, ClassInfo, ExcType, Function, Method
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
 #
@@ -51,62 +51,62 @@ class BaseTestCase(TestCase):
         self.assertTrue(issubclass(cls, supercls))
 
     def assertAllSubclass(
-            self, func: AnyFunc, supercls: type, cases: Cases) -> None:
+            self, func: AnyOp, supercls: type, cases: Cases) -> None:
         """Assert outcome type of a class constructor."""
         for case in cases:
             with self.subTest(case):
                 self.assertIsSubclass(func(*case.args, **case.kwds), supercls)
 
-    def assertAllIn(self, func: AnyFunc, cases: Cases) -> None:
+    def assertAllIn(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations are in the given values."""
         for case in cases:
             with self.subTest(case):
                 self.assertIn(func(*case.args, **case.kwds), case.value)
 
-    def assertNoneIn(self, func: AnyFunc, cases: Cases) -> None:
+    def assertNoneIn(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations are in the given values."""
         for case in cases:
             with self.subTest(case):
                 self.assertNotIn(func(*case.args, **case.kwds), case.value)
 
-    def assertAllComprise(self, func: AnyFunc, cases: Cases) -> None:
+    def assertAllComprise(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations comprise the given values."""
         for case in cases:
             with self.subTest(case):
                 self.assertIn(case.value, func(*case.args, **case.kwds))
 
-    def assertNoneComprise(self, func: AnyFunc, cases: Cases) -> None:
+    def assertNoneComprise(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations comprise the given values."""
         for case in cases:
             with self.subTest(case):
                 self.assertNotIn(case.value, func(*case.args, **case.kwds))
 
-    def assertAllTrue(self, func: AnyFunc, cases: Cases) -> None:
+    def assertAllTrue(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations cast to True."""
         for case in cases:
             with self.subTest(case):
                 self.assertTrue(func(*case.args, **case.kwds))
 
-    def assertNoneTrue(self, func: AnyFunc, cases: Cases) -> None:
+    def assertNoneTrue(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations cast to False."""
         for case in cases:
             with self.subTest(case):
                 self.assertFalse(func(*case.args, **case.kwds))
 
-    def assertAllEqual(self, func: AnyFunc, cases: Cases) -> None:
+    def assertAllEqual(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations equal the given values."""
         for case in cases:
             with self.subTest(case):
                 self.assertEqual(func(*case.args, **case.kwds), case.value)
 
-    def assertNoneEqual(self, func: AnyFunc, cases: Cases) -> None:
+    def assertNoneEqual(self, func: AnyOp, cases: Cases) -> None:
         """Assert that all function evaluations differ from the given values."""
         for case in cases:
             with self.subTest(case):
                 self.assertNotEqual(func(*case.args, **case.kwds), case.value)
 
     def assertNotRaises(
-            self, Error: ExcType, func: AnyFunc, *args: Any,
+            self, Error: ExcType, func: AnyOp, *args: Any,
             **kwds: Any) -> None:
         """Assert that an exception is not raised."""
         try:
@@ -116,14 +116,14 @@ class BaseTestCase(TestCase):
                 f"function {func.__name__} raises error {Error.__name__}")
 
     def assertAllRaises(
-            self, Error: ExcType, func: AnyFunc, cases: Cases) -> None:
+            self, Error: ExcType, func: AnyOp, cases: Cases) -> None:
         """Assert that all function parameters raise an exception."""
         for case in cases:
             with self.subTest(case):
                 self.assertRaises(Error, func, *case.args, **case.kwds)
 
     def assertNoneRaises(
-            self, Error: ExcType, func: AnyFunc, cases: Cases) -> None:
+            self, Error: ExcType, func: AnyOp, cases: Cases) -> None:
         """Assert that no function parameter raises an exception."""
         for case in cases:
             with self.subTest(case):
