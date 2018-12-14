@@ -6,49 +6,41 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import abc
-import itertools
-import random
 from typing import NewType
-import dataclasses
 from nemoa.base import attrib, check, operator, pattern
-from nemoa.errors import RowLookupError, CursorModeError, ProxyError
+from nemoa.db import record, cursor
+from nemoa.errors import RowLookupError, ProxyError
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
-from nemoa.types import OptIntList, OptOp, Callable
-from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any, Type
+from nemoa.types import Tuple, StrList, StrTuple
+from nemoa.types import OptOp, Callable
+from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
-from nemoa.types import TypeHint, AnyOp, SeqOp, OptType
+from nemoa.types import AnyOp, SeqOp, OptType
 
 #
 # Structural Types
 #
 
 # Various
-OrderByType = Optional[Union[str, StrList, StrTuple, Callable]]
+OrderByType = Optional[Union[str, StrList, StrTuple, SeqOp]]
 OptContainer = Optional[attrib.Container]
 OptMappingProxy = Optional[MappingProxy]
 AggAttr = Union[str, Tuple[str, AnyOp]]
 
 # Fields
-Field = dataclasses.Field
-FieldTuple = Tuple[Field, ...]
-OptFieldTuple = Optional[FieldTuple]
+OptFieldTuple = Optional[Tuple[record.Field, ...]]
 
-# Columns
-ColDefA = str # Column name
-ColDefB = Tuple[str, type] # Column name and type
-ColDefC = Tuple[str, type, StrDict] # Column name, type and constraints
-ColDefD = Tuple[str, type, Field] # Column name, type and constraints
-ColDef = Union[ColDefA, ColDefB, ColDefC, ColDefD]
-ColsDef = Tuple[ColDef, ...]
-OptColsDef = Optional[ColsDef]
+# Colums
+SelColA = str # Select Column: name
+SelColB = Tuple[str, SeqOp] # Select Column: name, aggregator
+SelCol = Union[SelColA, SelColB] # Select Column
 
 # Rows
-Row = NewType('Row', 'Record')
+Row = NewType('Row', record.Record)
 OptRow = Optional[Row]
 RowList = List[Row]
 RowLike = Union[tuple, Mapping, Row]
+RowLikeClasses = (tuple, Mapping, record.Record)
 RowLikeList = Union[RowList, List[tuple], List[Mapping]]
 ValuesType = Optional[Union[RowLike, RowLikeList]]
 
@@ -56,452 +48,9 @@ ValuesType = Optional[Union[RowLike, RowLikeList]]
 # Constants
 #
 
-# Record State
-RECORD_STATE_FLAG_CREATE = 0b0001
-RECORD_STATE_FLAG_UPDATE = 0b0010
-RECORD_STATE_FLAG_DELETE = 0b0100
-
-# Cursor Mode
-CURSOR_MODE_FLAG_BUFFERED = 0b0001
-CURSOR_MODE_FLAG_INDEXED = 0b0010
-CURSOR_MODE_FLAG_SCROLLABLE = 0b0100
-CURSOR_MODE_FLAG_RANDOM = 0b1000
-
-# Proxy Mode
 PROXY_MODE_FLAG_CACHE = 0b0001
 PROXY_MODE_FLAG_INCREMENTAL = 0b0010
 PROXY_MODE_FLAG_READONLY = 0b0100
-
-#
-# Record Base Class and Class Constructor
-#
-
-class Record(abc.ABC):
-    """Abstract base class for :mod:`dataclasses` based records.
-
-    Args:
-        *args: Arguments, that are valid with respect to the column definitions
-            of derived :mod:'dataclasses'.
-        **kwds: Keyword arguments, that are valid with respect to the column
-            definitions of derived :mod:'dataclasses'.
-
-    """
-
-    __slots__: StrTuple = ('_id', '_name', '_state')
-
-    _id: int
-    _name: str
-    _state: int
-
-    def __post_init__(self, *args: Any, **kwds: Any) -> None:
-        self._validate()
-        self._id = self._get_newid()
-        self._state = RECORD_STATE_FLAG_CREATE
-
-    def _validate(self) -> None:
-        """Check validity of the field types."""
-        fields = getattr(self, '__dataclass_fields__', {})
-        for name, field in fields.items():
-            if isinstance(field.type, str):
-                continue # Do not type check structural types like 'typing.Any'
-            value = getattr(self, name)
-            check.has_type(f"field '{name}'", value, field.type)
-
-    def _delete(self) -> None:
-        """Mark record as deleted and remove it's ID from index."""
-        if not self._state & RECORD_STATE_FLAG_DELETE:
-            self._state |= RECORD_STATE_FLAG_DELETE
-            self._delete_hook(self._id)
-
-    def _update(self, **kwds: Any) -> None:
-        """Mark record as updated and write the update to diff table."""
-        if not self._state & RECORD_STATE_FLAG_UPDATE:
-            self._state |= RECORD_STATE_FLAG_UPDATE
-            self._update_hook(self._id, **kwds)
-
-    def _restore(self) -> None:
-        """Mark record as not deleted and append it's ID to index."""
-        if self._state & RECORD_STATE_FLAG_DELETE:
-            self._state &= ~RECORD_STATE_FLAG_DELETE
-            self._restore_hook(self._id)
-
-    def _revoke(self) -> None:
-        """Mark record as not updated and remove the update from diff table."""
-        if self._state & RECORD_STATE_FLAG_UPDATE:
-            self._state &= ~RECORD_STATE_FLAG_UPDATE
-            self._revoke_hook(self._id)
-
-    @abc.abstractmethod
-    def _get_newid(self) -> int:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _delete_hook(self, rowid: int) -> None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _restore_hook(self, rowid: int) -> None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _update_hook(self, rowid: int, **kwds: Any) -> None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _revoke_hook(self, rowid: int) -> None:
-        raise NotImplementedError()
-
-def create_record_class(
-        columns: ColsDef, newid: OptOp = None,
-        **kwds: Any) -> Type[Record]:
-    """Create a new subclass of the Record class.
-
-    Args:
-        columns: Tuple of *column definitions*. All column definitions
-            independent from each other can be given in one of the following
-            formats: (1) In order to only specify the name of the column,
-            without further information, the colum definition has to be given as
-            a string `<name>`. Thereby the choice of `<name>` is restricted to
-            valid identifiers, described by [UAX31]_. (2) If, additionally to
-            the name, also the data type of the column shall be specified, then
-            the column definition has to be given as a tuple `(<name>, <type>)`.
-            Thereby `<type>` is required to by a valid :class:`type`, like
-            like :class:`str`, :class:`int`, :class:`float` or :class:`Date
-            <datetime.datetime>`. (3) Finally the column definition may also
-            contain supplementary constraints and metadata. In this case the
-            definition has to be given as a tuple `(<name>, <type>, <dict>)`,
-            where `<dict>` is dictionary which comprises any items, documented
-            by the function :func:`dataclasses.fields`.
-        newid: Optional reference to a method, which returns the current ID of
-            a new instance of the Record class. By default the Record class
-            uses an internal Iterator.
-        **kwds: Optional references to methods, which are bound to specific
-            events of the new Record class. These events are: 'delete',
-            'restore', 'update' and 'revoke'. By default no events are hooked.
-
-    Returns:
-        New subclass of the Record class.
-
-    """
-    # Check column defnitions and convert them to field descriptors, as required
-    # by dataclasses.make_dataclass()
-    check.has_type("'columns'", columns, tuple)
-    fields: list = []
-    names: StrList = []
-    for column in columns:
-        if isinstance(column, str):
-            fields.append(column)
-            names.append(column)
-            continue
-        check.has_type(f'column {column}', column, tuple)
-        check.has_size(f'column {column}', column, min_size=2, max_size=3)
-        check.has_type('first argument', column[0], str)
-        check.has_type('second argument', column[1], TypeHint)
-        if len(column) == 2:
-            fields.append(column)
-            names.append(column[0])
-            continue
-        check.has_type('third argument', column[2], (Field, dict))
-        if isinstance(column[2], Field):
-            fields.append(column)
-            names.append(column[0])
-            continue
-        field = dataclasses.field(**column[2])
-        names.append(column[0])
-        fields.append(column[:2] + (field,))
-
-    # Dynamically create a dataclass, which is inherited from Record class.
-    # Thereby create an ampty '__slots__' attribute to avoid collision with
-    # default values (which in dataclasses are stored as class variables),
-    # while avoiding the creation of a '__dict__' attribute
-    namespace: StrDict = {}
-    if newid and callable(newid):
-        namespace['_get_newid'] = newid
-    else:
-        counter = itertools.count() # Infinite iterator
-        namespace['_get_newid'] = lambda obj: next(counter)
-    hooks = {
-        'delete': '_delete_hook', 'restore': '_restore_hook',
-        'update': '_update_hook', 'revoke': '_revoke_hook'}
-    for key in hooks:
-        namespace[hooks[key]] = kwds.get(key, void)
-    namespace['__slots__'] = tuple()
-    dataclass = dataclasses.make_dataclass(
-        Record.__name__, fields, bases=(Record, ), namespace=namespace)
-
-    # Dynamically create a new class, which is inherited from dataclass,
-    # with corrected __slots__ attribute.
-    return type(dataclass.__name__, (dataclass,), {'__slots__': names})
-
-#
-# Cursor Class
-#
-
-class Cursor(attrib.Container):
-    """Cursor Class.
-
-    Args:
-        index: List of row IDs, that are traversed by the cursor. By default the
-            attribute '_index' of the parent object is used.
-        mode: Named string identifier for the cursor :py:attr:`.mode`. The
-            default cursor mode is 'forward-only indexed'. Note: After
-            initializing the curser, it's mode can not be changed anymore.
-        batchsize: Integer, that specifies the default number of rows which is
-            to be fetched by the method :meth:`.fetch`. It defaults to 1,
-            meaning to fetch a single row at a time. Whether and which batchsize
-            to use depends on the application and should be considered with
-            care. The batchsize can also be adapted during the lifetime of the
-            cursor, which allows dynamic performance optimization.
-        getter: Method which is used to fetch single rows by their row ID.
-        predicate: Optional filter operator, which determines, if a row is
-            included within the result set or not. By default all rows are
-            included within the result set
-        sorter: Optional sorting operator, which determines the order of the
-            rows withon the result set. By default the order is determined by
-            the creation of the rows.
-        parent: Reference to parent :class:'attribute group
-            <nemoa.base.attrib.Group>', which is used for inheritance and
-            shared attributes. By default no parent is referenced.
-
-    """
-
-    #
-    # Public Attributes
-    #
-
-    mode: property = attrib.Virtual('_get_mode')
-    mode.__doc__ = """
-    The read-only attribute :term:`cursor mode` provides information about the
-    *scrolling type* and the *operation mode* of the cursor.
-    """
-
-    batchsize: property = attrib.MetaData(dtype=int, default=1)
-    """
-    The read-writable integer attribute *batchsize* specifies the default number
-    of rows which is to be fetched by the method :meth:`.fetch`. It defaults
-    to 1, meaning to fetch a single row at a time. Whether and which batchsize
-    to use depends on the application and should be considered with care. The
-    batchsize can also be adapted during the lifetime of the cursor, which
-    allows dynamic performance optimization.
-    """
-
-    rowcount: property = attrib.Virtual('_get_rowcount')
-    """
-    The read-only integer attribute *rowcount* identifies the current number of
-    rows within the cursor.
-    """
-
-    #
-    # Protected Attributes
-    #
-
-    _mode: property = attrib.MetaData(dtype=int, factory='_default_mode')
-    _index: property = attrib.MetaData(dtype=list, inherit=True)
-    _getter: property = attrib.Temporary(dtype=Callable)
-    _sorter: property = attrib.Temporary(dtype=Callable)
-    _filter: property = attrib.Temporary(dtype=Callable)
-    _buffer: property = attrib.Temporary(dtype=list, default=[])
-
-    #
-    # Special Methods
-    #
-
-    def __init__(
-            self, index: OptIntList = None, mode: OptStr = None,
-            batchsize: OptInt = None, getter: OptOp = None,
-            predicate: OptOp = None, sorter: OptOp = None,
-            parent: OptContainer = None) -> None:
-        # Initialize Attribute Container with parent Attribute Group
-        super().__init__(parent=parent)
-
-        # Get cursor parameters from arguments
-        if index is not None:
-            self._index = index
-        self._getter = getter
-        self._filter = predicate
-        self._sorter = sorter
-        if mode:
-            self._set_mode(mode)
-        if batchsize:
-            self.batchsize = batchsize
-
-        # Check validity of cursor parameters
-        self._check_validity()
-
-        # Initialize cursor
-        if self._mode & CURSOR_MODE_FLAG_INDEXED:
-            self._create_index() # Initialize index
-        if self._mode & CURSOR_MODE_FLAG_BUFFERED:
-            self._create_buffer() # Initialize buffer
-        self.reset() # Initialize iterator
-
-    def __iter__(self) -> Iterator:
-        self.reset()
-        return self
-
-    def __next__(self) -> Row:
-        return self.next()
-
-    def __len__(self) -> int:
-        return self.rowcount
-
-    #
-    # Public Methods
-    #
-
-    def fetch(self, size: OptInt = None) -> RowList:
-        """Fetch rows from the result set.
-
-        Args:
-            size: Integer value, which represents the number of rows, which is
-                fetched from the result set. For the given size -1 all remaining
-                rows from the result set are fetched. By default the number of
-                rows is given by the cursors attribute :attr:`.batchsize`.
-
-        Returns:
-            Result set given by a list of :term:`row like` data.
-
-        """
-        # TODO: Scrollable cursors are defined on sequences not on iterables:
-        # the cursor can use operations, such as FIRST, LAST, PRIOR, NEXT,
-        # RELATIVE n, ABSOLUTE n to navigate the results
-        if size is None:
-            size = self.batchsize
-        if self._mode & CURSOR_MODE_FLAG_RANDOM and size <= 0:
-            raise CursorModeError(self.mode, 'fetching all rows')
-        finished = False
-        rows: RowList = []
-        while not finished:
-            try:
-                rows.append(self.next())
-            except StopIteration:
-                finished = True
-            else:
-                finished = 0 < size <= len(rows)
-        return rows
-
-    def next(self) -> Row:
-        """Return next row that matches the given filter."""
-        mode = self._mode
-        if mode & CURSOR_MODE_FLAG_BUFFERED:
-            return self._get_next_from_buffer()
-        if mode & CURSOR_MODE_FLAG_INDEXED:
-            return self._get_next_from_fixed_index()
-        # TODO: For dynamic cursors implement _get_next_from_dynamic_index()
-        return self._get_next_from_fixed_index()
-
-    def reset(self) -> None:
-        """Reset cursor position before the first record."""
-        mode = self._mode
-        if mode & CURSOR_MODE_FLAG_BUFFERED: # Iterate over fixed result set
-            self._iter_buffer = iter(self._buffer)
-        elif mode & CURSOR_MODE_FLAG_INDEXED: # Iterate over fixed index
-            self._iter_index = iter(self._index)
-        else: # TODO: handle case for dynamic cursors by self._iter_table
-            self._iter_index = iter(self._index)
-
-    #
-    # Protected Methods
-    #
-
-    def _check_validity(self) -> None:
-        mode = self._mode
-
-        # Sorting rows requires a buffered cursor
-        if self._sorter and not mode & CURSOR_MODE_FLAG_BUFFERED:
-            raise CursorModeError(self.mode, 'sorting rows')
-
-        # Sorting rows is not supported by random cursors
-        if self._sorter and mode & CURSOR_MODE_FLAG_RANDOM:
-            raise CursorModeError(self.mode, 'sorting rows')
-
-    def _create_index(self) -> None:
-        if isinstance(self._index, list):
-            self._index = self._index.copy()
-        else:
-            self._index = []
-
-    def _create_buffer(self) -> None:
-        cur = self.__class__(
-            index=self._index, getter=self._getter, predicate=self._filter)
-        buffer = cur.fetch(-1) # Create result set from dynamic cursor
-        if self._sorter:
-            buffer = self._sorter(buffer) # Sort result set
-        self._buffer = buffer
-
-    def _default_mode(self) -> int:
-        if self._sorter:
-            return CURSOR_MODE_FLAG_BUFFERED
-        return CURSOR_MODE_FLAG_INDEXED
-
-    def _get_next_from_fixed_index(self) -> Row:
-        is_random = self._mode & CURSOR_MODE_FLAG_RANDOM
-        matches = False
-        while not matches:
-            if is_random:
-                rowid = random.randrange(len(self._index))
-            else:
-                rowid = next(self._iter_index)
-            row = self._getter(rowid)
-            if self._filter:
-                matches = self._filter(row)
-            else:
-                matches = True
-        return row
-
-    def _get_next_from_buffer(self) -> Row:
-        if self._mode & CURSOR_MODE_FLAG_RANDOM:
-            rowid = random.randrange(len(self._buffer))
-            return self._buffer[rowid]
-        return next(self._iter_buffer)
-
-    def _get_mode(self) -> str:
-        mode = self._mode
-        tokens = []
-
-        # Add name of traversal mode
-        if mode & CURSOR_MODE_FLAG_RANDOM:
-            tokens.append('random')
-        elif mode & CURSOR_MODE_FLAG_SCROLLABLE:
-            tokens.append('scrollable')
-
-        # Add name of operation mode
-        if mode & CURSOR_MODE_FLAG_BUFFERED:
-            tokens.append('static')
-        elif mode & CURSOR_MODE_FLAG_INDEXED:
-            tokens.append('indexed')
-        else:
-            tokens.append('dynamic')
-
-        return ' '.join(tokens)
-
-    def _set_mode(self, name: str) -> None:
-        mode = 0
-        name = name.strip(' ').lower()
-
-        # Set traversal mode flags
-        if 'random' in name:
-            mode |= CURSOR_MODE_FLAG_RANDOM
-        elif 'scrollable' in name:
-            mode |= CURSOR_MODE_FLAG_SCROLLABLE
-
-        # Set operation mode flags
-        if 'static' in name:
-            mode |= CURSOR_MODE_FLAG_BUFFERED | CURSOR_MODE_FLAG_INDEXED
-        elif 'indexed' in name:
-            mode |= CURSOR_MODE_FLAG_INDEXED
-
-        self._mode = mode
-
-    def _get_rowcount(self) -> int:
-        mode = self._mode
-        if mode & CURSOR_MODE_FLAG_RANDOM:
-            raise CursorModeError(self.mode, 'counting rows')
-        if mode & CURSOR_MODE_FLAG_BUFFERED:
-            return len(self._buffer)
-        if self._filter:
-            raise CursorModeError(self.mode, 'counting filtered rows')
-        return len(self._index)
 
 #
 # Table Class
@@ -585,7 +134,7 @@ class Table(attrib.Container):
     #
 
     def __init__(
-            self, name: OptStr = None, columns: OptColsDef = None,
+            self, name: OptStr = None, columns: record.OptColsDef = None,
             metadata: OptMapping = None, parent: OptContainer = None) -> None:
         super().__init__(parent=parent) # Initialize Container Parameters
 
@@ -597,7 +146,7 @@ class Table(attrib.Container):
         self._iter_index = iter(self._index)
         return self
 
-    def __next__(self) -> Record:
+    def __next__(self) -> Row:
         row = self.row(next(self._iter_index))
         while not row:
             row = self.row(next(self._iter_index))
@@ -614,7 +163,7 @@ class Table(attrib.Container):
     #
 
     def create(
-            self, name: OptStr, columns: ColsDef,
+            self, name: OptStr, columns: record.ColsDef,
             metadata: OptMapping = None) -> None:
         """Create table structure.
 
@@ -653,7 +202,7 @@ class Table(attrib.Container):
         """
         self._set_name(name) # Set Name of the Table
         self._create_metadata(metadata) # Set supplementary Metadata of Table
-        self._create_header(columns) # Dynamically create a new Record Class
+        self._build_record_class(columns) # Build Record Class
 
     def drop(self) -> None:
         """Delete table data and table structure.
@@ -709,13 +258,13 @@ class Table(attrib.Container):
             if not row:
                 continue
             state = row._state # pylint: disable=W0212
-            if state & RECORD_STATE_FLAG_DELETE:
+            if state & record.STATE_DELETE:
                 self._data[rowid] = None
                 try:
                     self._index.remove(rowid)
                 except ValueError:
                     pass
-            elif state & (RECORD_STATE_FLAG_CREATE | RECORD_STATE_FLAG_UPDATE):
+            elif state & (record.STATE_CREATE | record.STATE_UPDATE):
                 self._data[rowid] = self._diff[rowid]
                 self._data[rowid]._state = 0 # pylint: disable=W0212
 
@@ -739,7 +288,7 @@ class Table(attrib.Container):
             if not row:
                 continue
             state = row._state # pylint: disable=W0212
-            if state & RECORD_STATE_FLAG_CREATE:
+            if state & record.STATE_CREATE:
                 try:
                     self._index.remove(rowid)
                 except ValueError:
@@ -866,19 +415,17 @@ class Table(attrib.Container):
         .. _SELECT: https://en.wikipedia.org/wiki/Select_(SQL)
 
         """
-        # Create sorting operator for parameters 'orderby' and 'reverse'
-        sorter = self._create_sorter(orderby, reverse=reverse)
-
         # Create cursor, which specifies the result set
-        cursor = self._create_cursor(
-            predicate=where, sorter=sorter, batchsize=batchsize, mode=mode)
+        cur = self._create_cursor(
+            predicate=where, orderby=orderby, reverse=reverse,
+            batchsize=batchsize, mode=mode)
 
         # Create grouping operator for parameter 'groupby'
 
         # Create mapping operator with respect to 'columns' and 'dtype'
         mapper = self._create_mapper(columns, dtype=dtype)
 
-        return list(map(mapper, cursor)) # Map result set
+        return list(map(mapper, cur)) # Map result set
 
     def get_metadata(self, key: str) -> Any:
         """Get single entry from table metadata.
@@ -898,7 +445,10 @@ class Table(attrib.Container):
 
     def row(self, rowid: int) -> OptRow:
         """Get single row by row ID."""
-        return self._diff[rowid] or self._data[rowid]
+        try:
+            return self._diff[rowid] or self._data[rowid]
+        except IndexError as err:
+            raise RowLookupError(rowid) from err
 
     def pack(self) -> None:
         """Remove empty records from data and rebuild table index."""
@@ -944,16 +494,18 @@ class Table(attrib.Container):
         del self._metadata
 
     def _create_cursor(
-            self, predicate: OptOp = None, sorter: OptOp = None,
+            self, predicate: OptOp = None,
+            orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None,
-            mode: OptStr = None) -> Cursor:
-        return Cursor(
-            getter=self.row, predicate=predicate, sorter=sorter,
+            mode: OptStr = None) -> cursor.Cursor:
+        return cursor.Cursor(
+            getter=self.row, predicate=predicate,
+            orderby=orderby, reverse=reverse,
             batchsize=batchsize, mode=mode, parent=self)
 
-    def _create_header(self, columns: ColsDef) -> None:
+    def _build_record_class(self, columns: record.ColsDef) -> None:
         # Dynamically create a new record class
-        self._record = create_record_class(columns,
+        self._record = record.build(columns,
             newid=self._get_new_rowid,
             delete=self._remove_rowid,
             restore=self._append_rowid,
@@ -961,16 +513,16 @@ class Table(attrib.Container):
             revoke=self._remove_row_diff)
         self.truncate() # Initialize table data
 
-    def _create_record(self, data: RowLike) -> Record:
+    def _create_record(self, data: RowLike) -> Row:
         if isinstance(data, tuple):
             return self._record(*data)
         if isinstance(data, Mapping):
             return self._record(**data)
-        if isinstance(data, Record):
+        if isinstance(data, record.Record):
             keys = self.columns
             vals = tuple(getattr(data, key, None) for key in keys)
             return self._record(**dict(zip(keys, vals)))
-        raise InvalidTypeError("'data'", data, (tuple, list, Mapping, Record))
+        raise InvalidTypeError("'data'", data, RowLikeClasses)
 
     def _delete_header(self) -> None:
         self.truncate() # Delete table data
@@ -1015,21 +567,6 @@ class Table(attrib.Container):
         columns = columns or self.columns
         return operator.get_attrs(*columns, dtype=dtype)
 
-    def _create_sorter(
-            self, orderby: OrderByType, reverse: bool = False) -> OptOp:
-        if callable(orderby):
-            # TODO: check if orderby is a valid sorter
-            return orderby
-        if orderby is None and not reverse:
-            return None
-        if isinstance(orderby, str):
-            attrs = [orderby]
-        elif isinstance(orderby, (list, tuple)):
-            attrs = list(orderby)
-        else:
-            attrs = []
-        return operator.orderby_attrs(*attrs, reverse=reverse)
-
     def _get_new_rowid(self) -> int:
         return len(self._data)
 
@@ -1045,7 +582,7 @@ class Table(attrib.Container):
     def _get_fields(self) -> OptFieldTuple:
         if not hasattr(self, '_record') or not self._record:
             return None
-        return dataclasses.fields(self._record)
+        return record.get_fields(self._record)
 
     def _get_name(self) -> str:
         return self._name or self._default_name()
@@ -1074,12 +611,10 @@ class Table(attrib.Container):
 
     def _update_row_diff(self, rowid: int, **kwds: Any) -> None:
         row = self.row(rowid)
-        if not row:
-            raise RowLookupError(rowid)
-        new_row = dataclasses.replace(row, **kwds)
-        new_row._id = rowid # pylint: disable=W0212
-        new_row._state = row._state # pylint: disable=W0212
-        self._diff[rowid] = new_row
+        if not row: # Row has already been deleted
+            return
+        new = record.create_from(row, **kwds)
+        self._diff[rowid] = new
 
 #
 # Proxy Class

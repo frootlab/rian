@@ -7,14 +7,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import string
-from nemoa.db import table
+from nemoa.db import cursor, record, table
 from nemoa.test import Case, ModuleTestCase
 from nemoa.types import Any, StrList
 
-class TestTable(ModuleTestCase):
-    """Testcase for the module nemoa.db.table."""
+class TestCursor(ModuleTestCase):
+    """Testcase for the module nemoa.db.cursor."""
 
-    module = 'nemoa.db.table'
+    module = cursor.__name__
 
     def setUp(self) -> None:
         # Cursor modes
@@ -22,32 +22,20 @@ class TestTable(ModuleTestCase):
         for tmode in ['forward-only', 'scrollable', 'random']:
             for omode in ['dynamic', 'indexed', 'static']:
                 self.cursor_modes.append(' '.join([tmode, omode]))
+
         # Create test table
         self.columns = (
             ('uid', int),
             ('prename', str, {'default': ''}),
             ('name', str, {'default': ''}))
         self.table = table.Table('test', columns=self.columns)
+
         # Create test data
         letters = string.ascii_letters
         self.size = len(letters)
         self.table.insert( # type: ignore
             [(i + 1, letters[i], letters[-i]) for i in range(self.size)])
         self.table.commit()
-
-    def test_create_record_class(self) -> None:
-        # Check types
-        self.assertAllSubclass(table.create_record_class, table.Record, [
-            Case(args=(('id', 'name'), )),
-            Case(args=((('id', int), ('name', str)), )),
-            Case(args=(('id', ('type', type, {'default': str})), ))])
-        # Validate
-        Record = table.create_record_class((('id', int), ))
-        rec1 = Record(id=1) # type: ignore
-        self.assertEqual(getattr(rec1, '_id'), 0)
-        rec1 = Record(id=1) # type: ignore
-        self.assertEqual(getattr(rec1, '_id'), 1)
-        self.assertFalse(hasattr(rec1, '__dict__'))
 
     def test_Cursor(self) -> None:
         pass
@@ -57,10 +45,10 @@ class TestTable(ModuleTestCase):
             with self.subTest(mode=mode):
                 cur = self.table._create_cursor( # pylint: disable=W0212
                     mode=mode)
-                self.assertIsInstance(cur.fetch()[0], table.Record)
+                self.assertIsInstance(cur.fetch()[0], record.Record)
                 self.assertEqual(len(cur.fetch(4)), 4)
                 if mode.split()[0] == 'random':
-                    self.assertRaises(table.CursorModeError, cur.fetch, -1)
+                    self.assertRaises(cursor.CursorModeError, cur.fetch, -1)
                 else:
                     self.assertEqual(len(cur.fetch(-1)), self.size - 5)
                     self.assertEqual(cur.fetch(), [])
@@ -118,37 +106,48 @@ class TestTable(ModuleTestCase):
 
     def test_Cursor_sorter(self) -> None:
         for column in self.table.columns:
-            sorter = self.table._create_sorter( # pylint: disable=W0212
-                orderby=column, reverse=False)
-            rsorter = self.table._create_sorter( # pylint: disable=W0212
-                orderby=column, reverse=True)
             for mode in self.cursor_modes:
                 with self.subTest(mode=mode, orderby=column):
                     if (mode.split()[0] == 'random'
                         or mode.split()[1] != 'static'):
-                        self.assertRaises(table.CursorModeError,
+                        self.assertRaises(cursor.CursorModeError,
                             self.table._create_cursor, # pylint: disable=W0212
-                            mode=mode, sorter=sorter)
+                            mode=mode, orderby=column, reverse=False)
                         continue
                     cur = self.table._create_cursor( # pylint: disable=W0212
-                        mode=mode, sorter=sorter)
+                        mode=mode, orderby=column, reverse=False)
                     rcur = self.table._create_cursor( # pylint: disable=W0212
-                        mode=mode, sorter=rsorter)
+                        mode=mode, orderby=column, reverse=True)
                     self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
+
+class TestRecord(ModuleTestCase):
+    """Testcase for the module nemoa.db.record."""
+
+    module = record.__name__
+
+    def test_build(self) -> None:
+
+        # Check types
+        self.assertAllSubclass(record.build, record.Record, [
+            Case(args=(('id', 'name'), )),
+            Case(args=((('id', int), ('name', str)), )),
+            Case(args=(('id', ('type', type, {'default': str})), ))])
+            
+        # Validate
+        Record = record.build((('id', int), ))
+        rec1 = Record(id=1) # type: ignore
+        self.assertEqual(getattr(rec1, '_id'), 0)
+        rec1 = Record(id=1) # type: ignore
+        self.assertEqual(getattr(rec1, '_id'), 1)
+        self.assertFalse(hasattr(rec1, '__dict__'))
+
+class TestTable(ModuleTestCase):
+    """Testcase for the module nemoa.db.table."""
+
+    module = 'nemoa.db.table'
 
     def test_Table(self) -> None:
         pass
-
-    # def test_Table_select(self) -> None:
-    #     for dtype in [tuple, dict]:
-    #         mapper = self.table._create_mapper( # pylint: disable=W0212
-    #             None, dtype=dtype)
-    #         for mode in self.cursor_modes:
-    #             with self.subTest(mode=mode, dtype=dtype):
-    #                 cur = self.table._create_cursor( # pylint: disable=W0212
-    #                     mode=mode, mapper=mapper)
-    #                 row = cur.fetch()[0]
-    #                 self.assertEqual(type(row), dtype)
 
     def test_Table_create(self) -> None:
         kwds: dict
