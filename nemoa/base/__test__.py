@@ -68,15 +68,41 @@ class TestOperator(ModuleTestCase):
 
     module = operator.__name__
 
-    def test_get_attrs(self) -> Any:
-        attrs = {'name': 'test', 'group': 1}
-        setter = operator.set_attrs(**attrs)
-        getter = operator.get_attrs(*attrs.keys(), dtype=dict)
-        self.assertEqual(getter(setter(list)), attrs)
+    def test_create_getter(self) -> Any:
+        class Object:
+            def __init__(self, **attrs: Any) -> None:
+                self.__dict__ = attrs
+        obj = Object(name='test', id=1)
+        dic = {'name': 'test', 'id': 1}
+        seq = ['test', 1]
+        with self.subTest(domain=object, target=dict):
+            getter = operator.create_getter(
+                'name', 'id', domain=object, target=dict)
+            self.assertEqual(getter(obj), {'name': 'test', 'id': 1})
+        with self.subTest(domain=object, target=tuple):
+            getter = operator.create_getter(
+                'name', 'id', domain=object, target=tuple)
+            self.assertEqual(getter(obj), ('test', 1))
+        with self.subTest(domain=dict, target=dict):
+            getter = operator.create_getter(
+                'name', 'id', domain=dict, target=dict)
+            self.assertEqual(getter(dic), {'name': 'test', 'id': 1})
+        with self.subTest(domain=dict, target=tuple):
+            getter = operator.create_getter(
+                'name', 'id', domain=dict, target=tuple)
+            self.assertEqual(getter(dic), ('test', 1))
+        with self.subTest(domain=list, target=dict):
+            getter = operator.create_getter(
+                0, 1, domain=list, target=dict)
+            self.assertEqual(getter(seq), {0: 'test', 1: 1})
+        with self.subTest(domain=list, target=tuple):
+            getter = operator.create_getter(
+                0, 1, domain=list, target=tuple)
+            self.assertEqual(getter(seq), ('test', 1))
 
-    def test_set_attrs(self) -> None:
+    def test_create_setter(self) -> None:
         attrs = {'name': 'test', 'group': 1}
-        setter = operator.set_attrs(**attrs)
+        setter = operator.create_setter(**attrs)
         op = lambda x: x # identity operator
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
@@ -108,16 +134,16 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(len(group(seq)), 10)
             self.assertEqual(len(group(seq)[0]), 1)
 
-    def test_create_sort(self) -> None:
+    def test_create_sorter(self) -> None:
         class Obj:
             pass
         objs = [Obj() for i in range(10)]
         for i in range(10):
             objs[i].x = i # type: ignore
             objs[i].y = -i # type: ignore
-        getx = operator.get_attrs('x')
-        sortx = operator.create_sort('x')
-        sorty = operator.create_sort('y', reverse=True)
+        getx = operator.create_getter('x')
+        sortx = operator.create_sorter('x')
+        sorty = operator.create_sorter('y', reverse=True)
         self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
         self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
 
@@ -154,13 +180,13 @@ class TestOtree(ModuleTestCase):
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @operator.set_attrs(name='a', group=1)
+            @operator.create_setter(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @operator.set_attrs(name='b', group=2)
+            @operator.create_setter(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @operator.set_attrs(name='b', group=2)
+            @operator.create_setter(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()
