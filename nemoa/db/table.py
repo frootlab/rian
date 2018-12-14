@@ -7,15 +7,15 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from typing import NewType
-from nemoa.base import attrib, check, operator, pattern
+from nemoa.base import attrib, check, pattern
 from nemoa.db import record, cursor
 from nemoa.errors import RowLookupError, ProxyError
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Tuple, StrList, StrTuple
-from nemoa.types import OptOp, Callable
+from nemoa.types import OptOp
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
 from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
-from nemoa.types import AnyOp, SeqOp, OptType
+from nemoa.types import SeqOp, OptType
 
 #
 # Structural Types
@@ -25,7 +25,6 @@ from nemoa.types import AnyOp, SeqOp, OptType
 OrderByType = Optional[Union[str, StrList, StrTuple, SeqOp]]
 OptContainer = Optional[attrib.Container]
 OptMappingProxy = Optional[MappingProxy]
-AggAttr = Union[str, Tuple[str, AnyOp]]
 
 # Fields
 OptFieldTuple = Optional[Tuple[record.Field, ...]]
@@ -344,7 +343,8 @@ class Table(attrib.Container):
         .. _WHERE: https://en.wikipedia.org/wiki/Where_(SQL)
 
         """
-        for row in self._create_cursor(predicate=where):
+        cur = cursor.Cursor(getter=self.row, predicate=where, parent=self)
+        for row in cur:
             row._update(**kwds) # pylint: disable=W0212
 
     def delete(self, where: OptOp = None) -> None:
@@ -364,14 +364,15 @@ class Table(attrib.Container):
         .. _WHERE: https://en.wikipedia.org/wiki/Where_(SQL)
 
         """
-        for row in self._create_cursor(predicate=where):
+        cur = cursor.Cursor(getter=self.row, predicate=where, parent=self)
+        for row in cur:
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, columns: OptStrTuple = None, where: OptOp = None,
+            self, *columns: cursor.ColDef, where: OptOp = None,
+            groupby: cursor.GroupByType = None, dtype: OptType = None,
             orderby: OrderByType = None, reverse: bool = False,
-            dtype: type = tuple, batchsize: OptInt = None,
-            mode: OptStr = None) -> RowLikeList:
+            batchsize: OptInt = None, mode: OptStr = None) -> cursor.Cursor:
         """Get cursor on a specified result set of records from table.
 
         This method is motivated by the SQL `SELECT`_ statement and creates
@@ -379,9 +380,17 @@ class Table(attrib.Container):
         properties.
 
         Args:
-            columns: Optional tuple of column names, that are known to the
-                table. By default the columns are taken from the attribute
-                :attr:`.columns`.
+            *columns: Optional columns of the result set. If provided the
+                columns individually can be given can be given in one of the
+                following formats: (1) In order to provide the content of the
+                column the column has to be given by a string `<name>`, which is
+                required to be known to the underlying object (table, view,
+                etc.). (2) In order to aggregate the result set by using
+                `groupby`, any non-grouping column has to be given as a tuple
+                `(<name>, <operator>)`. Thereby `<operator>` is required to by a
+                sequence operator, like :func:`max`, :func:`min` or :func:`sum`
+                etc. If no colums is given, the arguments `groupby` and `dtype`
+                are ignored, and the result set is returned as raw records.
             where: Optional filter operator, which determines, if a row is
                 included within the result set or not. By default all rows are
                 included within the result set.
@@ -415,17 +424,18 @@ class Table(attrib.Container):
         .. _SELECT: https://en.wikipedia.org/wiki/Select_(SQL)
 
         """
+        # Check arguments and set default values
+        if columns:
+            check.is_subset(
+                "'columns'", set(columns), "table columns", set(self.columns))
+        else:
+            columns = self.columns
+
         # Create cursor, which specifies the result set
-        cur = self._create_cursor(
-            predicate=where, orderby=orderby, reverse=reverse,
-            batchsize=batchsize, mode=mode)
-
-        # Create grouping operator for parameter 'groupby'
-
-        # Create mapping operator with respect to 'columns' and 'dtype'
-        mapper = self._create_mapper(columns, dtype=dtype)
-
-        return list(map(mapper, cur)) # Map result set
+        return cursor.create(*columns,
+            getter=self.row, predicate=where, orderby=orderby, reverse=reverse,
+            groupby=groupby, batchsize=batchsize, dtype=dtype, mode=mode,
+            parent=self)
 
     def get_metadata(self, key: str) -> Any:
         """Get single entry from table metadata.
@@ -493,16 +503,6 @@ class Table(attrib.Container):
         del self._metadata_proxy
         del self._metadata
 
-    def _create_cursor(
-            self, predicate: OptOp = None,
-            orderby: OrderByType = None, reverse: bool = False,
-            batchsize: OptInt = None,
-            mode: OptStr = None) -> cursor.Cursor:
-        return cursor.Cursor(
-            getter=self.row, predicate=predicate,
-            orderby=orderby, reverse=reverse,
-            batchsize=batchsize, mode=mode, parent=self)
-
     def _build_record_class(self, columns: record.ColsDef) -> None:
         # Dynamically create a new record class
         self._record = record.build(columns,
@@ -527,45 +527,6 @@ class Table(attrib.Container):
     def _delete_header(self) -> None:
         self.truncate() # Delete table data
         del self._record # Delete record constructor
-
-    def _create_grouper(self, *attrs: AggAttr, dtype: OptType = tuple) -> SeqOp:
-        names: StrList = []
-        groupby: StrList = []
-        aggop: list = []
-        atrepr: StrList = []
-        for attr in attrs:
-            if isinstance(attr, str):
-                groupby.append(attr)
-                names.append(attr)
-                aggop.append(lambda seq: seq[0])
-                atrepr.append(attr)
-            elif isinstance(attr, tuple):
-                names.append(attr[0])
-                aggop.append(attr[1])
-                atrepr.append(f'{attr[1].__name__}({attr[0]})')
-        if not names:
-            return lambda seq: seq
-        trans: SeqOp = lambda mat: tuple(list(seq) for seq in zip(*mat))
-        apply: SeqOp = lambda mat: tuple(op(seq) for op, seq in zip(aggop, mat))
-        getter: SeqOp = operator.get_attrs(*names, dtype=tuple)
-        rowagg: SeqOp = lambda seq: apply(trans(list(map(getter, seq))))
-        grouper: SeqOp = operator.groupby_attrs(*groupby)
-        aggreg: SeqOp = lambda seq: list(map(rowagg, grouper(seq)))
-        if dtype == tuple:
-            return aggreg
-        if dtype == dict:
-            return lambda seq: \
-                list(dict(zip(atrepr, row)) for row in aggreg(seq))
-        raise ValueError()
-
-    def _create_mapper(
-            self, columns: OptStrTuple, dtype: type = tuple) -> Callable:
-        if columns:
-            check.is_subset(
-                "'columns'", set(columns),
-                "table column names", set(self.columns))
-        columns = columns or self.columns
-        return operator.get_attrs(*columns, dtype=dtype)
 
     def _get_new_rowid(self) -> int:
         return len(self._data)

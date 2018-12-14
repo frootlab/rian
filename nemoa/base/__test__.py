@@ -81,7 +81,7 @@ class TestOperator(ModuleTestCase):
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
-    def test_groupby_attrs(self) -> None:
+    def test_create_grouper(self) -> None:
         class Obj:
             def __init__(self, i: int, name: str) -> None:
                 self.id = i
@@ -89,26 +89,26 @@ class TestOperator(ModuleTestCase):
         seq = list(Obj(i, f'{i>5}') for i in range(10))
         attrs: tuple = tuple()
         with self.subTest(attrs=attrs):
-            group = operator.groupby_attrs(*attrs)
+            group = operator.create_grouper(*attrs)
             self.assertEqual(len(group(seq)), 1)
             self.assertEqual(len(group(seq)[0]), 10)
         attrs = ('name', )
         with self.subTest(attrs=attrs):
-            group = operator.groupby_attrs(*attrs)
+            group = operator.create_grouper(*attrs)
             self.assertEqual(len(group(seq)), 2)
             self.assertEqual(len(group(seq)[0]), 6)
         attrs = ('id', )
         with self.subTest(attrs=attrs):
-            group = operator.groupby_attrs(*attrs)
+            group = operator.create_grouper(*attrs)
             self.assertEqual(len(group(seq)), 10)
             self.assertEqual(len(group(seq)[0]), 1)
         attrs = ('name', 'id')
         with self.subTest(attrs=attrs):
-            group = operator.groupby_attrs(*attrs)
+            group = operator.create_grouper(*attrs)
             self.assertEqual(len(group(seq)), 10)
             self.assertEqual(len(group(seq)[0]), 1)
 
-    def test_orderby_attrs(self) -> None:
+    def test_create_sort(self) -> None:
         class Obj:
             pass
         objs = [Obj() for i in range(10)]
@@ -116,8 +116,8 @@ class TestOperator(ModuleTestCase):
             objs[i].x = i # type: ignore
             objs[i].y = -i # type: ignore
         getx = operator.get_attrs('x')
-        sortx = operator.orderby_attrs('x')
-        sorty = operator.orderby_attrs('y', reverse=True)
+        sortx = operator.create_sort('x')
+        sorty = operator.create_sort('y', reverse=True)
         self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
         self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
 

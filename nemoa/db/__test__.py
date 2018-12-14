@@ -37,14 +37,17 @@ class TestCursor(ModuleTestCase):
             [(i + 1, letters[i], letters[-i]) for i in range(self.size)])
         self.table.commit()
 
+    def create_cursor(self, *args: Any, **kwds: Any) -> cursor.Cursor:
+        return cursor.create(
+            *args, getter=self.table.row, parent=self.table, **kwds)
+
     def test_Cursor(self) -> None:
         pass
 
     def test_Cursor_fetch(self) -> None:
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
-                cur = self.table._create_cursor( # pylint: disable=W0212
-                    mode=mode)
+                cur = self.create_cursor(mode=mode)
                 self.assertIsInstance(cur.fetch()[0], record.Record)
                 self.assertEqual(len(cur.fetch(4)), 4)
                 if mode.split()[0] == 'random':
@@ -56,8 +59,7 @@ class TestCursor(ModuleTestCase):
     def test_Cursor_reset(self) -> None:
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
-                cur = self.table._create_cursor( # pylint: disable=W0212
-                    mode=mode)
+                cur = self.create_cursor(mode=mode)
                 if mode.split()[0] == 'random':
                     self.assertNotRaises(Exception, cur.reset)
                 else:
@@ -69,16 +71,14 @@ class TestCursor(ModuleTestCase):
     def test_Cursor_batchsize(self) -> None:
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
-                cur = self.table._create_cursor( # pylint: disable=W0212
-                    mode=mode, batchsize=5)
+                cur = self.create_cursor(mode=mode, batchsize=5)
                 self.assertEqual(len(cur.fetch()), 5)
                 cur.batchsize = 1
                 self.assertEqual(len(cur.fetch()), 1)
                 if mode.split()[0] != 'random':
                     cur.batchsize = -1
                     self.assertEqual(len(cur.fetch()), self.size - 6)
-                cur = self.table._create_cursor( # pylint: disable=W0212
-                    mode=mode, batchsize=100)
+                cur = self.create_cursor(mode=mode, batchsize=100)
                 if mode.split()[0] == 'random':
                     self.assertEqual(len(cur.fetch()), 100)
                 else:
@@ -88,37 +88,46 @@ class TestCursor(ModuleTestCase):
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
                 predicate = lambda row: row._id < 5 # pylint: disable=W0212
-                cur = self.table._create_cursor( # pylint: disable=W0212
-                    mode=mode, predicate=predicate)
+                cur = self.create_cursor(mode=mode, predicate=predicate)
                 size = len(cur.fetch(10))
                 if mode.split()[0] == 'random':
                     self.assertEqual(size, 10)
                 else:
                     self.assertEqual(size, 5)
                 predicate = lambda row: row.name in 'abc'
-                cur = self.table._create_cursor( # pylint: disable=W0212
-                    mode=mode, predicate=predicate)
+                cur = self.create_cursor(mode=mode, predicate=predicate)
                 size = len(cur.fetch(10))
                 if mode.split()[0] == 'random':
                     self.assertEqual(size, 10)
                 else:
                     self.assertEqual(size, 3)
 
-    def test_Cursor_sorter(self) -> None:
+    def test_Cursor_orderby(self) -> None:
         for column in self.table.columns:
             for mode in self.cursor_modes:
                 with self.subTest(mode=mode, orderby=column):
                     if (mode.split()[0] == 'random'
                         or mode.split()[1] != 'static'):
-                        self.assertRaises(cursor.CursorModeError,
-                            self.table._create_cursor, # pylint: disable=W0212
+                        self.assertRaises(
+                            cursor.CursorModeError, self.create_cursor,
                             mode=mode, orderby=column, reverse=False)
                         continue
-                    cur = self.table._create_cursor( # pylint: disable=W0212
+                    cur = self.create_cursor(
                         mode=mode, orderby=column, reverse=False)
-                    rcur = self.table._create_cursor( # pylint: disable=W0212
+                    rcur = self.create_cursor(
                         mode=mode, orderby=column, reverse=True)
                     self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
+
+    # def test_Cursor_mapper(self) -> None:
+    #     for dtype in [tuple, dict]:
+    #         mapper = self.table._create_mapper( # pylint: disable=W0212
+    #             None, dtype=dtype)
+    #         for mode in self.cursor_modes:
+    #             with self.subTest(mode=mode, dtype=dtype):
+    #                 cur = self._create_cursor( # pylint: disable=W0212
+    #                     mode=mode, mapper=mapper)
+    #                 row = cur.fetch()[0]
+    #                 self.assertEqual(type(row), dtype)
 
 class TestRecord(ModuleTestCase):
     """Testcase for the module nemoa.db.record."""
@@ -132,7 +141,7 @@ class TestRecord(ModuleTestCase):
             Case(args=(('id', 'name'), )),
             Case(args=((('id', int), ('name', str)), )),
             Case(args=(('id', ('type', type, {'default': str})), ))])
-            
+
         # Validate
         Record = record.build((('id', int), ))
         rec1 = Record(id=1) # type: ignore
