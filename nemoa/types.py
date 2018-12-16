@@ -124,6 +124,7 @@ IntTuple = Tuple[int, ...]
 IntList = List[int]
 IntDict = Dict[int, Any]
 FloatPair = Tuple[float, float]
+StrIter = Iterable[str]
 
 # Unions of Collections of Literals
 StrOrDict = Union[str, AnyDict]
@@ -140,6 +141,7 @@ OptStrTuple = Optional[StrTuple]
 OptStrOrDict = Optional[StrOrDict]
 OptIntList = Optional[IntList]
 OptIntTuple = Optional[IntTuple]
+OptStrIter = Optional[StrIter]
 
 # Compounds of Literals and Collections of Literals
 StrPairDict = Dict[StrPair, Any]
