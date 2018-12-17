@@ -129,6 +129,24 @@ class TestOperator(ModuleTestCase):
         sorter = operator.create_sorter('y', reverse=True)
         self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
 
+    def test_create_aggregator(self) -> None:
+        seq = list(mock.Mock() for i in range(10))
+        for i, obj in enumerate(seq):
+            obj.configure_mock(id=i, bool=bool(i>5))
+        groups = operator.create_grouper('bool')
+        fields = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+        with self.subTest(fields=fields, target=tuple):
+            aggregate = operator.create_aggregator(*fields, target=tuple)
+            self.assertEqual(
+                list(aggregate(g) for g in groups(seq)),
+                [(False, 6, 5), (True, 4, 9)])
+        with self.subTest(fields=fields, target=dict):
+            aggregate = operator.create_aggregator(*fields, target=dict)
+            self.assertEqual(
+                list(aggregate(g) for g in groups(seq)), [
+                {'bool': False, 'count': 6, 'max(id)': 5},
+                {'bool': True, 'count': 4, 'max(id)': 9}])
+
     def test_create_grouper(self) -> None:
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
