@@ -71,7 +71,7 @@ class TestOperator(ModuleTestCase):
     def test_create_getter(self) -> Any:
         class Object:
             def __init__(self, **attrs: Any) -> None:
-                self.__dict__ = attrs
+                self.__dict__.update(attrs)
         obj = Object(name='test', id=1)
         dic = {'name': 'test', 'id': 1}
         seq = ['test', 1]
@@ -100,9 +100,27 @@ class TestOperator(ModuleTestCase):
                 0, 1, domain=list, target=tuple)
             self.assertEqual(getter(seq), ('test', 1))
 
-    def test_create_setter(self) -> None:
-        attrs = {'name': 'test', 'group': 1}
-        setter = operator.create_setter(**attrs)
+    def test_create_setter(self) -> Any:
+        attrs = {'name': 'monty', 'id': 42}
+        items = list(attrs.items())
+        with self.subTest(domain=object):
+            class Object:
+                def __init__(self, **attrs: Any) -> None:
+                    self.__dict__.update(attrs)
+            obj = Object()
+            operator.create_setter(*items, domain=object)(obj)
+            self.assertEqual((obj.name, obj.id), ('monty', 42)) # type: ignore
+        with self.subTest(domain=dict):
+            dic: dict = {}
+            operator.create_setter(*items, domain=dict)(dic)
+            self.assertEqual((dic['name'], dic['id']), ('monty', 42))
+        with self.subTest(domain=list):
+            seq: list = [None] * 2
+            operator.create_setter((0, 'monty'), (1, 42), domain=list)(seq)
+            self.assertEqual((seq[0], seq[1]), ('monty', 42))
+
+    def test_create_wrapper(self) -> None:
+        setter = operator.create_wrapper(name='test', group=1)
         op = lambda x: x # identity operator
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
@@ -180,13 +198,13 @@ class TestOtree(ModuleTestCase):
     @staticmethod
     def get_test_object() -> Any:
         class Base:
-            @operator.create_setter(name='a', group=1)
+            @operator.create_wrapper(name='a', group=1)
             def geta(self) -> None:
                 pass
-            @operator.create_setter(name='b', group=2)
+            @operator.create_wrapper(name='b', group=2)
             def getb(self) -> None:
                 pass
-            @operator.create_setter(name='b', group=2)
+            @operator.create_wrapper(name='b', group=2)
             def setb(self) -> None:
                 pass
         return Base()
