@@ -22,9 +22,7 @@ ttylib = tty.get_lib().__name__
 #
 
 class TestTTY(ModuleTestCase):
-    """Testcase for the module nemoa.core.tty."""
-
-    module = 'nemoa.core.tty'
+    module = tty
 
     def test_get_lib(self) -> None:
         self.assertIsInstance(tty.get_lib(), Module)

@@ -7,15 +7,16 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import datetime
+from unittest import mock
 from pathlib import Path
 import typing
 import numpy as np
-from nemoa.base import array, binary, check, env, literal, operator, otree, pkg
-from nemoa.base import stack
-from nemoa.base import nbase, mapping
+from nemoa.base import array, binary, check, env, literal, mapping
+from nemoa.base import operator, otree, pkg, stack
+from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
-from nemoa.types import OrderedDict, NaN
+from nemoa.types import OrderedDict, NaN, Method
 
 #
 # Module Variables
@@ -28,9 +29,7 @@ osname = env.get_osname()
 #
 
 class TestArray(ModuleTestCase):
-    """Testcase for the module nemoa.base.array."""
-
-    module = 'nemoa.base.array'
+    module = array
 
     def setUp(self) -> None:
         self.x = np.array([[NaN, 1.], [NaN, NaN]])
@@ -64,122 +63,112 @@ class TestArray(ModuleTestCase):
         self.assertEqual(new['z'][0], 'a')
 
 class TestOperator(ModuleTestCase):
-    """Testcase for the module nemoa.base.operator."""
-
-    module = operator.__name__
+    module = operator
 
     def test_create_getter(self) -> Any:
-        class Object:
-            def __init__(self, **attrs: Any) -> None:
-                self.__dict__.update(attrs)
-        obj = Object(name='test', id=1)
-        dic = {'name': 'test', 'id': 1}
-        seq = ['test', 1]
-        with self.subTest(domain=object, target=dict):
-            getter = operator.create_getter(
-                'name', 'id', domain=object, target=dict)
-            self.assertEqual(getter(obj), {'name': 'test', 'id': 1})
-        with self.subTest(domain=object, target=tuple):
-            getter = operator.create_getter(
-                'name', 'id', domain=object, target=tuple)
-            self.assertEqual(getter(obj), ('test', 1))
-        with self.subTest(domain=dict, target=dict):
-            getter = operator.create_getter(
-                'name', 'id', domain=dict, target=dict)
-            self.assertEqual(getter(dic), {'name': 'test', 'id': 1})
-        with self.subTest(domain=dict, target=tuple):
-            getter = operator.create_getter(
-                'name', 'id', domain=dict, target=tuple)
-            self.assertEqual(getter(dic), ('test', 1))
-        with self.subTest(domain=list, target=dict):
-            getter = operator.create_getter(
-                0, 1, domain=list, target=dict)
-            self.assertEqual(getter(seq), {0: 'test', 1: 1})
-        with self.subTest(domain=list, target=tuple):
-            getter = operator.create_getter(
-                0, 1, domain=list, target=tuple)
-            self.assertEqual(getter(seq), ('test', 1))
+        with self.subTest(domain=object):
+            obj = mock.Mock()
+            obj.configure_mock(name='test', id=1)
+            with self.subTest(target=dict):
+                getter = operator.create_getter(
+                    'name', 'id', domain=object, target=dict)
+                self.assertEqual(getter(obj), {'name': 'test', 'id': 1})
+            with self.subTest(target=tuple):
+                getter = operator.create_getter(
+                    'name', 'id', domain=object, target=tuple)
+                self.assertEqual(getter(obj), ('test', 1))
+        with self.subTest(domain=dict):
+            dic = {'name': 'test', 'id': 1}
+            with self.subTest(target=dict):
+                getter = operator.create_getter(
+                    'name', 'id', domain=dict, target=dict)
+                self.assertEqual(getter(dic), {'name': 'test', 'id': 1})
+            with self.subTest(target=tuple):
+                getter = operator.create_getter(
+                    'name', 'id', domain=dict, target=tuple)
+                self.assertEqual(getter(dic), ('test', 1))
+        with self.subTest(domain=list):
+            seq = ['test', 1]
+            with self.subTest(target=dict):
+                getter = operator.create_getter(
+                    0, 1, domain=list, target=dict)
+                self.assertEqual(getter(seq), {0: 'test', 1: 1})
+            with self.subTest(target=tuple):
+                getter = operator.create_getter(
+                    0, 1, domain=list, target=tuple)
+                self.assertEqual(getter(seq), ('test', 1))
 
     def test_create_setter(self) -> Any:
-        attrs = {'name': 'monty', 'id': 42}
-        items = list(attrs.items())
+        items = [('name', 'monty'), ('id', 42)]
         with self.subTest(domain=object):
-            class Object:
-                def __init__(self, **attrs: Any) -> None:
-                    self.__dict__.update(attrs)
-            obj = Object()
+            obj = mock.Mock()
             operator.create_setter(*items, domain=object)(obj)
-            self.assertEqual((obj.name, obj.id), ('monty', 42)) # type: ignore
+            self.assertEqual((obj.name, obj.id), ('monty', 42))
         with self.subTest(domain=dict):
-            dic: dict = {}
+            dic = dict()
             operator.create_setter(*items, domain=dict)(dic)
             self.assertEqual((dic['name'], dic['id']), ('monty', 42))
         with self.subTest(domain=list):
-            seq: list = [None] * 2
+            seq = [None] * 2
             operator.create_setter((0, 'monty'), (1, 42), domain=list)(seq)
             self.assertEqual((seq[0], seq[1]), ('monty', 42))
 
     def test_create_wrapper(self) -> None:
         setter = operator.create_wrapper(name='test', group=1)
-        op = lambda x: x # identity operator
+        op = lambda *args: None # null operator
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
     def test_create_sorter(self) -> None:
-        class Obj:
-            pass
-        objs = [Obj() for i in range(10)]
-        for i in range(10):
-            objs[i].x = i # type: ignore
-            objs[i].y = -i # type: ignore
+        seq = list(mock.Mock() for i in range(10))
+        for i, obj in enumerate(seq):
+            obj.configure_mock(x=i, y=-i)
         getx = operator.create_getter('x')
-        sortx = operator.create_sorter('x')
-        sorty = operator.create_sorter('y', reverse=True)
-        self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
-        self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
+        sorter = operator.create_sorter('x')
+        self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
+        sorter = operator.create_sorter('y', reverse=True)
+        self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
 
     def test_create_grouper(self) -> None:
-        class Obj:
-            def __init__(self, i: int, name: str) -> None:
-                self.id = i
-                self.name = name
-        seq = list(Obj(i, f'{i>5}') for i in range(10))
+        seq = list(mock.Mock() for i in range(10))
+        for i, obj in enumerate(seq):
+            obj.configure_mock(id=i, name=f'{i>5}')
         keys: tuple = tuple()
         with self.subTest(keys=keys):
-            group = operator.create_grouper(*keys)
-            self.assertEqual(len(group(seq)), 1)
-            self.assertEqual(len(group(seq)[0]), 10)
+            grouper = operator.create_grouper(*keys)
+            self.assertEqual(len(grouper(seq)), 1)
+            self.assertEqual(len(grouper(seq)[0]), 10)
         keys = ('name', )
         with self.subTest(keys=keys):
-            group = operator.create_grouper(*keys)
-            self.assertEqual(len(group(seq)), 2)
-            self.assertEqual(len(group(seq)[0]), 6)
+            grouper = operator.create_grouper(*keys)
+            self.assertEqual(len(grouper(seq)), 2)
+            self.assertEqual(len(grouper(seq)[0]), 6)
         with self.subTest(keys=keys, presorted=True):
-            group = operator.create_grouper(*keys, presorted=True)
-            self.assertEqual(len(group(seq)), 2)
-            self.assertEqual(len(group(seq)[0]), 6)
+            grouper = operator.create_grouper(*keys, presorted=True)
+            self.assertEqual(len(grouper(seq)), 2)
+            self.assertEqual(len(grouper(seq)[0]), 6)
         keys = ('id', )
         with self.subTest(keys=keys):
-            group = operator.create_grouper(*keys)
-            self.assertEqual(len(group(seq)), 10)
-            self.assertEqual(len(group(seq)[0]), 1)
+            grouper = operator.create_grouper(*keys)
+            self.assertEqual(len(grouper(seq)), 10)
+            self.assertEqual(len(grouper(seq)[0]), 1)
         keys = ('name', 'id')
         with self.subTest(keys=keys):
-            group = operator.create_grouper(*keys)
-            self.assertEqual(len(group(seq)), 10)
-            self.assertEqual(len(group(seq)[0]), 1)
-
-    def test_evaluate(self) -> None:
-        func = operator.get_parameters
-        self.assertAllEqual(operator.evaluate, [
-            Case(args=(func, list), value=OrderedDict()),
-            Case(args=(func, list), kwds={'test': True}, value=OrderedDict())])
+            grouper = operator.create_grouper(*keys)
+            self.assertEqual(len(grouper(seq)), 10)
+            self.assertEqual(len(grouper(seq)[0]), 1)
 
     def test_compose(self) -> None:
         f = lambda x: x + 1
         g = lambda x: x - 1
         fg = operator.compose(f, g)
         self.assertEqual(operator.evaluate(fg, 1), 1)
+
+    def test_evaluate(self) -> None:
+        func = operator.get_parameters
+        self.assertAllEqual(operator.evaluate, [
+            Case(args=(func, list), value=OrderedDict()),
+            Case(args=(func, list), kwds={'test': True}, value=OrderedDict())])
 
     def test_get_parameters(self) -> None:
         func = operator.get_parameters
@@ -195,23 +184,7 @@ class TestOperator(ModuleTestCase):
             ('f', (1.0, 'a'), {'b': 2}))
 
 class TestOtree(ModuleTestCase):
-    """Testcase for the module nemoa.base.otree."""
-
-    module = 'nemoa.base.otree'
-
-    @staticmethod
-    def get_test_object() -> Any:
-        class Base:
-            @operator.create_wrapper(name='a', group=1)
-            def geta(self) -> None:
-                pass
-            @operator.create_wrapper(name='b', group=2)
-            def getb(self) -> None:
-                pass
-            @operator.create_wrapper(name='b', group=2)
-            def setb(self) -> None:
-                pass
-        return Base()
+    module = otree
 
     def test_has_base(self) -> None:
         self.assertAllEqual(otree.has_base, [
@@ -299,16 +272,17 @@ class TestOtree(ModuleTestCase):
                 value='list')])
 
     def test_get_methods(self) -> None:
-        obj = self.get_test_object()
+        obj = mock.Mock()
+        obj.geta.configure_mock(__class__=Method, name='a', group=1)
+        obj.getb.configure_mock(__class__=Method, name='b', group=2)
+        obj.setb.configure_mock(__class__=Method, name='b', group=2)
         names = otree.get_methods(obj, pattern='get*').keys()
         self.assertEqual(names, {'geta', 'getb'})
         names = otree.get_methods(obj, pattern='*b').keys()
         self.assertEqual(names, {'getb', 'setb'})
 
 class TestCheck(ModuleTestCase):
-    """Testcase for the module nemoa.base.check."""
-
-    module = 'nemoa.base.check'
+    module = check
 
     def test_has_type(self) -> None:
         self.assertNoneRaises(TypeError, check.has_type, [
@@ -467,9 +441,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', [1, 2]), kwds={'min_size': 3, 'max_size': 5})])
 
 class TestEnv(ModuleTestCase):
-    """Testcase for the module nemoa.base.env."""
-
-    module = 'nemoa.base.env'
+    module = env
 
     def setUp(self) -> None:
         self.sys_dirs = ['home', 'cwd']
@@ -703,9 +675,7 @@ class TestEnv(ModuleTestCase):
         self.assertFalse(dirpath.is_dir())
 
 class TestNbase(ModuleTestCase):
-    """Testcase for the module nemoa.base.nbase."""
-
-    module = 'nemoa.base.nbase'
+    module = nbase
 
     def test_ObjectIP(self) -> None:
         obj = nbase.ObjectIP()
@@ -715,9 +685,7 @@ class TestNbase(ModuleTestCase):
         self.assertNotIn('%', obj.path)
 
 class TestBinary(ModuleTestCase):
-    """Testcase for the module nemoa.base.binary."""
-
-    module = 'nemoa.base.binary'
+    module = binary
 
     def test_as_bytes(self) -> None:
         self.assertEqual(binary.as_bytes(b'test'), b'test')
@@ -770,9 +738,7 @@ class TestBinary(ModuleTestCase):
             self.assertEqual(binary.unpack(data, compressed=iscomp), obj)
 
 class TestNdict(ModuleTestCase):
-    """Testcase for the module nemoa.base.mapping."""
-
-    module = 'nemoa.base.mapping'
+    module = mapping
 
     def test_select(self) -> None:
         self.assertTrue(
@@ -818,9 +784,7 @@ class TestNdict(ModuleTestCase):
             {1: 'ab', 2: 2})
 
 class TestLiteral(ModuleTestCase):
-    """Testcase for the module nemoa.base.literal."""
-
-    module = 'nemoa.base.literal'
+    module = literal
 
     def test_as_path(self) -> None:
         self.assertAllEqual(literal.as_path, [
@@ -882,9 +846,7 @@ class TestLiteral(ModuleTestCase):
             Case(args=(repr(1j), ), value=complex)])
 
 class TestStack(ModuleTestCase):
-    """Testcase for the module nemoa.base.stack."""
-
-    module = stack.__name__
+    module = stack
 
     def test_get_caller_module_name(self) -> None:
         name = stack.get_caller_module_name()
@@ -900,9 +862,7 @@ class TestStack(ModuleTestCase):
 
 
 class TestPkg(ModuleTestCase):
-    """Testcase for the module nemoa.base.pkg."""
-
-    module = 'nemoa.base.pkg'
+    module = pkg
 
     def test_has_attr(self) -> None:
         pass # Function is testet in otree.get_module

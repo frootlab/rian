@@ -12,9 +12,7 @@ from nemoa.math import curve, category, graph, matrix, regression, vector
 from nemoa.test import ModuleTestCase, MathTestCase
 
 class TestCategory(ModuleTestCase):
-    """Testcase for the module nemoa.math.category."""
-
-    module = 'nemoa.math.category'
+    module = category
 
     def test_search(self) -> None:
         self.assertEqual(
@@ -66,9 +64,7 @@ class TestCategory(ModuleTestCase):
             getattr(test_association, 'category', None), 'association')
 
 class TestCurve(MathTestCase, ModuleTestCase):
-    """Testcase for the module nemoa.math.curve."""
-
-    module = 'nemoa.math.curve'
+    module = curve
 
     def setUp(self) -> None:
         self.x = np.array([[0.0, 0.5], [1.0, -1.0]])
@@ -160,9 +156,7 @@ class TestCurve(MathTestCase, ModuleTestCase):
         self.assertCheckSum(curve.multilogistic, self.x, 0.500091)
 
 class TestVector(MathTestCase, ModuleTestCase):
-    """Testcase for the module nemoa.math.vector."""
-
-    module = 'nemoa.math.vector'
+    module = vector
 
     def test_norms(self) -> None:
         norms = vector.norms()
@@ -233,9 +227,7 @@ class TestVector(MathTestCase, ModuleTestCase):
         self.assertIsVectorDistance(vector.dist_euclid)
 
 class TestMatrix(MathTestCase, ModuleTestCase):
-    """Testcase for the module nemoa.math.matrix."""
-
-    module = 'nemoa.math.matrix'
+    module = matrix
 
     def test_norms(self) -> None:
         norms = matrix.norms()
@@ -276,9 +268,7 @@ class TestMatrix(MathTestCase, ModuleTestCase):
                     self.assertIsMatrixDistance(matrix.dist_pq, p=p, q=q)
 
 class TestRegr(MathTestCase, ModuleTestCase):
-    """Testcase for the module nemoa.math.regression."""
-
-    module = 'nemoa.math.regression'
+    module = regression
 
     def test_errors(self) -> None:
         errors = regression.errors()

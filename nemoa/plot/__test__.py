@@ -11,9 +11,7 @@ from nemoa.plot import Plot, network, heatmap, histogram, scatter
 from nemoa.test import ModuleTestCase
 
 class TestGraph(ModuleTestCase):
-    """Testcase for the module nemoa.plot.network."""
-
-    module = 'nemoa.plot.network'
+    module = network
 
     def setUp(self) -> None:
         self.G = nx.DiGraph([(1, 3), (1, 4), (2, 3), (2, 4)], directed=True)

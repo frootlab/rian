@@ -13,7 +13,7 @@ from unittest import skipIf
 from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
 import numpy as np
 from nemoa.base import pkg, otree
-from nemoa.types import Any, AnyOp, ClassInfo, ExcType, Function, Method
+from nemoa.types import Any, AnyOp, ClassInfo, ExcType, Function, Method, Module
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
 #
@@ -132,7 +132,7 @@ class BaseTestCase(TestCase):
 class ModuleTestCase(BaseTestCase):
     """Custom testcase."""
 
-    module: str
+    module: Module
     test_completeness: bool = True
 
     def assertModuleIsComplete(self) -> None:
@@ -141,9 +141,9 @@ class ModuleTestCase(BaseTestCase):
             return
 
         # Get reference to module
-        ref = pkg.get_module(self.module)
-        if not ref:
-            raise AssertionError(f"module {self.module} does not exist")
+        ref = getattr(self, 'module', None)
+        if not isinstance(ref, Module):
+            raise AssertionError(f"module has not been specified")
 
         # Get module members
         members = set()
@@ -171,7 +171,7 @@ class ModuleTestCase(BaseTestCase):
 
         # Raise error on untested module members
         raise AssertionError(
-            f"module '{self.module}' comprises "
+            f"module '{self.module.__name__}' comprises "
             f"untested members: {', '.join(sorted(untested))}")
 
     @skipIf(skip_completeness_test, "completeness is not tested")

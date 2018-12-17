@@ -15,9 +15,7 @@ from nemoa.test import ModuleTestCase, Case
 from nemoa.types import List
 
 class TestRaw(ModuleTestCase):
-    """Testcase for the module nemoa.io.raw."""
-
-    module = 'nemoa.io.raw'
+    module = raw
 
     def setUp(self) -> None:
         self.filepath = env.get_temp_file(suffix='.gz')
@@ -59,9 +57,7 @@ class TestRaw(ModuleTestCase):
             self.filepath.unlink()
 
 class TestPlain(ModuleTestCase):
-    """Testcase for the module nemoa.io.plain."""
-
-    module = 'nemoa.io.plain'
+    module = plain
 
     def setUp(self) -> None:
         self.filepath = env.get_temp_file(suffix='.txt')
@@ -127,9 +123,7 @@ class TestPlain(ModuleTestCase):
             self.filepath.unlink()
 
 class TestCsv(ModuleTestCase):
-    """Testcase for the module nemoa.io.csv."""
-
-    module = 'nemoa.io.csv'
+    module = csv
 
     def setUp(self) -> None:
         path = env.get_temp_file()
@@ -340,9 +334,7 @@ class TestCsv(ModuleTestCase):
             self.rlang_path.unlink()
 
 class TestInifile(ModuleTestCase):
-    """Testcase for the module nemoa.io.ini."""
-
-    module = 'nemoa.io.ini'
+    module = ini
 
     def setUp(self) -> None:
         self.filepath = env.get_temp_file(suffix='.ini')

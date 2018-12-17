@@ -12,9 +12,7 @@ from nemoa.test import Case, ModuleTestCase
 from nemoa.types import Any, StrList
 
 class TestCursor(ModuleTestCase):
-    """Testcase for the module nemoa.db.cursor."""
-
-    module = cursor.__name__
+    module = cursor
 
     def setUp(self) -> None:
         # Cursor modes
@@ -130,9 +128,7 @@ class TestCursor(ModuleTestCase):
     #                 self.assertEqual(type(row), dtype)
 
 class TestRecord(ModuleTestCase):
-    """Testcase for the module nemoa.db.record."""
-
-    module = record.__name__
+    module = record
 
     def test_build(self) -> None:
 
@@ -151,9 +147,7 @@ class TestRecord(ModuleTestCase):
         self.assertFalse(hasattr(rec1, '__dict__'))
 
 class TestTable(ModuleTestCase):
-    """Testcase for the module nemoa.db.table."""
-
-    module = 'nemoa.db.table'
+    module = table
 
     def test_Table(self) -> None:
         pass
