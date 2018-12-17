@@ -125,33 +125,6 @@ class TestOperator(ModuleTestCase):
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
-    def test_create_grouper(self) -> None:
-        class Obj:
-            def __init__(self, i: int, name: str) -> None:
-                self.id = i
-                self.name = name
-        seq = list(Obj(i, f'{i>5}') for i in range(10))
-        attrs: tuple = tuple()
-        with self.subTest(attrs=attrs):
-            group = operator.create_grouper(*attrs)
-            self.assertEqual(len(group(seq)), 1)
-            self.assertEqual(len(group(seq)[0]), 10)
-        attrs = ('name', )
-        with self.subTest(attrs=attrs):
-            group = operator.create_grouper(*attrs)
-            self.assertEqual(len(group(seq)), 2)
-            self.assertEqual(len(group(seq)[0]), 6)
-        attrs = ('id', )
-        with self.subTest(attrs=attrs):
-            group = operator.create_grouper(*attrs)
-            self.assertEqual(len(group(seq)), 10)
-            self.assertEqual(len(group(seq)[0]), 1)
-        attrs = ('name', 'id')
-        with self.subTest(attrs=attrs):
-            group = operator.create_grouper(*attrs)
-            self.assertEqual(len(group(seq)), 10)
-            self.assertEqual(len(group(seq)[0]), 1)
-
     def test_create_sorter(self) -> None:
         class Obj:
             pass
@@ -164,6 +137,37 @@ class TestOperator(ModuleTestCase):
         sorty = operator.create_sorter('y', reverse=True)
         self.assertEqual(list(map(getx, sortx(objs))), list(range(10)))
         self.assertEqual(list(map(getx, sorty(objs))), list(range(10)))
+
+    def test_create_grouper(self) -> None:
+        class Obj:
+            def __init__(self, i: int, name: str) -> None:
+                self.id = i
+                self.name = name
+        seq = list(Obj(i, f'{i>5}') for i in range(10))
+        keys: tuple = tuple()
+        with self.subTest(keys=keys):
+            group = operator.create_grouper(*keys)
+            self.assertEqual(len(group(seq)), 1)
+            self.assertEqual(len(group(seq)[0]), 10)
+        keys = ('name', )
+        with self.subTest(keys=keys):
+            group = operator.create_grouper(*keys)
+            self.assertEqual(len(group(seq)), 2)
+            self.assertEqual(len(group(seq)[0]), 6)
+        with self.subTest(keys=keys, presorted=True):
+            group = operator.create_grouper(*keys, presorted=True)
+            self.assertEqual(len(group(seq)), 2)
+            self.assertEqual(len(group(seq)[0]), 6)
+        keys = ('id', )
+        with self.subTest(keys=keys):
+            group = operator.create_grouper(*keys)
+            self.assertEqual(len(group(seq)), 10)
+            self.assertEqual(len(group(seq)[0]), 1)
+        keys = ('name', 'id')
+        with self.subTest(keys=keys):
+            group = operator.create_grouper(*keys)
+            self.assertEqual(len(group(seq)), 10)
+            self.assertEqual(len(group(seq)[0]), 1)
 
     def test_evaluate(self) -> None:
         func = operator.get_parameters
