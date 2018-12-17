@@ -65,7 +65,15 @@ class TestArray(ModuleTestCase):
 class TestOperator(ModuleTestCase):
     module = operator
 
-    def test_create_getter(self) -> Any:
+    def test_get_field_spec(self) -> None:
+        fields = ('a', ('b', ), ('c', len), ('d', max, 'max(d)'))
+        names, ops, keys = operator.get_field_spec(*fields)
+        self.assertEqual(names, ('a', 'b', 'c', 'd'))
+        for op in ops:
+            self.assertTrue(callable(op))
+        self.assertEqual(keys, ('a', 'b', 'c', 'max(d)'))
+
+    def test_create_getter(self) -> None:
         with self.subTest(domain=object):
             obj = mock.Mock()
             obj.configure_mock(name='test', id=1)

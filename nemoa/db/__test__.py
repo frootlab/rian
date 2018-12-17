@@ -6,6 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import random
 import string
 from nemoa.db import cursor, record, table
 from nemoa.test import Case, ModuleTestCase
@@ -25,18 +26,20 @@ class TestCursor(ModuleTestCase):
         self.columns = (
             ('uid', int),
             ('prename', str, {'default': ''}),
-            ('name', str, {'default': ''}))
+            ('name', str, {'default': ''}),
+            ('dep_id', int, {'default': 0}))
         self.table = table.Table('test', columns=self.columns)
 
         # Create test data
         letters = string.ascii_letters
         self.size = len(letters)
         self.table.insert( # type: ignore
-            [(i + 1, letters[i], letters[-i]) for i in range(self.size)])
+            [(i + 1, letters[i], letters[-i], random.randint(0, 9))
+            for i in range(self.size)])
         self.table.commit()
 
     def create_cursor(self, *args: Any, **kwds: Any) -> cursor.Cursor:
-        return cursor.create(
+        return cursor.Cursor(
             *args, getter=self.table.row, parent=self.table, **kwds)
 
     def test_Cursor(self) -> None:
@@ -101,20 +104,19 @@ class TestCursor(ModuleTestCase):
                     self.assertEqual(size, 3)
 
     def test_Cursor_orderby(self) -> None:
-        for column in self.table.columns:
-            for mode in self.cursor_modes:
-                with self.subTest(mode=mode, orderby=column):
-                    if (mode.split()[0] == 'random'
-                        or mode.split()[1] != 'static'):
-                        self.assertRaises(
-                            cursor.CursorModeError, self.create_cursor,
-                            mode=mode, orderby=column, reverse=False)
-                        continue
-                    cur = self.create_cursor(
-                        mode=mode, orderby=column, reverse=False)
-                    rcur = self.create_cursor(
-                        mode=mode, orderby=column, reverse=True)
-                    self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
+        for mode in self.cursor_modes:
+            with self.subTest(mode=mode, orderby='uid'):
+                if (mode.split()[0] == 'random'
+                    or mode.split()[1] != 'static'):
+                    self.assertRaises(
+                        cursor.CursorModeError, self.create_cursor,
+                        mode=mode, orderby='uid', reverse=False)
+                    continue
+                cur = self.create_cursor(
+                    mode=mode, orderby='uid', reverse=False)
+                rcur = self.create_cursor(
+                    mode=mode, orderby='uid', reverse=True)
+                self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
 
     # def test_Cursor_mapper(self) -> None:
     #     for dtype in [tuple, dict]:
