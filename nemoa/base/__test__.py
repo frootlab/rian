@@ -12,7 +12,7 @@ import typing
 import numpy as np
 from nemoa.base import array, binary, check, env, literal, operator, otree, pkg
 from nemoa.base import stack
-from nemoa.base import nbase, ndict
+from nemoa.base import nbase, mapping
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Function, Module, PathLikeList, StrList
 from nemoa.types import OrderedDict, NaN
@@ -766,18 +766,18 @@ class TestBinary(ModuleTestCase):
             self.assertEqual(binary.unpack(data, compressed=iscomp), obj)
 
 class TestNdict(ModuleTestCase):
-    """Testcase for the module nemoa.base.ndict."""
+    """Testcase for the module nemoa.base.mapping."""
 
-    module = 'nemoa.base.ndict'
+    module = 'nemoa.base.mapping'
 
     def test_select(self) -> None:
         self.assertTrue(
-            ndict.select({'a1': 1, 'a2': 2, 'b1': 3}, pattern='a*') \
+            mapping.select({'a1': 1, 'a2': 2, 'b1': 3}, pattern='a*') \
             == {'a1': 1, 'a2': 2})
 
     def test_groupby(self) -> None:
         self.assertEqual(
-            ndict.groupby(
+            mapping.groupby(
                 {1: {'a': 0}, 2: {'a': 0}, 3: {'a': 1}, 4: {}}, key='a'),
             {
                 0: {1: {'a': 0}, 2: {'a': 0}},
@@ -785,32 +785,32 @@ class TestNdict(ModuleTestCase):
 
     def test_flatten(self) -> None:
         self.assertEqual(
-            ndict.flatten({1: {'a': {}}, 2: {'b': {}}}),
+            mapping.flatten({1: {'a': {}}, 2: {'b': {}}}),
             {'a': {}, 'b': {}})
         self.assertEqual(
-            ndict.flatten({1: {'a': {}}, 2: {'b': {}}}, group='id'),
+            mapping.flatten({1: {'a': {}}, 2: {'b': {}}}, group='id'),
             {'a': {'id': 1}, 'b': {'id': 2}})
 
     def test_merge(self) -> None:
         self.assertEqual(
-            ndict.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3}),
+            mapping.merge({'a': 1}, {'a': 2, 'b': 2}, {'c': 3}),
             {'a': 1, 'b': 2, 'c': 3})
 
     def test_crop(self) -> None:
         self.assertEqual(
-            ndict.crop({'a1': 1, 'a2': 2, 'b1': 3}, 'a'),
+            mapping.crop({'a1': 1, 'a2': 2, 'b1': 3}, 'a'),
             {'1': 1, '2': 2})
 
     def test_strkeys(self) -> None:
         self.assertEqual(
-            ndict.strkeys({(1, 2): 3, None: {True: False}}),
+            mapping.strkeys({(1, 2): 3, None: {True: False}}),
             {('1', '2'): 3, 'None': {'True': False}})
 
     def test_sumjoin(self) -> None:
         self.assertEqual(
-            ndict.sumjoin({'a': 1}, {'a': 2, 'b': 3}), {'a': 3, 'b': 3})
+            mapping.sumjoin({'a': 1}, {'a': 2, 'b': 3}), {'a': 3, 'b': 3})
         self.assertEqual(
-            ndict.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
+            mapping.sumjoin({1: 'a', 2: True}, {1: 'b', 2: True}),
             {1: 'ab', 2: 2})
 
 class TestLiteral(ModuleTestCase):

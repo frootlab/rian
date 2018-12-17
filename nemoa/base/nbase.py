@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import check, ndict, env, otree
+from nemoa.base import check, mapping, env, otree
 from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
@@ -271,7 +271,7 @@ class ObjectIP:
 
         """
         gdict = otree.get_methods(self, pattern='_get_*')
-        glist = sorted(ndict.crop(gdict, '_get_'))
+        glist = sorted(mapping.crop(gdict, '_get_'))
 
         return glist
 
@@ -340,7 +340,7 @@ class ObjectIP:
 
         """
         sdict = otree.get_methods(self, pattern='_set_*')
-        slist = sorted(ndict.crop(sdict, '_set_'))
+        slist = sorted(mapping.crop(sdict, '_set_'))
 
         return slist
 

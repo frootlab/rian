@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import matplotlib.patches
 import networkx as nx
 import numpy as np
-from nemoa.base import ndict
+from nemoa.base import mapping
 from nemoa.math import graph
 from nemoa.plot import Plot
 from nemoa.types import Any, OptBool, OptStr, OptTuple, FloatPair, Type
@@ -84,7 +84,7 @@ class Graph2D(Plot):
         ax.axis('off')
 
         # get node positions and sizes
-        layout_params = ndict.crop(self._config, 'graph_')
+        layout_params = mapping.crop(self._config, 'graph_')
         del layout_params['layout']
 
         pos = graph.get_layout(

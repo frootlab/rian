@@ -5,6 +5,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import networkx
+from nemoa.base import mapping
+
 
 def filetypes():
     """Get supported graph description filetypes for network import."""
@@ -85,10 +87,8 @@ class Graphml:
     def load(self, path):
         """ """
 
-        from nemoa.base import ndict
-
         G = networkx.read_graphml(path)
-        d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))
+        d = mapping.strkeys(_graph_to_dict(_graph_decode(G)))
 
         return {'config': d['graph']['params'], 'graph': d }
 
@@ -105,9 +105,7 @@ class Gml:
     def load(self, path):
         """ """
 
-        from nemoa.base import ndict
-
         G = networkx.read_gml(path, relabel = True)
-        d = ndict.strkeys(_graph_to_dict(_graph_decode(G)))
+        d = mapping.strkeys(_graph_to_dict(_graph_decode(G)))
 
         return {'config': d['graph']['params'], 'graph': d }

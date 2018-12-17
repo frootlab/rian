@@ -7,6 +7,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa.model.morphisms.ann
+from nemoa.base import mapping
 from nemoa.core import ui
 from nemoa.math import category
 
@@ -282,9 +283,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_visible_rasa())
 
-        from nemoa.base import ndict
-
-        return ndict.sumjoin(*deltas)
+        return mapping.sumjoin(*deltas)
 
     def _cdiv_delta_visible_cd(self, vdata, hdata, vmodel, hmodel, **kwds):
         """Constrastive divergency gradients of visible units.
@@ -340,9 +339,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_hidden_rasa())
 
-        from nemoa.base import ndict
-
-        return ndict.sumjoin(*deltas)
+        return mapping.sumjoin(*deltas)
 
     def _cdiv_delta_hidden_cd(self, vdata, hdata, vmodel, hmodel, **kwds):
         """Constrastive divergency gradients of hidden units.
@@ -419,8 +416,7 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         if config['gen_rasa_enable']:
             deltas.append(self._cdiv_delta_links_rasa(deltas))
 
-        from nemoa.base import ndict
-        return ndict.sumjoin(*deltas)
+        return mapping.sumjoin(*deltas)
 
     def _cdiv_delta_links_cd(self, vdata, hdata, vmodel, hmodel, **kwds):
         """Constrastive divergency gradients of links.
