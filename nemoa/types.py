@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Types."""
+"""Collection of Structural Types and Stubs, required by different Modules."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -172,6 +172,7 @@ OptVoid = Optional[Void]
 OptFunction = Optional[Function]
 OptMethod = Optional[Method]
 OptModule = Optional[Module]
+OptSeqOp = Optional[SeqOp]
 
 # Operator Collections
 DictOfOps = Dict[str, AnyOp]

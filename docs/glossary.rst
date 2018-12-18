@@ -484,8 +484,8 @@ Statistics
 API Glossary
 ------------
 
-Types
-~~~~~
+Generic Types and Formats
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. glossary::
 
@@ -496,6 +496,11 @@ Types
         :term:`path-like objects <path-like object>`, that point to filenames in
         the directory structure of the system and instances of the class
         :class:`~nemoa.types.FileAccessor`.
+
+Database and Data Warehousing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. glossary::
 
     Row Like
 
@@ -551,3 +556,60 @@ Types
             was first opened. Static cursors are not thread-safe but support
             counting the rows with respect to a given filter and sorting the
             rows.
+
+    Aggregation Function
+
+        *Aggregation Functions* are :class:`callable` objects, that transform
+        sequences of objects of a given domain into a single value. Examples
+        include :func:`len`, :func:`sum`, :func:`min` or :func:`max`, but
+        depending on the domain, many out-of-the-box aggregators are shipped
+        with the standard library package :mod:`statistics` or with third party
+        packages like :mod:`numpy`.
+
+    Field Identifier
+
+        *Field Identifiers* uniquely identify a field within an object. Thereby,
+        however, the identification mechanism by itself is not unique since
+        an object may comprise fields, given by it's attributes, items or
+        other accessing mechanisms, such that the requirements to the field
+        identifier depend on the domain, which specifies this mechanism:
+
+        :objects: For the domain :class:`object`, the field identifiers are the
+            attribute names of the objects, and therefore required to be valid
+            identifiers as specified in :PEP:`3131`. The functions in the module
+            :mod:`nemoa.base.operator` additionally allow the usage of dots, for
+            the identification of arbitrary sub-objects within the object
+            hierarchy.
+        :mappings: For the domain :class:`dict` (or any subclass of the
+            :class:`Mapping class <collection.abs.Mapping>`), the field
+            identifiers are the keys of the mappings and therefore required to
+            be :term:`hashable` objects. The functions in the module
+            :mod:`nemoa.base.operator` additionally require, that the field
+            identifiers are not given by tuples.
+        :sequences: For any subclass of the :class:`Sequence class
+            <collection.abs.Sequence>` (like :class:`list` or :class:`tuple`)
+            the field identifiers are not the names of fields, but their
+            position within the sequence (starting with 0) and therefore
+            required to be non-negative integers.
+
+    Field Variable
+
+        *Field Variables* provide information about fields of objects or
+        collections of objects. Thereby the definition of field variables
+        depends on the types of the underlying fields:
+
+        :constant fields: For field variables that represent a constant field
+            (e.g. group keys in grouped sequences), it is sufficient to only
+            provide the :term:`field identifier` `<field>`. If the target type
+            supports named identifiers, then the variable name can be included
+            in the definition by `(<field>, <name>)`, where the variable name is
+            required to be a valid field identifier for the target type.
+        :non-constant fields: For variables that summarize non-constant fields,
+            an additional :term:`aggregation function` has to be included within
+            the definition by `(<field>, <aggregator>)`, or by including the
+            variable name by `(<field>, <aggregator>, <name>)`.
+        :multiple fields: Field variables may also summarize information about
+            multiple fields. In this case the definition has to be given in the
+            format `(<fields>, <aggregator>, <name>)`, where `<fields>` is a
+            tuple of field identifiers and `<aggregator>` an aggregation
+            function, which accepts the specified fields as arguments.

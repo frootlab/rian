@@ -65,13 +65,13 @@ class TestArray(ModuleTestCase):
 class TestOperator(ModuleTestCase):
     module = operator
 
-    def test_get_field_spec(self) -> None:
-        fields = ('a', ('b', ), ('c', len), ('d', max, 'max(d)'))
-        names, ops, keys = operator.get_field_spec(*fields)
-        self.assertEqual(names, ('a', 'b', 'c', 'd'))
+    def test_split_var_params(self) -> None:
+        variables = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
+        fields, ops, names = operator.split_var_params(*variables)
+        self.assertEqual(fields, ('a', 'b', 'c', 'd'))
         for op in ops:
             self.assertTrue(callable(op))
-        self.assertEqual(keys, ('a', 'b', 'c', 'max(d)'))
+        self.assertEqual(names, ('a', 'b', 'c', 'Y'))
 
     def test_create_getter(self) -> None:
         with self.subTest(domain=object):
@@ -142,18 +142,40 @@ class TestOperator(ModuleTestCase):
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, bool=bool(i>5))
         groups = operator.create_grouper('bool')
-        fields = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
-        with self.subTest(fields=fields, target=tuple):
-            aggregate = operator.create_aggregator(*fields, target=tuple)
+        with self.subTest(fvars=tuple(), target=tuple):
+            aggregate = operator.create_aggregator()
+            self.assertEqual(aggregate, None) # TODO: operator.null
+        fvars = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+        with self.subTest(fvars=fvars, target=tuple):
+            aggregate = operator.create_aggregator(*fvars, target=tuple)
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)),
                 [(False, 6, 5), (True, 4, 9)])
-        with self.subTest(fields=fields, target=dict):
-            aggregate = operator.create_aggregator(*fields, target=dict)
+        with self.subTest(fvars=fvars, target=dict):
+            aggregate = operator.create_aggregator(*fvars, target=dict)
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)), [
                 {'bool': False, 'count': 6, 'max(id)': 5},
                 {'bool': True, 'count': 4, 'max(id)': 9}])
+
+    def test_create_group_aggregator(self) -> None:
+        with self.subTest(domain=object):
+            objseq = list(mock.Mock() for i in range(15))
+            for i, obj in enumerate(objseq):
+                obj.configure_mock(id=i, bool=bool(i>5))
+            fvars = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+            with self.subTest(fvars=fvars, key='bool', target=tuple):
+                op = operator.create_group_aggregator(
+                    *fvars, key='bool', target=tuple)
+                self.assertEqual(
+                    list(op(objseq)), [(False, 6, 5), (True, 9, 14)])
+            with self.subTest(fvars=fvars, key='bool', target=dict):
+                op = operator.create_group_aggregator(
+                    *fvars, key='bool', target=dict)
+                self.assertEqual(
+                    list(op(objseq)), [
+                    {'bool': False, 'count': 6, 'max(id)': 5},
+                    {'bool': True, 'count': 9, 'max(id)': 14}])
 
     def test_create_grouper(self) -> None:
         seq = list(mock.Mock() for i in range(10))
