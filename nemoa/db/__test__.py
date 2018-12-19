@@ -135,7 +135,7 @@ class TestCursor(ModuleTestCase):
                     self.assertEqual(
                         list(cur), [(0, 18, 52), (1, 17, 50), (2, 17, 51)])
 
-    # def test_Cursor_mapper(self) -> None:
+    # def test_Cursor_dtype(self) -> None:
     #     for dtype in [tuple, dict]:
     #         mapper = self.table._create_mapper( # pylint: disable=W0212
     #             None, dtype=dtype)

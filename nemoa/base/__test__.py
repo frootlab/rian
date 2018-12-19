@@ -59,6 +59,17 @@ class TestArray(ModuleTestCase):
 class TestOperator(ModuleTestCase):
     module = operator
 
+    def test_Identity(self) -> None:
+        pass # Already tested in test_identity
+
+    def test_Zero(self) -> None:
+        pass # Already tested in test_create_zero
+
+    def test_identity(self) -> None:
+        self.assertFalse(operator.identity)
+        self.assertEqual(operator.identity(''), '')
+        self.assertEqual(operator.identity(1, 2, 3), (1, 2, 3))
+
     def test_split_var_params(self) -> None:
         variables = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
         fields, ops, names = operator.split_var_params(*variables)
@@ -66,6 +77,17 @@ class TestOperator(ModuleTestCase):
         for op in ops:
             self.assertTrue(callable(op))
         self.assertEqual(names, ('a', 'b', 'c', 'Y'))
+
+    def test_create_zero(self) -> None:
+        for category in [set, tuple, list, dict, object]:
+            zero = operator.create_zero(category)
+        zero = operator.create_zero()
+        self.assertFalse(zero) # Test evaluates to zero
+        self.assertIsNone(zero('text'))
+        self.assertIsNone(zero(1, 2, 3))
+        self.assertEqual(zero, operator.create_zero()) # Test caching
+        zero = operator.create_zero(tuple)
+
 
     def test_create_getter(self) -> None:
         with self.subTest(domain=object):
@@ -107,17 +129,17 @@ class TestOperator(ModuleTestCase):
             operator.create_setter(*items, domain=object)(obj)
             self.assertEqual((obj.name, obj.id), ('monty', 42))
         with self.subTest(domain=dict):
-            dic = dict()
+            dic: dict = dict()
             operator.create_setter(*items, domain=dict)(dic)
             self.assertEqual((dic['name'], dic['id']), ('monty', 42))
         with self.subTest(domain=list):
-            seq = [None] * 2
+            seq: list = [None] * 2
             operator.create_setter((0, 'monty'), (1, 42), domain=list)(seq)
             self.assertEqual((seq[0], seq[1]), ('monty', 42))
 
     def test_create_wrapper(self) -> None:
         setter = operator.create_wrapper(name='test', group=1)
-        op = lambda *args: None # null operator
+        op = operator.create_zero()
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
@@ -136,9 +158,9 @@ class TestOperator(ModuleTestCase):
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, bool=bool(i>5))
         groups = operator.create_grouper('bool')
-        with self.subTest(args=tuple(), target=tuple):
+        with self.subTest():
             aggregate = operator.create_aggregator()
-            self.assertEqual(aggregate, None) # TODO: operator.null
+            self.assertFalse(bool(aggregate))
         args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
         with self.subTest(args=args, target=tuple):
             aggregate = operator.create_aggregator(*args, target=tuple)
@@ -208,7 +230,7 @@ class TestOperator(ModuleTestCase):
         op = operator.compose(lambda x: x + 1, lambda x: x - 1, None)
         self.assertEqual(op(1), 1)
         op = operator.compose()
-        self.assertEqual(op, None)
+        self.assertEqual(op, operator.identity)
 
     def test_evaluate(self) -> None:
         func = operator.get_parameters
