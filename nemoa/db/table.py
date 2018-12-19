@@ -29,6 +29,9 @@ OptMappingProxy = Optional[MappingProxy]
 # Fields
 OptFieldTuple = Optional[Tuple[record.Field, ...]]
 
+# Field Variables
+VarDef = cursor.VarDef
+
 # Colums
 SelColA = str # Select Column: name
 SelColB = Tuple[str, SeqOp] # Select Column: name, aggregator
@@ -369,7 +372,7 @@ class Table(attrib.Container):
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, *columns: cursor.ColDef, where: OptOp = None,
+            self, *args: VarDef, where: OptOp = None,
             groupby: cursor.GroupByType = None, dtype: OptType = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, mode: OptStr = None) -> cursor.Cursor:
@@ -380,7 +383,7 @@ class Table(attrib.Container):
         properties.
 
         Args:
-            *columns: Optional columns of the result set. If provided the
+            *args: Optional columns of the result set. If provided the
                 columns individually can be given can be given in one of the
                 following formats: (1) In order to provide the content of the
                 column the column has to be given by a string `<name>`, which is
@@ -425,17 +428,17 @@ class Table(attrib.Container):
 
         """
         # Check arguments and set default values
-        if columns:
+        if args:
             check.is_subset(
-                "'columns'", set(columns), "table columns", set(self.columns))
+                'columns', set(args), 'table columns', set(self.columns))
         else:
-            columns = self.columns
+            args = self.columns
 
-        # Create cursor, which specifies the result set
-        return cursor.create(*columns,
-            getter=self.row, predicate=where, orderby=orderby, reverse=reverse,
-            groupby=groupby, batchsize=batchsize, dtype=dtype, mode=mode,
-            parent=self)
+        # Create and return cursor
+        return cursor.Cursor(
+            *args, getter=self.row, predicate=where, orderby=orderby,
+            reverse=reverse, groupby=groupby, batchsize=batchsize, dtype=dtype,
+            mode=mode, parent=self)
 
     def get_metadata(self, key: str) -> Any:
         """Get single entry from table metadata.

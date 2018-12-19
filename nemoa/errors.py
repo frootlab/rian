@@ -227,16 +227,6 @@ class ColumnLookupError(TableError, LookupError):
     def __init__(self, colname: int) -> None:
         super().__init__(f"column name '{colname}' is not valid")
 
-class CursorModeError(TableError, LookupError):
-    """Raise when a procedure is not supported by a cursor."""
-
-    def __init__(self, mode: str, operation: OptStr = None) -> None:
-        if not operation:
-            msg = f"unknown cursor mode '{mode}'"
-        else:
-            msg = f"{operation} is not supported by {mode} cursors"
-        super().__init__(msg)
-
 ################################################################################
 # Proxy Errors
 ################################################################################

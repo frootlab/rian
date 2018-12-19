@@ -6,7 +6,6 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import random
 import string
 from nemoa.db import cursor, record, table
 from nemoa.test import Case, ModuleTestCase
@@ -27,14 +26,14 @@ class TestCursor(ModuleTestCase):
             ('uid', int),
             ('prename', str, {'default': ''}),
             ('name', str, {'default': ''}),
-            ('dep_id', int, {'default': 0}))
+            ('gid', int, {'default': 0}))
         self.table = table.Table('test', columns=self.columns)
 
         # Create test data
         letters = string.ascii_letters
         self.size = len(letters)
-        self.table.insert( # type: ignore
-            [(i + 1, letters[i], letters[-i], random.randint(0, 9))
+        self.table.insert(# type: ignore
+            [(i + 1, letters[i], letters[-i], i%3)
             for i in range(self.size)])
         self.table.commit()
 
@@ -110,13 +109,31 @@ class TestCursor(ModuleTestCase):
                     or mode.split()[1] != 'static'):
                     self.assertRaises(
                         cursor.CursorModeError, self.create_cursor,
-                        mode=mode, orderby='uid', reverse=False)
+                        mode=mode, orderby='uid')
                     continue
                 cur = self.create_cursor(
                     mode=mode, orderby='uid', reverse=False)
                 rcur = self.create_cursor(
                     mode=mode, orderby='uid', reverse=True)
                 self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
+
+    def test_Cursor_groupby(self) -> None:
+        args = ('gid', ('gid', len, 'count'), ('uid', max, 'max(uid)'))
+        for mode in self.cursor_modes:
+            with self.subTest(mode=mode, groupby='gid'):
+                self.assertRaises(
+                    cursor.CursorError, self.create_cursor,
+                    mode=mode, groupby='gid')
+            with self.subTest(args=args, mode=mode, groupby='gid'):
+                if (mode.split()[0] == 'random'
+                    or mode.split()[1] != 'static'):
+                    self.assertRaises(
+                        cursor.CursorError, self.create_cursor,
+                        *args, mode=mode, groupby='gid')
+                else:
+                    cur = self.create_cursor(*args, mode=mode, groupby='gid')
+                    self.assertEqual(
+                        list(cur), [(0, 18, 52), (1, 17, 50), (2, 17, 51)])
 
     # def test_Cursor_mapper(self) -> None:
     #     for dtype in [tuple, dict]:

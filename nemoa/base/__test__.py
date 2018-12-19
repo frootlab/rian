@@ -19,12 +19,6 @@ from nemoa.types import Any, Function, Module, PathLikeList, StrList
 from nemoa.types import OrderedDict, NaN, Method
 
 #
-# Module Variables
-#
-
-osname = env.get_osname()
-
-#
 # Test Cases
 #
 
@@ -142,17 +136,17 @@ class TestOperator(ModuleTestCase):
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, bool=bool(i>5))
         groups = operator.create_grouper('bool')
-        with self.subTest(fvars=tuple(), target=tuple):
+        with self.subTest(args=tuple(), target=tuple):
             aggregate = operator.create_aggregator()
             self.assertEqual(aggregate, None) # TODO: operator.null
-        fvars = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
-        with self.subTest(fvars=fvars, target=tuple):
-            aggregate = operator.create_aggregator(*fvars, target=tuple)
+        args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+        with self.subTest(args=args, target=tuple):
+            aggregate = operator.create_aggregator(*args, target=tuple)
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)),
                 [(False, 6, 5), (True, 4, 9)])
-        with self.subTest(fvars=fvars, target=dict):
-            aggregate = operator.create_aggregator(*fvars, target=dict)
+        with self.subTest(args=args, target=dict):
+            aggregate = operator.create_aggregator(*args, target=dict)
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)), [
                 {'bool': False, 'count': 6, 'max(id)': 5},
@@ -163,15 +157,15 @@ class TestOperator(ModuleTestCase):
             objseq = list(mock.Mock() for i in range(15))
             for i, obj in enumerate(objseq):
                 obj.configure_mock(id=i, bool=bool(i>5))
-            fvars = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
-            with self.subTest(fvars=fvars, key='bool', target=tuple):
+            args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+            with self.subTest(args=args, key='bool', target=tuple):
                 op = operator.create_group_aggregator(
-                    *fvars, key='bool', target=tuple)
+                    *args, key='bool', target=tuple)
                 self.assertEqual(
                     list(op(objseq)), [(False, 6, 5), (True, 9, 14)])
-            with self.subTest(fvars=fvars, key='bool', target=dict):
+            with self.subTest(args=args, key='bool', target=dict):
                 op = operator.create_group_aggregator(
-                    *fvars, key='bool', target=dict)
+                    *args, key='bool', target=dict)
                 self.assertEqual(
                     list(op(objseq)), [
                     {'bool': False, 'count': 6, 'max(id)': 5},
@@ -207,10 +201,14 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(len(grouper(seq)[0]), 1)
 
     def test_compose(self) -> None:
-        f = lambda x: x + 1
-        g = lambda x: x - 1
-        fg = operator.compose(f, g)
-        self.assertEqual(operator.evaluate(fg, 1), 1)
+        op = operator.compose(lambda x: x + 1, lambda x: x - 1)
+        self.assertEqual(op(1), 1)
+        op = operator.compose(None, lambda x: x)
+        self.assertEqual(op(1), 1)
+        op = operator.compose(lambda x: x + 1, lambda x: x - 1, None)
+        self.assertEqual(op(1), 1)
+        op = operator.compose()
+        self.assertEqual(op, None)
 
     def test_evaluate(self) -> None:
         func = operator.get_parameters
@@ -509,7 +507,7 @@ class TestEnv(ModuleTestCase):
         if dirname in self.sys_dirs: # Check system directories
             return True
         if dirname in self.app_dirs: # Check application dir
-            if osname == 'Linux':
+            if env.get_osname() == 'Linux':
                 return appname in str(path)
             return appname in str(path) and appauthor in str(path)
         if dirname in self.dist_dirs: # Check distribution dir
