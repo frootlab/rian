@@ -135,16 +135,13 @@ class TestCursor(ModuleTestCase):
                     self.assertEqual(
                         list(cur), [(0, 18, 52), (1, 17, 50), (2, 17, 51)])
 
-    # def test_Cursor_dtype(self) -> None:
-    #     for dtype in [tuple, dict]:
-    #         mapper = self.table._create_mapper( # pylint: disable=W0212
-    #             None, dtype=dtype)
-    #         for mode in self.cursor_modes:
-    #             with self.subTest(mode=mode, dtype=dtype):
-    #                 cur = self._create_cursor( # pylint: disable=W0212
-    #                     mode=mode, mapper=mapper)
-    #                 row = cur.fetch()[0]
-    #                 self.assertEqual(type(row), dtype)
+    def test_Cursor_dtype(self) -> None:
+        for dtype in [tuple, dict]:
+            for mode in self.cursor_modes:
+                with self.subTest('uid', mode=mode, dtype=dtype):
+                    cur = self.create_cursor('uid', mode=mode, dtype=dtype)
+                    row = cur.fetch()[0]
+                    self.assertEqual(type(row), dtype)
 
 class TestRecord(ModuleTestCase):
     module = record
