@@ -33,7 +33,7 @@ Infty = float('inf') # Standard Constant for the representation of infinity
 void: Callable[..., None] = lambda *args, **kwds: None
 
 ################################################################################
-# Class Stubs
+# Stub Classes
 ################################################################################
 
 class FileAccessor(abc.ABC):
@@ -161,6 +161,7 @@ ClassStrDict = ClassVar[StrDict]
 
 # Operator Types
 AnyOp = Callable[..., Any]
+BoolOp = Callable[..., bool]
 Void = Callable[..., None]
 KeyOp = Callable[[Any, Any], bool]
 SeqOp = Callable[[Sequence[Any]], Any]
@@ -169,6 +170,7 @@ SeqHom = Callable[[Sequence[Any]], Sequence[Any]]
 # Unions of Operators and Literals
 OptOp = Optional[AnyOp]
 OptVoid = Optional[Void]
+OptBoolOp = Optional[BoolOp]
 OptFunction = Optional[Function]
 OptMethod = Optional[Method]
 OptModule = Optional[Module]
