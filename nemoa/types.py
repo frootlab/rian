@@ -162,6 +162,8 @@ ClassStrDict = ClassVar[StrDict]
 # Operator Types
 AnyOp = Callable[..., Any]
 BoolOp = Callable[..., bool]
+StrOp = Callable[..., str]
+IntOp = Callable[..., int]
 Void = Callable[..., None]
 KeyOp = Callable[[Any, Any], bool]
 SeqOp = Callable[[Sequence[Any]], Any]
