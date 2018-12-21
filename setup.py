@@ -83,7 +83,8 @@ def install() -> None:
             'matplotlib>=3.0',
             'networkx>=2.1',
             'numpy>=1.15',
-            'pyparsing>=2.2'],
+            'pyparsing>=2.2'
+            'py_expression_eval>=0.3.5'],
         extras_require={
             'gui': ['pyside'],
             'gene': ['rpy2']},
