@@ -6,6 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import functools
 import inspect
 from io import StringIO
 from typing import NamedTuple
@@ -21,6 +22,7 @@ from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 #
 
 Cases = List['Case']
+LRUFunction = functools._lru_cache_wrapper
 
 ################################################################################
 # Global Test Setting
@@ -148,7 +150,7 @@ class ModuleTestCase(BaseTestCase):
         # Get module members
         members = set()
         for name in getattr(ref, '__all__',
-            otree.get_members(ref, classinfo=(type, Function))):
+            otree.get_members(ref, classinfo=(type, Function, LRUFunction))):
             if name.startswith('_'):
                 continue # Filter protected members
             obj = getattr(ref, name)

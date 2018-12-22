@@ -147,28 +147,30 @@ class TestOperator(ModuleTestCase):
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
             obj.configure_mock(x=i, y=-i)
-        getx = operator.create_getter('x')
-        sorter = operator.create_sorter('x')
+        getx = operator.create_getter('x', domain=object)
+        sorter = operator.create_sorter('x', domain=object)
         self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
-        sorter = operator.create_sorter('y', reverse=True)
+        sorter = operator.create_sorter('y', domain=object, reverse=True)
         self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
 
     def test_create_aggregator(self) -> None:
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, bool=bool(i>5))
-        groups = operator.create_grouper('bool')
+        groups = operator.create_grouper('bool', domain=object)
         with self.subTest():
             aggregate = operator.create_aggregator()
             self.assertFalse(bool(aggregate))
         args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
-        with self.subTest(args=args, target=tuple):
-            aggregate = operator.create_aggregator(*args, target=tuple)
+        with self.subTest(args=args, domain=object, target=tuple):
+            aggregate = operator.create_aggregator(
+                *args, domain=object, target=tuple)
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)),
                 [(False, 6, 5), (True, 4, 9)])
-        with self.subTest(args=args, target=dict):
-            aggregate = operator.create_aggregator(*args, target=dict)
+        with self.subTest(args=args, domain=object, target=dict):
+            aggregate = operator.create_aggregator(
+                *args, domain=object, target=dict)
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)), [
                 {'bool': False, 'count': 6, 'max(id)': 5},
@@ -182,12 +184,12 @@ class TestOperator(ModuleTestCase):
             args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
             with self.subTest(args=args, key='bool', target=tuple):
                 op = operator.create_group_aggregator(
-                    *args, key='bool', target=tuple)
+                    *args, key='bool', domain=object, target=tuple)
                 self.assertEqual(
                     list(op(objseq)), [(False, 6, 5), (True, 9, 14)])
             with self.subTest(args=args, key='bool', target=dict):
                 op = operator.create_group_aggregator(
-                    *args, key='bool', target=dict)
+                    *args, key='bool', domain=object, target=dict)
                 self.assertEqual(
                     list(op(objseq)), [
                     {'bool': False, 'count': 6, 'max(id)': 5},
@@ -198,27 +200,28 @@ class TestOperator(ModuleTestCase):
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, name=f'{i>5}')
         keys: tuple = tuple()
-        with self.subTest(keys=keys):
-            grouper = operator.create_grouper(*keys)
+        with self.subTest(keys=keys, domain=object):
+            grouper = operator.create_grouper(*keys, domain=object)
             self.assertEqual(len(grouper(seq)), 1)
             self.assertEqual(len(grouper(seq)[0]), 10)
         keys = ('name', )
-        with self.subTest(keys=keys):
-            grouper = operator.create_grouper(*keys)
+        with self.subTest(keys=keys, domain=object):
+            grouper = operator.create_grouper(*keys, domain=object)
             self.assertEqual(len(grouper(seq)), 2)
             self.assertEqual(len(grouper(seq)[0]), 6)
-        with self.subTest(keys=keys, presorted=True):
-            grouper = operator.create_grouper(*keys, presorted=True)
+        with self.subTest(keys=keys, domain=object, presorted=True):
+            grouper = operator.create_grouper(
+                *keys, domain=object, presorted=True)
             self.assertEqual(len(grouper(seq)), 2)
             self.assertEqual(len(grouper(seq)[0]), 6)
         keys = ('id', )
         with self.subTest(keys=keys):
-            grouper = operator.create_grouper(*keys)
+            grouper = operator.create_grouper(*keys, domain=object)
             self.assertEqual(len(grouper(seq)), 10)
             self.assertEqual(len(grouper(seq)[0]), 1)
         keys = ('name', 'id')
         with self.subTest(keys=keys):
-            grouper = operator.create_grouper(*keys)
+            grouper = operator.create_grouper(*keys, domain=object)
             self.assertEqual(len(grouper(seq)), 10)
             self.assertEqual(len(grouper(seq)[0]), 1)
 
