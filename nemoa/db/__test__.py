@@ -84,23 +84,20 @@ class TestCursor(ModuleTestCase):
                 else:
                     self.assertEqual(len(cur.fetch()), self.size)
 
-    def test_Cursor_predicate(self) -> None:
-        for mode in self.cursor_modes:
-            with self.subTest(mode=mode):
-                predicate = lambda row: row._id < 5 # pylint: disable=W0212
-                cur = self.create_cursor(mode=mode, predicate=predicate)
-                size = len(cur.fetch(10))
-                if mode.split()[0] == 'random':
-                    self.assertEqual(size, 10)
-                else:
-                    self.assertEqual(size, 5)
-                predicate = lambda row: row.name in 'abc'
-                cur = self.create_cursor(mode=mode, predicate=predicate)
-                size = len(cur.fetch(10))
-                if mode.split()[0] == 'random':
-                    self.assertEqual(size, 10)
-                else:
-                    self.assertEqual(size, 3)
+    def test_Cursor_where(self) -> None:
+        for where, matches in [
+            (lambda row: row._id < 5, 5), # pylint: disable=W0212
+            (lambda row: row.name in 'abc', 3),
+            ('uid < 6', 5),
+            ('uid < 6 and gid == 1', 2)]:
+            for mode in self.cursor_modes:
+                with self.subTest(mode=mode, where=where):
+                    cur = self.create_cursor(mode=mode, where=where)
+                    size = len(cur.fetch(10))
+                    if mode.split()[0] == 'random':
+                        self.assertEqual(size, 10)
+                    else:
+                        self.assertEqual(size, matches)
 
     def test_Cursor_orderby(self) -> None:
         for mode in self.cursor_modes:

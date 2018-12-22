@@ -346,7 +346,7 @@ class Table(attrib.Container):
         .. _WHERE: https://en.wikipedia.org/wiki/Where_(SQL)
 
         """
-        cur = cursor.Cursor(getter=self.row, predicate=where, parent=self)
+        cur = cursor.Cursor(getter=self.row, where=where, parent=self)
         for row in cur:
             row._update(**kwds) # pylint: disable=W0212
 
@@ -367,7 +367,7 @@ class Table(attrib.Container):
         .. _WHERE: https://en.wikipedia.org/wiki/Where_(SQL)
 
         """
-        cur = cursor.Cursor(getter=self.row, predicate=where, parent=self)
+        cur = cursor.Cursor(getter=self.row, where=where, parent=self)
         for row in cur:
             row._delete() # pylint: disable=W0212
 
@@ -436,7 +436,7 @@ class Table(attrib.Container):
 
         # Create and return cursor
         return cursor.Cursor(
-            *args, getter=self.row, predicate=where, orderby=orderby,
+            *args, getter=self.row, where=where, orderby=orderby,
             reverse=reverse, groupby=groupby, batchsize=batchsize, dtype=dtype,
             mode=mode, parent=self)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Database I/O."""
+"""Database and Data Warehouse."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
