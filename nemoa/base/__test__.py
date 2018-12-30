@@ -898,14 +898,16 @@ class TestLiteral(ModuleTestCase):
     def test_from_str(self) -> None:
         self.assertAllEqual(literal.from_str, [
             Case(args=(chr(1) + 'a', 'printable'), value='a'),
-            Case(args=('a, b', 'uax-31'), value='a_b')])
+            Case(args=('a, b', 'uax-31'), value='ab'),
+            Case(args=('max(x)', 'uax-31'),
+                kwds={'spacer': '_'}, value='max_x_')])
 
     def test_encode(self) -> None:
         self.assertAllEqual(literal.encode, [
             Case(args=(chr(1) + 'a', ),
                 kwds={'charset': 'printable'}, value='a'),
             Case(args=('a, b', ),
-                kwds={'charset': 'uax-31'}, value='a_b')])
+                kwds={'charset': 'uax-31'}, value='ab')])
 
     def test_estimate(self) -> None:
         self.assertAllEqual(literal.estimate, [

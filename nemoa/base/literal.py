@@ -30,10 +30,11 @@ def encode(obj: object, **kwds: Any) -> str:
         return pkg.call_attr(fname, obj, **kwds)
     return repr(obj)
 
-def from_str(text: str, charset: OptStr = None) -> str:
+def from_str(text: str, charset: OptStr = None, spacer: OptStr = None) -> str:
     """Filter text to given character set.
 
     Args:
+        text:
         charset: Name of used character set. Supportet options are:
 
             :printable: Printable characters
@@ -46,21 +47,23 @@ def from_str(text: str, charset: OptStr = None) -> str:
     if charset:
         charset = charset.lower()
     if charset == 'printable':
+        # TODO: if spacer is not None: test if spacer is printable
         # Get set of non-printable ASCII characters
         ascii_charset = set(chr(i) for i in range(128))
         ascii_non_printable = ascii_charset.difference(string.printable)
-        # Translate non printable characters to None
-        mapping = {ord(char): None for char in ascii_non_printable}
+        # Replace non printable characters by spacer
+        mapping = {ord(char): spacer for char in ascii_non_printable}
         return text.translate(mapping)
-    if charset in ['uax-31', 'identifier']:
-        # Interpret '-' and ' ' as '_'
-        text = text.strip(' ').translate(str.maketrans('- ', '__'))
+    if charset in ['uax31', 'uax-31', 'identifier']:
+        # TODO: if spacer is not None: test if spacer is printable
+        # # Interpret '-', '(', ')' and ' ' as '_'
+        # text = text.strip(' ').translate(str.maketrans('- ', '__'))
         # Get set of non-identifier ASCII characters
         ascii_charset = set(chr(i) for i in range(128))
         ascii_id_charset = string.ascii_letters + string.digits + '_'
         ascii_nonid_charset = ascii_charset.difference(ascii_id_charset)
-        # Translate non identifiable characters to None
-        mapping = {ord(char): None for char in ascii_nonid_charset}
+        # Replace non identifiable characters by spacer
+        mapping = {ord(char): spacer for char in ascii_nonid_charset}
         return text.translate(mapping)
     return text
 

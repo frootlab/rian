@@ -22,19 +22,17 @@ class TestCursor(ModuleTestCase):
                 self.cursor_modes.append(' '.join([tmode, omode]))
 
         # Create test table
-        self.columns = (
+        self.table = table.Table('test', columns=(
             ('uid', int),
             ('prename', str, {'default': ''}),
             ('name', str, {'default': ''}),
-            ('gid', int, {'default': 0}))
-        self.table = table.Table('test', columns=self.columns)
+            ('gid', int, {'default': 0})))
 
         # Create test data
         letters = string.ascii_letters
-        self.size = len(letters)
         self.table.insert(# type: ignore
             [(i + 1, letters[i], letters[-i], i%3)
-            for i in range(self.size)])
+            for i in range(len(letters))])
         self.table.commit()
 
     def create_cursor(self, *args: Any, **kwds: Any) -> cursor.Cursor:
@@ -51,9 +49,9 @@ class TestCursor(ModuleTestCase):
                 self.assertIsInstance(cur.fetch()[0], record.Record)
                 self.assertEqual(len(cur.fetch(4)), 4)
                 if mode.split()[0] == 'random':
-                    self.assertRaises(cursor.CursorModeError, cur.fetch, -1)
+                    self.assertRaises(cursor.CursorError, cur.fetch, -1)
                 else:
-                    self.assertEqual(len(cur.fetch(-1)), self.size - 5)
+                    self.assertEqual(len(cur.fetch(-1)), len(self.table) - 5)
                     self.assertEqual(cur.fetch(), [])
 
     def test_Cursor_reset(self) -> None:
@@ -66,7 +64,7 @@ class TestCursor(ModuleTestCase):
                     cur.fetch(-1)
                     self.assertEqual(cur.fetch(), [])
                     cur.reset()
-                    self.assertEqual(len(cur.fetch(-1)), self.size)
+                    self.assertEqual(len(cur.fetch(-1)), len(self.table))
 
     def test_Cursor_batchsize(self) -> None:
         for mode in self.cursor_modes:
@@ -77,12 +75,12 @@ class TestCursor(ModuleTestCase):
                 self.assertEqual(len(cur.fetch()), 1)
                 if mode.split()[0] != 'random':
                     cur.batchsize = -1
-                    self.assertEqual(len(cur.fetch()), self.size - 6)
+                    self.assertEqual(len(cur.fetch()), len(self.table) - 6)
                 cur = self.create_cursor(mode=mode, batchsize=100)
                 if mode.split()[0] == 'random':
                     self.assertEqual(len(cur.fetch()), 100)
                 else:
-                    self.assertEqual(len(cur.fetch()), self.size)
+                    self.assertEqual(len(cur.fetch()), len(self.table))
 
     def test_Cursor_where(self) -> None:
         for where, matches in [
@@ -98,21 +96,6 @@ class TestCursor(ModuleTestCase):
                         self.assertEqual(size, 10)
                     else:
                         self.assertEqual(size, matches)
-
-    def test_Cursor_orderby(self) -> None:
-        for mode in self.cursor_modes:
-            with self.subTest(mode=mode, orderby='uid'):
-                if (mode.split()[0] == 'random'
-                    or mode.split()[1] != 'static'):
-                    self.assertRaises(
-                        cursor.CursorModeError, self.create_cursor,
-                        mode=mode, orderby='uid')
-                    continue
-                cur = self.create_cursor(
-                    mode=mode, orderby='uid', reverse=False)
-                rcur = self.create_cursor(
-                    mode=mode, orderby='uid', reverse=True)
-                self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
 
     def test_Cursor_groupby(self) -> None:
         args = ('gid', ('gid', len, 'count'), ('uid', max, 'max(uid)'))
@@ -131,6 +114,42 @@ class TestCursor(ModuleTestCase):
                     cur = self.create_cursor(*args, mode=mode, groupby='gid')
                     self.assertEqual(
                         list(cur), [(0, 18, 52), (1, 17, 50), (2, 17, 51)])
+
+    def test_Cursor_having(self) -> None:
+        args = ('gid', ('gid', len, 'count'), ('uid', max, 'max(uid)'))
+        for mode in self.cursor_modes:
+            with self.subTest(
+                mode=mode, groupby='gid', having='max(uid)<52'):
+                self.assertRaises(
+                    cursor.CursorError, self.create_cursor,
+                    mode=mode, groupby='gid', having='max(uid)<52')
+            with self.subTest(
+                args=args, mode=mode, groupby='gid', having='max(uid)<52'):
+                if (mode.split()[0] == 'random'
+                    or mode.split()[1] != 'static'):
+                    self.assertRaises(
+                        cursor.CursorError, self.create_cursor,
+                        *args, mode=mode, groupby='gid', having='max(uid)<52')
+                else:
+                    cur = self.create_cursor(
+                        *args, mode=mode, groupby='gid', having='max(uid)<52')
+                    self.assertEqual(
+                        list(cur), [(1, 17, 50), (2, 17, 51)])
+
+    def test_Cursor_orderby(self) -> None:
+        for mode in self.cursor_modes:
+            with self.subTest(mode=mode, orderby='uid'):
+                if (mode.split()[0] == 'random'
+                    or mode.split()[1] != 'static'):
+                    self.assertRaises(
+                        cursor.CursorError, self.create_cursor,
+                        mode=mode, orderby='uid')
+                    continue
+                cur = self.create_cursor(
+                    mode=mode, orderby='uid', reverse=False)
+                rcur = self.create_cursor(
+                    mode=mode, orderby='uid', reverse=True)
+                self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
 
     def test_Cursor_dtype(self) -> None:
         for dtype in [tuple, dict]:
