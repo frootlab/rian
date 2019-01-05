@@ -45,8 +45,13 @@ VarDefD = Tuple[FieldID, AnyOp, FieldID] # <operator>: <field> -> <variable>
 VarDef = Union[FieldID, VarDefA, VarDefB, VarDefC, VarDefD]
 VarsParams = Tuple[tuple, tuple, tuple]
 
+# Categories
+CatA = OptType
+CatB = Tuple[OptType, FieldIDs]
+Cat = Union[CatA, CatB]
+
 #
-# Universal Operator Classes
+# Generic Operator Classes
 #
 
 OperatorBase = collections.abc.Callable
@@ -70,9 +75,11 @@ class Identity(OperatorBase): # type: ignore
         return 0
 
     def __repr__(self) -> str:
+        name = type(self).__name__
         with contextlib.suppress(AttributeError):
-            return f"{type(self).__name__}({', '.join(self._variables)})"
-        return f'{type(self).__name__}()'
+            args = ', '.join(self._variables) # type: ignore
+            return f"{name}({args})"
+        return f'{name}()'
 
     #
     # Public
@@ -143,7 +150,7 @@ def create_zero(target: OptType = None) -> AnyOp:
     return Zero(target)
 
 class Lambda(OperatorBase): # type: ignore
-    """Class for parsed expressions.
+    """Class for operators, that are based on parsed expressions.
 
     Args:
         expression:
@@ -204,9 +211,9 @@ class Lambda(OperatorBase): # type: ignore
     def variables(self) -> FieldIDs:
         with contextlib.suppress(AttributeError):
             attrs = self._operator.variables # type: ignore
-            if callable(attr):
-                return tuple(attr())
-            return attr
+            if callable(attrs):
+                return tuple(attrs())
+            return attrs
         with contextlib.suppress(AttributeError):
             return self._variables
         return None
@@ -221,8 +228,8 @@ class Lambda(OperatorBase): # type: ignore
         variables = self._get_valid_variables() or names # Set default values
         ops = [expr.evaluate] # type: ignore
         if domain != dict:
-            ops.append(create_getter(
-                *names, domain=domain, target=dict, variables=variables))
+            ops.append(create_mapper(
+                *names, domain=(domain, variables), target=dict))
         self._operator = compose(*ops) # type: ignore
         self._operator.variables = expr.variables # type: ignore
 
@@ -235,8 +242,8 @@ class Lambda(OperatorBase): # type: ignore
         compiled = eval(command) # pylint: disable=W0123
         ops = [lambda obj: compiled(*obj)]
         if domain != tuple:
-            ops.append(create_getter(
-                *names, domain=domain, target=tuple, variables=variables))
+            ops.append(create_mapper(
+                *names, domain=(domain, variables), target=tuple))
         self._operator = compose(*ops) # type: ignore
         self._variables = tuple(names)
 
@@ -455,78 +462,126 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
 # Factory functions for elementary operators
 #
 
-def create_getter(
-        *fields: FieldID, domain: OptType = None, target: OptType = None,
-        variables: OptStrIter = None) -> AnyOp:
-    """Create a getter operator with fixed field names.
+def create_mapper(
+        *fields: FieldID, domain: Cat = None, target: Cat = None) -> AnyOp:
+    """Create a converter.
 
     Args:
         *fields: Valid :term:`field identifiers <field identifier>` within the
             domain category.
-        domain: Optional domain category of the operator. If provided, the
-            category must to be given as a :class:`type` or None. Supported
-            types are :class:`object`, subclasses of the class:`Mapping class
-            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-            class <collection.abs.Sequence>`. By default the arguments passed to
-            the getter are used as inputs.
-        target: Optional target category of the operator. If provided, the
-            category has to be given as a type. Supported types are
-            :class:`tuple` and :dict:'dict'. If no target type is specified, the
-            target category of the operator depends on the domain. In this case
-            for the domain *object*, the target type is documented by the the
-            builtin function :func:`~operator.attrgetter`, for other domains by
-            the function :func:`~operator.itemgetter`.
-        variables: Tuple of variable names. This parameter is only required, if
-            the domain category is a subclass of the :class:`Sequence class
-            <collection.abs.Sequence>`. In this case the variable names are used
-            to map the fields (given as names) to their indices within the
-            domain tuple. If the target category has named field identifiers
-            (like :class:`object` or :class:`dict`) then the variable names are
-            used as the respective names.
+        domain: Optional parameter, that specifies the domain category of the
+            operator. If provided, the category has to be given in one of the
+            following formats: For categories / types, that support named fields
+            (like :class:`object` or like :class:`dict`), the parameter has to
+            be given by the format `<domain>`, where `<domain>` is a supported
+            :class:`type` or None. For domains, however, that only support
+            positional fields (like :class:`tuple` or :class:`list`), the
+            conversion to a target category, with field names (e.g. the
+            attributes of an object), requires to specify the field names. In
+            this case the domain has to be given by the format `(<domain>,
+            <variables>)`, where `<variables>` is a tuple of valid field
+            identifiers in the category of the domain and used to map the field
+            names to their positions. Supported types are :class:`object`,
+            subclasses of the class:`Mapping class <collection.abs.Mapping>` and
+            subclasses of the :class:`Sequence class <collection.abs.Sequence>`.
+            The default value for `<domain>` is None. In this case the fields
+            are taken from the positional arguments, that are passes to the
+            operator.
+        target: Optional parameter, that specifies the target category of the
+            operator. If provided, the category has to be given in one of the
+            following formats: For categories / types, that only support
+            positional field identifiers (like :class:`tuple` or :class:`list`),
+            the target category has to be given by the format `<target>`, where
+            `<target>` is a supported :class:`type` or None. Supported types are
+            :class:`tuple`, :class:`list` and :dict:'dict'. For domains,
+            however, that support field names (like :class:`dict`), the used
+            field names can be included within the specification. In this case
+            the target category has to be given by the format `(<target>,
+            <components>)`, where `<components>` is a tuple of valid field
+            identifiers in the category of the target and used to map the
+            variable names of the domain to component names of the target. If no
+            target is specified, the target category of the operator depends on
+            the domain. In this case for the domain *object*, the target type is
+            documented by the the builtin function :func:`~operator.attrgetter`,
+            for other domains by the function :func:`~operator.itemgetter`.
 
     Returns:
-        Operator that fetches the values of specified fields from its operand
-        and returns them in a given target format.
+        Operator that maps selected fields from its operand to fields of a
+        given target type.
 
     """
-    # The default getter is the zero operator of the target category
-    if not fields:
-        return create_zero(target)
+    # Split parameter 'domain' into category and variables
+    domain_type: OptType
+    domain_vars: tuple
+    if domain is None or isinstance(domain, type):
+        domain_type = domain
+        domain_vars = fields
+    elif isinstance(domain, tuple):
+        domain_type = domain[0]
+        domain_vars = domain[1]
+    else:
+        raise InvalidTypeError('domain', domain, (type, tuple))
 
-    # Create getter operator
+    # Split parameter 'target' into category and variables
+    target_type: OptType
+    target_vars: tuple
+    if target is None or isinstance(target, type):
+        target_type = target
+        target_vars = fields
+    elif isinstance(target, tuple):
+        target_type = target[0]
+        target_vars = target[1]
+    else:
+        raise InvalidTypeError('target', target, (type, tuple))
+
+    # The default mapper without given field names is the zero operator of the
+    # target category. For given field names it is the projection to the fields
+    if not fields:
+        return create_zero(target_type)
+    if not (domain_type or target_type):
+        return create_identity(*fields)
+
+    # Create getter, using standard library operator.attrgetter and
+    # operator.itemgetter
     getter: AnyOp
-    if not domain:
-        getter = create_identity(*fields)
-    elif domain == object:
+    if not domain_type:
+        getter = lambda *args: args
+    elif domain_type == object:
         # TODO: check if field ids are valid
         # check.has_iterable_type(...)
         getter = operator.attrgetter(*fields) # type: ignore
-    elif issubclass(domain, Mapping):
+    elif issubclass(domain_type, Mapping):
         # TODO: check if field ids are valid
         getter = operator.itemgetter(*fields)
-    elif issubclass(domain, Sequence):
+    elif issubclass(domain_type, Sequence):
         # TODO: check if field IDs are valid
-        if variables:
-            indices = [
-                list(variables).index(field) for field in fields] # type: ignore
-            getter = operator.itemgetter(*indices)
+        if domain_vars:
+            ids = [
+                domain_vars.index(field) for field in fields] # type: ignore
+            getter = operator.itemgetter(*ids)
         else:
             getter = operator.itemgetter(*fields)
     else:
         raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
 
-    # Create operator that maps the result to a specified target format
-    if not target:
-        return getter
-    astuple: AnyOp = lambda x: x if isinstance(x, tuple) else (x, )
-    if target == tuple:
-        return lambda *args: astuple(getter(*args))
-    if target == dict:
-        if variables:
-            return lambda *args: dict(
-                zip(variables, astuple(getter(*args)))) # type: ignore
-        return lambda *args: dict(zip(fields, astuple(getter(*args))))
-    raise InvalidTypeError('target', target, (tuple, dict))
+    # Create converter that maps the tuple retrived from the getter to a
+    # specified target format
+    converter: AnyOp
+    if not target_type:
+        converter = identity
+    elif target_type == tuple:
+        converter = lambda x: x if isinstance(x, tuple) else (x, )
+    elif target_type == list:
+        converter = lambda x: list(x) if isinstance(x, tuple) else [x]
+    elif target_type == dict:
+        dzip: AnyOp = lambda seq: dict(zip(target_vars, seq))
+        name = target_vars[0]
+        converter = lambda x: dzip(x) if isinstance(x, tuple) else {name: x}
+    else:
+        raise ValueError()
+        # TODO: raise InvalidValueError('target', target, (tuple, list, dict))
+
+    return compose(converter, getter)
 
 def create_setter(*items: Item, domain: type = dict) -> AnyOp:
     """Create a setter operator with fixed values.
@@ -593,8 +648,7 @@ def create_wrapper(**attrs: Any) -> AnyOp:
 #
 
 def create_sorter(
-        *keys: FieldID, domain: OptType = None,
-        reverse: bool = False) -> SeqHom:
+        *keys: FieldID, domain: Cat = None, reverse: bool = False) -> SeqHom:
     """Create a sorter with fixed sorting keys.
 
     Sorters are operators, that act on sequences of objects of a given category
@@ -617,14 +671,13 @@ def create_sorter(
 
     """
     # Create getter operator for given keys
-    getter = create_getter(*keys, domain=domain) if keys else None
+    getter = create_mapper(*keys, domain=domain) if keys else None
 
     # Create and return sorting operator
     return lambda seq: sorted(seq, key=getter, reverse=reverse)
 
 def create_grouper(
-        *keys: FieldID, domain: OptType = None,
-        presorted: bool = False) -> SeqOp:
+        *keys: FieldID, domain: Cat = None, presorted: bool = False) -> SeqOp:
     """Create a grouping operator with fixed grouping keys.
 
     Args:
@@ -654,7 +707,7 @@ def create_grouper(
         return lambda seq: [seq]
 
     # Create getter for given keys
-    getter = create_getter(*keys, domain=domain)
+    getter = create_mapper(*keys, domain=domain)
 
     # Create list mapper for groups
     group = operator.itemgetter(1)
@@ -670,7 +723,7 @@ def create_grouper(
     return lambda seq: grouper(sorted(seq, key=getter))
 
 def create_aggregator(
-        *args: VarDef, domain: OptType = None, target: type = tuple) -> SeqOp:
+        *args: VarDef, domain: Cat = None, target: type = tuple) -> SeqOp:
     """Creates an aggregation operator with specified field variables.
 
     Args:
@@ -700,7 +753,7 @@ def create_aggregator(
     fields, ops, names = split_var_params(*args, default=getfirst)
 
     # Create a getter, that maps the input sequence to a matrix
-    getter = create_getter(*fields, domain=domain, target=tuple)
+    getter = create_mapper(*fields, domain=domain, target=tuple)
     matrix: SeqOp = lambda seq: list(map(getter, seq))
 
     # Create operators, that transpose the matrix and aggregate the columns
@@ -718,7 +771,7 @@ def create_aggregator(
     raise ValueError(f"type '{target.__name__}' is not supported")
 
 def create_group_aggregator(
-        *args: VarDef, key: OptKey = None, domain: OptType = None,
+        *args: VarDef, key: OptKey = None, domain: Cat = None,
         target: type = tuple, presorted: bool = False) -> SeqOp:
     """Creates a group aggregation operator.
 

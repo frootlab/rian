@@ -399,15 +399,15 @@ class Cursor(attrib.Container):
         # acts on tuples as an itemgetter, which requires the specification of
         # the tuple variables.
         if self._groupby:
-            self._mapper = operator.create_getter(
-                *names, domain=tuple, target=dtype, variables=names)
+            self._mapper = operator.create_mapper(
+                *names, domain=(tuple, names), target=dtype)
             return
 
         # If the result set is not aggregated, and the target type is specified,
         # then the mapper acts on record objects as an attribute getter with
         # a subsequent convrerter
         if dtype:
-            self._mapper = operator.create_getter(
+            self._mapper = operator.create_mapper(
                 *names, domain=object, target=dtype)
             return
 

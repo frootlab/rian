@@ -88,37 +88,53 @@ class TestOperator(ModuleTestCase):
         self.assertEqual(zero, operator.create_zero()) # Test caching
         zero = operator.create_zero(tuple)
 
-
-    def test_create_getter(self) -> None:
+    def test_create_mapper(self) -> None:
+        with self.subTest(domain=None):
+            with self.subTest(target=dict):
+                getter = operator.create_mapper(
+                    'name', 'id', domain=None, target=dict)
+                self.assertEqual(getter('test', 1), {'name': 'test', 'id': 1})
+            with self.subTest(target=(dict, ('_', 1))):
+                getter = operator.create_mapper(
+                    'name', 'id', domain=None, target=(dict, ('_', 1)))
+                self.assertEqual(getter('test', 1), {'_': 'test', 1: 1})
         with self.subTest(domain=object):
             obj = mock.Mock()
             obj.configure_mock(name='test', id=1)
-            with self.subTest(target=dict):
-                getter = operator.create_getter(
-                    'name', 'id', domain=object, target=dict)
-                self.assertEqual(getter(obj), {'name': 'test', 'id': 1})
             with self.subTest(target=tuple):
-                getter = operator.create_getter(
+                getter = operator.create_mapper(
                     'name', 'id', domain=object, target=tuple)
                 self.assertEqual(getter(obj), ('test', 1))
+            with self.subTest(target=list):
+                getter = operator.create_mapper(
+                    'name', 'id', domain=object, target=list)
+                self.assertEqual(getter(obj), ['test', 1])
+            with self.subTest(target=dict):
+                getter = operator.create_mapper(
+                    'name', 'id', domain=object, target=dict)
+                self.assertEqual(getter(obj), {'name': 'test', 'id': 1})
+            with self.subTest(target=(dict, ('_', 1))):
+                getter = operator.create_mapper(
+                    'name', 'id', domain=object, target=(dict, ('_', 1)))
+                self.assertEqual(getter(obj), {'_': 'test', 1: 1})
         with self.subTest(domain=dict):
             dic = {'name': 'test', 'id': 1}
             with self.subTest(target=dict):
-                getter = operator.create_getter(
+                getter = operator.create_mapper(
                     'name', 'id', domain=dict, target=dict)
                 self.assertEqual(getter(dic), {'name': 'test', 'id': 1})
             with self.subTest(target=tuple):
-                getter = operator.create_getter(
+                getter = operator.create_mapper(
                     'name', 'id', domain=dict, target=tuple)
                 self.assertEqual(getter(dic), ('test', 1))
         with self.subTest(domain=list):
             seq = ['test', 1]
             with self.subTest(target=dict):
-                getter = operator.create_getter(
+                getter = operator.create_mapper(
                     0, 1, domain=list, target=dict)
                 self.assertEqual(getter(seq), {0: 'test', 1: 1})
             with self.subTest(target=tuple):
-                getter = operator.create_getter(
+                getter = operator.create_mapper(
                     0, 1, domain=list, target=tuple)
                 self.assertEqual(getter(seq), ('test', 1))
 
@@ -147,7 +163,7 @@ class TestOperator(ModuleTestCase):
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
             obj.configure_mock(x=i, y=-i)
-        getx = operator.create_getter('x', domain=object)
+        getx = operator.create_mapper('x', domain=object)
         sorter = operator.create_sorter('x', domain=object)
         self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
         sorter = operator.create_sorter('y', domain=object, reverse=True)

@@ -1,9 +1,27 @@
 # -*- coding: utf-8 -*-
+#
+# nemoa --- https://frootlab.github.io/nemoa
+# Copyright (C) 2013-2019, Patrick Michl
+#
+# This file is part of nemoa.
+#
+#  nemoa is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+#  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with nemoa. If not, see <http://www.gnu.org/licenses/>.
+#
+
 """Nemoa deep data-analysis and visualization.
 
-Nemoa is a python package to uncover complex dependency structures within
-natural data. For this purpose the package combines `probabilistic graphical
-modeling`_ with `structured data-analysis`_ and data visualization.
+Nemoa is a python package for statistical data analysis and visualization, based
+on `probabilistic graphical modeling`_ and `structured data-analysis`_.
 
 .. _probabilistic graphical modeling:
     https://en.wikipedia.org/wiki/Graphical_model
@@ -11,18 +29,19 @@ modeling`_ with `structured data-analysis`_ and data visualization.
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.386'
+__version__ = '0.5.387'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
 __license__ = 'GPLv3'
-__copyright__ = 'Copyright 2013-2018, Patrick Michl'
+__copyright__ = 'Copyright 2013-2019, Patrick Michl'
 __organization__ = 'frootlab'
 __author__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'
 __maintainer__ = 'Patrick Michl'
 __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 __credits__ = ['Willi Jäger', 'Rainer König']
+__docformat__ = 'google'
 
 import nemoa.dataset
 import nemoa.model
