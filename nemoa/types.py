@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Collection of Structural Types and Stubs, required by different Modules."""
+"""Collection of frequently used types, stubs and constants."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -22,7 +22,7 @@ S = TypeVar('S')
 T = TypeVar('T')
 
 # Type-Surrogates
-TypeHint = Generic[T]
+TypeHint = Generic[T] # pylint: disable=E1136
 
 ################################################################################
 # Constants
@@ -53,7 +53,7 @@ class FileAccessor(abc.ABC):
             "to implement a method with name 'open'")
 
 ################################################################################
-# Classes
+# Collection of frequently used Classes
 ################################################################################
 
 Array = array.ArrayType
@@ -63,6 +63,7 @@ Mapping = collections.Mapping
 MappingProxy = types.MappingProxyType
 Method = types.MethodType
 Module = types.ModuleType
+NoneType = None.__class__
 OrderedDict = collections.OrderedDict
 Collection = collections.Collection
 Path = os.PathLike

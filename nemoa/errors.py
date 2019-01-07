@@ -44,9 +44,14 @@ class InvalidTypeError(NemoaAssert, TypeError):
     """Raise when an object is required to be of a given type."""
 
     def __init__(self, name: str, obj: object, classinfo: object) -> None:
-        this = otree.get_lang_repr(classinfo, separator='or')
         that = otree.get_name(type(obj))
-        msg = f"{name} requires to be of type {this} not {that}"
+        if classinfo is None:
+            msg = f"{name} has invalid type {that}"
+        elif isinstance(classinfo, str):
+            msg = f"{name} requires to be {classinfo}"
+        else:
+            this = otree.get_lang_repr(classinfo, separator='or')
+            msg = f"{name} requires to be of type {this} not {that}"
         super().__init__(msg)
 
 class InvalidClassError(NemoaAssert, TypeError):

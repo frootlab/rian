@@ -484,21 +484,65 @@ Statistics
 API Glossary
 ------------
 
-Generic Types and Formats
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Basic Parameters and Formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. glossary::
 
     File Reference
 
-        *File references* aggregate different types, that identify files,
+        *File References* aggregate different types, that identify files,
         including: :term:`File objects <file object>`, Strings and
         :term:`path-like objects <path-like object>`, that point to filenames in
         the directory structure of the system and instances of the class
         :class:`~nemoa.types.FileAccessor`.
 
-Database and Data Warehousing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Field Identifier
+
+        *Field Identifiers* uniquely identify fields within objects. Since
+        objects may comprise fields, given by it's attributes, items or / and
+        other accessing mechanisms, the identification mechanism of the fields
+        depends on the domain type of the object:
+
+        :objects: For the domain type :class:`object` fields are identified by
+            attribute names, and therefore required to be valid identifiers as
+            specified in :PEP:`3131`. Additionally the functions in the module
+            :mod:`nemoa.base.operator` accept the usage of dots, for the
+            identification of arbitrary sub-objects within object hierarchies.
+        :mappings: For the domain type :class:`dict` (or any subclass of the
+            :class:`Mapping class <collection.abs.Mapping>`) fields are
+            identified by the keys of the mappings and therefore required to be
+            :term:`hashable`. Additionally the functions in the module
+            :mod:`nemoa.base.operator` require, that the field identifiers are
+            not given by tuples.
+        :sequences: For the domain type :class:`tuple` (or any subclass of the
+            :class:`Sequence class <collection.abs.Sequence>`) the fields are
+            identifiers are not the names of fields, but their
+            position within the sequence (starting with 0) and therefore
+            required to be non-negative integers.
+
+    Domain Like
+
+        *Domain Like* parameters are used to specify the *type* and the *frame*
+        of the domain and the target (codomain) of an operator. Thereby the
+        format, which is used for the specification depends an the respective
+        type:
+
+        Domain types that use named :term:`field identifiers<field identifier>`
+        (like :class:`object` or :class:`dict`) do not require the specification
+        of a frame. In this case the parameter format is given by a single term
+        `<type>`, where `<type>` may ether be a supported :class:`type` of the
+        respective parameter or :ref:`None<None>`, for the default behavior of
+        the respective function.
+
+        Domain types that use positional field identifiers (like :class:`tuple`
+        or :class:`list`) require the specification of a frame, to map variable
+        names to their positions within the frame. In this case the parameter
+        format is given by a tuple `(<type>, <frame>)`, where the term `<frame>`
+        is required to be a tuple of valid field identifiers in the domain type.
+
+Parameters and Formats used in Data Warehousing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. glossary::
 
@@ -565,32 +609,6 @@ Database and Data Warehousing
         depending on the domain, many out-of-the-box aggregators are shipped
         with the standard library package :mod:`statistics` or with third party
         packages like :mod:`numpy`.
-
-    Field Identifier
-
-        *Field Identifiers* uniquely identify a field within an object. Thereby,
-        however, the identification mechanism by itself is not unique since
-        an object may comprise fields, given by it's attributes, items or
-        other accessing mechanisms, such that the requirements to the field
-        identifier depend on the domain, which specifies this mechanism:
-
-        :objects: For the domain :class:`object`, the field identifiers are the
-            attribute names of the objects, and therefore required to be valid
-            identifiers as specified in :PEP:`3131`. The functions in the module
-            :mod:`nemoa.base.operator` additionally allow the usage of dots, for
-            the identification of arbitrary sub-objects within the object
-            hierarchy.
-        :mappings: For the domain :class:`dict` (or any subclass of the
-            :class:`Mapping class <collection.abs.Mapping>`), the field
-            identifiers are the keys of the mappings and therefore required to
-            be :term:`hashable` objects. The functions in the module
-            :mod:`nemoa.base.operator` additionally require, that the field
-            identifiers are not given by tuples.
-        :sequences: For any subclass of the :class:`Sequence class
-            <collection.abs.Sequence>` (like :class:`list` or :class:`tuple`)
-            the field identifiers are not the names of fields, but their
-            position within the sequence (starting with 0) and therefore
-            required to be non-negative integers.
 
     Field Variable
 
