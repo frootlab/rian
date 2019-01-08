@@ -13,7 +13,7 @@ import weakref
 from nemoa.base import env, pattern
 from nemoa.errors import PullError, PushError, ConnectError, DisconnectError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
-from nemoa.types import ExcType, Exc, Traceback, FileAccessor
+from nemoa.types import ErrMeta, ErrType, ErrStack, FileAccessor
 from nemoa.types import BinaryFileLike, TextFileLike
 
 #
@@ -74,7 +74,7 @@ class FileConnector:
     def __enter__(self) -> FileLike:
         return self.open(self._ref, *self._args, **self._kwds)
 
-    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         self.close()
 
     def __del__(self) -> None:

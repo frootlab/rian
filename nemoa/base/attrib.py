@@ -7,8 +7,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import check
+from datetime import datetime as Date
 from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
-from nemoa.types import Any, Date, OptClassInfo, Optional, TypeHint
+from nemoa.types import Any, OptClassInfo, Optional, TypeHint
 from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
 from nemoa.types import OptDict, OptBool, Union, Callable
 

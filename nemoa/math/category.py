@@ -13,7 +13,9 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import pkg, stack
-from nemoa.types import Any, Callable, OptModule, OptStr, OptStrList
+from nemoa.types import Any, Callable, Module, OptStr, OptStrList, Optional
+
+OptModule = Optional[Module]
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.

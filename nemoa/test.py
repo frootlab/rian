@@ -8,13 +8,13 @@ __docformat__ = 'google'
 
 import functools
 import inspect
-from io import StringIO
-from typing import NamedTuple
-from unittest import skipIf
-from unittest import TestCase, TestResult, TestLoader, TestSuite, TextTestRunner
+import io
+import types
+import typing
+import unittest
 import numpy as np
 from nemoa.base import pkg, otree
-from nemoa.types import Any, AnyOp, ClassInfo, ExcType, Function, Method, Module
+from nemoa.types import Any, AnyOp, ClassInfo, Method, ErrMeta, Module, Function
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 
 #
@@ -22,7 +22,6 @@ from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 #
 
 Cases = List['Case']
-LRUFunction = functools._lru_cache_wrapper
 
 ################################################################################
 # Global Test Setting
@@ -31,11 +30,11 @@ LRUFunction = functools._lru_cache_wrapper
 skip_completeness_test: bool = False
 
 ################################################################################
-# Test Parameters
+# Parameter Classes
 ################################################################################
 
-class Case(NamedTuple):
-    """Case parameter."""
+class Case(typing.NamedTuple):
+    """Class for the storage of Case parameters."""
 
     args: Tuple[Any, ...] = tuple()
     kwds: Dict[Any, Any] = {}
@@ -45,7 +44,7 @@ class Case(NamedTuple):
 # Test Cases
 ################################################################################
 
-class BaseTestCase(TestCase):
+class BaseTestCase(unittest.TestCase):
     """Custom testcase."""
 
     def assertIsSubclass(self, cls: type, supercls: type) -> None:
@@ -108,28 +107,25 @@ class BaseTestCase(TestCase):
                 self.assertNotEqual(func(*case.args, **case.kwds), case.value)
 
     def assertNotRaises(
-            self, Error: ExcType, func: AnyOp, *args: Any,
-            **kwds: Any) -> None:
+            self, cls: ErrMeta, func: AnyOp, *args: Any, **kwds: Any) -> None:
         """Assert that an exception is not raised."""
         try:
             func(*args, **kwds)
-        except Error:
+        except cls:
             raise AssertionError(
-                f"function {func.__name__} raises error {Error.__name__}")
+                f"function {func.__name__} raises error {cls.__name__}")
 
-    def assertAllRaises(
-            self, Error: ExcType, func: AnyOp, cases: Cases) -> None:
+    def assertAllRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
         """Assert that all function parameters raise an exception."""
         for case in cases:
             with self.subTest(case):
-                self.assertRaises(Error, func, *case.args, **case.kwds)
+                self.assertRaises(cls, func, *case.args, **case.kwds)
 
-    def assertNoneRaises(
-            self, Error: ExcType, func: AnyOp, cases: Cases) -> None:
+    def assertNoneRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
         """Assert that no function parameter raises an exception."""
         for case in cases:
             with self.subTest(case):
-                self.assertNotRaises(Error, func, *case.args, **case.kwds)
+                self.assertNotRaises(cls, func, *case.args, **case.kwds)
 
 class ModuleTestCase(BaseTestCase):
     """Custom testcase."""
@@ -143,18 +139,21 @@ class ModuleTestCase(BaseTestCase):
             return
 
         # Get reference to module
-        ref = getattr(self, 'module', None)
-        if not isinstance(ref, Module):
+        module = getattr(self, 'module', None)
+        if not isinstance(module, Module):
             raise AssertionError(f"module has not been specified")
 
         # Get module members
         members = set()
-        for name in getattr(ref, '__all__',
-            otree.get_members(ref, classinfo=(type, Function, LRUFunction))):
+        candidates = getattr(module, '__all__', None)
+        if not candidates:
+            allow = (type, Function, functools._lru_cache_wrapper)
+            candidates = otree.get_members(module, classinfo=allow)
+        for name in candidates:
             if name.startswith('_'):
                 continue # Filter protected members
-            obj = getattr(ref, name)
-            if obj.__module__ != ref.__name__:
+            obj = getattr(module, name)
+            if obj.__module__ != module.__name__:
                 continue # Filter imported members
             if BaseException in getattr(obj, '__mro__', []):
                 continue # Filter exceptions
@@ -176,7 +175,7 @@ class ModuleTestCase(BaseTestCase):
             f"module '{self.module.__name__}' comprises "
             f"untested members: {', '.join(sorted(untested))}")
 
-    @skipIf(skip_completeness_test, "completeness is not tested")
+    @unittest.skipIf(skip_completeness_test, "completeness is not tested")
     def test_completeness_of_module(self) -> None:
         self.assertModuleIsComplete()
 
@@ -343,14 +342,15 @@ class MathTestCase(BaseTestCase):
 #
 
 def run(
-        classinfo: ClassInfo = TestCase, stream: TextFileLike = StringIO(),
-        verbosity: int = 2) -> TestResult:
+        classinfo: ClassInfo = unittest.TestCase,
+        stream: TextFileLike = io.StringIO(),
+        verbosity: int = 2) -> unittest.TestResult:
     """Run all tests if given type."""
-    loader = TestLoader()
-    suite = TestSuite()
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
     root = pkg.get_root()
     cases = pkg.search(module=root, classinfo=classinfo, val='reference')
     for ref in cases.values():
         suite.addTests(loader.loadTestsFromTestCase(ref))
-    return TextTestRunner( # type: ignore
+    return unittest.TextTestRunner( # type: ignore
         stream=stream, verbosity=verbosity).run(suite)

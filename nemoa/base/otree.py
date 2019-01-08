@@ -7,10 +7,11 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
+from typing import Collection
 from nemoa.base import check, literal, mapping, operator
 from nemoa.types import Any, ClassInfo, OptStr, OptDictOfKeyOps
 from nemoa.types import RecDict, Union, StrDict
-from nemoa.types import DictOfRecDicts, StrOrType, Collection
+from nemoa.types import DictOfRecDicts, StrOrType
 
 #
 # Structural Types

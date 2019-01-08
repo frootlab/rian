@@ -16,19 +16,16 @@ import operator
 import py_expression_eval
 from nemoa.base import literal
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Any, OrderedDict, Method, Mapping, Sequence, NoneType
+from nemoa.types import Any, Method, Mapping, Sequence, NoneType
 from nemoa.types import Tuple, OptType, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, BoolOp, StrIter, OptStrIter, StrList
+from nemoa.types import Optional, OptOp, BoolOp, StrList, Class
 
 #
-# Structural Types
+# Types and ClassInfos
 #
 
 # Expression
 Expr = Any # TODO: Use py_expression_eval.Expression
-
-# Predicate
-PredLike = Optional[Union[str, BoolOp]]
 
 # Field identifiers
 FieldID = Hashable # <field>
@@ -37,48 +34,142 @@ OptFieldIDs = Optional[FieldIDs]
 OptKey = Optional[Union[FieldID, FieldIDs]]
 Item = Tuple[FieldID, Any] # <field>, <value>
 
-# Field variables
+# Field Variables
 VarDefA = Tuple[FieldID] # <field>
 VarDefB = Tuple[FieldID, FieldID] # id: <field> -> <variable>
 VarDefC = Tuple[FieldID, AnyOp] # <operator>: <field> -> <field>
 VarDefD = Tuple[FieldID, AnyOp, FieldID] # <operator>: <field> -> <variable>
-VarDef = Union[FieldID, VarDefA, VarDefB, VarDefC, VarDefD]
-VarsParams = Tuple[tuple, tuple, tuple]
+FieldVar = Union[FieldID, VarDefA, VarDefB, VarDefC, VarDefD]
 
 # Domains
-Dom = Tuple[type, FieldIDs]
 DomLike = Union[OptType, Tuple[OptType, FieldIDs]]
 
 #
-# Parameter type converters
+# Parameter Classes
 #
 
-def _get_domain(
-        domain: DomLike, default_type: type = NoneType,
-        default_frame: OptFieldIDs = None) -> Dom:
-    # Get type and frame from domain like parameter
-    if domain is None:
-        return default_type, default_frame or tuple()
-    if isinstance(domain, type):
-        return domain, default_frame or tuple()
-    if isinstance(domain, tuple):
-        return domain[0] or NoneType, domain[1]
-    raise InvalidTypeError('domain', domain, (NoneType, type, tuple))
+class Domain:
+    """Class for the storage of domain parameters.
+
+    Args:
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of a domain.
+        default_type: Optional parameter, that specifies the default domain type
+            which is used if no type is given within the argument `domain`. If
+            provided, the argument has to be given as a :class:`type`.
+        default_frame: Optional parameter, that specifies the default domain
+            frame which is used if no frame is given within the argument
+            `domain`. If provided, the argument has to be given as a
+            :class:`tuple`.
+
+    """
+    __slots__ = ['type', 'frame']
+
+    type: Class
+    frame: tuple
+
+    def __init__(
+        self, domain: DomLike = None, default_type: Class = NoneType,
+        default_frame: OptFieldIDs = None) -> None:
+        if domain is None:
+            self.type = default_type
+            self.frame = default_frame or tuple()
+        elif isinstance(domain, type):
+            self.type = domain
+            self.frame = default_frame or tuple()
+        elif isinstance(domain, tuple):
+            self.type = domain[0] or default_type
+            self.frame = domain[1] or default_frame or tuple()
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        dtype = self.type.__name__
+        frame = ', '.join(map(str, self.frame))
+        if not frame:
+            return f"{name}({dtype})"
+        return f"{name}({dtype}, frame={frame})"
+
+class FieldMap:
+    """Class for the storage of field mapping parameters.
+
+    Args:
+        *args: Definitions of :term:`field variables <field variable>`.
+        default: Default operator which is used to map fields to field
+            variables. By default the identity is used.
+
+    """
+    __slots__ = ['fields', 'operators', 'variables']
+
+    fields: FieldIDs
+    operators: Tuple[AnyOp, ...]
+    variables: tuple
+
+    def __init__(self, *args: FieldVar, default: OptOp = None) -> None:
+        if not args:
+            self.fields = tuple()
+            self.operators = tuple()
+            self.variables = tuple()
+            return
+
+        # Set default values
+        default = default or identity
+
+        # Get list of parameters
+        params: list = []
+        for fvar in args:
+            if isinstance(fvar, tuple):
+                size = len(fvar)
+                if size == 1:
+                    params.append((fvar[0], default, fvar[0]))
+                    continue
+                if size == 2:
+                    if callable(fvar[1]):
+                        params.append((fvar[0], fvar[1], fvar[0]))
+                        continue
+                    params.append((fvar[0], default, fvar[1]))
+                    continue
+                params.append((fvar[0], fvar[1], fvar[2]))
+                continue
+            if isinstance(fvar, Hashable):
+                params.append((fvar, default, fvar))
+                continue
+            raise InvalidTypeError(
+                'field variable definition', fvar, (Hashable, tuple))
+
+        par = tuple(zip(*params))
+        self.fields = par[0]
+        self.operators = par[1]
+        self.variables = par[2]
 
 #
-# Generic Operator Classes
+# Operator Classes
 #
 
-OperatorBase = collections.abc.Callable
+class Operator(collections.abc.Callable): # type: ignore
+    """Base Class for operators."""
 
-class Identity(OperatorBase): # type: ignore
+    _domain: Domain
+    _target: Domain
+
+    @property
+    def domain(self) -> Domain:
+        if hasattr(self, '_domain'):
+            return self._domain
+        return Domain()
+
+    @property
+    def target(self) -> Domain:
+        if hasattr(self, '_target'):
+            return self._target
+        return Domain()
+
+class Identity(Operator):
     """Class for identity operators."""
-
-    _variables: OptFieldIDs
     _require: int
 
     def __init__(self, *args: FieldID) -> None:
-        self._variables = args
+        self._domain = Domain(default_frame=args)
+        self._target = Domain(default_frame=args)
         self._require = len(args) if args else 0
 
     def __call__(self, *args: Any) -> Any:
@@ -103,46 +194,24 @@ class Identity(OperatorBase): # type: ignore
 
     def __repr__(self) -> str:
         name = type(self).__name__
-        if not hasattr(self, '_variables'):
+        frame = self._domain.frame
+        if not frame:
             return f'{name}()'
-        if not isinstance(self._variables, tuple):
-            return f'{name}({self._variables})'
-        args = ', '.join(map(str, self._variables))
-        return f"{name}({args})"
+        return f"{name}({', '.join(map(str, frame))})"
 
-    #
-    # Public
-    #
-
-    @property
-    def variables(self) -> OptFieldIDs:
-        with contextlib.suppress(AttributeError):
-            return self._variables
-        return None
-
-identity = Identity()
-
-@functools.lru_cache(maxsize=32)
-def create_identity(*args: FieldID) -> Identity:
-    """Create identity operator."""
-    if not args: # Do not create a new instance for identity
-        return identity
-    return Identity(*args)
-
-class Zero(OperatorBase): # type: ignore
+class Zero(Operator):
     """Class for zero operators.
 
     Args:
         target:
 
     """
-
-    _type: type
     _zero: Any
 
     def __init__(self, target: DomLike = None) -> None:
-        self._type = _get_domain(target)[0] # Get target type
-        self._zero = self._type() # Create zero object in target type
+        self._domain = Domain()
+        self._target = Domain(target)
+        self._zero = self._target.type() # Create zero object in target type
 
     def __call__(self, *args: Any) -> Any:
         return self._zero
@@ -151,33 +220,11 @@ class Zero(OperatorBase): # type: ignore
         return False
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._type.__name__})"
+        name = type(self).__name__
+        target = self._target.type.__name__
+        return f"{name}({target})"
 
-zero = Zero()
-
-@functools.lru_cache(maxsize=8)
-def create_zero(target: DomLike = None) -> AnyOp:
-    """Create a zero operator.
-
-    Args:
-        target: Optional target category of the operator. If provided, the
-            target category must by given as a :class:`type`, like
-            :class:`int`, :class:`float`, :class:`str`, :class:`set`,
-            :class:`tuple`, :class:`list`, :class:`dict` or :class:`object`.
-            Then the returned operator maps all objects of any domain category
-            to the zero object of the target category. By default the used zero
-            object is None.
-
-    Returns:
-        Operator, that maps given arguments to the zero object of a given target
-        type.
-
-    """
-    if not target: # Do not create a new instance for zero
-        return zero
-    return Zero(target)
-
-class Lambda(OperatorBase): # type: ignore
+class Lambda(Operator):
     """Class for operators, that are based on parsed expressions.
 
     Args:
@@ -196,17 +243,14 @@ class Lambda(OperatorBase): # type: ignore
         trusted:
 
     """
-
     _expression: str
-    _variables: StrIter
     _operator: Any # Usage of Callable leads to wrong interpretation by mypy
 
     def __init__(
-            self, expression: str = '', domain: OptType = None,
-            variables: OptStrIter = None, default: OptOp = None,
-            trusted: bool = True) -> None:
+            self, expression: str = '', domain: DomLike = None,
+            default: OptOp = None, trusted: bool = True) -> None:
         self._expression = expression
-        self._variables = variables or tuple()
+        self._domain = Domain(domain)
 
         if expression:
             parser = py_expression_eval.Parser()
@@ -243,14 +287,14 @@ class Lambda(OperatorBase): # type: ignore
                 return tuple(attrs())
             return attrs
         with contextlib.suppress(AttributeError):
-            return self._variables
+            return self._domain.frame
         return None
 
     #
     # Protected
     #
 
-    def _bind_operator(self, expr: Expr, domain: OptType = None) -> None:
+    def _bind_operator(self, expr: Expr, domain: DomLike = None) -> None:
         names = expr.variables()
         variables = self._get_valid_variables() or names # Set default values
         ops = [expr.evaluate]
@@ -260,7 +304,7 @@ class Lambda(OperatorBase): # type: ignore
         self._operator = compose(*ops)
         setattr(self._operator, 'variables', expr.variables)
 
-    def _compile_operator(self, expr: Expr, domain: OptType = None) -> None:
+    def _compile_operator(self, expr: Expr, domain: DomLike = None) -> None:
         names = expr.variables()
         variables = self._get_valid_variables() or names # Set default values
         string = expr.toString().replace('^', '**')
@@ -273,11 +317,11 @@ class Lambda(OperatorBase): # type: ignore
             ops.append(create_mapper(
                 *names, domain=(domain, variables), target=tuple))
         self._operator = compose(*ops)
-        self._variables = tuple(names)
+        self._domain.frame = tuple(names)
 
     def _get_valid_variables(self) -> StrList:
-        variables = self._variables
-        if not self._variables:
+        variables = self._domain.frame
+        if not variables:
             return []
         # Substitute Variables names
         # TODO: Enforce unique names!!!
@@ -286,7 +330,7 @@ class Lambda(OperatorBase): # type: ignore
 
     def _get_valid_expression(self) -> str:
         expr = self._expression
-        variables = self._variables
+        variables = self._domain.frame
         valid_variables = self._get_valid_variables()
         for orig, subst in zip(variables, valid_variables):
             if orig == subst:
@@ -294,11 +338,48 @@ class Lambda(OperatorBase): # type: ignore
             expr = expr.replace(orig, subst)
         return expr
 
+#
+# Operator Constructors
+#
+
+@functools.lru_cache(maxsize=32)
+def create_identity(*args: FieldID) -> Identity:
+    """Create identity operator."""
+    return Identity(*args)
+
+@functools.lru_cache(maxsize=8)
+def create_zero(target: DomLike = None) -> AnyOp:
+    """Create a zero operator.
+
+    Args:
+        target: Optional target category of the operator. If provided, the
+            target category must by given as a :class:`type`, like
+            :class:`int`, :class:`float`, :class:`str`, :class:`set`,
+            :class:`tuple`, :class:`list`, :class:`dict` or :class:`object`.
+            Then the returned operator maps all objects of any domain category
+            to the zero object of the target category. By default the used zero
+            object is None.
+
+    Returns:
+        Operator, that maps given arguments to the zero object of a given target
+        type.
+
+    """
+    return Zero(target)
+
+#
+# Operator Constants
+#
+
+identity = create_identity()
+zero = create_zero()
+
+
+
 @functools.lru_cache(maxsize=64)
 def create_lambda(
-        expression: str = '', domain: OptType = None,
-        variables: OptStrIter = None, default: OptOp = None,
-        trusted: bool = True) -> Lambda:
+        expression: str = '', domain: DomLike = None,
+        default: OptOp = None, trusted: bool = True) -> Lambda:
     """Create a lambda operator.
 
     Args:
@@ -320,14 +401,14 @@ def create_lambda(
 
     """
     return Lambda(
-        expression=expression, domain=domain, variables=variables,
-        default=default, trusted=trusted)
+        expression=expression, domain=domain, default=default, trusted=trusted)
 
 #
 # Operator Inspection Functions
 #
 
-def get_parameters(op: AnyOp, *args: Any, **kwds: Any) -> OrderedDict:
+def get_parameters(
+        op: AnyOp, *args: Any, **kwds: Any) -> collections.OrderedDict:
     """Get parameters of an operator.
 
     Args:
@@ -362,7 +443,7 @@ def get_parameters(op: AnyOp, *args: Any, **kwds: Any) -> OrderedDict:
     for key, val in defaults_list:
         if key not in args_keys:
             args_list.append((key, val))
-    params = OrderedDict(args_list)
+    params = collections.OrderedDict(args_list)
 
     # Update Keyword Arguments
     if spec.varkw:
@@ -374,44 +455,6 @@ def get_parameters(op: AnyOp, *args: Any, **kwds: Any) -> OrderedDict:
 
     # TODO: Split parameters in args and kwds
     return params
-
-def split_var_params(*args: VarDef, default: OptOp = None) -> VarsParams:
-    """Split field variable definitions into variable parameters.
-
-    Args:
-        *args: Definitions of :term:`field variables <field variable>`.
-        default: Default operator which is used to map fields to field
-            variables. By default the identity is used.
-
-    """
-    if not args:
-        return tuple(), tuple(), tuple()
-
-    # Set default values
-    default = default or identity
-
-    params: list = []
-    for fvar in args:
-        if isinstance(fvar, tuple):
-            size = len(fvar)
-            if size == 1:
-                params.append((fvar[0], default, fvar[0]))
-                continue
-            if size == 2:
-                if callable(fvar[1]):
-                    params.append((fvar[0], fvar[1], fvar[0]))
-                    continue
-                params.append((fvar[0], default, fvar[1]))
-                continue
-            params.append((fvar[0], fvar[1], fvar[2]))
-            continue
-        if isinstance(fvar, Hashable):
-            params.append((fvar, default, fvar))
-            continue
-        raise InvalidTypeError(
-            'field variable definition', fvar, (Hashable, tuple))
-
-    return zip(*params) # type: ignore
 
 def parse_call(text: str) -> Tuple[str, tuple, dict]:
     """Split an function call in the function name, it's arguments and keywords.
@@ -497,7 +540,7 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
 # Factory functions for elementary operators
 #
 
-def create_getter(*fields: FieldID, domain: DomLike = None) -> AnyOp:
+def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
     """Create a getter operator.
 
     This function uses the standard library module :mod:`operator` and returns
@@ -505,11 +548,11 @@ def create_getter(*fields: FieldID, domain: DomLike = None) -> AnyOp:
     :func:`~operator.itemgetter` or :func:`.create_identity`.
 
     Args:
-        *fields: Valid :term:`field identifiers <field identifier>` within the
+        *args: Valid :term:`field identifiers <field identifier>` within the
             domain type.
-        domain: Optional :term:`domain like` parameter, that specifies the
-            type and (if required) the frame of the operator's domain. Supported
-            domain types are :class:`object`, subclasses of the :class:`mapping
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. Supported
+            domain types are :class:`object`, subclasses of the :class:`Mapping
             class <collection.abs.Mapping>` and subclasses of the
             :class:`Sequence class <collection.abs.Sequence>`. If no domain type
             is specified (which is indicated by the default value None) the
@@ -524,45 +567,103 @@ def create_getter(*fields: FieldID, domain: DomLike = None) -> AnyOp:
     # If no fields are specified, the returned operator is the zero operator. If
     # fields are specified, but no domain is specified the returned operator is
     # the argument getter for the specified fields.
-    if not fields:
+    if not args:
         return zero
     if not domain:
-        return create_identity(*fields) # TODO: create argument getter
+        return create_identity(*args) # TODO: create argument getter
 
-    # Get domain type and frame
-    dom_type, dom_frame = _get_domain(domain, default_frame=fields)
+    # Get domain
+    dom = Domain(domain, default_frame=args)
 
     # Create getter
-    if dom_type is NoneType:
+    if dom.type is NoneType:
         return identity # TODO: create argument getter
     validate: AnyOp
-    if dom_type is object:
+    if dom.type is object:
         # Check if field identifiers are attribute identifiers
         validate = lambda obj: isinstance(obj, str) and str.isidentifier
-        if not all(map(validate, fields)):
-            raise InvalidTypeError('every field', fields, 'an identifier')
-        return operator.attrgetter(*fields) # type: ignore
-    if issubclass(dom_type, Mapping):
+        if not all(map(validate, args)):
+            raise InvalidTypeError('any field', args, 'an identifier')
+        return operator.attrgetter(*args) # type: ignore
+    if issubclass(dom.type, Mapping):
         # Check if field identifiers are mapping keys (hashable)
         validate = lambda obj: isinstance(obj, Hashable)
-        if not all(map(validate, fields)):
-            raise InvalidTypeError('every field', fields, 'hashable')
-        return operator.itemgetter(*fields)
-    if issubclass(dom_type, Sequence):
-        if dom_frame:
-            return operator.itemgetter(*map(dom_frame.index, fields))
+        if not all(map(validate, args)):
+            raise InvalidTypeError('any field', args, 'hashable')
+        return operator.itemgetter(*args)
+    if issubclass(dom.type, Sequence):
+        if dom.frame:
+            getid = dom.frame.index
+            return operator.itemgetter(*map(getid, args))
         # Check if field identifiers are sequence positions
         validate = lambda obj: isinstance(obj, int) and obj >= 0
-        return operator.itemgetter(*fields)
+        if not all(map(validate, args)):
+            raise InvalidTypeError('any field', args, 'positive integer')
+        return operator.itemgetter(*args)
 
     # TODO: raise InvalidValueError!
     raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
 
-def create_formatter(*fields: FieldID, target: DomLike = None) -> AnyOp:
+def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
+    """Create a setter operator.
+
+    Args:
+        *args: Optional pairs containing field values. If provided, the pairs
+            have to be given in the format `(<field>, <value>)`, where `<field>`
+            is a valid :term:`field identifier` within the domain type and
+            `<value>` an arbitrary object.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. Supported
+            domain types are :class:`object`, subclasses of the class:`Mapping
+            class <collection.abs.Mapping>` and subclasses of the
+            :class:`Sequence class <collection.abs.Sequence>`. If no domain type
+            is specified (which is indicated by the default value None) the
+            returned operator ir the zero operator.
+
+    """
+    # If no field-value pairs are specified, the returned operator is the zero
+    # operator.
+    if not args:
+        return zero
+
+    # Get domain
+    dom = Domain(domain)
+
+    # Create setter
+    if dom.type is object:
+        # TODO: check if field names are identifiers
+        # check.has_iterable_type(...)
+        if len(args) == 1:
+            name, val = args[0]
+            return lambda obj: setattr(obj, name, val) # type: ignore
+        def attrsetter(obj: object) -> None:
+            set_item = lambda item: setattr(obj, *item)
+            iterator = map(set_item, args) # type: ignore
+            collections.deque(iterator, maxlen=0) # avoid creation of list
+        return attrsetter
+    if issubclass(dom.type, Mapping):
+        # For mappings use the .update() method
+        updates = dict(args)
+        return lambda obj: obj.update(updates)
+    if issubclass(dom.type, Sequence):
+        if dom.frame: # If a frame is given get the item positions from index
+            getid = dom.frame.index
+            items = tuple((getid(arg[0]), arg[1]) for arg in args)
+        else:
+            items = tuple((int(arg[0]), arg[1]) for arg in args) # type: ignore
+        def setitems(seq: Sequence) -> None:
+            for key, val in items:
+                seq[key] = val # type: ignore
+        return setitems
+
+    # TODO: Use some kind of ValueEror for domain!
+    raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
+
+def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
     """Create a formatter operator.
 
     Args:
-        *fields: Valid :term:`field identifiers <field identifier>` within the
+        *args: Valid :term:`field identifiers <field identifier>` within the
             target type.
         target: Optional :term:`domain like` parameter, that specifies the
             type and (if required) the frame of the operator's target. Supported
@@ -579,28 +680,30 @@ def create_formatter(*fields: FieldID, target: DomLike = None) -> AnyOp:
         target type.
 
     """
-    # Get target type and frame
-    tgt_type, tgt_frame = _get_domain(target, default_frame=fields)
+    # Get target
+    tgt = Domain(target, default_frame=args)
 
     # Create formatter
-    if tgt_type is NoneType:
+    if tgt.type is NoneType:
         return create_identity('x')
-    if tgt_type is tuple:
+    if tgt.type is tuple:
         return lambda x: x if isinstance(x, tuple) else (x, )
-    if tgt_type is list:
+    if tgt.type is list:
         return lambda x: list(x) if isinstance(x, tuple) else [x]
-    if tgt_type is dict:
-        if not tgt_frame:
+    if tgt.type is dict:
+        frame = tgt.frame
+        if not frame:
             raise ValueError() # TODO: ...
-        d1: AnyOp = lambda x: {tgt_frame[0]: x} # arg -> dict
-        dn: AnyOp = lambda x: dict(zip(tgt_frame, x)) # args -> dict
+        first = frame[0]
+        d1: AnyOp = lambda x: {first: x} # arg -> dict
+        dn: AnyOp = lambda x: dict(zip(frame, x)) # args -> dict
         return lambda x: dn(x) if isinstance(x, tuple) else d1(x)
 
     # TODO: raise InvalidValueError!
     raise InvalidTypeError('target', target, (tuple, list, dict))
 
 def create_mapper(
-        *fields: FieldID, domain: DomLike = None,
+        *args: FieldID, domain: DomLike = None,
         target: DomLike = None) -> AnyOp:
     """Create a mapping operator.
 
@@ -609,16 +712,14 @@ def create_mapper(
     from it's operand (or arguments) to the fields of a given target type.
 
     Args:
-        *fields: Valid :term:`field identifiers <field identifier>` within the
+        *args: Valid :term:`field identifiers <field identifier>` within the
             domain type.
-        domain: Optional :term:`domain like` parameter, that specifies the
-            type and (if required) the frame of the operator's domain. The
-            accepted parameter values are documented within the function
-            :func:`create_getter`.
-        target: Optional :term:`domain like` parameter, that specifies the
-            type and (if required) the frame of the operator's target. The
-            accepted parameter values are documented within the function
-            :func:`create_formatter`.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. The accepted
+            parameter values are documented in :func:`create_getter`.
+        target: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's target. The accepted
+            parameter values are documented in :func:`create_formatter`.
 
     Returns:
         Operator that maps selected fields from its operand to fields of a
@@ -628,14 +729,14 @@ def create_mapper(
     # If no fields are specified, the returned operator is the zero operator of
     # the target type. If fields are specified, but no domain and no target the
     # returned operator is the identity with a fixed number of arguments
-    if not fields:
+    if not args:
         return create_zero(target)
     if not (domain or target):
-        return create_identity(*fields)
+        return create_identity(*args)
 
     # Create a getter with given domain and a formatter with given target
-    getter = create_getter(*fields, domain=domain)
-    formatter = create_formatter(*fields, target=target)
+    getter = create_getter(*args, domain=domain)
+    formatter = create_formatter(*args, target=target)
 
     # If the formatter is an identity operator, return getter. If the getter is
     # an identity operator, precede a 'boxing' operation.
@@ -645,54 +746,6 @@ def create_mapper(
         return compose(formatter, lambda *args: args)
 
     return compose(formatter, getter)
-
-def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
-    """Create a setter operator.
-
-    Args:
-        *args:
-        domain: Optional domain category of the operator. If provided, the
-            category has to be given as a :class:`type`. Supported types are
-            :class:`object`, subclasses of the class:`Mapping class
-            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-            class <collection.abs.Sequence>`. The default domain is object.
-
-    """
-    # The default setter is the zero operator
-    if not args:
-        return create_zero(None)
-
-    # Get domain type and frame
-    dom_type, dom_frame = _get_domain(domain)
-
-    # Create setter
-    if dom_type is object:
-        # TODO: check if field names are identifiers
-        # check.has_iterable_type(...)
-        if len(args) == 1:
-            name, val = args[0]
-            return lambda obj: setattr(obj, name, val) # type: ignore
-        def attrsetter(obj: object) -> None:
-            set_item = lambda item: setattr(obj, *item)
-            iterator = map(set_item, args) # type: ignore
-            collections.deque(iterator, maxlen=0) # avoid creation of list
-        return attrsetter
-    if issubclass(dom_type, Mapping):
-        # For mappings use the .update() method
-        updates = dict(args)
-        return lambda obj: obj.update(updates)
-    if issubclass(dom_type, Sequence):
-        if dom_frame: # If a frame is given get the item positions from index
-            items = tuple((dom_frame.index(arg[0]), arg[1]) for arg in args)
-        else:
-            items = tuple((int(arg[0]), arg[1]) for arg in args) # type: ignore
-        def setitems(seq: Sequence) -> None:
-            for key, val in items:
-                seq[key] = val # type: ignore
-        return setitems
-
-    # TODO: Use some kind of ValueEror for domain!
-    raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
 
 def create_wrapper(**attrs: Any) -> AnyOp:
     """Create a function wrapper that adds attributes.
@@ -721,7 +774,7 @@ def create_wrapper(**attrs: Any) -> AnyOp:
 #
 
 def create_sorter(
-        *keys: FieldID, domain: DomLike = None,
+        *args: FieldID, domain: DomLike = None,
         reverse: bool = False) -> SeqHom:
     """Create a sorter with fixed sorting keys.
 
@@ -729,60 +782,58 @@ def create_sorter(
     and change the order of the objects within the sequence.
 
     Args:
-        *keys: Valid :term:`field identifiers <field identifier>` for the
-            *sorting keys*, where the requirements and the concrete meaning
-            depends on the domain of the operator.
-        domain: Optional domain category of the operator. If provided, the
-            category has to be given as a :class:`type`. Supported types are
-            :class:`object`, subclasses of the class:`Mapping class
-            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-            class <collection.abs.Sequence>`. The default domain is object.
-        reverse:
+        *args: Optional *sorting keys*, which in hierarchically descending order
+            are used to sort sequences of objects of given domain type. If
+            provided, any sorting key is required to be a valid :term:`field
+            identifier` for the domain type.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. The accepted
+            parameter values are documented in :func:`create_getter`.
+        reverse: Optional boolean parameter. If set to True, then the sequence
+            elements are sorted as if each comparison were reversed.
 
     Returns:
-        Callable function which sorts a sequence of operands by specified
-        content.
+        Callable function which sorts a sequence of objects of a given domain by
+        given sorting keys.
 
     """
     # Create getter operator for given keys
-    getter = create_mapper(*keys, domain=domain) if keys else None
+    getter = create_getter(*args, domain=domain) if args else None
 
     # Create and return sorting operator
     return lambda seq: sorted(seq, key=getter, reverse=reverse)
 
 def create_grouper(
-        *keys: FieldID, domain: DomLike = None,
+        *args: FieldID, domain: DomLike = None,
         presorted: bool = False) -> SeqOp:
     """Create a grouping operator with fixed grouping keys.
 
     Args:
-        *keys: Valid :term:`field identifiers <field identifier>` of the
-            *grouping keys*, where the requirements and the concrete meaning
-            depends on the domain of the operator.
-        domain: Optional domain category of the operator. If provided, the
-            category has to be given as a :class:`type`. Supported types are
-            :class:`object`, subclasses of the class:`Mapping class
-            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-            class <collection.abs.Sequence>`. The default domain is object.
+        *args: Optional *grouping keys*, which are used to group sequences of
+            objects of given domain type. If provided, any grouping key is
+            required to be a valid :term:`field identifier` for the domain type.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. The accepted
+            parameter values are documented in :func:`create_getter`.
         presorted: The grouping operation splits in two consecutive steps: In
             the first step the input sequence is sorted by the given keys.
-            Thereupon in the second steps the sorted sequence is partitioned in
+            Thereupon in the second step the sorted sequence is partitioned in
             blocks, which are equal with respect to the keys. Consequently if
             the sequences are already sorted, the first step is not required and
             can be omitted to increase the performance of the operator. By
             default the input sequences are assumed not to be presorted.
 
     Returns:
-        List of sequences containing objects of a given domain, which are equal
-        with respect to given grouping keys.
+        List of sequences containing objects of a given domain typr, which are
+        equal with respect to given grouping keys.
 
     """
     # The default grouper groups all sequence elements into a single group
-    if not keys:
+    if not args:
         return lambda seq: [seq]
 
     # Create getter for given keys
-    getter = create_mapper(*keys, domain=domain)
+    getter = create_getter(*args, domain=domain)
 
     # Create list mapper for groups
     group = operator.itemgetter(1)
@@ -798,7 +849,8 @@ def create_grouper(
     return lambda seq: grouper(sorted(seq, key=getter))
 
 def create_aggregator(
-        *args: VarDef, domain: DomLike = None, target: type = tuple) -> SeqOp:
+        *args: FieldVar, domain: DomLike = None,
+        target: type = tuple) -> SeqOp:
     """Creates an aggregation operator with specified field variables.
 
     Args:
@@ -824,11 +876,11 @@ def create_aggregator(
         return create_zero(target)
 
     # Split field variable parameters
-    getfirst = operator.itemgetter(0) # Faster then: lambda seq: seq[0]
-    fields, ops, names = split_var_params(*args, default=getfirst)
+    fmap = FieldMap(*args, default=operator.itemgetter(0))
+    ops = fmap.operators
 
     # Create a getter, that maps the input sequence to a matrix
-    getter = create_mapper(*fields, domain=domain, target=tuple)
+    getter = create_mapper(*fmap.fields, domain=domain, target=tuple)
     matrix: SeqOp = lambda seq: list(map(getter, seq))
 
     # Create operators, that transpose the matrix and aggregate the columns
@@ -841,12 +893,13 @@ def create_aggregator(
 
     # For dictionaries a further type conversion is required
     if target == dict:
+        names = fmap.variables
         return lambda seq: dict(zip(names, aggreg(trans(matrix(seq)))))
 
     raise ValueError(f"type '{target.__name__}' is not supported")
 
 def create_group_aggregator(
-        *args: VarDef, key: OptKey = None, domain: DomLike = None,
+        *args: FieldVar, key: OptKey = None, domain: DomLike = None,
         target: type = tuple, presorted: bool = False) -> SeqOp:
     """Creates a group aggregation operator.
 

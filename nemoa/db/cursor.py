@@ -13,7 +13,7 @@ from nemoa.db import record
 from nemoa.errors import InvalidTypeError, NemoaError
 from nemoa.types import Tuple, StrList, StrTuple, OptIntList, OptOp, Callable
 from nemoa.types import OptInt, List, OptStr, Iterator, Mapping, Union, Optional
-from nemoa.types import SeqOp, AnyOp, OptType
+from nemoa.types import SeqOp, AnyOp, OptType, BoolOp
 
 #
 # Exceptions
@@ -37,15 +37,15 @@ class ModeError(CursorError):
 #
 
 # Various
-PredLike = operator.PredLike
+PredLike = Optional[Union[str, BoolOp]]
 OrderByType = Optional[Union[str, StrList, StrTuple, SeqOp]]
 GroupByType = OrderByType
 OptContainer = Optional[attrib.Container]
 AggAttr = Union[str, Tuple[str, AnyOp]]
 OptSeqOp = Optional[SeqOp]
 
-# Field Variable
-VarDef = operator.VarDef
+# Field Mappings
+FieldVar = operator.FieldVar
 ColNames = Tuple[str, ...]
 OptColNames = Optional[ColNames]
 
@@ -161,7 +161,7 @@ class Cursor(attrib.Container):
     #
 
     def __init__(
-            self, *variables: VarDef, where: PredLike = None,
+            self, *variables: FieldVar, where: PredLike = None,
             groupby: GroupByType = None, having: PredLike = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, dtype: OptType = None,
@@ -300,7 +300,7 @@ class Cursor(attrib.Container):
         raise InvalidTypeError('where', where, (type(None), str)) # TODO: Type!
 
     def _set_aggregator(
-            self, *variables: VarDef, groupby: GroupByType = None,
+            self, *args: FieldVar, groupby: GroupByType = None,
             having: PredLike = None) -> None:
 
         if not groupby:
@@ -312,7 +312,7 @@ class Cursor(attrib.Container):
         # preprocess the fields to variables. This in turn needs the cursor to
         # be buffered and countable in the sense to support counting the rows
         # (which is not possible for random cursors).
-        if not variables:
+        if not args:
             raise CursorError(
                 'group aggregation '
                 'requires the specification of field variables')
@@ -327,7 +327,7 @@ class Cursor(attrib.Container):
 
         # Create group aggragation operator
         self._groupby = operator.create_group_aggregator(
-            *variables, key=groupby, domain=object)
+            *args, key=groupby, domain=object)
 
         if having is None:
             self._having = operator.identity
@@ -335,23 +335,22 @@ class Cursor(attrib.Container):
 
         if callable(having):
             # TODO: check if having is a valid group predicate
-            self._having = having
+            self._having = having # type: ignore
             return
 
         # Get field variable names
-        names = list(operator.split_var_params(*variables))[2]
+        names = operator.FieldMap(*args).variables
 
         if isinstance(having, str):
-            self._having = operator.create_lambda(
-                having, domain=tuple, variables=names)
+            self._having = operator.create_lambda(having, domain=(tuple, names))
             print('\n' + '#' * 30)
-            print(self._having.variables)
+            print(self._having.domain.frame) # type: ignore
             return
 
         raise InvalidTypeError('having', having, (type(None), str)) # TODO
 
     def _set_sorter(
-            self, orderby: OrderByType, reverse: bool = False) -> OptSeqOp:
+            self, orderby: OrderByType, reverse: bool = False) -> None:
 
         # If sorting is not used, the sorting operator is the identity
         if not (orderby or reverse):
@@ -384,16 +383,17 @@ class Cursor(attrib.Container):
         self._sorter = operator.create_sorter(
             *keys, domain=domain, reverse=reverse)
 
-    def _set_mapper(self, *variables: VarDef, dtype: OptType = None) -> None:
+    def _set_mapper(
+            self, *args: FieldVar, dtype: OptType = None) -> None:
 
         # Validate Arguments
-        if dtype and not variables:
+        if dtype and not args:
             raise CursorError(
                 'mapping to a given target type '
                 'requires the specification of field variables')
 
         # Get field variable names
-        names = list(operator.split_var_params(*variables))[2]
+        names = operator.FieldMap(*args).variables
 
         # If the result set is aggregated by a grouping operator, the mapper
         # acts on tuples as an itemgetter, which requires the specification of

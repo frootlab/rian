@@ -11,7 +11,7 @@ import os
 import sys
 from nemoa.base import pkg
 from nemoa.core import log
-from nemoa.types import Any, AnyOp, ExcType, Exc, Traceback, OptVoid
+from nemoa.types import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
 
 #
 # Module Variables
@@ -120,17 +120,17 @@ def clear() -> None:
 # Exception Handling
 #
 
-def hook_exception(Error: ExcType, value: Exc, tb: Traceback) -> None:
+def hook_exception(cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
     """Alternative exception hook."""
-    log.exception(str(value), exc_info=(Error, value, tb))
+    log.exception(str(obj), exc_info=(cls, obj, tb))
 
 def bypass_exceptions(
         func: AnyOp, hook: AnyOp, interrupt: bool = False) -> AnyOp:
     """Bypass exceptions from given function."""
     @functools.wraps(func)
     def wrapper(*args: Any, **kwds: Any) -> Any:
-        Error = sys.exc_info()[0]
-        if Error and not issubclass(Error, Exception):
+        err = sys.exc_info()[0]
+        if err and not issubclass(err, Exception):
             return func(*args, **kwds)
         hook(*sys.exc_info())
         if interrupt:

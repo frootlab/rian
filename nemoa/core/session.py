@@ -14,9 +14,9 @@ from pathlib import Path
 from nemoa.base import attrib, env
 from nemoa.core import log
 from nemoa.io import ini, ws
-from nemoa.types import Any, BytesLike, FileLike, ClassVar, Exc, ExcType
-from nemoa.types import OptBytes, OptPath, OptPathLike, OptStr, PathLike
-from nemoa.types import StrDict, StrList, StrOrInt, Traceback, FileAccessor
+from nemoa.types import Any, BytesLike, ClassVar, ErrType, ErrMeta, ErrStack
+from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
+from nemoa.types import PathLike, StrDict, StrList, StrOrInt, FileAccessor
 
 #
 # Structural Types
@@ -110,7 +110,7 @@ class Session(attrib.Container):
     def __enter__(self) -> 'Session':
         return self
 
-    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         self.close() # Close Workspace
         self._save_config() # Save config
 

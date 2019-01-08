@@ -36,18 +36,13 @@ from nemoa.base import attrib, check, literal
 from nemoa.errors import FileFormatError, ColumnLookupError
 from nemoa.io import FileConnector, FileProxy, plain
 from nemoa.types import OptInt, OptIntTuple, OptStr, StrList, List, Tuple
-from nemoa.types import IntTuple, OptList, OptStrTuple, FileRefClasses, Union
-from nemoa.types import Iterable, Iterator, Any, Traceback, ExcType, Exc
+from nemoa.types import IntTuple, OptList, OptStrTuple, Union
+from nemoa.types import Iterable, Iterator, Any, ErrStack, ErrMeta, ErrType
 from nemoa.types import StrDict, FileRef, Optional, FileLike, StrTuple
+from nemoa.types import FileAccessor, Path
 
 #
-# Attributes
-#
-
-mime = "text/csv"
-
-#
-# Stuctural Types
+# Types and ClassInfos
 #
 
 IterableClass = collections.abc.Iterable
@@ -60,6 +55,7 @@ Fields = List[Field]
 Rows = List[tuple]
 RowsLike = Iterable[tuple]
 OptColumns = OptStrTuple
+FileRefClasses = (str, Path, io.BufferedIOBase, io.TextIOBase, FileAccessor)
 
 #
 # Constants
@@ -121,7 +117,7 @@ class HandlerBase(abc.ABC):
     def __enter__(self) -> 'HandlerBase':
         return self
 
-    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         self.close()
 
     def __del__(self) -> None:
@@ -425,7 +421,7 @@ class File(attrib.Container):
     def __enter__(self) -> 'File':
         return self
 
-    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         self.close()
 
     #

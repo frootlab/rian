@@ -17,8 +17,8 @@ from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
 from nemoa.io import ini
 from nemoa.types import BinaryFileLike, BytesLike, ClassVar
 from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessor
-from nemoa.types import PathLike, PathLikeList, Traceback
-from nemoa.types import FileLike, StrList, OptPath, Optional, ExcType, Exc
+from nemoa.types import PathLike, PathLikeList, ErrMeta, ErrType, ErrStack
+from nemoa.types import FileLike, StrList, OptPath, Optional
 from nemoa.types import Any, AnyOp
 
 #
@@ -122,7 +122,7 @@ class File(attrib.Container):
         """Enter with statement."""
         return self
 
-    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         """Close workspace file and buffer."""
         self.close()
 

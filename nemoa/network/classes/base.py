@@ -358,9 +358,7 @@ class Network(nbase.ObjectIP):
 
     def _get_algorithms(self, category = None, attribute = None):
         """Get algorithms provided by network."""
-        funcs = otree.get_members_dict(
-            networkx.algorithms, classinfo=Function)
-
+        funcs = otree.get_members_dict(networkx.algorithms, classinfo=Function)
         if attribute is None:
             return funcs
 

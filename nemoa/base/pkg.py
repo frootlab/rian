@@ -9,8 +9,10 @@ __docformat__ = 'google'
 import importlib
 import pkgutil
 from nemoa.base import check, otree, mapping, stack
-from nemoa.types import Any, Module, OptModule, Function, OptStr, StrList
-from nemoa.types import OptDictOfKeyOps, ClassInfo
+from nemoa.types import Any, OptStr, StrList, OptDictOfKeyOps, ClassInfo
+from nemoa.types import Optional, Module, Function
+
+OptModule = Optional[Module]
 
 def call_attr(name: str, *args: Any, **kwds: Any) -> Any:
     """Call an attribute of current module with given arguments.
@@ -42,20 +44,22 @@ def crop_functions(prefix: str, module: OptModule = None) -> list:
     module = module or stack.get_caller_module()
 
     # Get functions of current callers module
-    funcs = otree.get_members_dict(
-        module, classinfo=Function, pattern=(prefix + '*'))
+    pattern = prefix + '*'
+    funcs = otree.get_members_dict(module, classinfo=Function, pattern=pattern)
 
     # Create list of cropped function names
     offset = len(prefix)
     return [each['name'][offset:] for each in funcs.values()]
 
-def get_module(name: OptStr = None) -> OptModule:
+def get_module(name: OptStr = None, errors: bool = True) -> OptModule:
     """Get reference to a module instance.
 
     Args:
         name: Optional name of module- If provided, the name is required to be
             a fully qualified name. By default a refrence to the module of the
             current caller is returned.
+        errors: Boolean value which determines if an error is raised, if the
+            module could not be found. By default errors are raised.
 
     Returns:
         Module reference or None, if the name does not point to a valid module.
@@ -64,12 +68,16 @@ def get_module(name: OptStr = None) -> OptModule:
     # Set default values
     name = name or stack.get_caller_module_name(-1)
 
-    # Try to import the given module by using importlib
+    # Try to import a module with importlib
     try:
         return importlib.import_module(name)
     except ModuleNotFoundError:
+        if errors:
+            raise
         return None
     except ImportError:
+        if errors:
+            raise
         return None
 
 def get_submodule(name: str, parent: OptModule = None) -> OptModule:
@@ -219,7 +227,8 @@ def search(
         module: OptModule = None, pattern: OptStr = None,
         classinfo: ClassInfo = Function, key: OptStr = None, val: OptStr = None,
         groupby: OptStr = None, recursive: bool = True,
-        rules: OptDictOfKeyOps = None, **kwds: Any) -> dict:
+        rules: OptDictOfKeyOps = None, errors: bool = False,
+        **kwds: Any) -> dict:
     """Recursively search for objects within submodules.
 
     Args:
@@ -251,6 +260,8 @@ def search(
             value against the argument value. Example: {'tags': lambda arg,
             attr: set(arg) <= set(attr)} By default any attribute, which is not
             in the filter rules is compared to the argument value by equality.
+        errors: Boolean value which determines if an error is raised, if the
+            module could not be found. By default errors are not raised.
         **kwds: Keyword arguments, that define the attribute filter for the
             returned dictionary. For example if the argument "tags = ['test']"
             is given, then only objects are returned, which have the attribute
@@ -279,7 +290,7 @@ def search(
     fd = {}
     rules = rules or {}
     for mname in mnames:
-        minst = get_module(mname)
+        minst = get_module(mname, errors=errors)
         if minst is None:
             continue
         d = otree.get_members_dict(

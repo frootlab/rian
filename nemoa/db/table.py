@@ -6,16 +6,15 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import types
 from typing import NewType
 from nemoa.base import attrib, check, pattern
 from nemoa.db import record, cursor
 from nemoa.errors import RowLookupError, ProxyError
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Tuple, StrList, StrTuple
-from nemoa.types import OptOp
+from nemoa.types import Tuple, StrList, StrTuple, OptOp, SeqOp, OptType
 from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
-from nemoa.types import Mapping, MappingProxy, OptMapping, Union, Optional
-from nemoa.types import SeqOp, OptType
+from nemoa.types import Mapping, OptMapping, Union, Optional
 
 #
 # Structural Types
@@ -24,13 +23,16 @@ from nemoa.types import SeqOp, OptType
 # Various
 OrderByType = Optional[Union[str, StrList, StrTuple, SeqOp]]
 OptContainer = Optional[attrib.Container]
+
+# MappingProxy
+MappingProxy = types.MappingProxyType
 OptMappingProxy = Optional[MappingProxy]
 
 # Fields
 OptFieldTuple = Optional[Tuple[record.Field, ...]]
 
 # Field Variables
-VarDef = cursor.VarDef
+FieldVar = cursor.FieldVar
 
 # Colums
 SelColA = str # Select Column: name
@@ -372,7 +374,7 @@ class Table(attrib.Container):
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, *args: VarDef, where: OptOp = None,
+            self, *args: FieldVar, where: OptOp = None,
             groupby: cursor.GroupByType = None, dtype: OptType = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, mode: OptStr = None) -> cursor.Cursor:

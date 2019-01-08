@@ -9,7 +9,7 @@ __docformat__ = 'google'
 from nemoa.base import attrib
 from nemoa.db import table
 from nemoa.io import csv, ini
-from nemoa.types import Any, FileRef, FileRefClasses
+from nemoa.types import Any, FileRef
 from nemoa.errors import ConnectError, DisconnectError
 
 #
@@ -31,7 +31,7 @@ class Table(table.Proxy):
     # Protected Attributes
     #
 
-    _fileref: property = attrib.Temporary(dtype=FileRefClasses)
+    _fileref: property = attrib.Temporary(dtype=csv.FileRefClasses)
     _file: property = attrib.Temporary(dtype=csv.File)
 
     #

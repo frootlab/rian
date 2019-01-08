@@ -7,14 +7,10 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import abc
-import array
-import collections
-import datetime
-import io
 import os
 import types
-from typing import Any, Callable, ClassVar, Dict, Hashable, IO
-from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple
+from typing import Any, Callable, ClassVar, Dict, Hashable, IO, Iterable
+from typing import Iterator, List, Mapping, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized, Generic
 
 # Type-Variables for Generic Structural Types
@@ -53,31 +49,6 @@ class FileAccessor(abc.ABC):
             "to implement a method with name 'open'")
 
 ################################################################################
-# Collection of frequently used Classes
-################################################################################
-
-Array = array.ArrayType
-Date = datetime.datetime
-Function = types.FunctionType
-Mapping = collections.Mapping
-MappingProxy = types.MappingProxyType
-Method = types.MethodType
-Module = types.ModuleType
-NoneType = None.__class__
-OrderedDict = collections.OrderedDict
-Collection = collections.Collection
-Path = os.PathLike
-Traceback = types.TracebackType
-
-################################################################################
-# Class Information
-################################################################################
-
-FileClasses = (io.BufferedIOBase, io.TextIOBase)
-PathLikeClasses = (str, Path)
-FileRefClasses = PathLikeClasses + FileClasses + (FileAccessor, )
-
-################################################################################
 # Structural Types for Literals and Collections of Literals
 ################################################################################
 
@@ -94,7 +65,6 @@ OptFloat = Optional[float]
 OptComplex = Optional[complex]
 OptBool = Optional[bool]
 OptBytes = Optional[bytes]
-OptArray = Optional[Array]
 StrOrBool = Union[str, bool]
 OptStrOrBool = Optional[StrOrBool]
 StrOrInt = Union[str, int]
@@ -135,7 +105,6 @@ OptPair = Optional[Tuple[Any, Any]]
 OptTuple = Optional[Tuple[Any, ...]]
 OptList = Optional[List[Any]]
 OptDict = Optional[Dict[Any, Any]]
-OptMapping = Optional[Mapping]
 OptStrDict = Optional[StrDict]
 OptStrList = Optional[StrList]
 OptStrTuple = Optional[StrTuple]
@@ -157,10 +126,10 @@ ClassDict = ClassVar[AnyDict]
 ClassStrDict = ClassVar[StrDict]
 
 ################################################################################
-# Structural Types for Operators and Operator Collections
+# Callable Types and Collection Types for Callables
 ################################################################################
 
-# Operator Types
+# Callable Types
 AnyOp = Callable[..., Any]
 BoolOp = Callable[..., bool]
 StrOp = Callable[..., str]
@@ -176,9 +145,6 @@ SeqHom = Callable[[Sequence[Any]], Sequence[Any]]
 OptOp = Optional[AnyOp]
 OptVoid = Optional[Void]
 OptBoolOp = Optional[BoolOp]
-OptFunction = Optional[Function]
-OptMethod = Optional[Method]
-OptModule = Optional[Module]
 OptSeqOp = Optional[SeqOp]
 
 # Operator Collections
@@ -190,26 +156,38 @@ OptDictOfOps = Optional[DictOfOps]
 OptDictOfKeyOps = Optional[DictOfKeyOps]
 
 ################################################################################
-# Structural Types for standard library packages
+# Specific Structural Types
 ################################################################################
 
-# Collections
-IterAny = Iterator[Any]
-IterNone = Iterator[None]
+# Containers and Mappings
 OptContainer = Optional[Container]
 OptSized = Optional[Sized]
+OptMapping = Optional[Mapping]
 
-# Exceptions
-Exc = BaseException
-ExcType = Type[Exc]
-ExcInfo = Union[ExcType, Tuple[ExcType, ...]]
+# Exceptions / Errors
+ErrMeta = Type[BaseException]
+ErrType = BaseException
+ErrStack = types.TracebackType
 
 # File Like
 FileLike = IO[Any]
 BinaryFileLike = IO[bytes]
 TextFileLike = IO[str]
 
+# Functions, Methods and Modules
+Function = types.FunctionType
+Method = types.MethodType
+Module = types.ModuleType
+
+# Iterators
+IterAny = Iterator[Any]
+IterNone = Iterator[None]
+
+# None
+NoneType = None.__class__
+
 # Path Like
+Path = os.PathLike
 OptPath = Optional[Path]
 PathList = List[Path]
 StrDictOfPaths = Dict[str, Path]
@@ -244,7 +222,7 @@ OptNpArray = Optional[NpArray]
 NpArrayFunc = Callable[..., NpArray]
 NpRecArrayFunc = Callable[..., NpRecArray]
 NpMatrixFunc = Callable[..., NpMatrix]
-# TODO (patrick.michl@gmail.com): Currently (Python 3.7.1) the typing module
+# TODO (patrick.michl@gmail.com): Currently (Python 3.7.2) the typing module
 # does not support argument specification for callables with variing numbers of
 # arguments, but this feature is in progress, see:
 # https://github.com/python/typing/issues/264

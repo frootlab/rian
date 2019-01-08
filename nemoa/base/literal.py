@@ -7,12 +7,12 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import ast
-import datetime
+from datetime import datetime as Date
 import string
 from pathlib import Path
 import pyparsing as pp
 from nemoa.base import check, env, pkg
-from nemoa.types import Any, OptStr, Date, OptType
+from nemoa.types import Any, OptStr, OptType
 
 def encode(obj: object, **kwds: Any) -> str:
     """Encode object to literal text representation.
@@ -324,7 +324,7 @@ def as_datetime(text: str, fmt: OptStr = None) -> Date:
     # Check types of Arguments
     check.has_type("first argument 'text'", text, str)
     fmt = '%Y-%m-%d %H:%M:%S.%f'
-    return datetime.datetime.strptime(text, fmt)
+    return Date.strptime(text, fmt)
 
 def estimate(text: str) -> OptType:
     """Estimate type of text by using :func:`~ast.literal_eval`.

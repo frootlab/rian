@@ -6,6 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from collections import OrderedDict
 import datetime
 from unittest import mock
 from pathlib import Path
@@ -15,8 +16,8 @@ from nemoa.base import array, binary, check, env, literal, mapping
 from nemoa.base import operator, otree, pkg, stack
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
-from nemoa.types import Any, Function, Module, PathLikeList, StrList
-from nemoa.types import OrderedDict, NaN, Method
+from nemoa.types import Any, Module, PathLikeList, StrList
+from nemoa.types import NaN, Method, Function
 
 #
 # Test Cases
@@ -60,29 +61,53 @@ class TestOperator(ModuleTestCase):
     module = operator
 
     def test_Identity(self) -> None:
-        pass # Already tested in test_identity
+        pass # Already tested in test_create_identity
 
     def test_Zero(self) -> None:
         pass # Already tested in test_create_zero
 
-    def test_identity(self) -> None:
-        self.assertFalse(operator.identity)
-        self.assertEqual(operator.identity(''), '')
-        self.assertEqual(operator.identity(1, 2, 3), (1, 2, 3))
+    def test_Domain(self) -> None:
+        create = operator.Domain
+        with self.subTest():
+            dom = create()
+            self.assertEqual(dom.type, type(None))
+            self.assertEqual(dom.frame, tuple())
+        with self.subTest(object):
+            dom = create(object)
+            self.assertEqual(dom.type, object)
+            self.assertEqual(dom.frame, tuple())
+        with self.subTest((tuple, ('a', 'b', 'c'))):
+            dom = create((tuple, ('a', 'b', 'c')))
+            self.assertEqual(dom.type, tuple)
+            self.assertEqual(dom.frame, ('a', 'b', 'c'))
+        with self.subTest(tuple, default_frame=('a', 'b', 'c')):
+            dom = create(tuple, default_frame=('a', 'b', 'c'))
+            self.assertEqual(dom.type, tuple)
+            self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
-    def test_split_var_params(self) -> None:
-        variables = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
-        fields, ops, names = operator.split_var_params(*variables)
-        self.assertEqual(fields, ('a', 'b', 'c', 'd'))
-        for op in ops:
-            self.assertTrue(callable(op))
-        self.assertEqual(names, ('a', 'b', 'c', 'Y'))
+        #
+        # args = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
+        # fmap = operator.FieldMap(*args)
+        # self.assertEqual(fmap.fields, ('a', 'b', 'c', 'd'))
+        # for op in fmap.operators:
+        #     self.assertTrue(callable(op))
+        # self.assertEqual(fmap.variables, ('a', 'b', 'c', 'Y'))
+
+    def test_FieldMap(self) -> None:
+        args = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
+        fmap = operator.FieldMap(*args)
+        self.assertEqual(fmap.fields, ('a', 'b', 'c', 'd'))
+        self.assertTrue(all(map(callable, fmap.operators)))
+        self.assertEqual(fmap.variables, ('a', 'b', 'c', 'Y'))
 
     def test_create_identity(self) -> None:
         create = operator.create_identity
         with self.subTest():
             identity = create()
             self.assertEqual(identity, operator.identity)
+            self.assertFalse(identity)
+            self.assertEqual(identity(''), '')
+            self.assertEqual(identity(1, 2, 3), (1, 2, 3))
         with self.subTest(args=('a', )):
             identity = create('a')
             self.assertNotEqual(identity, operator.identity)

@@ -13,30 +13,29 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import abc
+import queue
 import sys
+import threading
 import time
-from abc import ABC, abstractmethod
-from queue import Empty, Queue
-from threading import Thread
 from nemoa.base import env, pkg
-from nemoa.types import Any, Module, ClassVar, Exc, ExcType, Traceback, Method
-from nemoa.types import OptStr
+from nemoa.types import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
+from nemoa.types import Module, OptStr
 
 #
 # TTY Controle Classes
 #
 
-class TTYBase(ABC):
+class TTYBase(abc.ABC):
     """Abstract base class for TTY controle."""
 
     _encoding: ClassVar[str] = env.get_encoding()
-
-    _ttylib: Module
+    _module: Module
     _cur_attr: Any
 
     def __init__(self, mode: OptStr = None) -> None:
         """Modify terminal attributes."""
-        self._ttylib = get_lib()
+        self._module = get_lib()
         self._cur_attr = self.get_attr()
         if mode:
             self.set_mode(mode)
@@ -44,7 +43,7 @@ class TTYBase(ABC):
     def __enter__(self) -> 'TTYBase':
         return self
 
-    def __exit__(self, cls: ExcType, obj: Exc, tb: Traceback) -> None:
+    def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         """Reset current terminal attributes."""
         self.reset()
 
@@ -52,39 +51,39 @@ class TTYBase(ABC):
         """Reset current terminal attributes."""
         self.reset()
         if hasattr(self, 'ttylib'):
-            del self._ttylib
+            del self._module
 
     def reset(self) -> None:
         """Reset current terminal attributes to it's initial value."""
         if hasattr(self, 'cur_attr'):
             self.set_attr(self._cur_attr)
 
-    @abstractmethod
+    @abc.abstractmethod
     def get_attr(self) -> Any:
         """Get current terminal attributes."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def set_attr(self, attr: Any) -> None:
         """Set current terminal attributes."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def set_mode(self, mode: str) -> None:
         """Set current terminal mode."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def getch(self) -> str:
         """Get character from TTY."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def start_getch(self) -> None:
         """Start handling of :meth:`.getch` requests."""
         raise NotImplementedError()
 
-    @abstractmethod
+    @abc.abstractmethod
     def stop_getch(self) -> None:
         """Stop handling of :meth:`.getch` requests."""
         raise NotImplementedError()
@@ -119,7 +118,7 @@ class TTYMsvcrt(TTYBase):
 
     def getch(self) -> str:
         """Get character from TTY."""
-        return str(getattr(self._ttylib, 'getch')(), self._encoding)
+        return str(getattr(self._module, 'getch')(), self._encoding)
 
 class TTYTermios(TTYBase):
     """Unix/Termios implementation of Getch.
@@ -132,9 +131,9 @@ class TTYTermios(TTYBase):
     _fd: int
     _tcgetattr: Method
     _tcsetattr: Method
-    _buffer: Queue
+    _buffer: queue.Queue
     _resume: bool
-    _thread: Thread
+    _thread: threading.Thread
     _time: float
 
     def __init__(self, mode: OptStr = None) -> None:
@@ -146,16 +145,16 @@ class TTYTermios(TTYBase):
         try:
             return self._tcgetattr(self._fd)
         except AttributeError:
-            self._tcgetattr = getattr(self._ttylib, 'tcgetattr')
+            self._tcgetattr = getattr(self._module, 'tcgetattr')
         return self._tcgetattr(self._fd)
 
     def set_attr(self, attr: Any) -> None:
         """Set attributes of current terminal."""
-        TCSAFLUSH = getattr(self._ttylib, 'TCSAFLUSH')
+        TCSAFLUSH = getattr(self._module, 'TCSAFLUSH')
         try:
             return self._tcsetattr(self._fd, TCSAFLUSH, attr)
         except AttributeError:
-            self._tcsetattr = getattr(self._ttylib, 'tcsetattr')
+            self._tcsetattr = getattr(self._module, 'tcsetattr')
         self._tcsetattr(self._fd, TCSAFLUSH, attr)
 
     def set_mode(self, mode: str) -> None:
@@ -166,8 +165,8 @@ class TTYTermios(TTYBase):
             # Modify lflag from current TTY attributes
             attr = self._cur_attr.copy()
             if isinstance(attr[3], int):
-                ECHO = getattr(self._ttylib, 'ECHO')
-                ICANON = getattr(self._ttylib, 'ICANON')
+                ECHO = getattr(self._module, 'ECHO')
+                ICANON = getattr(self._module, 'ICANON')
                 attr[3] = attr[3] | ICANON | ECHO
             self.set_attr(attr)
         # Unbufered terminal for 'key'-mode:
@@ -176,8 +175,8 @@ class TTYTermios(TTYBase):
             # Modify lflag from current TTY attributes
             attr = self._cur_attr.copy()
             if isinstance(attr[3], int):
-                ECHO = getattr(self._ttylib, 'ECHO')
-                ICANON = getattr(self._ttylib, 'ICANON')
+                ECHO = getattr(self._module, 'ECHO')
+                ICANON = getattr(self._module, 'ICANON')
                 attr[3] = attr[3] & ~ICANON & ~ECHO
             self.set_attr(attr)
 
@@ -189,8 +188,8 @@ class TTYTermios(TTYBase):
                 attr['_buffer'].put(sys.stdin.read(1))
 
         self._resume = True
-        self._buffer = Queue()
-        self._thread = Thread(
+        self._buffer = queue.Queue()
+        self._thread = threading.Thread(
             target=buffer, args=(self.__dict__, ), daemon=True)
         self._thread.start()
 
@@ -208,7 +207,7 @@ class TTYTermios(TTYBase):
 
         try:
             return self._buffer.get_nowait()
-        except Empty:
+        except queue.Empty:
             return ''
 
     def stop_getch(self) -> None:
@@ -233,9 +232,8 @@ def get_lib() -> Module:
         not be determined.
 
     """
-    libs = ['msvcrt', 'termios']
-    for name in libs:
-        module = pkg.get_module(name)
+    for name in ['msvcrt', 'termios']:
+        module = pkg.get_module(name, errors=False)
         if module:
             return module
     raise ImportError("no module for TTY I/O could be imported")
