@@ -68,30 +68,26 @@ class TestOperator(ModuleTestCase):
 
     def test_Domain(self) -> None:
         create = operator.Domain
+
         with self.subTest():
             dom = create()
             self.assertEqual(dom.type, type(None))
             self.assertEqual(dom.frame, tuple())
+
         with self.subTest(object):
             dom = create(object)
             self.assertEqual(dom.type, object)
             self.assertEqual(dom.frame, tuple())
+
         with self.subTest((tuple, ('a', 'b', 'c'))):
             dom = create((tuple, ('a', 'b', 'c')))
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
+
         with self.subTest(tuple, default_frame=('a', 'b', 'c')):
             dom = create(tuple, default_frame=('a', 'b', 'c'))
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
-
-        #
-        # args = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
-        # fmap = operator.FieldMap(*args)
-        # self.assertEqual(fmap.fields, ('a', 'b', 'c', 'd'))
-        # for op in fmap.operators:
-        #     self.assertTrue(callable(op))
-        # self.assertEqual(fmap.variables, ('a', 'b', 'c', 'Y'))
 
     def test_FieldMap(self) -> None:
         args = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
@@ -102,19 +98,22 @@ class TestOperator(ModuleTestCase):
 
     def test_create_identity(self) -> None:
         create = operator.create_identity
+
         with self.subTest():
             identity = create()
             self.assertEqual(identity, operator.identity)
             self.assertFalse(identity)
             self.assertEqual(identity(''), '')
             self.assertEqual(identity(1, 2, 3), (1, 2, 3))
-        with self.subTest(args=('a', )):
-            identity = create('a')
+
+        with self.subTest(domain=(None, 'a')):
+            identity = create(domain=(None, 'a'))
             self.assertNotEqual(identity, operator.identity)
             self.assertEqual(identity(1), 1)
             self.assertRaises(TypeError, identity, 1, 2)
-        with self.subTest(args=('a', 'b')):
-            identity = create('a', 'b')
+
+        with self.subTest(domain=(None, ('a', 'b'))):
+            identity = create(domain=(None, ('a', 'b')))
             self.assertNotEqual(identity, operator.identity)
             self.assertEqual(identity(1, 2), (1, 2))
             self.assertRaises(TypeError, identity, 1)
@@ -133,83 +132,104 @@ class TestOperator(ModuleTestCase):
         create = operator.create_getter
         obj = mock.Mock()
         obj.configure_mock(a=1, b=2)
+
         with self.subTest():
             getter = create()
             self.assertIsInstance(getter, operator.Zero)
             self.assertEqual(getter(1), None)
+
         with self.subTest(args=('a',)):
             getter = create('a')
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1), 1)
             self.assertRaises(TypeError, getter, 1, 2)
+
         with self.subTest(args=('a', 'b')):
             getter = create('a', 'b')
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1, 2), (1, 2))
             self.assertRaises(TypeError, getter, 1)
+
         with self.subTest(domain=tuple):
             getter = create(domain=tuple)
             self.assertIsInstance(getter, operator.Zero)
+
         with self.subTest(args=('a', 'b'), domain=tuple):
             getter = create('a', 'b', domain=tuple)
             self.assertEqual(getter((1, 2)), (1, 2))
+
         with self.subTest(args=('a', 'b'), domain=(tuple, ('a', 'b', 'c'))):
             getter = create('a', 'b', domain=(tuple, ('a', 'b', 'c')))
             self.assertEqual(getter((1, 2, 3)), (1, 2))
+
         with self.subTest(domain=list):
             getter = create(domain=list)
             self.assertIsInstance(getter, operator.Zero)
+
         with self.subTest(args=('a', 'b'), domain=list):
             getter = create('a', 'b', domain=list)
             self.assertEqual(getter([1, 2]), (1, 2))
+
         with self.subTest(args=('a', 'b'), domain=(list, ('a', 'b', 'c'))):
             getter = create('a', 'b', domain=(list, ('a', 'b', 'c')))
             self.assertEqual(getter([1, 2, 3]), (1, 2))
+
         with self.subTest(domain=dict):
             getter = create(domain=dict)
             self.assertIsInstance(getter, operator.Zero)
+
         with self.subTest(args=('a', 'b'), domain=dict):
             getter = create('a', 'b', domain=dict)
             self.assertEqual(getter({'a':1, 'b':2}), (1, 2))
+
         with self.subTest(domain=object):
             getter = create(domain=object)
             self.assertIsInstance(getter, operator.Zero)
+
         with self.subTest(args=('a', 'b'), domain=object):
             getter = create('a', 'b', domain=object)
             self.assertEqual(getter(obj), (1, 2))
 
     def test_create_formatter(self) -> None:
         create = operator.create_formatter
+
         with self.subTest():
             formatter = create()
             self.assertIsInstance(formatter, operator.Identity)
+
         with self.subTest(args=('a',)):
             formatter = create('a')
             self.assertIsInstance(formatter, operator.Identity)
             self.assertEqual(formatter(1), 1)
             self.assertRaises(TypeError, formatter, 1, 2)
+
         with self.subTest(args=('a', 'b')):
             formatter = create('a', 'b')
             self.assertIsInstance(formatter, operator.Identity)
             self.assertEqual(formatter((1, 2)), (1, 2))
             self.assertRaises(TypeError, formatter, 1, 2)
+
         with self.subTest(target=tuple):
             formatter = create(target=tuple)
             self.assertEqual(formatter(1), (1, ))
             self.assertEqual(formatter((1, 2)), (1, 2))
             self.assertRaises(TypeError, formatter, 1, 2)
+
         with self.subTest(target=list):
             formatter = create(target=list)
             self.assertEqual(formatter(1), [1])
             self.assertEqual(formatter((1, 2)), [1, 2])
             self.assertRaises(TypeError, formatter, 1, 2)
+
         with self.subTest(target=list):
             formatter = create(target=list)
             self.assertEqual(formatter(1), [1])
             self.assertEqual(formatter((1, 2)), [1, 2])
             self.assertRaises(TypeError, formatter, 1, 2)
+
         with self.subTest(target=dict):
             self.assertRaises(ValueError, create, target=dict)
+
         with self.subTest(args=('a', 'b'), target=dict):
             formatter = create('a', 'b', target=dict)
             self.assertEqual(formatter((1, 2)), {'a': 1, 'b': 2})
@@ -220,53 +240,68 @@ class TestOperator(ModuleTestCase):
         obj.configure_mock(a=1, b=2)
         dic = {'a': 1, 'b': 2}
         seq = [1, 2]
+
         with self.subTest(domain=None, target=dict):
             mapper = create('a', 'b', domain=None, target=dict)
             self.assertEqual(mapper(1, 2), {'a': 1, 'b': 2})
+
         with self.subTest(domain=None, target=(dict, ('_', 1))):
             mapper = create('a', 'b', domain=None, target=(dict, ('_', 1)))
             self.assertEqual(mapper(1, 2), {'_': 1, 1: 2})
+
         with self.subTest(domain=object, target=tuple):
             mapper = create('a', 'b', domain=object, target=tuple)
             self.assertEqual(mapper(obj), (1, 2))
+
         with self.subTest(domain=object, target=list):
             mapper = create('a', 'b', domain=object, target=list)
             self.assertEqual(mapper(obj), [1, 2])
+
         with self.subTest(domain=object, target=dict):
             mapper = create('a', 'b', domain=object, target=dict)
             self.assertEqual(mapper(obj), {'a': 1, 'b': 2})
+
         with self.subTest(domain=object, target=(dict, ('_', 1))):
             mapper = create('a', 'b', domain=object, target=(dict, ('_', 1)))
             self.assertEqual(mapper(obj), {'_': 1, 1: 2})
+
         with self.subTest(domain=dict, target=dict):
             mapper = create('a', 'b', domain=dict, target=dict)
             self.assertEqual(mapper(dic), {'a': 1, 'b': 2})
+
         with self.subTest(domain=dict, target=tuple):
             mapper = create('a', 'b', domain=dict, target=tuple)
             self.assertEqual(mapper(dic), (1, 2))
+
         with self.subTest(domain=dict, target=list):
             mapper = create('a', 'b', domain=dict, target=list)
             self.assertEqual(mapper(dic), [1, 2])
+
         with self.subTest(domain=list, target=dict):
             mapper = create(0, 1, domain=list, target=dict)
             self.assertEqual(mapper(seq), {0: 1, 1: 2})
+
         with self.subTest(domain=list, target=tuple):
             mapper = create(0, 1, domain=list, target=tuple)
             self.assertEqual(mapper(seq), (1, 2))
+
         with self.subTest(domain=list, target=list):
             mapper = create(0, 1, domain=list, target=list)
             self.assertEqual(mapper(seq), [1, 2])
 
     def test_create_setter(self) -> Any:
         items = [('name', 'monty'), ('id', 42)]
+
         with self.subTest(domain=object):
             obj = mock.Mock()
             operator.create_setter(*items, domain=object)(obj)
             self.assertEqual((obj.name, obj.id), ('monty', 42))
+
         with self.subTest(domain=dict):
             dic: dict = dict()
             operator.create_setter(*items, domain=dict)(dic)
             self.assertEqual((dic['name'], dic['id']), ('monty', 42))
+
         with self.subTest(domain=list):
             seq: list = [None] * 2
             operator.create_setter((0, 'monty'), (1, 42), domain=list)(seq)
@@ -293,9 +328,11 @@ class TestOperator(ModuleTestCase):
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, bool=bool(i>5))
         groups = operator.create_grouper('bool', domain=object)
+
         with self.subTest():
             aggregate = operator.create_aggregator()
             self.assertFalse(bool(aggregate))
+
         args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
         with self.subTest(args=args, domain=object, target=tuple):
             aggregate = operator.create_aggregator(
@@ -303,6 +340,7 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(
                 list(aggregate(g) for g in groups(seq)),
                 [(False, 6, 5), (True, 4, 9)])
+
         with self.subTest(args=args, domain=object, target=dict):
             aggregate = operator.create_aggregator(
                 *args, domain=object, target=dict)
@@ -334,41 +372,49 @@ class TestOperator(ModuleTestCase):
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
             obj.configure_mock(id=i, name=f'{i>5}')
-        keys: tuple = tuple()
-        with self.subTest(keys=keys, domain=object):
-            grouper = operator.create_grouper(*keys, domain=object)
+
+        with self.subTest(domain=object):
+            grouper = operator.create_grouper(domain=object)
             self.assertEqual(len(grouper(seq)), 1)
             self.assertEqual(len(grouper(seq)[0]), 10)
-        keys = ('name', )
-        with self.subTest(keys=keys, domain=object):
-            grouper = operator.create_grouper(*keys, domain=object)
+
+        with self.subTest(args=('name', ), domain=object):
+            grouper = operator.create_grouper('name', domain=object)
             self.assertEqual(len(grouper(seq)), 2)
             self.assertEqual(len(grouper(seq)[0]), 6)
-        with self.subTest(keys=keys, domain=object, presorted=True):
+
+        with self.subTest(args=('name', ), domain=object, presorted=True):
             grouper = operator.create_grouper(
-                *keys, domain=object, presorted=True)
+                'name', domain=object, presorted=True)
             self.assertEqual(len(grouper(seq)), 2)
             self.assertEqual(len(grouper(seq)[0]), 6)
-        keys = ('id', )
-        with self.subTest(keys=keys):
-            grouper = operator.create_grouper(*keys, domain=object)
+
+        with self.subTest(args=('id', )):
+            grouper = operator.create_grouper('id', domain=object)
             self.assertEqual(len(grouper(seq)), 10)
             self.assertEqual(len(grouper(seq)[0]), 1)
-        keys = ('name', 'id')
-        with self.subTest(keys=keys):
-            grouper = operator.create_grouper(*keys, domain=object)
+
+        with self.subTest(args=('name', 'id')):
+            grouper = operator.create_grouper('name', 'id', domain=object)
             self.assertEqual(len(grouper(seq)), 10)
             self.assertEqual(len(grouper(seq)[0]), 1)
 
     def test_compose(self) -> None:
-        op = operator.compose(lambda x: x + 1, lambda x: x - 1)
-        self.assertEqual(op(1), 1)
-        op = operator.compose(None, lambda x: x)
-        self.assertEqual(op(1), 1)
-        op = operator.compose(lambda x: x + 1, lambda x: x - 1, None)
-        self.assertEqual(op(1), 1)
-        op = operator.compose()
-        self.assertEqual(op, operator.identity)
+        with self.subTest(args=tuple()):
+            op = operator.compose()
+            self.assertEqual(op, operator.identity)
+
+        with self.subTest(args=(None, None)):
+            op = operator.compose(None, None)
+            self.assertEqual(op, operator.identity)
+
+        with self.subTest(args=(None, lambda x: x)):
+            op = operator.compose(None, lambda x: x)
+            self.assertEqual(op(1), 1)
+
+        with self.subTest(args=(lambda x: x + 1, lambda x: x - 1)):
+            op = operator.compose(lambda x: x + 1, lambda x: x - 1)
+            self.assertEqual(op(1), 1)
 
     def test_evaluate(self) -> None:
         func = operator.get_parameters
@@ -413,6 +459,7 @@ class TestOtree(ModuleTestCase):
             Case(args=(otree, ), kwds={
                 'rules': {'about': lambda arg, attr: arg in attr},
                 'about': 'members'}, value='get_members')])
+
         self.assertNoneComprise(otree.get_members, [
             Case(args=(object, '*dummy*'), value='__class__'),
             Case(args=(otree, ), kwds={'classinfo': str},
@@ -435,6 +482,7 @@ class TestOtree(ModuleTestCase):
             Case(args=(otree, ), kwds={
                 'rules': {'about': lambda arg, attr: arg in attr},
                 'about': 'members'}, value='nemoa.base.otree.get_members')])
+
         self.assertNoneComprise(otree.get_members_dict, [
             Case(args=(object, '*dummy*'), value='object.__class__'),
             Case(args=(otree, ), kwds={'classinfo': str},
@@ -471,10 +519,8 @@ class TestOtree(ModuleTestCase):
 
     def test_call_attr(self) -> None:
         self.assertAllEqual(otree.call_attr, [
-            Case(args=(otree, 'get_name', list),
-                value='list'),
-            Case(args=(otree, 'get_name', list),
-                kwds={'test': True},
+            Case(args=(otree, 'get_name', list), value='list'),
+            Case(args=(otree, 'get_name', list), kwds={'test': True},
                 value='list')])
 
     def test_get_methods(self) -> None:
@@ -498,6 +544,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', dict(), dict)),
             Case(args=('', object, typing.Callable)),
             Case(args=('', object, typing.Any))])
+
         self.assertAllRaises(TypeError, check.has_type, [
             Case(args=('', '', int)),
             Case(args=('', 1., int)),
@@ -511,6 +558,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 'ID')),
             Case(args=('', 'Table')),
             Case(args=('', 'Table1'))])
+
         self.assertAllRaises(ValueError, check.is_identifier, [
             Case(args=('', '')),
             Case(args=('', '1')),
@@ -523,6 +571,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', None, str)),
             Case(args=('', list(), list)),
             Case(args=('', dict(), dict))])
+
         self.assertAllRaises(TypeError, check.has_opt_type, [
             Case(args=('', '', int)),
             Case(args=('', 1., int)),
@@ -535,6 +584,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', dict)),
             Case(args=('', list)),
             Case(args=('', str))])
+
         self.assertAllRaises(TypeError, check.has_type, [
             Case(args=('', None)),
             Case(args=('', 0)),
@@ -547,6 +597,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', (int, float))),
             Case(args=('', typing.Any)),
             Case(args=('', typing.Callable))])
+
         self.assertAllRaises(TypeError, check.is_typehint, [
             Case(args=('', None)),
             Case(args=('', 0)),
@@ -559,6 +610,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', dict)),
             Case(args=('', list)),
             Case(args=('', str))])
+
         self.assertAllRaises(TypeError, check.is_class, [
             Case(args=('', None)),
             Case(args=('', 0)),
@@ -571,6 +623,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', dict, dict)),
             Case(args=('', list, object)),
             Case(args=('', str, str))])
+
         self.assertAllRaises(TypeError, check.is_subclass, [
             Case(args=('', int, str)),
             Case(args=('', dict, list)),
@@ -583,6 +636,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', {1}, '', {1, 2})),
             Case(args=('', {2}, '', {1, 2})),
             Case(args=('', {2, 1}, '', {1, 2}))])
+
         self.assertAllRaises(ValueError, check.is_subset, [
             Case(args=('', {1}, '', set())),
             Case(args=('', {2}, '', {1})),
@@ -593,6 +647,7 @@ class TestCheck(ModuleTestCase):
         self.assertNoneRaises(ValueError, check.is_positive, [
             Case(args=('', 1)),
             Case(args=('', 1.))])
+
         self.assertAllRaises(ValueError, check.is_positive, [
             Case(args=('', 0)),
             Case(args=('', -1)),
@@ -602,6 +657,7 @@ class TestCheck(ModuleTestCase):
         self.assertNoneRaises(ValueError, check.is_negative, [
             Case(args=('', -1)),
             Case(args=('', -1.))])
+
         self.assertAllRaises(ValueError, check.is_negative, [
             Case(args=('', 0)),
             Case(args=('', 1)),
@@ -612,6 +668,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 0)),
             Case(args=('', -1)),
             Case(args=('', -1.))])
+
         self.assertAllRaises(ValueError, check.is_not_positive, [
             Case(args=('', 1)),
             Case(args=('', 1.))])
@@ -621,6 +678,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 0)),
             Case(args=('', 1)),
             Case(args=('', 1.))])
+
         self.assertAllRaises(ValueError, check.is_not_negative, [
             Case(args=('', -1)),
             Case(args=('', -1.))])
@@ -630,6 +688,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', 'format')),
             Case(args=(0, 'real')),
             Case(args=(1j, 'imag'))])
+
         self.assertAllRaises(AttributeError, check.has_attr, [
             Case(args=(list(), 'keys')),
             Case(args=(0, ''))])
@@ -640,6 +699,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', set([])), kwds={'min_size': 0}),
             Case(args=('', tuple([1])), kwds={'max_size': 1}),
             Case(args=('', [1, 2]), kwds={'min_size': 1, 'max_size': 3})])
+
         self.assertAllRaises(ValueError, check.has_size, [
             Case(args=('', set([])), kwds={'size': 1}),
             Case(args=('', tuple([])), kwds={'min_size': 1}),

@@ -16,8 +16,6 @@ def new(*args, **kwds):
 
     mname, cname = tuple(kwds['config']['type'].split('.'))
     module = pkg.get_submodule(name=mname)
-    print(mname, cname)
-    print(module)
     if not hasattr(module, cname):
         raise NameError(f"class '{mname}.{cname}' is not known")
     cinst = getattr(module, cname)(**kwds)

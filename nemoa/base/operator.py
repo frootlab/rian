@@ -18,7 +18,7 @@ from nemoa.base import literal
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Any, Method, Mapping, Sequence, NoneType
 from nemoa.types import Tuple, OptType, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, BoolOp, StrList, Class
+from nemoa.types import Optional, OptOp, Class, StrTuple
 
 #
 # Types and ClassInfos
@@ -30,7 +30,6 @@ Expr = Any # TODO: Use py_expression_eval.Expression
 # Field identifiers
 FieldID = Hashable # <field>
 FieldIDs = Tuple[FieldID, ...] # <fields>
-OptFieldIDs = Optional[FieldIDs]
 OptKey = Optional[Union[FieldID, FieldIDs]]
 Item = Tuple[FieldID, Any] # <field>, <value>
 
@@ -42,7 +41,9 @@ VarDefD = Tuple[FieldID, AnyOp, FieldID] # <operator>: <field> -> <variable>
 FieldVar = Union[FieldID, VarDefA, VarDefB, VarDefC, VarDefD]
 
 # Domains
-DomLike = Union[OptType, Tuple[OptType, FieldIDs]]
+Frame = FieldIDs
+OptFrame = Optional[Frame]
+DomLike = Union[OptType, Tuple[OptType, Frame], 'Domain']
 
 #
 # Parameter Classes
@@ -70,16 +71,22 @@ class Domain:
 
     def __init__(
         self, domain: DomLike = None, default_type: Class = NoneType,
-        default_frame: OptFieldIDs = None) -> None:
+        default_frame: OptFrame = None) -> None:
         if domain is None:
             self.type = default_type
             self.frame = default_frame or tuple()
+        elif isinstance(domain, Domain):
+            self.type = domain.type
+            self.frame = domain.frame
         elif isinstance(domain, type):
             self.type = domain
             self.frame = default_frame or tuple()
         elif isinstance(domain, tuple):
             self.type = domain[0] or default_type
             self.frame = domain[1] or default_frame or tuple()
+        else:
+            allowed = (NoneType, type, tuple, Domain)
+            raise InvalidTypeError('domain', domain, allowed)
 
     def __repr__(self) -> str:
         name = type(self).__name__
@@ -167,10 +174,10 @@ class Identity(Operator):
     """Class for identity operators."""
     _require: int
 
-    def __init__(self, *args: FieldID) -> None:
-        self._domain = Domain(default_frame=args)
-        self._target = Domain(default_frame=args)
-        self._require = len(args) if args else 0
+    def __init__(self, domain: DomLike = None) -> None:
+        self._domain = Domain(domain)
+        self._target = self._domain
+        self._require = len(self._domain.frame)
 
     def __call__(self, *args: Any) -> Any:
         if self._require:
@@ -252,14 +259,9 @@ class Lambda(Operator):
         self._expression = expression
         self._domain = Domain(domain)
 
+        # Create Operator
         if expression:
-            parser = py_expression_eval.Parser()
-            valid_expression = self._get_valid_expression()
-            expr = parser.parse(valid_expression).simplify({})
-            if trusted:
-                self._compile_operator(expr, domain)
-            else:
-                self._bind_operator(expr, domain)
+            self._create_operator(trusted=trusted)
         elif callable(default):
             self._operator = default
         else:
@@ -294,39 +296,51 @@ class Lambda(Operator):
     # Protected
     #
 
-    def _bind_operator(self, expr: Expr, domain: DomLike = None) -> None:
-        names = expr.variables()
-        variables = self._get_valid_variables() or names # Set default values
-        ops = [expr.evaluate]
-        if domain is not dict:
-            ops.append(create_mapper(
-                *names, domain=(domain, variables), target=dict))
-        self._operator = compose(*ops)
-        setattr(self._operator, 'variables', expr.variables)
+    def _create_operator(self, trusted: bool) -> None:
 
-    def _compile_operator(self, expr: Expr, domain: DomLike = None) -> None:
-        names = expr.variables()
-        variables = self._get_valid_variables() or names # Set default values
-        string = expr.toString().replace('^', '**')
-        command = f"lambda {','.join(names)}:{string}"
-        # Note, that the command is a trusted expression, as it has been
-        # created by using the expression parser
-        compiled = eval(command) # pylint: disable=W0123
-        ops = [lambda obj: compiled(*obj)]
-        if domain is not tuple:
-            ops.append(create_mapper(
-                *names, domain=(domain, variables), target=tuple))
-        self._operator = compose(*ops)
-        self._domain.frame = tuple(names)
+        # Parse Expression
+        parser = py_expression_eval.Parser()
+        valid_expression = self._get_valid_expression()
+        expr = parser.parse(valid_expression).simplify({})
 
-    def _get_valid_variables(self) -> StrList:
+        # Create Mapper
+        names = expr.variables()
+        dom_frame = self._get_valid_variables() or names
+        dom_type = self._domain.type
+        dom_like = (dom_type, dom_frame)
+        if trusted:
+            if dom_type is list:
+                mapper = identity
+            else:
+                mapper = create_mapper(*names, domain=dom_like, target=list)
+        else:
+            if dom_type is dict:
+                mapper = identity
+            else:
+                mapper = create_mapper(*names, domain=dom_like, target=dict)
+
+        # If the term is trusted create and compile lambda term. Note, that the
+        # lambda term usually may be considered to be a trusted expression, as
+        # it has been created by using the expression parser
+        if trusted:
+            term = expr.toString().replace('^', '**')
+            term = f"lambda {','.join(names)}:{term}"
+            compiled = eval(term) # pylint: disable=W0123
+            runner: AnyOp = lambda x: compiled(*x)
+            self._operator = compose(runner, mapper)
+            self._domain.frame = tuple(names)
+        else:
+            self._operator = compose(expr.evaluate, mapper)
+            setattr(self._operator, 'variables', expr.variables)
+
+    def _get_valid_variables(self) -> StrTuple:
         variables = self._domain.frame
         if not variables:
-            return []
+            return tuple()
         # Substitute Variables names
         # TODO: Enforce unique names!!!
         convert = lambda var: literal.encode(var, charset='UAX31', spacer='_')
-        return list(map(convert, variables))
+        return tuple(map(convert, variables))
 
     def _get_valid_expression(self) -> str:
         expr = self._expression
@@ -343,12 +357,17 @@ class Lambda(Operator):
 #
 
 @functools.lru_cache(maxsize=32)
-def create_identity(*args: FieldID) -> Identity:
-    """Create identity operator."""
-    return Identity(*args)
+def create_identity(domain: DomLike = None) -> Identity:
+    """Create identity operator.
 
-@functools.lru_cache(maxsize=8)
-def create_zero(target: DomLike = None) -> AnyOp:
+    Args:
+        domain: Optional
+
+    """
+    return Identity(domain)
+
+@functools.lru_cache(maxsize=32)
+def create_zero(target: DomLike = None) -> Zero:
     """Create a zero operator.
 
     Args:
@@ -366,15 +385,6 @@ def create_zero(target: DomLike = None) -> AnyOp:
 
     """
     return Zero(target)
-
-#
-# Operator Constants
-#
-
-identity = create_identity()
-zero = create_zero()
-
-
 
 @functools.lru_cache(maxsize=64)
 def create_lambda(
@@ -402,6 +412,13 @@ def create_lambda(
     """
     return Lambda(
         expression=expression, domain=domain, default=default, trusted=trusted)
+
+#
+# Operator Constants
+#
+
+identity = create_identity()
+zero = create_zero()
 
 #
 # Operator Inspection Functions
@@ -570,7 +587,7 @@ def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
     if not args:
         return zero
     if not domain:
-        return create_identity(*args) # TODO: create argument getter
+        return create_identity(domain=(None, args))
 
     # Get domain
     dom = Domain(domain, default_frame=args)
@@ -685,7 +702,7 @@ def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
 
     # Create formatter
     if tgt.type is NoneType:
-        return create_identity('x')
+        return create_identity(domain=(None, 'x'))
     if tgt.type is tuple:
         return lambda x: x if isinstance(x, tuple) else (x, )
     if tgt.type is list:
@@ -732,7 +749,7 @@ def create_mapper(
     if not args:
         return create_zero(target)
     if not (domain or target):
-        return create_identity(*args)
+        return create_identity(domain=(None, args))
 
     # Create a getter with given domain and a formatter with given target
     getter = create_getter(*args, domain=domain)

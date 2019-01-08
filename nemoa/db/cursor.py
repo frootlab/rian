@@ -343,8 +343,6 @@ class Cursor(attrib.Container):
 
         if isinstance(having, str):
             self._having = operator.create_lambda(having, domain=(tuple, names))
-            print('\n' + '#' * 30)
-            print(self._having.domain.frame) # type: ignore
             return
 
         raise InvalidTypeError('having', having, (type(None), str)) # TODO
