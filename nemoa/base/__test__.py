@@ -66,6 +66,9 @@ class TestOperator(ModuleTestCase):
     def test_Zero(self) -> None:
         pass # Already tested in test_create_zero
 
+    def test_Lambda(self) -> None:
+        pass # Already tested in test_create_lambda
+
     def test_Domain(self) -> None:
         create = operator.Domain
 
@@ -128,12 +131,26 @@ class TestOperator(ModuleTestCase):
         self.assertEqual(zero, operator.create_zero()) # Test caching
         zero = operator.create_zero(tuple)
 
+    def test_create_lambda(self) -> None:
+        create = operator.create_lambda
+
+        with self.subTest(args=tuple()):
+            op = create()
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertIsInstance(op._operator, operator.Zero)
+
+        with self.subTest(args=('x^2 + y')):
+            op = create('x^2 + y')
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(TypeError, op, 1)
+            self.assertEqual(int(op(2, -4)), 0)
+
     def test_create_getter(self) -> None:
         create = operator.create_getter
         obj = mock.Mock()
         obj.configure_mock(a=1, b=2)
 
-        with self.subTest():
+        with self.subTest(args=tuple()):
             getter = create()
             self.assertIsInstance(getter, operator.Zero)
             self.assertEqual(getter(1), None)

@@ -29,7 +29,7 @@ import sys
 import tempfile
 
 try:
-    from appdirs import AppDirs
+    import appdirs
 except ImportError as err:
     raise ImportError(
         "requires package appdirs: "
@@ -284,13 +284,13 @@ def update_dirs(
     # Get application directories from appdirs
     appname = appname or get_var('name') or _default_appname
     appauthor = appauthor or get_var('author') or _default_appauthor
-    appdirs = AppDirs(
+    app_dirs = appdirs.AppDirs(
         appname=appname, appauthor=appauthor, version=version, **kwds)
     dirnames = [
         'user_cache_dir', 'user_config_dir', 'user_data_dir',
         'user_log_dir', 'site_config_dir', 'site_data_dir']
     for dirname in dirnames:
-        dirs[dirname] = Path(getattr(appdirs, dirname))
+        dirs[dirname] = Path(getattr(app_dirs, dirname))
 
     # Get distribution directories from distutils
     path = Path(sysconfig.get_python_lib(), appname)

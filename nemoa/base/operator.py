@@ -13,19 +13,19 @@ import functools
 import inspect
 import itertools
 import operator
+import re
 import py_expression_eval
-from nemoa.base import literal
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Any, Method, Mapping, Sequence, NoneType
 from nemoa.types import Tuple, OptType, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, Class, StrTuple
+from nemoa.types import Optional, OptOp, Class, StrTuple, OptStrTuple
 
 #
 # Types and ClassInfos
 #
 
 # Expression
-Expr = Any # TODO: Use py_expression_eval.Expression
+Expr = Any # TODO: Use py_expression_eval.Expression when valid
 
 # Field identifiers
 FieldID = Hashable # <field>
@@ -172,24 +172,24 @@ class Operator(collections.abc.Callable): # type: ignore
 
 class Identity(Operator):
     """Class for identity operators."""
-    _require: int
+    _sig_len: int # Length of signature
 
     def __init__(self, domain: DomLike = None) -> None:
         self._domain = Domain(domain)
-        self._target = self._domain
-        self._require = len(self._domain.frame)
+        self._target = self._domain # Identical domain
+        self._sig_len = len(self._domain.frame)
 
     def __call__(self, *args: Any) -> Any:
-        if self._require:
-            args_require = self._require
-            args_given = len(args)
-            if args_given != args_require:
+        if self._sig_len:
+            sig_len = self._sig_len
+            arg_len = len(args)
+            if arg_len != sig_len:
                 name = type(self).__name__
-                arg = "argument" if args_require == 1 else "arguments"
-                was = "was" if args_given == 1 else "were"
+                arguments = "argument" if sig_len == 1 else "arguments"
+                were = "was" if arg_len == 1 else "were"
                 raise TypeError(
-                    f"{name} takes {args_require} positional {arg} "
-                    f"but {args_given} {was} given")
+                    f"{name} takes {sig_len} positional {arguments} "
+                    f"but {arg_len} {were} given")
         if not args:
             return None
         if len(args) == 1:
@@ -232,7 +232,7 @@ class Zero(Operator):
         return f"{name}({target})"
 
 class Lambda(Operator):
-    """Class for operators, that are based on parsed expressions.
+    """Class for operators, that are based on arithmetic expressions.
 
     Args:
         expression:
@@ -247,21 +247,22 @@ class Lambda(Operator):
             to map the fields (given as names) to their indices within the
             domain tuple.
         default:
-        trusted:
+        assemble: Optional Boolean parameter, which determines if the operator
+            is compiled after it is parsed.
 
     """
     _expression: str
-    _operator: Any # Usage of Callable leads to wrong interpretation by mypy
+    _operator: Any
 
     def __init__(
             self, expression: str = '', domain: DomLike = None,
-            default: OptOp = None, trusted: bool = True) -> None:
+            default: OptOp = None, assemble: bool = True) -> None:
         self._expression = expression
         self._domain = Domain(domain)
 
         # Create Operator
         if expression:
-            self._create_operator(trusted=trusted)
+            self._create_operator(assemble=assemble)
         elif callable(default):
             self._operator = default
         else:
@@ -272,7 +273,8 @@ class Lambda(Operator):
 
     def __repr__(self) -> str:
         with contextlib.suppress(AttributeError):
-            return f"{type(self).__name__}('{self._expression}')"
+            if self._expression:
+                return f"{type(self).__name__}('{self._expression}')"
         with contextlib.suppress(AttributeError):
             return repr(self._operator)
         return f"{type(self).__name__}()"
@@ -296,7 +298,22 @@ class Lambda(Operator):
     # Protected
     #
 
-    def _create_operator(self, trusted: bool) -> None:
+    def _create_operator(self, assemble: bool) -> None:
+
+        # If the domain uses a frame (if variables are given) substitute all
+        # variable names, that are not valid to the expression parser by valid
+        # variable names
+
+        # def repl(mo) -> str:
+        #     if mo.group('var')
+        #     ...
+        # repl: AnyOp = lambda mo: 'x' if mo.group('var') else mo.group('text')
+        # re_str = '"[^"]+"'
+        # re_var = re.escape(var)
+        # pattern = f"(?P<str>{re_str})|(?P<var>{re_var})"
+        # new_expr = re.sub(pattern, repl, string)
+        # get_var: AnyOp = lambda obj: obj.group('var')
+        # while any(map(get_var, re.finditer(pattern, expr)))
 
         # Parse Expression
         parser = py_expression_eval.Parser()
@@ -305,16 +322,17 @@ class Lambda(Operator):
 
         # Create Mapper
         names = expr.variables()
-        dom_frame = self._get_valid_variables() or names
         dom_type = self._domain.type
+        dom_frame = self._get_valid_variables() or names
         dom_like = (dom_type, dom_frame)
-        if trusted:
-            if dom_type is list:
+        mapper: AnyOp
+        if assemble:
+            if dom_type == list:
                 mapper = identity
             else:
                 mapper = create_mapper(*names, domain=dom_like, target=list)
         else:
-            if dom_type is dict:
+            if dom_type == dict:
                 mapper = identity
             else:
                 mapper = create_mapper(*names, domain=dom_like, target=dict)
@@ -322,7 +340,7 @@ class Lambda(Operator):
         # If the term is trusted create and compile lambda term. Note, that the
         # lambda term usually may be considered to be a trusted expression, as
         # it has been created by using the expression parser
-        if trusted:
+        if assemble:
             term = expr.toString().replace('^', '**')
             term = f"lambda {','.join(names)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
@@ -334,13 +352,37 @@ class Lambda(Operator):
             setattr(self._operator, 'variables', expr.variables)
 
     def _get_valid_variables(self) -> StrTuple:
-        variables = self._domain.frame
-        if not variables:
+        frame = self._domain.frame
+        if not frame:
             return tuple()
-        # Substitute Variables names
-        # TODO: Enforce unique names!!!
-        convert = lambda var: literal.encode(var, charset='UAX31', spacer='_')
-        return tuple(map(convert, variables))
+
+        # Create an operator that checks, if a given variable name <var> is
+        # already occupied within the expression. Thereby ignore appearances
+        # within (single or double) quoted terms.
+        expr = self._expression
+        quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
+        raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
+        matches: AnyOp = lambda var: re.finditer(raw.format(var=var), expr)
+        hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
+        occupied: AnyOp = lambda var: any(map(hit, matches(var)))
+
+        # Use the operator to create a mapping from the original field IDs,
+        # (taken from the set of IDs) to valid variable names.
+        var_set = set(frame)
+        var_map = {}
+        var_counter = itertools.count()
+        get_next: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
+        new_name = get_next()
+        for var in var_set:
+            if isinstance(var, str) and str.isidentifier(var):
+                var_map[var] = var
+                continue
+            while occupied(new_name):
+                new_name = get_next()
+            var_map[var] = new_name
+
+        # Apply the mapping to the domain frame
+        return tuple(map(var_map.get, frame)) # type: ignore
 
     def _get_valid_expression(self) -> str:
         expr = self._expression
@@ -389,7 +431,8 @@ def create_zero(target: DomLike = None) -> Zero:
 @functools.lru_cache(maxsize=64)
 def create_lambda(
         expression: str = '', domain: DomLike = None,
-        default: OptOp = None, trusted: bool = True) -> Lambda:
+        variables: OptStrTuple = None, default: OptOp = None,
+        assemble: bool = True) -> Lambda:
     """Create a lambda operator.
 
     Args:
@@ -399,19 +442,22 @@ def create_lambda(
             :class:`object`, subclasses of the class:`Mapping class
             <collection.abs.Mapping>` and subclasses of the :class:`Sequence
             class <collection.abs.Sequence>`. The default domain is object.
-        variables: Tuple of variable names. This parameter is only required, if
-            the domain category is a subclass of the :class:`Sequence class
-            <collection.abs.Sequence>`. In this case the variable names are used
-            to map the fields (given as names) to their indices within the
-            domain tuple.
+        variables: Optional tuple with variable names. This parameter is only
+            required, if the domain category is a subclass of the
+            :class:`Sequence class <collection.abs.Sequence>`. In this case the
+            variable names are used to map the fields (given as names) to their
+            indices within the domain tuple.
         default:
-        trusted:
+        assemble: Optional Boolean parameter, which determines if the operator
+            is compiled after it is parsed.
 
     Returns:
 
     """
+    merged = Domain(domain, default_frame=variables)
     return Lambda(
-        expression=expression, domain=domain, default=default, trusted=trusted)
+        expression=expression, domain=merged, default=default,
+        assemble=assemble)
 
 #
 # Operator Constants
@@ -701,13 +747,13 @@ def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
     tgt = Domain(target, default_frame=args)
 
     # Create formatter
-    if tgt.type is NoneType:
+    if tgt.type == NoneType:
         return create_identity(domain=(None, 'x'))
-    if tgt.type is tuple:
+    if tgt.type == tuple:
         return lambda x: x if isinstance(x, tuple) else (x, )
-    if tgt.type is list:
+    if tgt.type == list:
         return lambda x: list(x) if isinstance(x, tuple) else [x]
-    if tgt.type is dict:
+    if tgt.type == dict:
         frame = tgt.frame
         if not frame:
             raise ValueError() # TODO: ...
