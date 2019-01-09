@@ -31,9 +31,6 @@ OptMappingProxy = Optional[MappingProxy]
 # Fields
 OptFieldTuple = Optional[Tuple[record.Field, ...]]
 
-# Field Variables
-FieldVar = cursor.FieldVar
-
 # Colums
 SelColA = str # Select Column: name
 SelColB = Tuple[str, SeqOp] # Select Column: name, aggregator
@@ -374,7 +371,7 @@ class Table(attrib.Container):
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, *args: FieldVar, where: OptOp = None,
+            self, *args: cursor.VarDef, where: OptOp = None,
             groupby: cursor.GroupByType = None, dtype: OptType = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, mode: OptStr = None) -> cursor.Cursor:

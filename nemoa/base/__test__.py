@@ -60,17 +60,8 @@ class TestArray(ModuleTestCase):
 class TestOperator(ModuleTestCase):
     module = operator
 
-    def test_Identity(self) -> None:
-        pass # Already tested in test_create_identity
-
-    def test_Zero(self) -> None:
-        pass # Already tested in test_create_zero
-
-    def test_Lambda(self) -> None:
-        pass # Already tested in test_create_lambda
-
-    def test_Domain(self) -> None:
-        create = operator.Domain
+    def test_Dom(self) -> None:
+        create = operator.Dom
 
         with self.subTest():
             dom = create()
@@ -92,12 +83,32 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
-    def test_FieldMap(self) -> None:
-        args = ('a', ('b', ), ('c', len), ('d', max, 'Y'))
-        fmap = operator.FieldMap(*args)
-        self.assertEqual(fmap.fields, ('a', 'b', 'c', 'd'))
-        self.assertTrue(all(map(callable, fmap.operators)))
-        self.assertEqual(fmap.variables, ('a', 'b', 'c', 'Y'))
+    def test_Component(self) -> None:
+        create = operator.Component
+
+        with self.subTest(args=(0, repr, 's')):
+            var = create(0, repr, 's')
+            self.assertEqual(var.field, 0)
+            self.assertEqual(var.operator, repr)
+            self.assertEqual(var.name, 's')
+
+    def test_Var(self) -> None:
+        create = operator.Var
+
+        with self.subTest(args=('a', ('b', ), ('c', len), ('d', max, 'Y'))):
+            var = create('a', ('b', ), ('c', len), ('d', max, 'Y'))
+            self.assertEqual(var.fields, ('a', 'b', 'c', 'd'))
+            self.assertTrue(all(map(callable, var.operators)))
+            self.assertEqual(var.names, ('a', 'b', 'c', 'Y'))
+
+    def test_Identity(self) -> None:
+        pass # Already tested in test_create_identity
+
+    def test_Zero(self) -> None:
+        pass # Already tested in test_create_zero
+
+    def test_Lambda(self) -> None:
+        pass # Already tested in test_create_lambda
 
     def test_create_identity(self) -> None:
         create = operator.create_identity

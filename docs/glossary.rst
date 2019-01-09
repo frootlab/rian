@@ -541,6 +541,32 @@ Basic Parameters and Formats
         format is given by a tuple `(<type>, <frame>)`, where the term `<frame>`
         is required to be a tuple of valid field identifiers in the domain type.
 
+    Variable Definition
+
+        *Variable Definition* parameters are used to specify the mapping of
+        fields to variables. For a variable that represents a named field (e.g.
+        group keys in grouped sequences, etc.), it is sufficient to only provide
+        the :term:`identifier<field identifier>` of the field. If the underlying
+        domain type, however, does not support named fields or the variable name
+        shall be different to the field identifier, then the variable name has
+        to be included in the definition by `(<field>, <name>)`, where `<name>`
+        is required to be a valid identifier.
+
+        For a variable that only depends on a single named field, but is not
+        identical identical to the field, the mapping from the field to the
+        variable has to be specified by an operator (e.g. an :term:`aggregation
+        function`), which has to be included within the definition by `(<field>,
+        <operator>)`. If the underlying domain type, does not support named
+        fields or the variable name is required to be different to the field
+        identifier, then the definition has to be given by the format `(<field>,
+        <operator>, <name>)`.
+
+        For a variable that depends on multiple fields the definition has to be
+        given in the format `(<fields>, <operator>, <name>)`, where `<fields>`
+        is a tuple of valid field identifiers in the domain type and
+        `<operator>` an operator, which accepts the specified fields as
+        arguments.
+
 Parameters and Formats used in Data Warehousing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -609,25 +635,3 @@ Parameters and Formats used in Data Warehousing
         depending on the domain, many out-of-the-box aggregators are shipped
         with the standard library package :mod:`statistics` or with third party
         packages like :mod:`numpy`.
-
-    Field Variable
-
-        *Field Variables* provide information about fields of objects or
-        collections of objects. Thereby the definition of field variables
-        depends on the types of the underlying fields:
-
-        :constant fields: For field variables that represent a constant field
-            (e.g. group keys in grouped sequences), it is sufficient to only
-            provide the :term:`field identifier` `<field>`. If the target type
-            supports named identifiers, then the variable name can be included
-            in the definition by `(<field>, <name>)`, where the variable name is
-            required to be a valid field identifier for the target type.
-        :non-constant fields: For variables that summarize non-constant fields,
-            an additional :term:`aggregation function` has to be included within
-            the definition by `(<field>, <aggregator>)`, or by including the
-            variable name by `(<field>, <aggregator>, <name>)`.
-        :multiple fields: Field variables may also summarize information about
-            multiple fields. In this case the definition has to be given in the
-            format `(<fields>, <aggregator>, <name>)`, where `<fields>` is a
-            tuple of field identifiers and `<aggregator>` an aggregation
-            function, which accepts the specified fields as arguments.

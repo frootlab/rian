@@ -44,8 +44,8 @@ OptContainer = Optional[attrib.Container]
 AggAttr = Union[str, Tuple[str, AnyOp]]
 OptSeqOp = Optional[SeqOp]
 
-# Field Mappings
-FieldVar = operator.FieldVar
+# Variables
+VarDef = operator.VarDef
 ColNames = Tuple[str, ...]
 OptColNames = Optional[ColNames]
 
@@ -73,7 +73,7 @@ class Cursor(attrib.Container):
     """Cursor Class.
 
     Args:
-        *variables: Definitions of :term:`field variables <field variable>`. If
+        *args: Optional :term:`variable defintions<variable defintion>`. If
             no variables are defined, the arguments `groupby` and `dtype` are
             ignored, and the result set is returned as raw records.
         where: Optional filter, which determines if a row is included within the
@@ -108,12 +108,11 @@ class Cursor(attrib.Container):
             <nemoa.base.attrib.Group>', which is used for inheritance and
             shared attributes. By default no parent is referenced.
         dtype: Optional type of the returned records. Supported types are
-            :class:`tuple` and :class:`dict`. The default type of the
-            returned records depends on the definition of the :term:`field
-            variables <field variable>`. If no field variables are defined, then
-            the records by default are returned as instances of the
-            :class:`Record class <nemoa.db.record.Record>`, ff field variables
-            are defined, then the records by default are returned as tuples.
+            :class:`tuple` and :class:`dict`. The default type of the returned
+            records depends on the variable definitions. If no variables are
+            defined, the records by default are returned as instances of the
+            :class:`Record class <nemoa.db.record.Record>`, if variables are
+            defined, then the records by default are returned as tuples.
 
     """
 
@@ -161,7 +160,7 @@ class Cursor(attrib.Container):
     #
 
     def __init__(
-            self, *variables: FieldVar, where: PredLike = None,
+            self, *args: VarDef, where: PredLike = None,
             groupby: GroupByType = None, having: PredLike = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, dtype: OptType = None,
@@ -175,9 +174,9 @@ class Cursor(attrib.Container):
         self._set_mode(mode)
         self._getter = getter # Bind getter
         self._set_filter(where)
-        self._set_aggregator(*variables, groupby=groupby, having=having)
+        self._set_aggregator(*args, groupby=groupby, having=having)
         self._set_sorter(orderby, reverse=reverse)
-        self._set_mapper(*variables, dtype=dtype)
+        self._set_mapper(*args, dtype=dtype)
 
         # Initialize index
         if index is not None:
@@ -300,7 +299,7 @@ class Cursor(attrib.Container):
         raise InvalidTypeError('where', where, (type(None), str)) # TODO: Type!
 
     def _set_aggregator(
-            self, *args: FieldVar, groupby: GroupByType = None,
+            self, *args: VarDef, groupby: GroupByType = None,
             having: PredLike = None) -> None:
 
         if not groupby:
@@ -314,15 +313,14 @@ class Cursor(attrib.Container):
         # (which is not possible for random cursors).
         if not args:
             raise CursorError(
-                'group aggregation '
-                'requires the specification of field variables')
+                'group aggregation requires the definition of variables')
         if not self._mode_id & MODE_BUFFERED:
             raise ModeError(
                 "group aggregation requires a static cursor "
                 f"not '{self.mode}'")
         if self._mode_id & MODE_RANDOM:
             raise ModeError(
-                "group aggregation requires a finite cursor "
+                "group aggregation requires a forward-only cursor "
                 f"not '{self.mode}'")
 
         # Create group aggragation operator
@@ -338,8 +336,8 @@ class Cursor(attrib.Container):
             self._having = having # type: ignore
             return
 
-        # Get field variable names
-        names = operator.FieldMap(*args).variables
+        # Get variable names
+        names = operator.Var(*args).names
 
         if isinstance(having, str):
             self._having = operator.create_lambda(having, domain=(tuple, names))
@@ -381,17 +379,17 @@ class Cursor(attrib.Container):
         self._sorter = operator.create_sorter(
             *keys, domain=domain, reverse=reverse)
 
-    def _set_mapper(
-            self, *args: FieldVar, dtype: OptType = None) -> None:
+    def _set_mapper(self, *args: VarDef, dtype: OptType = None) -> None:
 
         # Validate Arguments
         if dtype and not args:
             raise CursorError(
                 'mapping to a given target type '
-                'requires the specification of field variables')
+                'requires the definition of variables')
 
-        # Get field variable names
-        names = operator.FieldMap(*args).variables
+        # Get variable names
+        var = operator.Var(*args)
+        names = var.names
 
         # If the result set is aggregated by a grouping operator, the mapper
         # acts on tuples as an itemgetter, which requires the specification of
