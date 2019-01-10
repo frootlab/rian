@@ -347,15 +347,15 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(mapper(dic), [1, 2])
 
         with self.subTest(domain=list, target=dict):
-            mapper = create(0, 1, domain=list, target=dict)
-            self.assertEqual(mapper(seq), {0: 1, 1: 2})
+            mapper = create('a', 'b', domain=(list, ('a', 'b')), target=dict)
+            self.assertEqual(mapper(seq), {'a': 1, 'b': 2})
 
         with self.subTest(domain=list, target=tuple):
-            mapper = create(0, 1, domain=list, target=tuple)
+            mapper = create('a', 'b', domain=(list, ('a', 'b')), target=tuple)
             self.assertEqual(mapper(seq), (1, 2))
 
         with self.subTest(domain=list, target=list):
-            mapper = create(0, 1, domain=list, target=list)
+            mapper = create('a', 'b', domain=(list, ('a', 'b')), target=list)
             self.assertEqual(mapper(seq), [1, 2])
 
     def test_create_setter(self) -> Any:

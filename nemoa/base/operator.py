@@ -19,7 +19,7 @@ import py_expression_eval
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Any, Method, Mapping, Sequence, NoneType
 from nemoa.types import Tuple, OptType, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, Class, OptStrTuple, Dict
+from nemoa.types import Optional, OptOp, Class, OptStrTuple, Dict, List
 
 #
 # Types and ClassInfos
@@ -246,7 +246,7 @@ class Zero(OperatorBase):
         return f"{name}({target})"
 
 class Mapper(collections.abc.Sequence, OperatorBase):
-    """Class for functions.
+    """Class for mapper operators.
 
     Args:
         *args: Optional definitions of the function components. If provided, any
@@ -255,40 +255,41 @@ class Mapper(collections.abc.Sequence, OperatorBase):
             variables. By default the identity is used.
 
     """
-    __slots__ = ['_definition', '_operators']
+    __slots__ = ['_definition', '_call_partial', '_call_total']
 
     _definition: Tuple[Variable, ...]
-    _operators: Tuple[AnyOp, ...]
+    _call_partial: Tuple[AnyOp, ...]
+    _call_total: Any
 
     def __init__(
             self, *args: VarLike, domain: DomLike = None,
-            default: OptOp = None) -> None:
+            target: DomLike = None, default: OptOp = None) -> None:
         self._update_definition(*args, default=default)
         self._update_domain(domain)
-        self._update_operators()
+        self._update_target(target)
+        self._update_call_partial()
+        self._update_call_total()
 
     def __call__(self, *args: Any) -> Any:
-        if len(self._operators) == 1:
-            return self._operators[0](*args)
-        return tuple(op(*args) for op in self._operators)
+        return self._call_total(*args)
 
     def __getitem__(self, pos: Union[int, slice]) -> Any:
         if isinstance(pos, int):
-            return self._operators[pos]
+            return self._call_partial[pos]
         if isinstance(pos, slice):
-            ops = self._operators[pos]
+            ops = self._call_partial[pos]
             return lambda *args: tuple(op(*args) for op in ops)
         raise InvalidTypeError('pos', pos, (int, slice))
 
     def __len__(self) -> int:
-        return len(self._operators)
+        return len(self._definition)
 
     def __repr__(self) -> str:
         name = type(self).__name__
-        components = ', '.join(map(repr, self.components))
-        if not components:
+        fields = ', '.join(map(repr, self.fields))
+        if not fields:
             return f"{name}()"
-        return f"{name}({components})"
+        return f"{name}({fields})"
 
     @property
     def fields(self) -> Frame:
@@ -321,25 +322,69 @@ class Mapper(collections.abc.Sequence, OperatorBase):
                 fields.append(field)
         self._domain = Domain(domain, default_frame=tuple(fields))
 
-    def _update_operators(self) -> None:
+    def _update_target(self, target: DomLike = None) -> None:
+        fields = []
+        for var in self._definition:
+            fields.append(var.name)
+        self._target = Domain(target, default_frame=tuple(fields))
+
+    def _update_call_partial(self) -> None:
         # Check if all field identifiers are found within the frame. Note that
         # this is also True if no frame is used, since set() <= set()
         if not set(self.fields) <= set(self._domain.frame):
             raise ValueError() # TODO
 
-        # Create operators
-        ops = []
+        # Create operators for the partial (per component) evaluation of the
+        # mapper
+        ops: List[AnyOp] = []
         for var in self._definition:
-            if var.fields == self.domain.frame:
-                op = var.operator
-            elif isinstance(var.operator, Identity):
-                op = create_getter(*var.fields, domain=self.domain)
+            getter = create_getter(*var.fields, domain=self.domain)
+            if isinstance(var.operator, Identity):
+                ops.append(getter)
+            elif not var.fields:
+                ops.append(var.operator)
+            elif len(var.fields) == 1:
+                ops.append(compose(var.operator, getter))
             else:
-                getter = create_mapper(
-                    *var.fields, domain=self.domain, target=tuple)
-                op = compose(var.operator, getter, unpack=True)
-            ops.append(op)
-        self._operators = tuple(ops)
+                ops.append(compose(var.operator, getter, unpack=True))
+        self._call_partial = tuple(ops)
+
+    def _update_call_total(self) -> None:
+        # Check if the mapper can be implemented as a getter
+        is_getter = True
+        for var in self._definition:
+            if len(var.fields) != 1:
+                is_getter = False
+                break
+            if not isinstance(var.operator, Identity):
+                is_getter = False
+                break
+
+        mapper: AnyOp
+        f = self._call_partial
+        if is_getter:
+            fields = (var.fields[0] for var in self._definition)
+            mapper = create_getter(*fields, domain=self.domain)
+        elif len(self) == 1:
+            mapper = f[0]
+        elif len(self) == 2:
+            mapper = lambda *args: (f[0](*args), f[1](*args))
+        elif len(self) == 3:
+            mapper = lambda *args: (f[0](*args), f[1](*args), f[2](*args))
+        else:
+            mapper = lambda *args: tuple(comp(*args) for comp in f)
+
+        # Create formatter
+        formatter = create_formatter(*self.components, target=self.target)
+
+        # If the formatter is an identity operator, return mapper. If the mapper
+        # is an identity operator, precede a tuple 'packer' to the formatter
+        if isinstance(formatter, Identity):
+            self._call_total = mapper
+        elif isinstance(mapper, Identity):
+            self._call_total = compose(formatter, lambda *args: args)
+        else:
+            self._call_total = compose(formatter, mapper)
 
 class Lambda(OperatorBase):
     """Class for operators, that are based on arithmetic expressions.
@@ -545,6 +590,39 @@ def create_zero(target: DomLike = None) -> Zero:
 
     """
     return Zero(target)
+
+def create_mapper(
+        *args: VarLike, domain: DomLike = None,
+        target: DomLike = None, default: OptOp = None) -> Mapper:
+    """Create a mapping operator.
+
+    Mapping operators are compositions of :func:`getters<create_getter>`
+    and :func:`formatters<create_formatter>` and used to map selected fields
+    from it's operand (or arguments) to the fields of a given target type.
+
+    Args:
+        *args: Valid :term:`field identifiers <field identifier>` within the
+            domain type.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. The accepted
+            parameter values are documented in :func:`create_getter`.
+        target: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's target. The accepted
+            parameter values are documented in :func:`create_formatter`.
+        default:
+
+    Returns:
+        Operator that maps selected fields from its operand to fields of a
+        given target type.
+
+    """
+    # If no fields are specified, the returned operator is the zero operator of
+    # the target type. If fields are specified, but no domain and no target the
+    # returned operator is the identity with a fixed number of arguments
+    if not args:
+        return create_zero(target)
+
+    return Mapper(*args, domain=domain, target=target, default=default)
 
 @functools.lru_cache(maxsize=64)
 def create_lambda(
@@ -770,22 +848,26 @@ def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
         pos = map(dom.frame.index, args)
         itemgetter = operator.itemgetter(*pos)
         return lambda *args: itemgetter(args)
+
     if dom.type is object:
         # Check if field identifiers are attribute identifiers
         valid = lambda attr: isinstance(attr, str) and attr.isidentifier
         if not all(map(valid, args)):
             raise InvalidTypeError('any field', args, 'a valid attribute name')
         return operator.attrgetter(*args) # type: ignore
+
     if issubclass(dom.type, Mapping):
         # Check if field identifiers are mapping keys (hashable)
         valid = lambda obj: isinstance(obj, Hashable)
         if not all(map(valid, args)):
             raise InvalidTypeError('any field', args, 'a valid mappin key')
         return operator.itemgetter(*args)
+
     if issubclass(dom.type, Sequence):
         if dom.frame:
             pos = map(dom.frame.index, args)
             return operator.itemgetter(*pos)
+
         # Check if field identifiers are sequence positions
         valid = lambda pos: isinstance(pos, int) and pos >= 0
         if not all(map(valid, args)):
@@ -832,10 +914,12 @@ def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
             iterator = map(set_item, args) # type: ignore
             collections.deque(iterator, maxlen=0) # avoid creation of list
         return attrsetter
+
     if issubclass(dom.type, Mapping):
         # For mappings use the .update() method
         updates = dict(args)
         return lambda obj: obj.update(updates)
+
     if issubclass(dom.type, Sequence):
         if dom.frame: # If a frame is given get the item positions from index
             getid = dom.frame.index
@@ -892,51 +976,6 @@ def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
 
     # TODO: raise InvalidValueError!
     raise InvalidTypeError('target', target, (tuple, list, dict))
-
-def create_mapper(
-        *args: FieldID, domain: DomLike = None,
-        target: DomLike = None) -> AnyOp:
-    """Create a mapping operator.
-
-    Mapping operators are compositions of :func:`getters<create_getter>`
-    and :func:`formatters<create_formatter>` and used to map selected fields
-    from it's operand (or arguments) to the fields of a given target type.
-
-    Args:
-        *args: Valid :term:`field identifiers <field identifier>` within the
-            domain type.
-        domain: Optional :term:`domain like` parameter, that specifies the type
-            and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in :func:`create_getter`.
-        target: Optional :term:`domain like` parameter, that specifies the type
-            and (if required) the frame of the operator's target. The accepted
-            parameter values are documented in :func:`create_formatter`.
-
-    Returns:
-        Operator that maps selected fields from its operand to fields of a
-        given target type.
-
-    """
-    # If no fields are specified, the returned operator is the zero operator of
-    # the target type. If fields are specified, but no domain and no target the
-    # returned operator is the identity with a fixed number of arguments
-    if not args:
-        return create_zero(target)
-    if not (domain or target):
-        return create_identity(domain=(None, args))
-
-    # Create a getter with given domain and a formatter with given target
-    getter = create_getter(*args, domain=domain)
-    formatter = create_formatter(*args, target=target)
-
-    # If the formatter is an identity operator, return getter. If the getter is
-    # an identity operator, precede a 'boxing' operation.
-    if isinstance(formatter, Identity):
-        return getter
-    if isinstance(getter, Identity):
-        return compose(formatter, lambda *args: args)
-
-    return compose(formatter, getter)
 
 def create_wrapper(**attrs: Any) -> AnyOp:
     """Create a function wrapper that adds attributes.
