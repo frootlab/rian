@@ -83,8 +83,8 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
-    def test_Component(self) -> None:
-        create = operator.Component
+    def test_Map(self) -> None:
+        create = operator.Map
 
         with self.subTest(args=(0, repr, 's')):
             var = create(0, repr, 's')
@@ -153,7 +153,7 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('x^2 + y')):
             op = create('x^2 + y')
             self.assertIsInstance(op, operator.Lambda)
-            self.assertRaises(TypeError, op, 1)
+            self.assertRaises(IndexError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
 
     def test_create_getter(self) -> None:
@@ -177,6 +177,11 @@ class TestOperator(ModuleTestCase):
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1, 2), (1, 2))
             self.assertRaises(TypeError, getter, 1)
+
+        with self.subTest(args=('a', ), domain=(None, ('a', 'b'))):
+            getter = create('a', domain=(None, ('a', 'b')))
+            self.assertEqual(getter(1, 2), 1)
+            self.assertRaises(IndexError, getter)
 
         with self.subTest(domain=tuple):
             getter = create(domain=tuple)
