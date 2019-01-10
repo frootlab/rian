@@ -19,7 +19,7 @@ import py_expression_eval
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Any, Method, Mapping, Sequence, NoneType
 from nemoa.types import Tuple, OptType, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, Class, OptStrTuple, List, Dict
+from nemoa.types import Optional, OptOp, Class, OptStrTuple, Dict
 
 #
 # Types and ClassInfos
@@ -30,28 +30,27 @@ Expr = Any # TODO: Use py_expression_eval.Expression when valid
 
 # Fields
 FieldID = Hashable # <field>
-FieldIDs = Tuple[FieldID, ...] # <fields>
-OptKey = Optional[Union[FieldID, FieldIDs]]
+Frame = Tuple[FieldID, ...] # <fields>
+Key = Optional[Union[FieldID, Frame]]
 Item = Tuple[FieldID, Any] # <field>, <value>
 
-# Variables
-VarDefA = Tuple[str] # identity: <field> -> <field>
-VarDefB = Tuple[FieldID, str] # identity: <field> -> <variable>
-VarDefC = Tuple[str, AnyOp] # <operator>: <field> -> <field>
-VarDefD = Tuple[FieldID, AnyOp, str] # <operator>: <field> -> <variable>
-VarDef = Union[str, VarDefA, VarDefB, VarDefC, VarDefD]
-OpSlice = Union[AnyOp, Tuple[AnyOp, ...]]
+# Variable Definition
+VarLike = Union[
+    str, Tuple[str], # identity: <field> -> <field>
+    Tuple[FieldID, str], # identity: <field> -> <variable>
+    Tuple[Frame, str], # identity: <fields> -> <variable>
+    Tuple[str, AnyOp], # <operator>: <field> -> <field>
+    Tuple[FieldID, AnyOp, str], # <operator>: <field> -> <variable>
+    Tuple[Frame, AnyOp, str]] # <operator>: <fields> -> <variable>
 
 # Domains
-Frame = FieldIDs
-OptFrame = Optional[Frame]
-DomLike = Union[OptType, Tuple[OptType, Frame], 'Dom']
+DomLike = Union[OptType, Tuple[OptType, Frame], 'Domain']
 
 #
 # Parameter Classes
 #
 
-class Dom:
+class Domain:
     """Class for the storage of domain parameters.
 
     Args:
@@ -73,11 +72,11 @@ class Dom:
 
     def __init__(
         self, domain: DomLike = None, default_type: Class = NoneType,
-        default_frame: OptFrame = None) -> None:
+        default_frame: Optional[Frame] = None) -> None:
         if domain is None:
             self.type = default_type
             self.frame = default_frame or tuple()
-        elif isinstance(domain, Dom):
+        elif isinstance(domain, Domain):
             self.type = domain.type
             self.frame = domain.frame
         elif isinstance(domain, type):
@@ -87,7 +86,7 @@ class Dom:
             self.type = domain[0] or default_type
             self.frame = domain[1] or default_frame or tuple()
         else:
-            allowed = (NoneType, type, tuple, Dom)
+            allowed = (NoneType, type, tuple, Domain)
             raise InvalidTypeError('domain', domain, allowed)
 
     def __repr__(self) -> str:
@@ -109,194 +108,86 @@ class Dom:
             return False
         return True
 
-class Map(NamedTuple):
-    """Class for the storage of function component definitions."""
-    field: FieldID
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+class Variable(NamedTuple):
+    """Data Class for variable definitions."""
+    fields: Frame
     operator: AnyOp
     name: str
 
-class Var(collections.abc.Sequence):
-    """Class for multivariate variables.
+def create_variable(var: VarLike, default: OptOp = None) -> Variable:
+    """Create variable from variable definition.
 
     Args:
-        *args: Optional definitions of the mapping components. If provided, any
-            component has to be given as a valid :term:`variable definition`.
-        default: Default operator which is used to map fields to field
-            variables. By default the identity is used.
+
+    Returns:
 
     """
-    __slots__ = ['components', 'definition', 'domain']
+    default = default or identity
 
-    components: Tuple[AnyOp, ...]
-    definition: Tuple[Map, ...]
-    domain: Dom
+    if isinstance(var, str):
+        return Variable((var, ), default, var)
+    if not isinstance(var, tuple):
+        raise InvalidTypeError('var', var, (str, tuple))
+    size = len(var)
+    if size == 1:
+        if not isinstance(var[0], str):
+            raise InvalidTypeError('field', var[0], str)
+        return Variable((var[0], ), default, var[0])
+    if size == 2:
+        if callable(var[1]):
+            if not isinstance(var[0], str):
+                raise InvalidTypeError('field', var[0], str)
+            return Variable((var[0], ), var[1], var[0])
+        if not isinstance(var[1], str):
+            raise InvalidTypeError('name', var[1], str)
+        if not isinstance(var[0], tuple):
+            return Variable((var[0], ), default, var[1])
+        return Variable(var[0], default, var[1])
+    if size == 3:
+        if not callable(var[1]):
+            raise InvalidTypeError('operator', var[1], 'callable')
+        if not isinstance(var[2], str):
+            raise InvalidTypeError('name', var[2], str)
+        if not isinstance(var[0], tuple):
+            return Variable((var[0], ), var[1], var[2])
+        return Variable(var[0], var[1], var[2])
 
-    def __init__(
-            self, *args: VarDef, domain: DomLike = None,
-            default: OptOp = None) -> None:
-        self._update_definition(*args, default=default)
-        self._update_domain(domain)
-        self._update_components()
-
-    def __call__(self, *args: Any) -> Any:
-        if len(self.components) == 1:
-            return self.components[0](*args)
-        return tuple(op(*args) for op in self.components)
-
-    def __getitem__(self, pos: Union[int, slice]) -> Any:
-        if isinstance(pos, int):
-            return self.components[pos]
-        if isinstance(pos, slice):
-            ops = self.components[pos]
-            return lambda *args: tuple(op(*args) for op in ops)
-        raise InvalidTypeError('pos', pos, (int, slice))
-
-    def __len__(self) -> int:
-        return len(self.components)
-
-    def __repr__(self) -> str:
-        name = type(self).__name__
-        names = ', '.join(map(repr, self.names))
-        if not names:
-            return f"{name}()"
-        return f"{name}({names})"
-
-    @property
-    def fields(self) -> Tuple[FieldID, ...]:
-        if not hasattr(self, 'definition'):
-            return tuple()
-        if hasattr(self, 'domain'):
-            return self.domain.frame
-        return tuple(var.field for var in self.definition)
-
-    @property
-    def operators(self) -> Tuple[AnyOp, ...]:
-        if not hasattr(self, 'definition'):
-            return tuple()
-        return tuple(var.operator for var in self.definition)
-
-    @property
-    def names(self) -> Tuple[str, ...]:
-        if not hasattr(self, 'definition'):
-            return tuple()
-        return tuple(var.name for var in self.definition)
-
-    def _update_definition(
-            self, *args: VarDef, default: OptOp = None) -> None:
-        # Update variable definition
-        if not args:
-            self.definition = tuple()
-        cdefs: list = []
-        default = default or identity
-        invalid: List[VarDef] = []
-        for var in args:
-            if isinstance(var, str):
-                cdefs.append(Map(var, default, var))
-                continue
-            if not isinstance(var, tuple):
-                invalid.append(var)
-                continue
-            size = len(var)
-            if size == 1:
-                if not isinstance(var[0], str):
-                    invalid.append(var)
-                    continue
-                cdefs.append(Map(var[0], default, var[0]))
-                continue
-            if size == 2:
-                if callable(var[1]):
-                    if not isinstance(var[0], str):
-                        invalid.append(var)
-                        continue
-                    cdefs.append(Map(var[0], var[1], var[0]))
-                    continue
-                if not isinstance(var[1], str):
-                    invalid.append(var)
-                    continue
-                cdefs.append(Map(var[0], default, var[1]))
-                continue
-            if size == 3:
-                if not callable(var[1]):
-                    invalid.append(var)
-                    continue
-                if not isinstance(var[2], str):
-                    invalid.append(var)
-                    continue
-                cdefs.append(Map(var[0], var[1], var[2]))
-                continue
-            invalid.append(var)
-        if invalid:
-            definitions = 'definitions' if len(invalid) > 1 else 'definition'
-            raise ValueError(f'invalid variable {definitions} {invalid}')
-        self.definition = tuple(cdefs)
-
-    def _update_domain(self, domain: DomLike = None) -> None:
-        self.domain = Dom(domain, default_frame=self.fields)
-        if not self.domain.frame:
-            self.domain.frame = tuple(var.field for var in self.definition)
-
-    def _update_components(self) -> None:
-        # Check if all field identifiers are found within the frame. Note that
-        # this is also True if no frame is used, since set() <= set()
-        if not set(self.fields) <= set(self.domain.frame):
-            raise ValueError() # TODO
-
-        # Create function components
-        components = []
-        frame = self.domain.frame
-        for var in self.definition:
-            fields = var.field
-            if isinstance(fields, tuple):
-                if fields == frame:
-                    components.append(var.operator)
-                    continue
-                getter = operator.itemgetter(*map(frame.index, fields))
-                unpack = len(fields) > 1
-                op = compose(var.operator, getter, unpack=unpack)
-                components.append(op)
-                continue
-            # TODO: deprecated: Always use multiple fields in components!
-            if (fields, ) == frame:
-                components.append(var.operator)
-                continue
-            if isinstance(var.operator, Identity):
-                components.append(create_getter(fields, domain=self.domain))
-                continue
-            getter = create_mapper(fields, domain=self.domain, target=tuple)
-            components.append(compose(var.operator, getter, unpack=True))
-        self.components = tuple(components)
+    raise ValueError(f'invalid variable definition {var}')
 
 #
 # Operator Classes
 #
 
-class Operator(collections.abc.Callable): # type: ignore
+class OperatorBase(collections.abc.Callable): # type: ignore
     """Base Class for operators."""
     __slots__ = ['_domain', '_target']
 
-    _domain: Dom
-    _target: Dom
+    _domain: Domain
+    _target: Domain
 
     @property
-    def domain(self) -> Dom:
+    def domain(self) -> Domain:
         if hasattr(self, '_domain'):
             return self._domain
-        return Dom()
+        return Domain()
 
     @property
-    def target(self) -> Dom:
+    def target(self) -> Domain:
         if hasattr(self, '_target'):
             return self._target
-        return Dom()
+        return Domain()
 
-class Identity(Operator):
+class Identity(OperatorBase):
     """Class for identity operators."""
     __slots__ = ['_sig_len']
 
     _sig_len: int # Length of signature
 
     def __init__(self, domain: DomLike = None) -> None:
-        self._domain = Dom(domain)
+        self._domain = Domain(domain)
         self._target = self._domain # Identical domain
         self._sig_len = len(self._domain.frame)
 
@@ -325,9 +216,9 @@ class Identity(Operator):
         frame = self._domain.frame
         if not frame:
             return f'{name}()'
-        return f"{name}({', '.join(map(str, frame))})"
+        return f"{name}({', '.join(map(repr, frame))})"
 
-class Zero(Operator):
+class Zero(OperatorBase):
     """Class for zero operators.
 
     Args:
@@ -339,8 +230,8 @@ class Zero(Operator):
     _zero: Any
 
     def __init__(self, target: DomLike = None) -> None:
-        self._domain = Dom()
-        self._target = Dom(target)
+        self._domain = Domain()
+        self._target = Domain(target)
         self._zero = self._target.type() # Create zero object in target type
 
     def __call__(self, *args: Any) -> Any:
@@ -354,7 +245,103 @@ class Zero(Operator):
         target = self._target.type.__name__
         return f"{name}({target})"
 
-class Lambda(Operator):
+class Mapper(collections.abc.Sequence, OperatorBase):
+    """Class for functions.
+
+    Args:
+        *args: Optional definitions of the function components. If provided, any
+            component has to be given as a valid :term:`variable definition`.
+        default: Default operator which is used to map fields to field
+            variables. By default the identity is used.
+
+    """
+    __slots__ = ['_definition', '_operators']
+
+    _definition: Tuple[Variable, ...]
+    _operators: Tuple[AnyOp, ...]
+
+    def __init__(
+            self, *args: VarLike, domain: DomLike = None,
+            default: OptOp = None) -> None:
+        self._update_definition(*args, default=default)
+        self._update_domain(domain)
+        self._update_operators()
+
+    def __call__(self, *args: Any) -> Any:
+        if len(self._operators) == 1:
+            return self._operators[0](*args)
+        return tuple(op(*args) for op in self._operators)
+
+    def __getitem__(self, pos: Union[int, slice]) -> Any:
+        if isinstance(pos, int):
+            return self._operators[pos]
+        if isinstance(pos, slice):
+            ops = self._operators[pos]
+            return lambda *args: tuple(op(*args) for op in ops)
+        raise InvalidTypeError('pos', pos, (int, slice))
+
+    def __len__(self) -> int:
+        return len(self._operators)
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        components = ', '.join(map(repr, self.components))
+        if not components:
+            return f"{name}()"
+        return f"{name}({components})"
+
+    @property
+    def fields(self) -> Frame:
+        if not hasattr(self, '_domain'):
+            return tuple()
+        if self._domain.frame:
+            return self._domain.frame
+        if not hasattr(self, '_definition'):
+            return tuple()
+        fields = []
+        for var in self._definition:
+            for field in var.fields:
+                fields.append(field)
+        return tuple(fields)
+
+    @property
+    def components(self) -> Tuple[str, ...]:
+        if not hasattr(self, '_definition'):
+            return tuple()
+        return tuple(var.name for var in self._definition)
+
+    def _update_definition(self, *args: VarLike, default: OptOp = None) -> None:
+        var: AnyOp = lambda arg: create_variable(arg, default=default)
+        self._definition = tuple(map(var, args))
+
+    def _update_domain(self, domain: DomLike = None) -> None:
+        fields = []
+        for var in self._definition:
+            for field in var.fields:
+                fields.append(field)
+        self._domain = Domain(domain, default_frame=tuple(fields))
+
+    def _update_operators(self) -> None:
+        # Check if all field identifiers are found within the frame. Note that
+        # this is also True if no frame is used, since set() <= set()
+        if not set(self.fields) <= set(self._domain.frame):
+            raise ValueError() # TODO
+
+        # Create operators
+        ops = []
+        for var in self._definition:
+            if var.fields == self.domain.frame:
+                op = var.operator
+            elif isinstance(var.operator, Identity):
+                op = create_getter(*var.fields, domain=self.domain)
+            else:
+                getter = create_mapper(
+                    *var.fields, domain=self.domain, target=tuple)
+                op = compose(var.operator, getter, unpack=True)
+            ops.append(op)
+        self._operators = tuple(ops)
+
+class Lambda(OperatorBase):
     """Class for operators, that are based on arithmetic expressions.
 
     Args:
@@ -381,7 +368,7 @@ class Lambda(Operator):
             self, expression: str = '', domain: DomLike = None,
             default: OptOp = None, assemble: bool = True) -> None:
         self._expression = expression
-        self._domain = Dom(domain)
+        self._domain = Domain(domain)
 
         # Create Operator
         if expression:
@@ -407,7 +394,7 @@ class Lambda(Operator):
     #
 
     @property
-    def variables(self) -> FieldIDs:
+    def variables(self) -> Frame:
         with contextlib.suppress(AttributeError):
             attrs = self._operator.variables
             if callable(attrs):
@@ -431,7 +418,7 @@ class Lambda(Operator):
         var = self._get_variables(expr, dom.frame)
 
         # If the
-        if var.names:
+        if var.components:
             pass
 
         # def repl(mo) -> str:
@@ -453,7 +440,7 @@ class Lambda(Operator):
         # Create Mapper
         names = expr.variables()
         dom_type = self._domain.type
-        dom_frame = var.names or names
+        dom_frame = var.fields or names
         dom_like = (dom_type, dom_frame)
         mapper: AnyOp
         if assemble:
@@ -481,9 +468,9 @@ class Lambda(Operator):
             self._operator = compose(expr.evaluate, mapper)
             setattr(self._operator, 'variables', expr.variables)
 
-    def _get_variables(self, expr: str, frame: FieldIDs) -> Var:
+    def _get_variables(self, expr: str, frame: Frame) -> Mapper:
         if not frame:
-            return Var()
+            return Mapper()
 
         # Create an operator that checks, if a given variable name <var> is
         # already occupied by the expression. Thereby ignore appearances within
@@ -513,12 +500,12 @@ class Lambda(Operator):
         # Create variable
         get_var: AnyOp = lambda field: mapping.get(field, '')
         args = tuple(zip(frame, map(get_var, frame)))
-        return Var(*args)
+        return Mapper(*args)
 
     def _get_valid_expression(self) -> str:
         expr = self._expression
         frame = self._domain.frame
-        variables = self._get_variables(expr, frame).names
+        variables = self._get_variables(expr, frame).components
         for orig, subst in zip(frame, variables):
             if orig == subst:
                 continue
@@ -585,7 +572,7 @@ def create_lambda(
     Returns:
 
     """
-    merged = Dom(domain, default_frame=variables)
+    merged = Domain(domain, default_frame=variables)
     return Lambda(
         expression=expression, domain=merged, default=default,
         assemble=assemble)
@@ -773,7 +760,7 @@ def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
         return create_identity(domain=(None, args))
 
     # Get domain
-    dom = Dom(domain, default_frame=args)
+    dom = Domain(domain, default_frame=args)
 
     # Create getter
     valid: AnyOp
@@ -831,7 +818,7 @@ def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
         return zero
 
     # Get domain
-    dom = Dom(domain)
+    dom = Domain(domain)
 
     # Create setter
     if dom.type is object:
@@ -885,7 +872,7 @@ def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
 
     """
     # Get target
-    tgt = Dom(target, default_frame=args)
+    tgt = Domain(target, default_frame=args)
 
     # Create formatter
     if tgt.type == NoneType:
@@ -1053,7 +1040,7 @@ def create_grouper(
     return lambda seq: grouper(sorted(seq, key=getter))
 
 def create_aggregator(
-        *args: VarDef, domain: DomLike = None,
+        *args: VarLike, domain: DomLike = None,
         target: type = tuple) -> SeqOp:
     """Creates an aggregation operator with specified variables.
 
@@ -1082,31 +1069,33 @@ def create_aggregator(
     if not args:
         return create_zero(target)
 
-    # Create variable
-    fmap = Var(*args, default=operator.itemgetter(0))
-    ops = fmap.operators
+    # Create mapper object
+    f = Mapper(*args, default=operator.itemgetter(0))
 
-    # Create a getter, that maps the input sequence to a matrix
-    getter = create_mapper(*fmap.fields, domain=domain, target=tuple)
-    matrix: SeqOp = lambda seq: list(map(getter, seq))
-
-    # Create operators, that transpose the matrix and aggregate the columns
+    # Create an operator, that converts data stored in rows to columns.
+    # 1. At first fetch the rows from the input sequence
+    # 2. Create a Matrix from the sequence (a list of rows)
+    # 3. Transpose a Matrix (to a tuple of columns)
+    # 4. Compose Matrix creation and transposition
+    fetch = create_mapper(*f.fields, domain=domain, target=tuple)
+    matrix: SeqOp = lambda seq: list(map(fetch, seq))
     trans: SeqOp = lambda mat: tuple(list(col) for col in zip(*mat))
-    aggreg: SeqOp = lambda arr: tuple(op(seq) for op, seq in zip(ops, arr))
+    columns: SeqOp = lambda seq: trans(matrix(seq))
 
-    # If the requested type is tuple just compose the operators
+    # If the requested type is tuple return an operator, that evaluates the
+    # multivariate variable for the columns
     if target == tuple:
-        return lambda seq: aggreg(trans(matrix(seq)))
+        return lambda seq: f(*columns(seq))
 
     # For dictionaries a further type conversion is required
     if target == dict:
-        names = fmap.names
-        return lambda seq: dict(zip(names, aggreg(trans(matrix(seq)))))
+        components = f.components
+        return lambda seq: dict(zip(components, f(*columns(seq))))
 
     raise ValueError(f"type '{target.__name__}' is not supported")
 
 def create_group_aggregator(
-        *args: VarDef, key: OptKey = None, domain: DomLike = None,
+        *args: VarLike, key: Key = None, domain: DomLike = None,
         target: type = tuple, presorted: bool = False) -> SeqOp:
     """Creates a group aggregation operator.
 

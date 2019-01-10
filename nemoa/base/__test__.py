@@ -60,8 +60,8 @@ class TestArray(ModuleTestCase):
 class TestOperator(ModuleTestCase):
     module = operator
 
-    def test_Dom(self) -> None:
-        create = operator.Dom
+    def test_Domain(self) -> None:
+        create = operator.Domain
 
         with self.subTest():
             dom = create()
@@ -83,23 +83,59 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
-    def test_Map(self) -> None:
-        create = operator.Map
+    def test_Variable(self) -> None:
+        pass # Already tested in test_create_variable
 
-        with self.subTest(args=(0, repr, 's')):
-            var = create(0, repr, 's')
-            self.assertEqual(var.field, 0)
-            self.assertEqual(var.operator, repr)
-            self.assertEqual(var.name, 's')
+    def test_create_variable(self) -> None:
+        create = operator.create_variable
 
-    def test_Var(self) -> None:
-        create = operator.Var
+        with self.subTest(args=tuple()):
+            self.assertRaises(TypeError, create)
+
+        with self.subTest(args=('x', )):
+            var = create('x')
+            self.assertEqual(var.fields, ('x', ))
+            self.assertEqual(var.operator, operator.identity)
+            self.assertEqual(var.name, 'x')
+
+        with self.subTest(args=(('x', list), )):
+            var = create(('x', list))
+            self.assertEqual(var.fields, ('x', ))
+            self.assertEqual(var.operator, list)
+            self.assertEqual(var.name, 'x')
+
+        with self.subTest(args=(('x', 'y'), )):
+            var = create(('x', 'y'))
+            self.assertEqual(var.fields, ('x', ))
+            self.assertEqual(var.operator, operator.identity)
+            self.assertEqual(var.name, 'y')
+
+        with self.subTest(args=((('x1', 'x2'), 'y'), )):
+            var = create((('x1', 'x2'), 'y'))
+            self.assertEqual(var.fields, ('x1', 'x2'))
+            self.assertEqual(var.operator, operator.identity)
+            self.assertEqual(var.name, 'y')
+
+        with self.subTest(args=(('x', list, 'y'), )):
+            var = create(('x', list, 'y'))
+            self.assertEqual(var.fields, ('x', ))
+            self.assertEqual(var.operator, list)
+            self.assertEqual(var.name, 'y')
+
+        with self.subTest(args=((('x1', 'x2'), list, 'y'), )):
+            var = create((('x1', 'x2'), list, 'y'))
+            self.assertEqual(var.fields, ('x1', 'x2'))
+            self.assertEqual(var.operator, list)
+            self.assertEqual(var.name, 'y')
+
+    def test_Mapper(self) -> None:
+        create = operator.Mapper
 
         with self.subTest(args=('a', ('b', ), ('c', len), ('d', max, 'Y'))):
-            var = create('a', ('b', ), ('c', len), ('d', max, 'Y'))
-            self.assertEqual(var.fields, ('a', 'b', 'c', 'd'))
-            self.assertTrue(all(map(callable, var.operators)))
-            self.assertEqual(var.names, ('a', 'b', 'c', 'Y'))
+            f = create('a', ('b', ), ('c', len), ('d', max, 'Y'))
+            self.assertEqual(f.fields, ('a', 'b', 'c', 'd'))
+            self.assertTrue(all(map(callable, f)))
+            self.assertEqual(f.components, ('a', 'b', 'c', 'Y'))
 
     def test_Identity(self) -> None:
         pass # Already tested in test_create_identity

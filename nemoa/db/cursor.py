@@ -45,7 +45,7 @@ AggAttr = Union[str, Tuple[str, AnyOp]]
 OptSeqOp = Optional[SeqOp]
 
 # Variables
-VarDef = operator.VarDef
+VarLike = operator.VarLike
 ColNames = Tuple[str, ...]
 OptColNames = Optional[ColNames]
 
@@ -160,7 +160,7 @@ class Cursor(attrib.Container):
     #
 
     def __init__(
-            self, *args: VarDef, where: PredLike = None,
+            self, *args: VarLike, where: PredLike = None,
             groupby: GroupByType = None, having: PredLike = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, dtype: OptType = None,
@@ -299,7 +299,7 @@ class Cursor(attrib.Container):
         raise InvalidTypeError('where', where, (type(None), str)) # TODO: Type!
 
     def _set_aggregator(
-            self, *args: VarDef, groupby: GroupByType = None,
+            self, *args: VarLike, groupby: GroupByType = None,
             having: PredLike = None) -> None:
 
         if not groupby:
@@ -337,7 +337,8 @@ class Cursor(attrib.Container):
             return
 
         # Get variable names
-        names = operator.Var(*args).names
+        variables = map(operator.create_variable, args)
+        names = tuple(var.name for var in variables)
 
         if isinstance(having, str):
             self._having = operator.create_lambda(having, domain=(tuple, names))
@@ -379,7 +380,7 @@ class Cursor(attrib.Container):
         self._sorter = operator.create_sorter(
             *keys, domain=domain, reverse=reverse)
 
-    def _set_mapper(self, *args: VarDef, dtype: OptType = None) -> None:
+    def _set_mapper(self, *args: VarLike, dtype: OptType = None) -> None:
 
         # Validate Arguments
         if dtype and not args:
@@ -388,8 +389,8 @@ class Cursor(attrib.Container):
                 'requires the definition of variables')
 
         # Get variable names
-        var = operator.Var(*args)
-        names = var.names
+        variables = map(operator.create_variable, args)
+        names = tuple(var.name for var in variables)
 
         # If the result set is aggregated by a grouping operator, the mapper
         # acts on tuples as an itemgetter, which requires the specification of

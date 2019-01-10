@@ -371,7 +371,7 @@ class Table(attrib.Container):
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, *args: cursor.VarDef, where: OptOp = None,
+            self, *args: cursor.VarLike, where: OptOp = None,
             groupby: cursor.GroupByType = None, dtype: OptType = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, mode: OptStr = None) -> cursor.Cursor:
