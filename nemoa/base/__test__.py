@@ -13,7 +13,7 @@ from pathlib import Path
 import typing
 import numpy as np
 from nemoa.base import array, binary, check, env, literal, mapping
-from nemoa.base import operator, otree, pkg, stack
+from nemoa.base import operator, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Module, PathLikeList, StrList
@@ -57,14 +57,14 @@ class TestArray(ModuleTestCase):
         new = array.add_cols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
 
-class TestOperator(ModuleTestCase):
-    module = operator
+class TestStype(ModuleTestCase):
+    module = stype
 
     def test_Domain(self) -> None:
         pass # Already tested in test_create_domain
 
     def test_create_domain(self) -> None:
-        create = operator.create_domain
+        create = stype.create_domain
 
         with self.subTest():
             dom = create()
@@ -85,6 +85,9 @@ class TestOperator(ModuleTestCase):
             dom = create(tuple, default_frame=('a', 'b', 'c'))
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
+
+class TestOperator(ModuleTestCase):
+    module = operator
 
     def test_Variable(self) -> None:
         pass # Already tested in test_create_variable
