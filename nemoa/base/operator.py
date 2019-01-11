@@ -316,11 +316,12 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         self._definition = tuple(map(var, args))
 
     def _update_domain(self, domain: DomLike = None) -> None:
-        fields = []
+        frame: List[FieldID] = []
         for var in self._definition:
             for field in var.fields:
-                fields.append(field)
-        self._domain = Domain(domain, default_frame=tuple(fields))
+                if not field in frame:
+                    frame.append(field)
+        self._domain = Domain(domain, default_frame=tuple(frame))
 
     def _update_target(self, target: DomLike = None) -> None:
         fields = []
