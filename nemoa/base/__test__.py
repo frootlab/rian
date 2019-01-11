@@ -61,7 +61,10 @@ class TestOperator(ModuleTestCase):
     module = operator
 
     def test_Domain(self) -> None:
-        create = operator.Domain
+        pass # Already tested in test_create_domain
+
+    def test_create_domain(self) -> None:
+        create = operator.create_domain
 
         with self.subTest():
             dom = create()

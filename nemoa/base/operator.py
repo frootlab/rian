@@ -50,8 +50,86 @@ DomLike = Union[OptType, Tuple[OptType, Frame], 'Domain']
 # Parameter Classes
 #
 
-class Domain:
-    """Class for the storage of domain parameters.
+# class Domain:
+#     """Class for the storage of domain parameters.
+#
+#     Args:
+#         domain: Optional :term:`domain like` parameter, that specifies the type
+#             and (if required) the frame of a domain.
+#         default_type: Optional parameter, that specifies the default domain type
+#             which is used if no type is given within the argument `domain`. If
+#             provided, the argument has to be given as a :class:`type`.
+#         default_frame: Optional parameter, that specifies the default domain
+#             frame which is used if no frame is given within the argument
+#             `domain`. If provided, the argument has to be given as a
+#             :class:`tuple`.
+#
+#     """
+#     __slots__ = ['type', 'frame']
+#
+#     type: Class
+#     frame: tuple
+#
+#     def __init__(
+#         self, domain: DomLike = None, default_type: Class = NoneType,
+#         default_frame: Optional[Frame] = None) -> None:
+#         if domain is None:
+#             self.type = default_type
+#             self.frame = default_frame or tuple()
+#         elif isinstance(domain, Domain):
+#             self.type = domain.type
+#             self.frame = domain.frame
+#         elif isinstance(domain, type):
+#             self.type = domain
+#             self.frame = default_frame or tuple()
+#         elif isinstance(domain, tuple):
+#             self.type = domain[0] or default_type
+#             self.frame = domain[1] or default_frame or tuple()
+#         else:
+#             allowed = (NoneType, type, tuple, Domain)
+#             raise InvalidTypeError('domain', domain, allowed)
+#
+#     def __repr__(self) -> str:
+#         name = type(self).__name__
+#         dtype = self.type.__name__
+#         if dtype == 'NoneType':
+#             dtype = 'None'
+#         frame = ', '.join(map(repr, self.frame))
+#         if not frame:
+#             return f"{name}({dtype})"
+#         return f"{name}(({dtype}, ({frame}))"
+#
+#     def __eq__(self, other: object) -> bool:
+#         if not isinstance(other, type(self)):
+#             return False
+#         if not other.type == self.type:
+#             return False
+#         if not other.frame == self.frame:
+#             return False
+#         return True
+#
+#     def __ne__(self, other: object) -> bool:
+#         return not self.__eq__(other)
+
+class Domain(NamedTuple):
+    """Class for the storage of domain definitions."""
+    type: Class
+    frame: tuple
+
+class Variable(NamedTuple):
+    """Class for the storage of variable definitions."""
+    fields: Frame
+    operator: AnyOp
+    name: str
+
+#
+# Constructors for Parameter Classes
+#
+
+def create_domain(
+    domain: DomLike = None, default_type: Class = NoneType,
+    default_frame: Optional[Frame] = None) -> Domain:
+    """Create a Domain object.
 
     Args:
         domain: Optional :term:`domain like` parameter, that specifies the type
@@ -65,57 +143,29 @@ class Domain:
             :class:`tuple`.
 
     """
-    __slots__ = ['type', 'frame']
 
-    type: Class
-    frame: tuple
+    # Get domain definition parameters
+    if domain is None:
+        dom_type = default_type
+        dom_frame = default_frame or tuple()
+    elif isinstance(domain, Domain):
+        dom_type = domain.type
+        dom_frame = domain.frame
+    elif isinstance(domain, type):
+        dom_type = domain
+        dom_frame = default_frame or tuple()
+    elif isinstance(domain, tuple):
+        dom_type = domain[0] or default_type
+        dom_frame = domain[1] or default_frame or tuple()
+    else:
+        allowed = (NoneType, type, tuple, Domain)
+        raise InvalidTypeError('domain', domain, allowed)
 
-    def __init__(
-        self, domain: DomLike = None, default_type: Class = NoneType,
-        default_frame: Optional[Frame] = None) -> None:
-        if domain is None:
-            self.type = default_type
-            self.frame = default_frame or tuple()
-        elif isinstance(domain, Domain):
-            self.type = domain.type
-            self.frame = domain.frame
-        elif isinstance(domain, type):
-            self.type = domain
-            self.frame = default_frame or tuple()
-        elif isinstance(domain, tuple):
-            self.type = domain[0] or default_type
-            self.frame = domain[1] or default_frame or tuple()
-        else:
-            allowed = (NoneType, type, tuple, Domain)
-            raise InvalidTypeError('domain', domain, allowed)
+    # Verify parameters
+    if len(set(dom_frame)) < len(dom_frame):
+        raise ValueError() # TODO
 
-    def __repr__(self) -> str:
-        name = type(self).__name__
-        dtype = self.type.__name__
-        if dtype == 'NoneType':
-            dtype = 'None'
-        frame = ', '.join(map(repr, self.frame))
-        if not frame:
-            return f"{name}({dtype})"
-        return f"{name}(({dtype}, ({frame}))"
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, type(self)):
-            return False
-        if not other.type == self.type:
-            return False
-        if not other.frame == self.frame:
-            return False
-        return True
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
-class Variable(NamedTuple):
-    """Data Class for variable definitions."""
-    fields: Frame
-    operator: AnyOp
-    name: str
+    return Domain(dom_type, dom_frame)
 
 def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     """Create variable from variable definition.
@@ -172,13 +222,13 @@ class OperatorBase(collections.abc.Callable): # type: ignore
     def domain(self) -> Domain:
         if hasattr(self, '_domain'):
             return self._domain
-        return Domain()
+        return create_domain()
 
     @property
     def target(self) -> Domain:
         if hasattr(self, '_target'):
             return self._target
-        return Domain()
+        return create_domain()
 
 class Identity(OperatorBase):
     """Class for identity operators."""
@@ -187,7 +237,7 @@ class Identity(OperatorBase):
     _sig_len: int # Length of signature
 
     def __init__(self, domain: DomLike = None) -> None:
-        self._domain = Domain(domain)
+        self._domain = create_domain(domain)
         self._target = self._domain # Identical domain
         self._sig_len = len(self._domain.frame)
 
@@ -230,8 +280,8 @@ class Zero(OperatorBase):
     _zero: Any
 
     def __init__(self, target: DomLike = None) -> None:
-        self._domain = Domain()
-        self._target = Domain(target)
+        self._domain = create_domain()
+        self._target = create_domain(target)
         self._zero = self._target.type() # Create zero object in target type
 
     def __call__(self, *args: Any) -> Any:
@@ -321,13 +371,13 @@ class Mapper(collections.abc.Sequence, OperatorBase):
             for field in var.fields:
                 if not field in frame:
                     frame.append(field)
-        self._domain = Domain(domain, default_frame=tuple(frame))
+        self._domain = create_domain(domain, default_frame=tuple(frame))
 
     def _update_target(self, target: DomLike = None) -> None:
         fields = []
         for var in self._definition:
             fields.append(var.name)
-        self._target = Domain(target, default_frame=tuple(fields))
+        self._target = create_domain(target, default_frame=tuple(fields))
 
     def _update_call_partial(self) -> None:
         # Check if all field identifiers are found within the frame. Note that
@@ -414,7 +464,7 @@ class Lambda(OperatorBase):
             self, expression: str = '', domain: DomLike = None,
             default: OptOp = None, assemble: bool = True) -> None:
         self._expression = expression
-        self._domain = Domain(domain)
+        self._domain = create_domain(domain)
 
         # Create Operator
         if expression:
@@ -509,7 +559,7 @@ class Lambda(OperatorBase):
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
             self._operator = compose(runner, mapper)
-            self._domain.frame = tuple(names)
+            self._domain = self._domain._replace(frame=tuple(names))
         else:
             self._operator = compose(expr.evaluate, mapper)
             setattr(self._operator, 'variables', expr.variables)
@@ -651,7 +701,7 @@ def create_lambda(
     Returns:
 
     """
-    merged = Domain(domain, default_frame=variables)
+    merged = create_domain(domain, default_frame=variables)
     return Lambda(
         expression=expression, domain=merged, default=default,
         assemble=assemble)
@@ -839,7 +889,7 @@ def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
         return create_identity(domain=(None, args))
 
     # Get domain
-    dom = Domain(domain, default_frame=args)
+    dom = create_domain(domain, default_frame=args)
 
     # Create getter
     valid: AnyOp
@@ -901,7 +951,7 @@ def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
         return zero
 
     # Get domain
-    dom = Domain(domain)
+    dom = create_domain(domain)
 
     # Create setter
     if dom.type is object:
@@ -957,7 +1007,7 @@ def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
 
     """
     # Get target
-    tgt = Domain(target, default_frame=args)
+    tgt = create_domain(target, default_frame=args)
 
     # Create formatter
     if tgt.type == NoneType:
