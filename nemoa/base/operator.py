@@ -19,34 +19,21 @@ import py_expression_eval
 from nemoa.base import stype
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Any, Method, Mapping, Sequence, NoneType
-from nemoa.types import Tuple, OptType, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, Class, OptStrTuple, Dict, List
+from nemoa.types import Tuple, SeqHom, SeqOp, AnyOp, Hashable, Union
+from nemoa.types import Optional, OptOp, OptStrTuple, Dict, List
+from nemoa.base.stype import FieldID, Frame
 
-#
-# Types and ClassInfos
-#
-
-# Expression
 Expr = Any # TODO: Use py_expression_eval.Expression when valid
-
-# Fields
-FieldID = stype.FieldID
-Frame = stype.Frame
 Key = Optional[Union[FieldID, Frame]]
-Item = Tuple[FieldID, Any] # <field>, <value>
-
-# Variable Definition
+Item = Tuple[FieldID, Any]
 VarLike = Union[
-    str,                        # identity: <field> -> <field>
-    Tuple[str],                 # identity: <field> -> <field>
-    Tuple[FieldID, str],        # identity: <field> -> <variable>
-    Tuple[Frame, str],          # identity: <fields> -> <variable>
-    Tuple[str, AnyOp],          # <operator>: <field> -> <field>
-    Tuple[FieldID, AnyOp, str], # <operator>: <field> -> <variable>
-    Tuple[Frame, AnyOp, str]]   # <operator>: <fields> -> <variable>
-
-# Domains
-DomLike = stype.DomLike
+    str,                        # Variable((<name>, ), identity, <name>)
+    Tuple[str],                 # Variable((<name>, ), identity, <name>)
+    Tuple[FieldID, str],        # Variable((<id>, ), identity, <name>)
+    Tuple[Frame, str],          # Variable(<frame>, identity, <name>
+    Tuple[str, AnyOp],          # Variable((<name>, ), <operator>, <name>)
+    Tuple[FieldID, AnyOp, str], # Variable((<id>, ), <operator>, <name>)
+    Tuple[Frame, AnyOp, str]]   # Variable(<frame>, <operator>, <name>)
 
 #
 # Parameter Classes
@@ -131,7 +118,7 @@ class Identity(OperatorBase):
 
     _sig_len: int # Length of signature
 
-    def __init__(self, domain: DomLike = None) -> None:
+    def __init__(self, domain: stype.DomLike = None) -> None:
         self._domain = stype.create_domain(domain)
         self._target = self._domain # Identical domain
         self._sig_len = len(self._domain.frame)
@@ -174,7 +161,7 @@ class Zero(OperatorBase):
 
     _zero: Any
 
-    def __init__(self, target: DomLike = None) -> None:
+    def __init__(self, target: stype.DomLike = None) -> None:
         self._domain = stype.create_domain()
         self._target = stype.create_domain(target)
         self._zero = self._target.type() # Create zero object in target type
@@ -207,8 +194,8 @@ class Mapper(collections.abc.Sequence, OperatorBase):
     _call_total: Any
 
     def __init__(
-            self, *args: VarLike, domain: DomLike = None,
-            target: DomLike = None, default: OptOp = None) -> None:
+            self, *args: VarLike, domain: stype.DomLike = None,
+            target: stype.DomLike = None, default: OptOp = None) -> None:
         self._update_definition(*args, default=default)
         self._update_domain(domain)
         self._update_target(target)
@@ -260,19 +247,21 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         var: AnyOp = lambda arg: create_variable(arg, default=default)
         self._definition = tuple(map(var, args))
 
-    def _update_domain(self, domain: DomLike = None) -> None:
-        frame: List[FieldID] = []
+    def _update_domain(self, domain: stype.DomLike = None) -> None:
+        fields: List[FieldID] = []
         for var in self._definition:
             for field in var.fields:
-                if not field in frame:
-                    frame.append(field)
-        self._domain = stype.create_domain(domain, default_frame=tuple(frame))
+                if not field in fields:
+                    fields.append(field)
+        defaults = {'fields': tuple(fields)}
+        self._domain = stype.create_domain(domain, defaults=defaults)
 
-    def _update_target(self, target: DomLike = None) -> None:
-        fields = []
+    def _update_target(self, target: stype.DomLike = None) -> None:
+        fields: List[FieldID] = []
         for var in self._definition:
             fields.append(var.name)
-        self._target = stype.create_domain(target, default_frame=tuple(fields))
+        defaults = {'fields': tuple(fields)}
+        self._target = stype.create_domain(target, defaults=defaults)
 
     def _update_call_partial(self) -> None:
         # Check if all field identifiers are found within the frame. Note that
@@ -356,8 +345,9 @@ class Lambda(OperatorBase):
     _operator: Any
 
     def __init__(
-            self, expression: str = '', domain: DomLike = None,
+            self, expression: str = '', domain: stype.DomLike = None,
             default: OptOp = None, assemble: bool = True) -> None:
+
         self._expression = expression
         self._domain = stype.create_domain(domain)
 
@@ -429,7 +419,7 @@ class Lambda(OperatorBase):
         expr = parser.parse(valid_expression).simplify({})
 
         # Create Mapper
-        names = expr.variables()
+        names = tuple(expr.variables())
         dom_type = self._domain.type
         dom_frame = var.fields or names
         dom_like = (dom_type, dom_frame)
@@ -454,7 +444,7 @@ class Lambda(OperatorBase):
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
             self._operator = compose(runner, mapper)
-            self._domain = self._domain._replace(frame=tuple(names))
+            self._domain = stype.create_domain((dom_type, tuple(names)))
         else:
             self._operator = compose(expr.evaluate, mapper)
             setattr(self._operator, 'variables', expr.variables)
@@ -508,7 +498,7 @@ class Lambda(OperatorBase):
 #
 
 @functools.lru_cache(maxsize=32)
-def create_identity(domain: DomLike = None) -> Identity:
+def create_identity(domain: stype.DomLike = None) -> Identity:
     """Create identity operator.
 
     Args:
@@ -518,7 +508,7 @@ def create_identity(domain: DomLike = None) -> Identity:
     return Identity(domain)
 
 @functools.lru_cache(maxsize=32)
-def create_zero(target: DomLike = None) -> Zero:
+def create_zero(target: stype.DomLike = None) -> Zero:
     """Create a zero operator.
 
     Args:
@@ -538,8 +528,8 @@ def create_zero(target: DomLike = None) -> Zero:
     return Zero(target)
 
 def create_mapper(
-        *args: VarLike, domain: DomLike = None,
-        target: DomLike = None, default: OptOp = None) -> Mapper:
+        *args: VarLike, domain: stype.DomLike = None,
+        target: stype.DomLike = None, default: OptOp = None) -> Mapper:
     """Create a mapping operator.
 
     Mapping operators are compositions of :func:`getters<create_getter>`
@@ -572,7 +562,7 @@ def create_mapper(
 
 @functools.lru_cache(maxsize=64)
 def create_lambda(
-        expression: str = '', domain: DomLike = None,
+        expression: str = '', domain: stype.DomLike = None,
         variables: OptStrTuple = None, default: OptOp = None,
         assemble: bool = True) -> Lambda:
     """Create a lambda operator.
@@ -596,9 +586,9 @@ def create_lambda(
     Returns:
 
     """
-    merged = stype.create_domain(domain, default_frame=variables)
+    domain = stype.create_domain(domain, defaults={'fields': variables})
     return Lambda(
-        expression=expression, domain=merged, default=default,
+        expression=expression, domain=domain, default=default,
         assemble=assemble)
 
 #
@@ -751,7 +741,7 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
 # Factory functions for elementary operators
 #
 
-def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
+def create_getter(*args: FieldID, domain: stype.DomLike = None) -> AnyOp:
     """Create a getter operator.
 
     This function uses the standard library module :mod:`operator` and returns
@@ -784,7 +774,7 @@ def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
         return create_identity(domain=(None, args))
 
     # Get domain
-    dom = stype.create_domain(domain, default_frame=args)
+    dom = stype.create_domain(domain, defaults={'fields': args})
 
     # Create getter
     valid: AnyOp
@@ -823,7 +813,7 @@ def create_getter(*args: FieldID, domain: DomLike = None) -> AnyOp:
     # TODO: raise InvalidValueError!
     raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
 
-def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
+def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
     """Create a setter operator.
 
     Args:
@@ -880,7 +870,8 @@ def create_setter(*args: Item, domain: DomLike = object) -> AnyOp:
     # TODO: Use some kind of ValueEror for domain!
     raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
 
-def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
+def create_formatter(
+    *args: FieldID, target: stype.DomLike = None) -> AnyOp:
     """Create a formatter operator.
 
     Args:
@@ -902,7 +893,7 @@ def create_formatter(*args: FieldID, target: DomLike = None) -> AnyOp:
 
     """
     # Get target
-    tgt = stype.create_domain(target, default_frame=args)
+    tgt = stype.create_domain(target, defaults={'fields': args})
 
     # Create formatter
     if tgt.type == NoneType:
@@ -950,8 +941,8 @@ def create_wrapper(**attrs: Any) -> AnyOp:
 #
 
 def create_sorter(
-        *args: FieldID, domain: DomLike = None,
-        reverse: bool = False) -> SeqHom:
+    *args: FieldID, domain: stype.DomLike = None,
+    reverse: bool = False) -> SeqHom:
     """Create a sorter with fixed sorting keys.
 
     Sorters are operators, that act on sequences of objects of a given category
@@ -980,8 +971,8 @@ def create_sorter(
     return lambda seq: sorted(seq, key=getter, reverse=reverse)
 
 def create_grouper(
-        *args: FieldID, domain: DomLike = None,
-        presorted: bool = False) -> SeqOp:
+    *args: FieldID, domain: stype.DomLike = None,
+    presorted: bool = False) -> SeqOp:
     """Create a grouping operator with fixed grouping keys.
 
     Args:
@@ -1025,8 +1016,8 @@ def create_grouper(
     return lambda seq: grouper(sorted(seq, key=getter))
 
 def create_aggregator(
-        *args: VarLike, domain: DomLike = None,
-        target: type = tuple) -> SeqOp:
+    *args: VarLike, domain: stype.DomLike = None,
+    target: type = tuple) -> SeqOp:
     """Creates an aggregation operator with specified variables.
 
     Args:
@@ -1080,7 +1071,7 @@ def create_aggregator(
     raise ValueError(f"type '{target.__name__}' is not supported")
 
 def create_group_aggregator(
-        *args: VarLike, key: Key = None, domain: DomLike = None,
+        *args: VarLike, key: Key = None, domain: stype.DomLike = None,
         target: type = tuple, presorted: bool = False) -> SeqOp:
     """Creates a group aggregation operator.
 

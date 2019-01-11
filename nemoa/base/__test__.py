@@ -60,29 +60,50 @@ class TestArray(ModuleTestCase):
 class TestStype(ModuleTestCase):
     module = stype
 
+    def test_Field(self) -> None:
+        pass # Already tested in test_create_domain
+
+    def test_create_field(self) -> None:
+        f = stype.create_field
+
+        with self.subTest():
+            self.assertRaises(TypeError, f)
+
+        with self.subTest(args=('x', )):
+            field = f('x')
+            self.assertIsInstance(field, stype.Field)
+            self.assertEqual(field.id, 'x')
+            self.assertEqual(field.type, type(None))
+
+        with self.subTest(args=(('x', int))):
+            field = f(('x', int))
+            self.assertIsInstance(field, stype.Field)
+            self.assertEqual(field.id, 'x')
+            self.assertEqual(field.type, int)
+
     def test_Domain(self) -> None:
         pass # Already tested in test_create_domain
 
     def test_create_domain(self) -> None:
-        create = stype.create_domain
+        f = stype.create_domain
 
         with self.subTest():
-            dom = create()
+            dom = f()
             self.assertEqual(dom.type, type(None))
             self.assertEqual(dom.frame, tuple())
 
-        with self.subTest(object):
-            dom = create(object)
+        with self.subTest(args=(object, )):
+            dom = f(object)
             self.assertEqual(dom.type, object)
             self.assertEqual(dom.frame, tuple())
 
-        with self.subTest((tuple, ('a', 'b', 'c'))):
-            dom = create((tuple, ('a', 'b', 'c')))
+        with self.subTest(args=((tuple, ('a', 'b', 'c')), )):
+            dom = f((tuple, ('a', 'b', 'c')))
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
-        with self.subTest(tuple, default_frame=('a', 'b', 'c')):
-            dom = create(tuple, default_frame=('a', 'b', 'c'))
+        with self.subTest(args=(tuple, ), defaults={'fields': ('a', 'b', 'c')}):
+            dom = f(tuple, defaults={'fields': ('a', 'b', 'c')})
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
@@ -93,55 +114,55 @@ class TestOperator(ModuleTestCase):
         pass # Already tested in test_create_variable
 
     def test_create_variable(self) -> None:
-        create = operator.create_variable
+        f = operator.create_variable
 
         with self.subTest(args=tuple()):
-            self.assertRaises(TypeError, create)
+            self.assertRaises(TypeError, f)
 
         with self.subTest(args=('x', )):
-            var = create('x')
+            var = f('x')
             self.assertEqual(var.fields, ('x', ))
             self.assertEqual(var.operator, operator.identity)
             self.assertEqual(var.name, 'x')
 
         with self.subTest(args=(('x', list), )):
-            var = create(('x', list))
+            var = f(('x', list))
             self.assertEqual(var.fields, ('x', ))
             self.assertEqual(var.operator, list)
             self.assertEqual(var.name, 'x')
 
         with self.subTest(args=(('x', 'y'), )):
-            var = create(('x', 'y'))
+            var = f(('x', 'y'))
             self.assertEqual(var.fields, ('x', ))
             self.assertEqual(var.operator, operator.identity)
             self.assertEqual(var.name, 'y')
 
         with self.subTest(args=((('x1', 'x2'), 'y'), )):
-            var = create((('x1', 'x2'), 'y'))
+            var = f((('x1', 'x2'), 'y'))
             self.assertEqual(var.fields, ('x1', 'x2'))
             self.assertEqual(var.operator, operator.identity)
             self.assertEqual(var.name, 'y')
 
         with self.subTest(args=(('x', list, 'y'), )):
-            var = create(('x', list, 'y'))
+            var = f(('x', list, 'y'))
             self.assertEqual(var.fields, ('x', ))
             self.assertEqual(var.operator, list)
             self.assertEqual(var.name, 'y')
 
         with self.subTest(args=((('x1', 'x2'), list, 'y'), )):
-            var = create((('x1', 'x2'), list, 'y'))
+            var = f((('x1', 'x2'), list, 'y'))
             self.assertEqual(var.fields, ('x1', 'x2'))
             self.assertEqual(var.operator, list)
             self.assertEqual(var.name, 'y')
 
     def test_Mapper(self) -> None:
-        create = operator.Mapper
+        f = operator.Mapper
 
         with self.subTest(args=('a', ('b', ), ('c', len), ('d', max, 'Y'))):
-            f = create('a', ('b', ), ('c', len), ('d', max, 'Y'))
-            self.assertEqual(f.fields, ('a', 'b', 'c', 'd'))
-            self.assertTrue(all(map(callable, f)))
-            self.assertEqual(f.components, ('a', 'b', 'c', 'Y'))
+            mapper = f('a', ('b', ), ('c', len), ('d', max, 'Y'))
+            self.assertEqual(mapper.fields, ('a', 'b', 'c', 'd'))
+            self.assertTrue(all(map(callable, mapper)))
+            self.assertEqual(mapper.components, ('a', 'b', 'c', 'Y'))
 
     def test_Identity(self) -> None:
         pass # Already tested in test_create_identity
@@ -153,23 +174,23 @@ class TestOperator(ModuleTestCase):
         pass # Already tested in test_create_lambda
 
     def test_create_identity(self) -> None:
-        create = operator.create_identity
+        f = operator.create_identity
 
         with self.subTest():
-            identity = create()
+            identity = f()
             self.assertEqual(identity, operator.identity)
             self.assertFalse(identity)
             self.assertEqual(identity(''), '')
             self.assertEqual(identity(1, 2, 3), (1, 2, 3))
 
         with self.subTest(domain=(None, 'a')):
-            identity = create(domain=(None, 'a'))
+            identity = f(domain=(None, 'a'))
             self.assertNotEqual(identity, operator.identity)
             self.assertEqual(identity(1), 1)
             self.assertRaises(TypeError, identity, 1, 2)
 
         with self.subTest(domain=(None, ('a', 'b'))):
-            identity = create(domain=(None, ('a', 'b')))
+            identity = f(domain=(None, ('a', 'b')))
             self.assertNotEqual(identity, operator.identity)
             self.assertEqual(identity(1, 2), (1, 2))
             self.assertRaises(TypeError, identity, 1)
@@ -185,183 +206,183 @@ class TestOperator(ModuleTestCase):
         zero = operator.create_zero(tuple)
 
     def test_create_lambda(self) -> None:
-        create = operator.create_lambda
+        f = operator.create_lambda
 
         with self.subTest(args=tuple()):
-            op = create()
+            op = f()
             self.assertIsInstance(op, operator.Lambda)
             self.assertIsInstance(op._operator, operator.Zero)
 
         with self.subTest(args=('x^2 + y')):
-            op = create('x^2 + y')
+            op = f('x^2 + y')
             self.assertIsInstance(op, operator.Lambda)
-            self.assertRaises(IndexError, op, 1)
+            self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
 
     def test_create_getter(self) -> None:
-        create = operator.create_getter
+        f = operator.create_getter
         obj = mock.Mock()
         obj.configure_mock(a=1, b=2)
 
         with self.subTest(args=tuple()):
-            getter = create()
+            getter = f()
             self.assertIsInstance(getter, operator.Zero)
             self.assertEqual(getter(1), None)
 
         with self.subTest(args=('a',)):
-            getter = create('a')
+            getter = f('a')
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1), 1)
             self.assertRaises(TypeError, getter, 1, 2)
 
         with self.subTest(args=('a', 'b')):
-            getter = create('a', 'b')
+            getter = f('a', 'b')
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1, 2), (1, 2))
             self.assertRaises(TypeError, getter, 1)
 
         with self.subTest(args=('a', ), domain=(None, ('a', 'b'))):
-            getter = create('a', domain=(None, ('a', 'b')))
+            getter = f('a', domain=(None, ('a', 'b')))
             self.assertEqual(getter(1, 2), 1)
             self.assertRaises(IndexError, getter)
 
         with self.subTest(domain=tuple):
-            getter = create(domain=tuple)
+            getter = f(domain=tuple)
             self.assertIsInstance(getter, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=tuple):
-            getter = create('a', 'b', domain=tuple)
+            getter = f('a', 'b', domain=tuple)
             self.assertEqual(getter((1, 2)), (1, 2))
 
         with self.subTest(args=('a', 'b'), domain=(tuple, ('a', 'b', 'c'))):
-            getter = create('a', 'b', domain=(tuple, ('a', 'b', 'c')))
+            getter = f('a', 'b', domain=(tuple, ('a', 'b', 'c')))
             self.assertEqual(getter((1, 2, 3)), (1, 2))
 
         with self.subTest(domain=list):
-            getter = create(domain=list)
+            getter = f(domain=list)
             self.assertIsInstance(getter, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=list):
-            getter = create('a', 'b', domain=list)
+            getter = f('a', 'b', domain=list)
             self.assertEqual(getter([1, 2]), (1, 2))
 
         with self.subTest(args=('a', 'b'), domain=(list, ('a', 'b', 'c'))):
-            getter = create('a', 'b', domain=(list, ('a', 'b', 'c')))
+            getter = f('a', 'b', domain=(list, ('a', 'b', 'c')))
             self.assertEqual(getter([1, 2, 3]), (1, 2))
 
         with self.subTest(domain=dict):
-            getter = create(domain=dict)
+            getter = f(domain=dict)
             self.assertIsInstance(getter, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=dict):
-            getter = create('a', 'b', domain=dict)
+            getter = f('a', 'b', domain=dict)
             self.assertEqual(getter({'a':1, 'b':2}), (1, 2))
 
         with self.subTest(domain=object):
-            getter = create(domain=object)
+            getter = f(domain=object)
             self.assertIsInstance(getter, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=object):
-            getter = create('a', 'b', domain=object)
+            getter = f('a', 'b', domain=object)
             self.assertEqual(getter(obj), (1, 2))
 
     def test_create_formatter(self) -> None:
-        create = operator.create_formatter
+        f = operator.create_formatter
 
         with self.subTest():
-            formatter = create()
+            formatter = f()
             self.assertIsInstance(formatter, operator.Identity)
 
         with self.subTest(args=('a',)):
-            formatter = create('a')
+            formatter = f('a')
             self.assertIsInstance(formatter, operator.Identity)
             self.assertEqual(formatter(1), 1)
             self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(args=('a', 'b')):
-            formatter = create('a', 'b')
+            formatter = f('a', 'b')
             self.assertIsInstance(formatter, operator.Identity)
             self.assertEqual(formatter((1, 2)), (1, 2))
             self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=tuple):
-            formatter = create(target=tuple)
+            formatter = f(target=tuple)
             self.assertEqual(formatter(1), (1, ))
             self.assertEqual(formatter((1, 2)), (1, 2))
             self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=list):
-            formatter = create(target=list)
+            formatter = f(target=list)
             self.assertEqual(formatter(1), [1])
             self.assertEqual(formatter((1, 2)), [1, 2])
             self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=list):
-            formatter = create(target=list)
+            formatter = f(target=list)
             self.assertEqual(formatter(1), [1])
             self.assertEqual(formatter((1, 2)), [1, 2])
             self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=dict):
-            self.assertRaises(ValueError, create, target=dict)
+            self.assertRaises(ValueError, f, target=dict)
 
         with self.subTest(args=('a', 'b'), target=dict):
-            formatter = create('a', 'b', target=dict)
+            formatter = f('a', 'b', target=dict)
             self.assertEqual(formatter((1, 2)), {'a': 1, 'b': 2})
 
     def test_create_mapper(self) -> None:
-        create = operator.create_mapper
+        f = operator.create_mapper
         obj = mock.Mock()
         obj.configure_mock(a=1, b=2)
         dic = {'a': 1, 'b': 2}
         seq = [1, 2]
 
         with self.subTest(domain=None, target=dict):
-            mapper = create('a', 'b', domain=None, target=dict)
+            mapper = f('a', 'b', domain=None, target=dict)
             self.assertEqual(mapper(1, 2), {'a': 1, 'b': 2})
 
         with self.subTest(domain=None, target=(dict, ('_', 1))):
-            mapper = create('a', 'b', domain=None, target=(dict, ('_', 1)))
+            mapper = f('a', 'b', domain=None, target=(dict, ('_', 1)))
             self.assertEqual(mapper(1, 2), {'_': 1, 1: 2})
 
         with self.subTest(domain=object, target=tuple):
-            mapper = create('a', 'b', domain=object, target=tuple)
+            mapper = f('a', 'b', domain=object, target=tuple)
             self.assertEqual(mapper(obj), (1, 2))
 
         with self.subTest(domain=object, target=list):
-            mapper = create('a', 'b', domain=object, target=list)
+            mapper = f('a', 'b', domain=object, target=list)
             self.assertEqual(mapper(obj), [1, 2])
 
         with self.subTest(domain=object, target=dict):
-            mapper = create('a', 'b', domain=object, target=dict)
+            mapper = f('a', 'b', domain=object, target=dict)
             self.assertEqual(mapper(obj), {'a': 1, 'b': 2})
 
         with self.subTest(domain=object, target=(dict, ('_', 1))):
-            mapper = create('a', 'b', domain=object, target=(dict, ('_', 1)))
+            mapper = f('a', 'b', domain=object, target=(dict, ('_', 1)))
             self.assertEqual(mapper(obj), {'_': 1, 1: 2})
 
         with self.subTest(domain=dict, target=dict):
-            mapper = create('a', 'b', domain=dict, target=dict)
+            mapper = f('a', 'b', domain=dict, target=dict)
             self.assertEqual(mapper(dic), {'a': 1, 'b': 2})
 
         with self.subTest(domain=dict, target=tuple):
-            mapper = create('a', 'b', domain=dict, target=tuple)
+            mapper = f('a', 'b', domain=dict, target=tuple)
             self.assertEqual(mapper(dic), (1, 2))
 
         with self.subTest(domain=dict, target=list):
-            mapper = create('a', 'b', domain=dict, target=list)
+            mapper = f('a', 'b', domain=dict, target=list)
             self.assertEqual(mapper(dic), [1, 2])
 
         with self.subTest(domain=list, target=dict):
-            mapper = create('a', 'b', domain=(list, ('a', 'b')), target=dict)
+            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=dict)
             self.assertEqual(mapper(seq), {'a': 1, 'b': 2})
 
         with self.subTest(domain=list, target=tuple):
-            mapper = create('a', 'b', domain=(list, ('a', 'b')), target=tuple)
+            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=tuple)
             self.assertEqual(mapper(seq), (1, 2))
 
         with self.subTest(domain=list, target=list):
-            mapper = create('a', 'b', domain=(list, ('a', 'b')), target=list)
+            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=list)
             self.assertEqual(mapper(seq), [1, 2])
 
     def test_create_setter(self) -> Any:
