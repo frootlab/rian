@@ -81,6 +81,26 @@ class TestStype(ModuleTestCase):
             self.assertEqual(field.id, 'x')
             self.assertEqual(field.type, int)
 
+    def test_create_basis(self) -> None:
+        f = stype.create_basis
+
+        with self.subTest():
+            self.assertRaises(TypeError, f)
+
+        with self.subTest(args=('x', )):
+            frame, fields = f('x')
+            self.assertEqual(frame, ('x', ))
+            self.assertEqual(len(fields), 1)
+            self.assertEqual(fields[0].id, 'x')
+            self.assertEqual(fields[0].type, type(None))
+
+        with self.subTest(args=(('x', 'y'), )):
+            frame, fields = f(('x', 'y'))
+            self.assertEqual(frame, ('x', 'y'))
+            self.assertEqual(len(fields), 2)
+            self.assertEqual(fields[0].id, 'x')
+            self.assertEqual(fields[1].id, 'y')
+
     def test_Domain(self) -> None:
         pass # Already tested in test_create_domain
 
@@ -121,45 +141,45 @@ class TestOperator(ModuleTestCase):
 
         with self.subTest(args=('x', )):
             var = f('x')
-            self.assertEqual(var.fields, ('x', ))
-            self.assertEqual(var.operator, operator.identity)
             self.assertEqual(var.name, 'x')
+            self.assertEqual(var.operator, operator.identity)
+            self.assertEqual(var.frame, ('x', ))
 
         with self.subTest(args=(('x', list), )):
             var = f(('x', list))
-            self.assertEqual(var.fields, ('x', ))
-            self.assertEqual(var.operator, list)
             self.assertEqual(var.name, 'x')
-
-        with self.subTest(args=(('x', 'y'), )):
-            var = f(('x', 'y'))
-            self.assertEqual(var.fields, ('x', ))
-            self.assertEqual(var.operator, operator.identity)
-            self.assertEqual(var.name, 'y')
-
-        with self.subTest(args=((('x1', 'x2'), 'y'), )):
-            var = f((('x1', 'x2'), 'y'))
-            self.assertEqual(var.fields, ('x1', 'x2'))
-            self.assertEqual(var.operator, operator.identity)
-            self.assertEqual(var.name, 'y')
-
-        with self.subTest(args=(('x', list, 'y'), )):
-            var = f(('x', list, 'y'))
-            self.assertEqual(var.fields, ('x', ))
             self.assertEqual(var.operator, list)
-            self.assertEqual(var.name, 'y')
+            self.assertEqual(var.frame, ('x', ))
 
-        with self.subTest(args=((('x1', 'x2'), list, 'y'), )):
-            var = f((('x1', 'x2'), list, 'y'))
-            self.assertEqual(var.fields, ('x1', 'x2'))
-            self.assertEqual(var.operator, list)
+        with self.subTest(args=(('y', 'x'), )):
+            var = f(('y', 'x'))
             self.assertEqual(var.name, 'y')
+            self.assertEqual(var.operator, operator.identity)
+            self.assertEqual(var.frame, ('x', ))
+
+        with self.subTest(args=(('x', ('x1', 'x2')), )):
+            var = f(('x', ('x1', 'x2')))
+            self.assertEqual(var.name, 'x')
+            self.assertEqual(var.operator, operator.identity)
+            self.assertEqual(var.frame, ('x1', 'x2'))
+
+        with self.subTest(args=(('y', list, 'x'), )):
+            var = f(('y', list, 'x'))
+            self.assertEqual(var.name, 'y')
+            self.assertEqual(var.operator, list)
+            self.assertEqual(var.frame, ('x', ))
+
+        with self.subTest(args=(('y', list), ('x1', 'x2'))):
+            var = f(('y', list, ('x1', 'x2')))
+            self.assertEqual(var.name, 'y')
+            self.assertEqual(var.operator, list)
+            self.assertEqual(var.frame, ('x1', 'x2'))
 
     def test_Mapper(self) -> None:
         f = operator.Mapper
 
-        with self.subTest(args=('a', ('b', ), ('c', len), ('d', max, 'Y'))):
-            mapper = f('a', ('b', ), ('c', len), ('d', max, 'Y'))
+        with self.subTest(args=('a', ('b', ), ('c', len), ('Y', max, 'd'))):
+            mapper = f('a', ('b', ), ('c', len), ('Y', max, 'd'))
             self.assertEqual(mapper.fields, ('a', 'b', 'c', 'd'))
             self.assertTrue(all(map(callable, mapper)))
             self.assertEqual(mapper.components, ('a', 'b', 'c', 'Y'))
@@ -429,7 +449,7 @@ class TestOperator(ModuleTestCase):
             aggregate = operator.create_aggregator()
             self.assertFalse(bool(aggregate))
 
-        args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+        args = ('bool', ('count', len, 'bool'), ('max(id)', max, 'id'))
         with self.subTest(args=args, domain=object, target=tuple):
             aggregate = operator.create_aggregator(
                 *args, domain=object, target=tuple)
@@ -450,7 +470,7 @@ class TestOperator(ModuleTestCase):
             objseq = list(mock.Mock() for i in range(15))
             for i, obj in enumerate(objseq):
                 obj.configure_mock(id=i, bool=bool(i>5))
-            args = ('bool', ('bool', len, 'count'), ('id', max, 'max(id)'))
+            args = ('bool', ('count', len, 'bool'), ('max(id)', max, 'id'))
             with self.subTest(args=args, key='bool', target=tuple):
                 op = operator.create_group_aggregator(
                     *args, key='bool', domain=object, target=tuple)

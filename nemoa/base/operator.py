@@ -16,9 +16,9 @@ import operator
 import re
 from typing import NamedTuple
 import py_expression_eval
-from nemoa.base import stype
+from nemoa.base import check, stype
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Any, Method, Mapping, Sequence, NoneType
+from nemoa.types import Any, Method, Mapping, Sequence, NoneType, Callable
 from nemoa.types import Tuple, SeqHom, SeqOp, AnyOp, Hashable, Union
 from nemoa.types import Optional, OptOp, OptStrTuple, Dict, List
 from nemoa.base.stype import FieldID, Frame
@@ -29,11 +29,11 @@ Item = Tuple[FieldID, Any]
 VarLike = Union[
     str,                        # Variable((<name>, ), identity, <name>)
     Tuple[str],                 # Variable((<name>, ), identity, <name>)
-    Tuple[FieldID, str],        # Variable((<id>, ), identity, <name>)
-    Tuple[Frame, str],          # Variable(<frame>, identity, <name>
+    Tuple[str, FieldID],        # Variable((<id>, ), identity, <name>)
+    Tuple[str, Frame],          # Variable(<frame>, identity, <name>
     Tuple[str, AnyOp],          # Variable((<name>, ), <operator>, <name>)
-    Tuple[FieldID, AnyOp, str], # Variable((<id>, ), <operator>, <name>)
-    Tuple[Frame, AnyOp, str]]   # Variable(<frame>, <operator>, <name>)
+    Tuple[str, AnyOp, FieldID], # Variable((<id>, ), <operator>, <name>)
+    Tuple[str, AnyOp, Frame]]   # Variable(<frame>, <operator>, <name>)
 
 #
 # Parameter Classes
@@ -41,9 +41,9 @@ VarLike = Union[
 
 class Variable(NamedTuple):
     """Class for the storage of variable definitions."""
-    fields: Frame
-    operator: AnyOp
     name: str
+    operator: AnyOp
+    frame: Frame
 
 #
 # Constructors for Parameter Classes
@@ -57,37 +57,40 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     Returns:
 
     """
+    # Check Arguments
+    check.has_type('var', var, (str, tuple))
+    # TODO: check.not_empty('var', var)
+
+    # Get Defaults
     default = default or identity
 
+    # Get Variable Constructor Arguments
+    args: VarLike
     if isinstance(var, str):
-        return Variable((var, ), default, var)
-    if not isinstance(var, tuple):
-        raise InvalidTypeError('var', var, (str, tuple))
-    size = len(var)
-    if size == 1:
-        if not isinstance(var[0], str):
-            raise InvalidTypeError('field', var[0], str)
-        return Variable((var[0], ), default, var[0])
-    if size == 2:
+        args = (var, default, (var, ))
+    elif not var:
+        raise ValueError('the variable definition must not be empty')
+    elif len(var) == 1:
+        args = (var[0], default, (var[0], ))
+    elif len(var) == 2:
         if callable(var[1]):
-            if not isinstance(var[0], str):
-                raise InvalidTypeError('field', var[0], str)
-            return Variable((var[0], ), var[1], var[0])
-        if not isinstance(var[1], str):
-            raise InvalidTypeError('name', var[1], str)
-        if not isinstance(var[0], tuple):
-            return Variable((var[0], ), default, var[1])
-        return Variable(var[0], default, var[1])
-    if size == 3:
-        if not callable(var[1]):
-            raise InvalidTypeError('operator', var[1], 'callable')
-        if not isinstance(var[2], str):
-            raise InvalidTypeError('name', var[2], str)
-        if not isinstance(var[0], tuple):
-            return Variable((var[0], ), var[1], var[2])
-        return Variable(var[0], var[1], var[2])
+            args = (var[0], var[1], (var[0], ))
+        elif isinstance(var[1], tuple):
+            args = (var[0], default, var[1])
+        else:
+            args = (var[0], default, (var[1], ))
+    elif isinstance(var[2], tuple):
+        args = (var[0], var[1], var[2])
+    else:
+        args = (var[0], var[1], (var[2], ))
 
-    raise ValueError(f'invalid variable definition {var}')
+    # Check Variable Arguments
+    check.has_type('variable name', args[0], str)
+    check.has_type('variable operator', args[1], Callable)
+    check.has_type('variable frame', args[2], tuple)
+
+    # Create and return Variable object
+    return Variable(*args)
 
 #
 # Operator Classes
@@ -233,7 +236,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
             return tuple()
         fields = []
         for var in self._definition:
-            for field in var.fields:
+            for field in var.frame:
                 fields.append(field)
         return tuple(fields)
 
@@ -250,17 +253,15 @@ class Mapper(collections.abc.Sequence, OperatorBase):
     def _update_domain(self, domain: stype.DomLike = None) -> None:
         fields: List[FieldID] = []
         for var in self._definition:
-            for field in var.fields:
+            for field in var.frame:
                 if not field in fields:
                     fields.append(field)
         defaults = {'fields': tuple(fields)}
         self._domain = stype.create_domain(domain, defaults=defaults)
 
     def _update_target(self, target: stype.DomLike = None) -> None:
-        fields: List[FieldID] = []
-        for var in self._definition:
-            fields.append(var.name)
-        defaults = {'fields': tuple(fields)}
+        fields = tuple(var.name for var in self._definition)
+        defaults = {'fields': fields}
         self._target = stype.create_domain(target, defaults=defaults)
 
     def _update_call_partial(self) -> None:
@@ -273,12 +274,12 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         # mapper
         ops: List[AnyOp] = []
         for var in self._definition:
-            getter = create_getter(*var.fields, domain=self.domain)
+            getter = create_getter(*var.frame, domain=self.domain)
             if isinstance(var.operator, Identity):
                 ops.append(getter)
-            elif not var.fields:
+            elif not var.frame:
                 ops.append(var.operator)
-            elif len(var.fields) == 1:
+            elif len(var.frame) == 1:
                 ops.append(compose(var.operator, getter))
             else:
                 ops.append(compose(var.operator, getter, unpack=True))
@@ -288,7 +289,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         # Check if the mapper can be implemented as a getter
         is_getter = True
         for var in self._definition:
-            if len(var.fields) != 1:
+            if len(var.frame) != 1:
                 is_getter = False
                 break
             if not isinstance(var.operator, Identity):
@@ -298,7 +299,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         mapper: AnyOp
         f = self._call_partial
         if is_getter:
-            fields = (var.fields[0] for var in self._definition)
+            fields = (var.frame[0] for var in self._definition)
             mapper = create_getter(*fields, domain=self.domain)
         elif len(self) == 1:
             mapper = f[0]
@@ -490,7 +491,7 @@ class Lambda(OperatorBase):
         for orig, subst in zip(frame, variables):
             if orig == subst:
                 continue
-            expr = expr.replace(orig, subst)
+            expr = expr.replace(str(orig), subst)
         return expr
 
 #

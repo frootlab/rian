@@ -98,7 +98,7 @@ class TestCursor(ModuleTestCase):
                         self.assertEqual(size, matches)
 
     def test_Cursor_groupby(self) -> None:
-        args = ('gid', ('gid', len, 'count'), ('uid', max, 'max(uid)'))
+        args = ('gid', ('count', len, 'gid'), ('max(uid)', max, 'uid'))
         for mode in self.cursor_modes:
             with self.subTest(mode=mode, groupby='gid'):
                 self.assertRaises(
@@ -116,7 +116,7 @@ class TestCursor(ModuleTestCase):
                         list(cur), [(0, 18, 52), (1, 17, 50), (2, 17, 51)])
 
     def test_Cursor_having(self) -> None:
-        args = ('gid', ('gid', len, 'count'), ('uid', max, 'max(uid)'))
+        args = ('gid', ('count', len, 'gid'), ('max(uid)', max, 'uid'))
         for mode in self.cursor_modes:
             with self.subTest(
                 mode=mode, groupby='gid', having='max(uid)<52'):
