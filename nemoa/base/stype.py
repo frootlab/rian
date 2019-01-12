@@ -68,31 +68,23 @@ def create_field(field: FieldLike) -> Field:
         Instance of class :class:`Field`
 
     """
-    # Get field parameters
-    field_id: Any
-    field_type: Any
+    # Get Field Arguments
     if isinstance(field, Field):
-        field_id = field.id
-        field_type = field.type
+        args = (field.id, field.type)
     elif isinstance(field, tuple):
         if len(field) == 1:
-            field_id = field[0]
-            field_type = NoneType
+            args = (field[0], NoneType)
         elif len(field) == 2:
-            field_id = field[0]
-            field_type = field[1]
+            args = (field[0], field[1])
     else:
-        field_id = field
-        field_type = NoneType
+        args = (field, NoneType)
 
-    # Validate Paramateres
-    if not isinstance(field_id, Hashable):
-        raise ValueError(f"unhashable field identifier '{field_id}'")
-    if not isinstance(field_type, type):
-        raise ValueError(f"invalid daomin type '{field_type}'")
+    # Validate Field Arguments
+    check.has_type('field identifier', args[0], Hashable)
+    check.has_type('field type', args[1], type)
 
     # Create and return Field object
-    return Field(field_id, field_type)
+    return Field(*args)
 
 def create_basis(arg: Any) -> Basis:
     """Create a domain basis from given field definitions.
@@ -145,7 +137,7 @@ def create_domain(domain: DomLike = None, defaults: Keywords = None) -> Domain:
     deftype = defaults.get('type', NoneType)
     defbasis = defaults.get('fields', tuple())
 
-    # Get Domain Constructor Arguments
+    # Get Domain Arguments
     if not domain:
         args = (deftype, *create_basis(defbasis))
     elif isinstance(domain, Domain):
@@ -155,13 +147,10 @@ def create_domain(domain: DomLike = None, defaults: Keywords = None) -> Domain:
     else:
         args = (domain, *create_basis(defbasis))
 
-    # Validate Arguments
+    # Validate Domain Arguments
     check.has_type('domain type', args[0], type)
     check.has_type('domain frame', args[1], tuple)
-    # TODO: check.is_unique('domain frame', args[1])
-    if len(set(args[1])) < len(args[1]):
-        print(domain, defaults)
-        raise ValueError(f"invalid frame {args[1]}")
+    check.has_dublicates('domain frame', args[1])
     check.has_type('domain fields', args[2], tuple)
 
     # Create and return Domain Object

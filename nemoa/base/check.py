@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Assert functions."""
+"""Check type and value of objects."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,16 +7,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import inspect
-from nemoa.errors import IsPositiveError, IsNegativeError, SizeError
-from nemoa.errors import InvalidTypeError, InvalidClassError, NotClassError
-from nemoa.errors import NotCallableError, InvalidAttrError, NoSubsetError
-from nemoa.errors import NotPositiveError, NotNegativeError, MinSizeError
-from nemoa.errors import MaxSizeError, InvalidFormatError
-from nemoa.types import Any, Callable, Class, Sized, RealNumber
+from typing import Any, Callable, Collection
+from nemoa import errors
+from nemoa.types import Class, Sized, RealNumber
 from nemoa.types import OptInt, TypeHint
 
 #
-# Check Type of Objects
+# Type Checks
 #
 
 def has_type(name: str, obj: object, hint: TypeHint) -> None:
@@ -25,21 +22,21 @@ def has_type(name: str, obj: object, hint: TypeHint) -> None:
     if isinstance(hint, (type, tuple)):
         if isinstance(obj, hint):
             return
-        raise InvalidTypeError(name, obj, hint)
+        raise errors.InvalidTypeError(name, obj, hint)
     # Check against assorted Structural Types
     if hint == Any:
         return
     if hint == TypeHint:
         try:
             is_typehint(name, obj)
-        except InvalidTypeError as err:
-            raise InvalidTypeError(name, obj, hint) from err
+        except errors.InvalidTypeError as err:
+            raise errors.InvalidTypeError(name, obj, hint) from err
         return
     if hint == Callable:
         try:
             is_callable(name, obj)
-        except NotCallableError as err:
-            raise InvalidTypeError(name, obj, hint) from err
+        except errors.NotCallableError as err:
+            raise errors.InvalidTypeError(name, obj, hint) from err
         return
     if hasattr(hint, '__origin__'):
         has_type(name, obj, getattr(hint, '__origin__'))
@@ -53,17 +50,17 @@ def has_opt_type(name: str, obj: object, hint: TypeHint) -> None:
 def is_callable(name: str, obj: object) -> None:
     """Check if object is callable."""
     if not callable(obj):
-        raise NotCallableError(name, obj)
+        raise errors.NotCallableError(name, obj)
 
 def is_class(name: str, obj: object) -> None:
     """Check if object is a class."""
     if not inspect.isclass(obj):
-        raise NotClassError(name, obj)
+        raise errors.NotClassError(name, obj)
 
 def is_subclass(name: str, obj: object, ref: Class) -> None:
     """Check if object is a subclass of given class."""
     if not inspect.isclass(obj) or not issubclass(obj, ref): # type: ignore
-        raise InvalidClassError(name, obj, ref)
+        raise errors.InvalidClassError(name, obj, ref)
 
 def is_typehint(name: str, obj: object) -> None:
     """Check if object is a supported typeinfo object."""
@@ -79,41 +76,50 @@ def is_typehint(name: str, obj: object) -> None:
         return
     if hasattr(obj, '__origin__'):
         return
-    raise InvalidTypeError(name, obj, 'typeinfo')
+    raise errors.InvalidTypeError(name, obj, 'typeinfo')
 
 #
-# Check Value of Objects
+# Value Checks
 #
 
 def is_identifier(name: str, string: str) -> None:
     """Check if a string is a valid identifier."""
     if not string.isidentifier():
-        raise InvalidFormatError(name, string, "'UAX-31'")
+        raise errors.InvalidFormatError(name, string, "'UAX-31'")
 
 def is_subset(a: str, seta: set, b: str, setb: set) -> None:
     """Check if a set is a subset of another."""
     if not seta.issubset(setb):
-        raise NoSubsetError(a, seta, b, setb)
+        raise errors.NoSubsetError(a, seta, b, setb)
+
+def has_dublicates(name: str, coll: Collection) -> None:
+    """Check if all elements of a collection are unique."""
+
+    if not len(set(coll)) == len(coll):
+        items = list(coll)
+        for item in set(coll):
+            items.remove(item)
+        raise errors.DublicateError(name, set(items))
 
 def is_positive(name: str, obj: RealNumber) -> None:
     """Check if number is positive."""
     if obj <= 0:
-        raise NotPositiveError(name, obj)
+        raise errors.NotPositiveError(name, obj)
 
 def is_negative(name: str, obj: RealNumber) -> None:
     """Check if number is negative."""
     if obj >= 0:
-        raise NotNegativeError(name, obj)
+        raise errors.NotNegativeError(name, obj)
 
 def is_not_positive(name: str, obj: RealNumber) -> None:
     """Check if number is not positive."""
     if obj > 0:
-        raise IsPositiveError(name, obj)
+        raise errors.IsPositiveError(name, obj)
 
 def is_not_negative(name: str, obj: RealNumber) -> None:
     """Check if number is not negative."""
     if obj < 0:
-        raise IsNegativeError(name, obj)
+        raise errors.IsNegativeError(name, obj)
 
 def has_size(
         name: str, obj: Sized, size: OptInt = None,
@@ -121,17 +127,13 @@ def has_size(
     """Check the size of a sized object."""
     num = len(obj)
     if size and num != size:
-        raise SizeError(name, obj, size)
+        raise errors.SizeError(name, obj, size)
     if min_size and num < min_size:
-        raise MinSizeError(name, obj, min_size)
+        raise errors.MinSizeError(name, obj, min_size)
     if max_size is not None and num > max_size:
-        raise MaxSizeError(name, obj, max_size)
-
-#
-# Check Properties of an Object
-#
+        raise errors.MaxSizeError(name, obj, max_size)
 
 def has_attr(obj: object, attr: str) -> None:
     """Check if object has an attribute."""
     if not hasattr(obj, attr):
-        raise InvalidAttrError(obj, attr)
+        raise errors.InvalidAttrError(obj, attr)

@@ -759,6 +759,17 @@ class TestCheck(ModuleTestCase):
             Case(args=('', {1, 2}, '', {1})),
             Case(args=('', {1, 2, 3}, '', set()))])
 
+    def test_has_dublicates(self) -> None:
+        self.assertNoneRaises(ValueError, check.has_dublicates, [
+            Case(args=('', set())),
+            Case(args=('', {1, 1, 2, 3})),
+            Case(args=('', [1, 2, 3])),
+            Case(args=('', {1: 1, 2: 2}))])
+
+        self.assertAllRaises(ValueError, check.has_dublicates, [
+            Case(args=('', (1, 1))),
+            Case(args=('', [1, 2, 2]))])
+
     def test_is_positive(self) -> None:
         self.assertNoneRaises(ValueError, check.is_positive, [
             Case(args=('', 1)),

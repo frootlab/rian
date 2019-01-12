@@ -90,39 +90,47 @@ class InvalidFormatError(NemoaAssert, ValueError):
         msg = f"{name} '{val}' does not have the required format {fmt}"
         super().__init__(msg)
 
+class IsPositiveError(NemoaAssert, ValueError):
+    """Raise when a value may not be positive."""
+
+    def __init__(self, name: str, val: Number) -> None:
+        msg = f"{name} is required not to be a negative number not {val}"
+        super().__init__(msg)
+
 class IsNegativeError(NemoaAssert, ValueError):
-    """Raise when a number may not be negative."""
+    """Raise when a value may not be negative."""
 
     def __init__(self, name: str, val: Number) -> None:
         msg = f"{name} is required to be a positive number not {val}"
         super().__init__(msg)
 
 class NotPositiveError(NemoaAssert, ValueError):
-    """Raise when a number has strictly to be positive."""
+    """Raise when a value must be positive."""
 
     def __init__(self, name: str, val: Number) -> None:
         msg = f"{name} is required to be a strictly positive number not {val}"
         super().__init__(msg)
 
-class IsPositiveError(NemoaAssert, ValueError):
-    """Raise when a number may not be positive."""
-
-    def __init__(self, name: str, val: Number) -> None:
-        msg = f"{name} is required not to be a negative number not {val}"
-        super().__init__(msg)
-
 class NotNegativeError(NemoaAssert, ValueError):
-    """Raise when a number has strictly to be negative."""
+    """Raise when a value must be negative."""
 
     def __init__(self, name: str, val: Number) -> None:
         msg = f"{name} is required to be a strictly negative number not {val}"
         super().__init__(msg)
 
-class NotInSequenceError(NemoaAssert, ValueError):
-    """Raise when an element is not contained within a sequence."""
+class ItemNotFoundError(NemoaAssert, ValueError):
+    """Raise when an item is not found within a container."""
 
-    def __init__(self, name: str, val: Any, seqname: str) -> None:
-        msg = f"value {val} of {name} is not contained in {seqname}"
+    def __init__(self, name: str, val: Any, container: str) -> None:
+        msg = f"item {val} of {name} is not contained in {container}"
+        super().__init__(msg)
+
+class DublicateError(NemoaAssert, ValueError):
+    """Raise when a collection contains dublicates."""
+
+    def __init__(self, name: str, dubl: set) -> None:
+        dublicates = otree.get_lang_repr(dubl)
+        msg = f"{name} contains dublicates {dublicates}"
         super().__init__(msg)
 
 class NoSubsetError(NemoaAssert, ValueError):
