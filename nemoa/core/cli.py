@@ -13,6 +13,7 @@ from nemoa.base import env
 from nemoa.core import ui
 from nemoa.core.ui import shell
 import nemoa.test
+from nemoa.types import OptStr, BoolOp
 import nemoa
 
 def print_scripts(workspace: str) -> None:
@@ -71,13 +72,13 @@ def run_shell() -> None:
     banner = name + ' ' +  version
     shell.run(banner=banner)
 
-def run_unittest() -> None:
+def run_unittest(module: OptStr = None) -> None:
     """Run unittest."""
     ui.info(f"testing nemoa {env.get_var('version')}")
     cur_level = ui.get_notification_level()
     ui.set_notification_level('CRITICAL')
     try:
-        nemoa.test.run(stream=sys.stderr)
+        nemoa.test.run(module=module, stream=sys.stderr)
     finally:
         ui.set_notification_level(cur_level)
 
@@ -88,35 +89,36 @@ def main() -> Any:
         return run_shell()
 
     # Get command line options
-    shortopts = "hvtslw:s:a:"
-    longopts = ["workspace=", "script=", "arguments="]
+    short = "hvtslw:s:a:"
+    long = ["workspace=", "script=", "arguments="]
     try:
-        opts, args = getopt.getopt(argv, shortopts, longopts)
+        opts, args = getopt.getopt(argv, short, long)
     except getopt.GetoptError:
         return print_usage()
 
     dic = dict(opts)
     keys = dic.keys()
-    given: Callable[..., bool] = (lambda *args: not keys.isdisjoint(set(args)))
+    given: BoolOp = (lambda *args: not keys.isdisjoint(set(args)))
+
+    workspace = dic.get('-w') or dic.get('--workspace')
+    script = dic.get('-r') or dic.get('--run-script')
+    arguments = dic.get('-a') or dic.get('--arguments')
 
     if given('-h', '--help'):
         return print_usage()
     if given('-v', '--version'):
         return print_version()
     if given('-t', '--test'):
-        return run_unittest()
+        return run_unittest(*args)
     if given('-s', '--shell'):
         return run_shell()
     if given('-l', '--list'):
         return print_workspaces()
 
-    workspace = dic.get('-w') or dic.get('--workspace')
     if not workspace:
         return print_workspaces()
-    script = dic.get('-r') or dic.get('--run-script')
     if not script:
         return print_scripts(workspace)
-    arguments = dic.get('-a') or dic.get('--arguments')
     if not arguments:
         return run_script(workspace, script)
     return run_script(workspace, script, arguments)

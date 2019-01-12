@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Testcases including setup and teardown for nemoa."""
+"""Classes and functions for UnitTests."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import fnmatch
 import functools
 import inspect
 import io
@@ -16,6 +17,7 @@ import numpy as np
 from nemoa.base import pkg, otree
 from nemoa.types import Any, AnyOp, ClassInfo, Method, ErrMeta, Module, Function
 from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
+from nemoa.types import OptStr
 
 #
 # Structural Types
@@ -24,7 +26,7 @@ from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
 Cases = List['Case']
 
 ################################################################################
-# Global Test Setting
+# Global Test Settings
 ################################################################################
 
 skip_completeness_test: bool = False
@@ -342,15 +344,22 @@ class MathTestCase(BaseTestCase):
 #
 
 def run(
-        classinfo: ClassInfo = unittest.TestCase,
+        module: OptStr = None, classinfo: ClassInfo = unittest.TestCase,
         stream: TextFileLike = io.StringIO(),
         verbosity: int = 2) -> unittest.TestResult:
-    """Run all tests if given type."""
+    """Search and run Unittest."""
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     root = pkg.get_root()
     cases = pkg.search(module=root, classinfo=classinfo, val='reference')
     for ref in cases.values():
+        if module:
+            if not hasattr(ref, 'module'):
+                continue
+            if not hasattr(ref.module, '__name__'):
+                continue
+            if not fnmatch.fnmatch(ref.module.__name__, f'*{module}*'):
+                continue
         suite.addTests(loader.loadTestsFromTestCase(ref))
     return unittest.TextTestRunner( # type: ignore
         stream=stream, verbosity=verbosity).run(suite)
