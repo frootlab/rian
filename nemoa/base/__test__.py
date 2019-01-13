@@ -88,18 +88,18 @@ class TestStype(ModuleTestCase):
             self.assertRaises(TypeError, f)
 
         with self.subTest(args=('x', )):
-            frame, fields = f('x')
+            frame, basis = f('x')
             self.assertEqual(frame, ('x', ))
-            self.assertEqual(len(fields), 1)
-            self.assertEqual(fields[0].id, 'x')
-            self.assertEqual(fields[0].type, type(None))
+            self.assertEqual(len(basis), 1)
+            self.assertEqual(basis['x'].id, 'x')
+            self.assertEqual(basis['x'].type, type(None))
 
         with self.subTest(args=(('x', 'y'), )):
-            frame, fields = f(('x', 'y'))
+            frame, basis = f(('x', 'y'))
             self.assertEqual(frame, ('x', 'y'))
-            self.assertEqual(len(fields), 2)
-            self.assertEqual(fields[0].id, 'x')
-            self.assertEqual(fields[1].id, 'y')
+            self.assertEqual(len(basis), 2)
+            self.assertTrue('x' in basis)
+            self.assertTrue('y' in basis)
 
     def test_Domain(self) -> None:
         pass # Already tested in test_create_domain

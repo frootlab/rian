@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import otree
-from nemoa.types import Any, Class, FileRef, Number, Sized, OptStr
+from nemoa.types import Any, Class, FileRef, Number, Sized
 
 ################################################################################
 # Generic Application Exceptions
