@@ -759,14 +759,14 @@ class TestCheck(ModuleTestCase):
             Case(args=('', {1, 2}, '', {1})),
             Case(args=('', {1, 2, 3}, '', set()))])
 
-    def test_has_dublicates(self) -> None:
-        self.assertNoneRaises(ValueError, check.has_dublicates, [
+    def test_no_dublicates(self) -> None:
+        self.assertNoneRaises(ValueError, check.no_dublicates, [
             Case(args=('', set())),
             Case(args=('', {1, 1, 2, 3})),
             Case(args=('', [1, 2, 3])),
             Case(args=('', {1: 1, 2: 2}))])
 
-        self.assertAllRaises(ValueError, check.has_dublicates, [
+        self.assertAllRaises(ValueError, check.no_dublicates, [
             Case(args=('', (1, 1))),
             Case(args=('', [1, 2, 2]))])
 
@@ -822,16 +822,29 @@ class TestCheck(ModuleTestCase):
 
     def test_has_size(self) -> None:
         self.assertNoneRaises(ValueError, check.has_size, [
-            Case(args=('', set([])), kwds={'size': 0}),
-            Case(args=('', set([])), kwds={'min_size': 0}),
+            Case(args=('', set()), kwds={'size': 0}),
+            Case(args=('', set()), kwds={'min_size': 0}),
             Case(args=('', tuple([1])), kwds={'max_size': 1}),
             Case(args=('', [1, 2]), kwds={'min_size': 1, 'max_size': 3})])
 
         self.assertAllRaises(ValueError, check.has_size, [
-            Case(args=('', set([])), kwds={'size': 1}),
-            Case(args=('', tuple([])), kwds={'min_size': 1}),
+            Case(args=('', set()), kwds={'size': 1}),
+            Case(args=('', tuple()), kwds={'min_size': 1}),
             Case(args=('', set([1])), kwds={'max_size': 0}),
             Case(args=('', [1, 2]), kwds={'min_size': 3, 'max_size': 5})])
+
+    def test_not_empty(self) -> None:
+        self.assertNoneRaises(ValueError, check.not_empty, [
+            Case(args=('', 'x')),
+            Case(args=('', {1})),
+            Case(args=('', [1])),
+            Case(args=('', {1: 1}))])
+
+        self.assertAllRaises(ValueError, check.not_empty, [
+            Case(args=('', set())),
+            Case(args=('', tuple())),
+            Case(args=('', [])),
+            Case(args=('', ''))])
 
 class TestEnv(ModuleTestCase):
     module = env

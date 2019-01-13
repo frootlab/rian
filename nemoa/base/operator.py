@@ -23,7 +23,7 @@ from nemoa.types import Tuple, SeqHom, SeqOp, AnyOp, Hashable, Union
 from nemoa.types import Optional, OptOp, OptStrTuple, Dict, List
 from nemoa.base.stype import FieldID, Frame
 
-Expr = Any # TODO: Use py_expression_eval.Expression when valid
+Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
 Key = Optional[Union[FieldID, Frame]]
 Item = Tuple[FieldID, Any]
 VarLike = Union[
@@ -45,6 +45,9 @@ class Variable(NamedTuple):
     operator: AnyOp
     frame: Frame
 
+    def __call__(self, *args: Any) -> Any:
+        return self.operator(*args)
+
 #
 # Constructors for Parameter Classes
 #
@@ -59,17 +62,15 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     """
     # Check Arguments
     check.has_type('var', var, (str, tuple))
-    # TODO: check.not_empty('var', var)
+    check.not_empty('var', var)
 
     # Get Defaults
     default = default or identity
 
-    # Get Variable Constructor Arguments
+    # Get Variable Arguments
     args: VarLike
     if isinstance(var, str):
         args = (var, default, (var, ))
-    elif not var:
-        raise ValueError('the variable definition must not be empty')
     elif len(var) == 1:
         args = (var[0], default, (var[0], ))
     elif len(var) == 2:
@@ -89,7 +90,7 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     check.has_type('variable operator', args[1], Callable)
     check.has_type('variable frame', args[2], tuple)
 
-    # Create and return Variable object
+    # Create and return Variable
     return Variable(*args)
 
 #
@@ -117,18 +118,18 @@ class OperatorBase(collections.abc.Callable): # type: ignore
 
 class Identity(OperatorBase):
     """Class for identity operators."""
-    __slots__ = ['_sig_len']
+    __slots__ = ['_arglen']
 
-    _sig_len: int # Length of signature
+    _arglen: int # Length of signature
 
     def __init__(self, domain: stype.DomLike = None) -> None:
         self._domain = stype.create_domain(domain)
         self._target = self._domain # Identical domain
-        self._sig_len = len(self._domain.frame)
+        self._arglen = len(self._domain.frame)
 
     def __call__(self, *args: Any) -> Any:
-        if self._sig_len:
-            sig_len = self._sig_len
+        if self._arglen:
+            sig_len = self._arglen
             arg_len = len(args)
             if arg_len != sig_len:
                 name = type(self).__name__

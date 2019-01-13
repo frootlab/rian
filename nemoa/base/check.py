@@ -92,7 +92,7 @@ def is_subset(a: str, seta: set, b: str, setb: set) -> None:
     if not seta.issubset(setb):
         raise errors.NoSubsetError(a, seta, b, setb)
 
-def has_dublicates(name: str, coll: Collection) -> None:
+def no_dublicates(name: str, coll: Collection) -> None:
     """Check if all elements of a collection are unique."""
 
     if not len(set(coll)) == len(coll):
@@ -120,6 +120,11 @@ def is_not_negative(name: str, obj: RealNumber) -> None:
     """Check if number is not negative."""
     if obj < 0:
         raise errors.IsNegativeError(name, obj)
+
+def not_empty(name: str, obj: Sized) -> None:
+    """Check if a sized object is not empty."""
+    if len(obj) == 0:
+        raise errors.MinSizeError(name, obj, 1)
 
 def has_size(
         name: str, obj: Sized, size: OptInt = None,

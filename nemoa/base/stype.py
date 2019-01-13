@@ -31,27 +31,28 @@ DomLike = Union[OptType, Tuple[OptType, Frame], 'Domain']
 class Field(NamedTuple):
     """Class for Field Parameters."""
     id: FieldID
-    type: Type
-
-class Domain(NamedTuple):
-    """Class for Domain Parameters."""
-    type: Type
-    frame: Frame
-    fields: Fields
+    type: Type = NoneType
 
     def __repr__(self) -> str:
         name = type(self).__name__
-        if self.type == NoneType:
-            type_name = 'None'
-        else:
-            type_name = self.type.__name__
+        dtype = 'None' if self.type == NoneType else self.type.__name__
+        return f"{name}({repr(self.id)}, {dtype})"
+
+class Domain(NamedTuple):
+    """Class for Domain Parameters."""
+    type: Type = NoneType
+    frame: Frame = tuple()
+    fields: Fields = tuple()
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        dtype = 'None' if self.type == NoneType else self.type.__name__
         if not self.fields:
-            return f"{name}({type_name})"
+            return f"{name}({dtype})"
         if len(self.fields) == 1:
-            fields_repr = repr(self.fields[0])
-            return f"{name}({type_name}, {fields_repr})"
-        fields_repr = ', '.join(map(repr, self.fields))
-        return f"{name}({type_name}, ({fields_repr}))"
+            return f"{name}({dtype}, {repr(self.fields[0])})"
+        fields = ', '.join(map(repr, self.fields))
+        return f"{name}({dtype}, ({fields}))"
 
 #
 # Constructors
@@ -79,11 +80,11 @@ def create_field(field: FieldLike) -> Field:
     else:
         args = (field, NoneType)
 
-    # Validate Field Arguments
+    # Check Field Arguments
     check.has_type('field identifier', args[0], Hashable)
     check.has_type('field type', args[1], type)
 
-    # Create and return Field object
+    # Create and return Field
     return Field(*args)
 
 def create_basis(arg: Any) -> Basis:
@@ -106,9 +107,10 @@ def create_basis(arg: Any) -> Basis:
     else:
         raise ValueError(f"field definition '{arg}' is not valid")
 
-    # Get frame and fields from basis
+    # Get Frame and Fields from Basis
     frame = tuple(b.id for b in basis)
     fields = basis
+
     return frame, fields
 
 def create_domain(domain: DomLike = None, defaults: Keywords = None) -> Domain:
@@ -128,7 +130,7 @@ def create_domain(domain: DomLike = None, defaults: Keywords = None) -> Domain:
         Instance of the class :class:`Domain`
 
     """
-    # Check Types of Arguments
+    # Check Arguments
     check.has_opt_type('domain', domain, (Hashable, Field, tuple))
     check.has_opt_type('defaults', defaults, Mapping)
 
@@ -147,11 +149,11 @@ def create_domain(domain: DomLike = None, defaults: Keywords = None) -> Domain:
     else:
         args = (domain, *create_basis(defbasis))
 
-    # Validate Domain Arguments
+    # Check Domain Arguments
     check.has_type('domain type', args[0], type)
     check.has_type('domain frame', args[1], tuple)
-    check.has_dublicates('domain frame', args[1])
+    check.no_dublicates('domain frame', args[1])
     check.has_type('domain fields', args[2], tuple)
 
-    # Create and return Domain Object
+    # Create and return Domain
     return Domain(*args)
