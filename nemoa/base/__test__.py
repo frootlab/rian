@@ -61,10 +61,13 @@ class TestPattern(ModuleTestCase):
     module = pattern
 
     def test_SingletonMeta(self) -> None:
-        pass
+        pass # Implicitely tested by test_Singleton()
 
-    def test_SingletonType(self) -> None:
-        pass
+    def test_Singleton(self) -> None:
+        f = type('Singleton', (pattern.Singleton, ), {})
+
+        self.assertTrue(f() is f())
+        self.assertTrue(f(1) is f(2))
 
     def test_singleton_object(self) -> None:
 
@@ -77,11 +80,21 @@ class TestPattern(ModuleTestCase):
         self.assertTrue(hasattr(Singleton, 'test'))
         self.assertTrue(Singleton.test)
 
+    def test_MultitonMeta(self) -> None:
+        pass # Implicitely tested by test_Multiton()
+
+    def test_Multiton(self) -> None:
+        f = type('Multiton', (pattern.Multiton, ), {})
+
+        self.assertTrue(f() is f())
+        self.assertTrue(f(1) is f(1))
+        self.assertFalse(f(1) is f(2))
+
 class TestStype(ModuleTestCase):
     module = stype
 
     def test_Field(self) -> None:
-        pass # Already tested in test_create_domain
+        pass # Implicitely tested by test_create_domain()
 
     def test_create_field(self) -> None:
         f = stype.create_field
@@ -122,7 +135,7 @@ class TestStype(ModuleTestCase):
             self.assertTrue('y' in basis)
 
     def test_Domain(self) -> None:
-        pass # Already tested in test_create_domain
+        pass # Implicitely tested by test_create_domain()
 
     def test_create_domain(self) -> None:
         f = stype.create_domain
@@ -151,7 +164,7 @@ class TestOperator(ModuleTestCase):
     module = operator
 
     def test_Variable(self) -> None:
-        pass # Already tested in test_create_variable
+        pass # Implicitely tested by test_create_variable()
 
     def test_create_variable(self) -> None:
         f = operator.create_variable
@@ -205,13 +218,13 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(mapper.components, ('a', 'b', 'c', 'Y'))
 
     def test_Identity(self) -> None:
-        pass # Already tested in test_create_identity
+        pass # Implicitely tested by test_create_identity()
 
     def test_Zero(self) -> None:
-        pass # Already tested in test_create_zero
+        pass # Implicitely tested by test_create_zero()
 
     def test_Lambda(self) -> None:
-        pass # Already tested in test_create_lambda
+        pass # Implicitely tested by test_create_lambda()
 
     def test_create_identity(self) -> None:
         f = operator.create_identity
