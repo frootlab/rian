@@ -238,7 +238,7 @@ class Zero(Operator, pattern.Multiton):
         target_type = self._target.type.__name__
         return f"{class_name}({target_type})"
 
-class Mapper(collections.abc.Sequence, Operator):
+class Mapper(collections.abc.Sequence, Operator, pattern.Multiton):
     """Class for mapper operators.
 
     Args:
@@ -257,6 +257,8 @@ class Mapper(collections.abc.Sequence, Operator):
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> None:
+        super().__init__()
+
         self._update_variables(*args, default=default)
         self._update_domain(domain)
         self._update_target(target)
@@ -344,20 +346,35 @@ class Mapper(collections.abc.Sequence, Operator):
         self._call_partial = tuple(ops)
 
     def _update_call_total(self) -> None:
-        # Check if the mapper can be implemented as a getter
-        is_getter = True
-        for var in self._variables:
-            if len(var.frame) != 1:
-                is_getter = False
-                break
-            if not isinstance(var.operator, Identity):
-                is_getter = False
-                break
+        variables = self._variables
+        domain = self._domain
+        target = self._target
 
+        # If no variables are specified, the mapper is the zero operator of the
+        # target type.
+        if not variables:
+            self._call_total = Zero(target)
+            return None
+
+        # Check if the mapper can be implemented as a coordinate projection. In
+        # this case create and return the projection
+        validate: AnyOp = lambda var: (
+            len(var.frame) == 1 and isinstance(var.operator, Identity))
+        is_projection = all(map(validate, variables))
+        if domain.type == target.type and is_projection:
+            fields = tuple(var.frame[0] for var in variables)
+            projection = Projection(*fields, domain=self.domain)
+            self._call_total = projection._operator
+
+        # If the mapper can not be implemented as a projection ...
+        # TODO: Implement as follows:
+        # 1. single getter
+        # 2. apply all component operators ...
+        # 3. single formatter
         mapper: AnyOp
         f = self._call_partial
-        if is_getter:
-            fields = (var.frame[0] for var in self._variables)
+        if is_projection:
+            fields = tuple(var.frame[0] for var in variables)
             mapper = create_getter(*fields, domain=self.domain)
         elif len(self) == 1:
             mapper = f[0]
@@ -406,9 +423,9 @@ class Lambda(Operator):
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
             default: OptOp = None, assemble: bool = True) -> None:
+        super().__init__(domain=domain, target=None)
 
         self._expression = expression
-        self._domain = stype.create_domain(domain)
 
         # Create Operator
         if expression:
@@ -847,7 +864,7 @@ def create_getter(*args: FieldID, domain: stype.DomLike = None) -> AnyOp:
                     raise ValueError() # TODO: NotInList
             return operator.itemgetter(*map(domain.frame.index, args))
         for arg in args:
-            if not isinstance(arg, int) and arg >= 0:
+            if not isinstance(arg, int) or arg < 0:
                 raise InvalidTypeError('any field', args, 'positive integer')
         return operator.itemgetter(*args)
 
