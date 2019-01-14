@@ -36,7 +36,7 @@ VarLike = Union[
     Tuple[str, AnyOp, Frame]]   # Variable(<frame>, <operator>, <name>)
 
 #
-# Parameter Classes
+# Variables
 #
 
 class Variable(NamedTuple):
@@ -181,6 +181,11 @@ class Zero(OperatorBase):
         target = self._target.type.__name__
         return f"{name}({target})"
 
+# class Projection(OperatorBase):
+#     def __new__(cls, *args: Any, *kwds: Any) -> 'Projection':
+#         return type(cls.__name__)
+
+
 class Mapper(collections.abc.Sequence, OperatorBase):
     """Class for mapper operators.
 
@@ -191,16 +196,16 @@ class Mapper(collections.abc.Sequence, OperatorBase):
             variables. By default the identity is used.
 
     """
-    __slots__ = ['_definition', '_call_partial', '_call_total']
+    __slots__ = ['_variables', '_call_partial', '_call_total']
 
-    _definition: Tuple[Variable, ...]
+    _variables: Tuple[Variable, ...]
     _call_partial: Tuple[AnyOp, ...]
     _call_total: Any
 
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> None:
-        self._update_definition(*args, default=default)
+        self._update_variables(*args, default=default)
         self._update_domain(domain)
         self._update_target(target)
         self._update_call_partial()
@@ -218,7 +223,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         raise InvalidTypeError('pos', pos, (int, slice))
 
     def __len__(self) -> int:
-        return len(self._definition)
+        return len(self._variables)
 
     def __repr__(self) -> str:
         name = type(self).__name__
@@ -233,27 +238,27 @@ class Mapper(collections.abc.Sequence, OperatorBase):
             return tuple()
         if self._domain.frame:
             return self._domain.frame
-        if not hasattr(self, '_definition'):
+        if not hasattr(self, '_variables'):
             return tuple()
         fields = []
-        for var in self._definition:
+        for var in self._variables:
             for field in var.frame:
                 fields.append(field)
         return tuple(fields)
 
     @property
     def components(self) -> Tuple[str, ...]:
-        if not hasattr(self, '_definition'):
+        if not hasattr(self, '_variables'):
             return tuple()
-        return tuple(var.name for var in self._definition)
+        return tuple(var.name for var in self._variables)
 
-    def _update_definition(self, *args: VarLike, default: OptOp = None) -> None:
+    def _update_variables(self, *args: VarLike, default: OptOp = None) -> None:
         var: AnyOp = lambda arg: create_variable(arg, default=default)
-        self._definition = tuple(map(var, args))
+        self._variables = tuple(map(var, args))
 
     def _update_domain(self, domain: stype.DomLike = None) -> None:
         fields: List[FieldID] = []
-        for var in self._definition:
+        for var in self._variables:
             for field in var.frame:
                 if not field in fields:
                     fields.append(field)
@@ -261,7 +266,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         self._domain = stype.create_domain(domain, defaults=defaults)
 
     def _update_target(self, target: stype.DomLike = None) -> None:
-        fields = tuple(var.name for var in self._definition)
+        fields = tuple(var.name for var in self._variables)
         defaults = {'fields': fields}
         self._target = stype.create_domain(target, defaults=defaults)
 
@@ -274,7 +279,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         # Create operators for the partial (per component) evaluation of the
         # mapper
         ops: List[AnyOp] = []
-        for var in self._definition:
+        for var in self._variables:
             getter = create_getter(*var.frame, domain=self.domain)
             if isinstance(var.operator, Identity):
                 ops.append(getter)
@@ -289,7 +294,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
     def _update_call_total(self) -> None:
         # Check if the mapper can be implemented as a getter
         is_getter = True
-        for var in self._definition:
+        for var in self._variables:
             if len(var.frame) != 1:
                 is_getter = False
                 break
@@ -300,7 +305,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         mapper: AnyOp
         f = self._call_partial
         if is_getter:
-            fields = (var.frame[0] for var in self._definition)
+            fields = (var.frame[0] for var in self._variables)
             mapper = create_getter(*fields, domain=self.domain)
         elif len(self) == 1:
             mapper = f[0]
