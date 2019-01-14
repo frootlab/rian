@@ -248,6 +248,28 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(identity(1, 2), (1, 2))
             self.assertRaises(TypeError, identity, 1)
 
+    def test_Projection(self) -> None:
+        f = operator.Projection
+
+        with self.subTest():
+            self.assertTrue(f() is f())
+
+        with self.subTest(args=('x', ), domain=dict):
+            prj = f('x', domain=dict)
+            self.assertEqual(prj({'x': 1, 'y': 2, 'z': 3}), {'x': 1})
+
+        with self.subTest(args=('x', ), domain=(tuple, ('x', 'y', 'z'))):
+            prj = f('x', domain=(tuple, ('x', 'y', 'z')))
+            self.assertEqual(prj((1, 2, 3)), (1, ))
+
+        with self.subTest(args=('x', ), domain=(None, ('x', 'y', 'z'))):
+            prj = f('x', domain=(None, ('x', 'y', 'z')))
+            self.assertEqual(prj(1, 2, 3), 1)
+
+        with self.subTest(args=('x', 'z'), domain=(None, ('x', 'y', 'z'))):
+            prj = f('x', 'z', domain=(None, ('x', 'y', 'z')))
+            self.assertEqual(prj(1, 2, 3), (1, 3))
+
     def test_create_zero(self) -> None:
         for category in [set, tuple, list, dict, object]:
             zero = operator.create_zero(category)

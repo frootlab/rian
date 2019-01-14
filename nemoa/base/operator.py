@@ -16,7 +16,7 @@ import operator
 import re
 from typing import NamedTuple
 import py_expression_eval
-from nemoa.base import check, stype
+from nemoa.base import check, pattern, stype
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Any, Method, Mapping, Sequence, NoneType, Callable
 from nemoa.types import Tuple, SeqHom, SeqOp, AnyOp, Hashable, Union
@@ -97,34 +97,88 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 # Operator Classes
 #
 
-class OperatorBase(collections.abc.Callable): # type: ignore
+class Operator(collections.abc.Callable): # type: ignore
     """Base Class for operators."""
     __slots__ = ['_domain', '_target']
 
     _domain: stype.Domain
     _target: stype.Domain
 
+    def __init__(
+        self, domain: stype.DomLike = None,
+        target: stype.DomLike = None) -> None:
+        self._domain = stype.create_domain(domain)
+        self._target = stype.create_domain(target)
+
     @property
     def domain(self) -> stype.Domain:
-        if hasattr(self, '_domain'):
+        try:
             return self._domain
-        return stype.create_domain()
+        except AttributeError:
+            return stype.create_domain()
 
     @property
     def target(self) -> stype.Domain:
-        if hasattr(self, '_target'):
+        try:
             return self._target
-        return stype.create_domain()
+        except AttributeError:
+            return stype.create_domain()
 
-class Identity(OperatorBase):
+class Projection(Operator, pattern.Multiton):
+    """Class for projection operators.
+
+    Args:
+        *args:
+        domain:
+
+    """
+    __slots__ = ['_operator']
+
+    _operator: Any
+
+    def __init__(self, *args: FieldID, domain: stype.DomLike = None) -> None:
+
+        # Set domain and target
+        domain = stype.create_domain(domain)
+        target = (domain.type, args)
+        super().__init__(domain=domain, target=target)
+
+        # Create getter and formatter according to domain and target
+        getter = create_getter(*args, domain=domain)
+        formatter = create_formatter(*args, target=target)
+
+        # If the formatter is an identity operator, return getter. If the getter
+        # is an identity operator, precede a tuple 'packer' to the formatter
+        if isinstance(formatter, Identity):
+            self._operator = getter
+        elif isinstance(getter, Identity):
+            self._operator = compose(formatter, lambda *args: args)
+        else:
+            self._operator = compose(formatter, getter)
+
+    def __call__(self, *args: Any) -> Any:
+        return self._operator(*args)
+
+    def __repr__(self) -> str:
+        if isinstance(self._operator, Operator):
+            return repr(self._operator)
+        name = type(self).__name__
+        try:
+            fields = self._operator(self._domain.frame)
+            return f"{name}({', '.join(map(repr, fields))})"
+        except AttributeError:
+            return f"{name}()"
+        except TypeError:
+            return f"{name}()"
+
+class Identity(Operator):
     """Class for identity operators."""
     __slots__ = ['_arglen']
 
     _arglen: int # Length of signature
 
     def __init__(self, domain: stype.DomLike = None) -> None:
-        self._domain = stype.create_domain(domain)
-        self._target = self._domain # Identical domain
+        super().__init__(domain=domain, target=domain)
         self._arglen = len(self._domain.frame)
 
     def __call__(self, *args: Any) -> Any:
@@ -154,7 +208,7 @@ class Identity(OperatorBase):
             return f'{name}()'
         return f"{name}({', '.join(map(repr, frame))})"
 
-class Zero(OperatorBase):
+class Zero(Operator):
     """Class for zero operators.
 
     Args:
@@ -166,8 +220,7 @@ class Zero(OperatorBase):
     _zero: Any
 
     def __init__(self, target: stype.DomLike = None) -> None:
-        self._domain = stype.create_domain()
-        self._target = stype.create_domain(target)
+        super().__init__(domain=None, target=target)
         self._zero = self._target.type() # Create zero object in target type
 
     def __call__(self, *args: Any) -> Any:
@@ -181,12 +234,7 @@ class Zero(OperatorBase):
         target = self._target.type.__name__
         return f"{name}({target})"
 
-# class Projection(OperatorBase):
-#     def __new__(cls, *args: Any, *kwds: Any) -> 'Projection':
-#         return type(cls.__name__)
-
-
-class Mapper(collections.abc.Sequence, OperatorBase):
+class Mapper(collections.abc.Sequence, Operator):
     """Class for mapper operators.
 
     Args:
@@ -328,7 +376,7 @@ class Mapper(collections.abc.Sequence, OperatorBase):
         else:
             self._call_total = compose(formatter, mapper)
 
-class Lambda(OperatorBase):
+class Lambda(Operator):
     """Class for operators, that are based on arithmetic expressions.
 
     Args:

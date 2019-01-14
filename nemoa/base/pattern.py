@@ -12,10 +12,10 @@ from typing import Any, Dict, Tuple
 from nemoa.errors import DisconnectError
 
 #
-# Chached Classes (Singletons and Registries of Singletons)
+# Persistent Classes (Singletons and Registries of Singletons)
 #
 
-class SingletonMeta(type):
+class SingletonMeta(abc.ABCMeta):
     """Metaclass for Singleton Classes.
 
     Singleton Classes create a single instance per application.
@@ -39,6 +39,7 @@ class SingletonMeta(type):
 
 class Singleton(metaclass=SingletonMeta):
     """Base Class for Singleton Classes."""
+    __slots__: list = []
 
 def singleton_object(cls: SingletonMeta) -> object:
     """Class decorator that instantiates a Singleton class.
@@ -60,7 +61,7 @@ def singleton_object(cls: SingletonMeta) -> object:
     setattr(obj, '__name__', cls.__name__)
     return obj
 
-class MultitonMeta(type):
+class MultitonMeta(abc.ABCMeta):
     """Metaclass for Multiton Classes.
 
     Moltiton Classes allow the controlled creation of multiple instances, by
@@ -99,8 +100,15 @@ class MultitonMeta(type):
             cls._registry[key] = obj
         return obj
 
+    @classmethod
+    def __instancecheck__(mcs, obj: object) -> bool:
+        if obj.__class__ is mcs:
+            return True
+        return isinstance(obj.__class__, mcs)
+
 class Multiton(metaclass=MultitonMeta):
     """Base Class for Multiton Classes."""
+    __slots__: list = []
 
 #
 # Proxies
