@@ -13,7 +13,7 @@ from pathlib import Path
 import typing
 import numpy as np
 from nemoa.base import array, binary, check, env, literal, mapping
-from nemoa.base import operator, otree, pkg, stack, stype
+from nemoa.base import operator, otree, pattern, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Module, PathLikeList, StrList
@@ -56,6 +56,26 @@ class TestArray(ModuleTestCase):
         tgt = np.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
         new = array.add_cols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
+
+class TestPattern(ModuleTestCase):
+    module = pattern
+
+    def test_SingletonMeta(self) -> None:
+        pass
+
+    def test_SingletonType(self) -> None:
+        pass
+
+    def test_singleton_object(self) -> None:
+
+        @pattern.singleton_object
+        class Singleton(metaclass=pattern.SingletonMeta):
+            def __init__(self) -> None:
+                self.test = True
+
+        self.assertEqual(Singleton.__name__, type(Singleton).__name__)
+        self.assertTrue(hasattr(Singleton, 'test'))
+        self.assertTrue(Singleton.test)
 
 class TestStype(ModuleTestCase):
     module = stype
