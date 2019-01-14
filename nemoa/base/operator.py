@@ -195,11 +195,20 @@ class Projection(Operator, pattern.Multiton):
         except TypeError:
             return f"{name}()"
 
-class Zero(Operator):
+class Zero(Operator, pattern.Multiton):
     """Class for zero operators.
 
+    A zero operator (or zero morphism) maps all given arguments to the zero
+    object (empty object) of a given target category.
+
     Args:
-        target:
+        target: Optional target category of the operator. If provided, the
+            target category must by given as a :class:`type`, like
+            :class:`int`, :class:`float`, :class:`str`, :class:`set`,
+            :class:`tuple`, :class:`list`, :class:`dict` or :class:`object`.
+            Then the returned operator maps all objects of any domain category
+            to the zero object of the target category. By default the used zero
+            object is None.
 
     """
     __slots__ = ['_zero']
@@ -208,6 +217,14 @@ class Zero(Operator):
 
     def __init__(self, target: stype.DomLike = None) -> None:
         super().__init__(domain=None, target=target)
+
+        # Sanity check if target type seems to be valid
+        target_type = self._target.type
+        if not target_type() == target_type():
+            raise ValueError(
+                f"target type '{target_type.__name__}' is not supported: "
+                "zero object is not unique") # TODO
+
         self._zero = self._target.type() # Create zero object in target type
 
     def __call__(self, *args: Any) -> Any:
@@ -217,9 +234,9 @@ class Zero(Operator):
         return False
 
     def __repr__(self) -> str:
-        name = type(self).__name__
-        target = self._target.type.__name__
-        return f"{name}({target})"
+        class_name = type(self).__name__
+        target_type = self._target.type.__name__
+        return f"{class_name}({target_type})"
 
 class Mapper(collections.abc.Sequence, Operator):
     """Class for mapper operators.
@@ -399,7 +416,7 @@ class Lambda(Operator):
         elif callable(default):
             self._operator = default
         else:
-            self._operator = create_zero()
+            self._operator = Zero()
 
     def __call__(self, *args: Any) -> Any:
         return self._operator(*args)
@@ -539,26 +556,6 @@ class Lambda(Operator):
 # Operator Constructors
 #
 
-@functools.lru_cache(maxsize=32)
-def create_zero(target: stype.DomLike = None) -> Zero:
-    """Create a zero operator.
-
-    Args:
-        target: Optional target category of the operator. If provided, the
-            target category must by given as a :class:`type`, like
-            :class:`int`, :class:`float`, :class:`str`, :class:`set`,
-            :class:`tuple`, :class:`list`, :class:`dict` or :class:`object`.
-            Then the returned operator maps all objects of any domain category
-            to the zero object of the target category. By default the used zero
-            object is None.
-
-    Returns:
-        Operator, that maps given arguments to the zero object of a given target
-        type.
-
-    """
-    return Zero(target)
-
 def create_mapper(
         *args: VarLike, domain: stype.DomLike = None,
         target: stype.DomLike = None, default: OptOp = None) -> Mapper:
@@ -588,7 +585,7 @@ def create_mapper(
     # the target type. If fields are specified, but no domain and no target the
     # returned operator is the identity with a fixed number of arguments
     if not args:
-        return create_zero(target)
+        return Zero(target)
 
     return Mapper(*args, domain=domain, target=target, default=default)
 
@@ -628,7 +625,7 @@ def create_lambda(
 #
 
 identity = Identity()
-zero = create_zero()
+zero = Zero()
 
 #
 # Operator Inspection Functions
@@ -1090,7 +1087,7 @@ def create_aggregator(
     """
     # The default operator is the zero operator (in the target type)
     if not args:
-        return create_zero(target)
+        return Zero(target)
 
     # Create mapper object
     f = Mapper(*args, default=operator.itemgetter(0))

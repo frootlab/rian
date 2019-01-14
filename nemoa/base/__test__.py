@@ -218,7 +218,15 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(mapper.components, ('a', 'b', 'c', 'Y'))
 
     def test_Zero(self) -> None:
-        pass # Implicitely tested by test_create_zero()
+        f = operator.Zero
+
+        for target in [set, tuple, list, dict]:
+            with self.subTest(target=target):
+                zero = f(target)
+                self.assertEqual(zero(), target())
+
+        with self.subTest(target=object):
+            self.assertRaises(ValueError, f, object)
 
     def test_Lambda(self) -> None:
         pass # Implicitely tested by test_create_lambda()
@@ -265,16 +273,6 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('x', 'z'), domain=(None, ('x', 'y', 'z'))):
             prj = f('x', 'z', domain=(None, ('x', 'y', 'z')))
             self.assertEqual(prj(1, 2, 3), (1, 3))
-
-    def test_create_zero(self) -> None:
-        for category in [set, tuple, list, dict, object]:
-            zero = operator.create_zero(category)
-        zero = operator.create_zero()
-        self.assertFalse(zero) # Test evaluates to zero
-        self.assertIsNone(zero('text'))
-        self.assertIsNone(zero(1, 2, 3))
-        self.assertEqual(zero, operator.create_zero()) # Test caching
-        zero = operator.create_zero(tuple)
 
     def test_create_lambda(self) -> None:
         f = operator.create_lambda
@@ -469,7 +467,7 @@ class TestOperator(ModuleTestCase):
 
     def test_create_wrapper(self) -> None:
         setter = operator.create_wrapper(name='test', group=1)
-        op = operator.create_zero()
+        op = operator.Zero()
         self.assertEqual(getattr(setter(op), 'name'), 'test')
         self.assertEqual(getattr(setter(op), 'group'), 1)
 
