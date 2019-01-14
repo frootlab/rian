@@ -54,6 +54,9 @@ class Domain(NamedTuple):
         fields = ', '.join(map(repr, map(self.basis.get, self.frame)))
         return f"{name}({dtype}, ({fields}))"
 
+    def __hash__(self) -> int:
+        return hash((self.type, self.frame, frozenset(self.basis.items())))
+
 #
 # Constructors
 #

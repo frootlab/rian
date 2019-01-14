@@ -74,7 +74,11 @@ class MultitonMeta(abc.ABCMeta):
     def __call__(cls, *args: Any, **kwds: Any) -> object:
         # Create 'fingerprint' of instance. Beware: The fingerprint is only
         # hashable if all given arguments and keywords are hashable
-        key = (cls, args, frozenset(kwds.items()))
+        try:
+            key = (cls, args, frozenset(kwds.items()))
+        except TypeError:
+            print(cls, args, kwds)
+            raise
 
         # Check registry for the fingerprint. If the fingerprint is not hashable
         # create and return and an instance of the class. If the the fingerprint

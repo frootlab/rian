@@ -99,7 +99,7 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 
 class Operator(collections.abc.Callable): # type: ignore
     """Base Class for operators."""
-    __slots__ = ['_domain', '_target']
+    __slots__: list = ['_domain', '_target']
 
     _domain: stype.Domain
     _target: stype.Domain
@@ -123,6 +123,30 @@ class Operator(collections.abc.Callable): # type: ignore
             return self._target
         except AttributeError:
             return stype.create_domain()
+
+class Identity(Operator, pattern.Multiton):
+    """Class for identity operators."""
+    __slots__: list = []
+
+    def __init__(self, domain: stype.DomLike = None) -> None:
+        super().__init__(domain=domain, target=domain)
+
+    def __call__(self, *args: Any) -> Any:
+        if not args:
+            return None
+        if len(args) == 1:
+            return args[0]
+        return args
+
+    def __len__(self) -> int:
+        return 0
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        dom_type = self.domain.type
+        if dom_type == NoneType:
+            return f'{type(self).__name__}'
+        return f'{type(self).__name__}({dom_type.__name__})'
 
 class Projection(Operator, pattern.Multiton):
     """Class for projection operators.
@@ -170,43 +194,6 @@ class Projection(Operator, pattern.Multiton):
             return f"{name}()"
         except TypeError:
             return f"{name}()"
-
-class Identity(Operator):
-    """Class for identity operators."""
-    __slots__ = ['_arglen']
-
-    _arglen: int # Length of signature
-
-    def __init__(self, domain: stype.DomLike = None) -> None:
-        super().__init__(domain=domain, target=domain)
-        self._arglen = len(self._domain.frame)
-
-    def __call__(self, *args: Any) -> Any:
-        if self._arglen:
-            sig_len = self._arglen
-            arg_len = len(args)
-            if arg_len != sig_len:
-                name = type(self).__name__
-                arguments = "argument" if sig_len == 1 else "arguments"
-                were = "was" if arg_len == 1 else "were"
-                raise TypeError(
-                    f"{name} takes {sig_len} positional {arguments} "
-                    f"but {arg_len} {were} given")
-        if not args:
-            return None
-        if len(args) == 1:
-            return args[0]
-        return args
-
-    def __len__(self) -> int:
-        return 0
-
-    def __repr__(self) -> str:
-        name = type(self).__name__
-        frame = self._domain.frame
-        if not frame:
-            return f'{name}()'
-        return f"{name}({', '.join(map(repr, frame))})"
 
 class Zero(Operator):
     """Class for zero operators.
@@ -553,16 +540,6 @@ class Lambda(Operator):
 #
 
 @functools.lru_cache(maxsize=32)
-def create_identity(domain: stype.DomLike = None) -> Identity:
-    """Create identity operator.
-
-    Args:
-        domain: Optional
-
-    """
-    return Identity(domain)
-
-@functools.lru_cache(maxsize=32)
 def create_zero(target: stype.DomLike = None) -> Zero:
     """Create a zero operator.
 
@@ -650,7 +627,7 @@ def create_lambda(
 # Operator Constants
 #
 
-identity = create_identity()
+identity = Identity()
 zero = create_zero()
 
 #
@@ -796,12 +773,13 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
 # Factory functions for elementary operators
 #
 
+@functools.lru_cache(maxsize=128)
 def create_getter(*args: FieldID, domain: stype.DomLike = None) -> AnyOp:
     """Create a getter operator.
 
     This function uses the standard library module :mod:`operator` and returns
     an operator created by :func:`~operator.attrgetter`,
-    :func:`~operator.itemgetter` or :func:`.create_identity`.
+    :func:`~operator.itemgetter` or and instance if the class :class:`Identity`.
 
     Args:
         *args: Valid :term:`field identifiers <field identifier>` within the
@@ -826,47 +804,59 @@ def create_getter(*args: FieldID, domain: stype.DomLike = None) -> AnyOp:
     if not args:
         return zero
     if not domain:
-        return create_identity(domain=(None, args))
+        return Identity(domain=(None, args))
 
     # Get domain
-    dom = stype.create_domain(domain, defaults={'fields': args})
+    domain = stype.create_domain(domain, defaults={'fields': args})
 
-    # Create getter
-    valid: AnyOp
-    if dom.type is NoneType:
-        if not dom.frame or dom.frame == args:
-            return identity
-        pos = map(dom.frame.index, args)
-        itemgetter = operator.itemgetter(*pos)
-        return lambda *args: itemgetter(args)
+    # If no domain type is given, return Identity. Otherwise return an
+    # itemgetter, that operates on it's given arguments.
+    if domain.type == NoneType:
+        if not domain.frame or domain.frame == args:
+            return Identity(domain=domain)
+        for arg in args:
+            if arg not in domain.frame:
+                raise ValueError() # TODO: NotInList
+        getter = create_getter(*args, domain=(tuple, domain.frame))
+        return lambda *args: getter(args)
 
-    if dom.type is object:
-        # Check if field identifiers are attribute identifiers
-        valid = lambda attr: isinstance(attr, str) and attr.isidentifier
-        if not all(map(valid, args)):
-            raise InvalidTypeError('any field', args, 'a valid attribute name')
+    # If the domain type is object, check if field identifiers are valid
+    # attribute identifiers and return attrgetter() from standard library module
+    # operator
+    if domain.type == object:
+        for arg in args:
+            if not (isinstance(arg, str) and arg.isidentifier):
+                raise InvalidTypeError('field', arg, 'a valid attribute name')
         return operator.attrgetter(*args) # type: ignore
 
-    if issubclass(dom.type, Mapping):
-        # Check if field identifiers are mapping keys (hashable)
-        valid = lambda obj: isinstance(obj, Hashable)
-        if not all(map(valid, args)):
-            raise InvalidTypeError('any field', args, 'a valid mappin key')
+    # If the domain is a mapping, check if field identifiers are valid mapping
+    # keys and return itemgetter() from standard library module operator
+    if issubclass(domain.type, Mapping):
+        for arg in args:
+            if not isinstance(arg, Hashable):
+                raise InvalidTypeError('field', arg, 'a valid mapping key')
         return operator.itemgetter(*args)
 
-    if issubclass(dom.type, Sequence):
-        if dom.frame:
-            pos = map(dom.frame.index, args)
-            return operator.itemgetter(*pos)
-
-        # Check if field identifiers are sequence positions
-        valid = lambda pos: isinstance(pos, int) and pos >= 0
-        if not all(map(valid, args)):
-            raise InvalidTypeError('any field', args, 'positive integer')
+    # If the domain is a sequence and a frame is given, check that all field
+    # identifiers are contained within the frame. In this case the frame is used
+    # to determine the positions and an itemgetter() from standard library
+    # module operator is returned. If, however, no frame is given the field
+    # identifiers are required to be valid positions. In this case also an
+    # itemgetter() is returned.
+    if issubclass(domain.type, Sequence):
+        if domain.frame:
+            for arg in args:
+                if arg not in domain.frame:
+                    raise ValueError() # TODO: NotInList
+            return operator.itemgetter(*map(domain.frame.index, args))
+        for arg in args:
+            if not isinstance(arg, int) and arg >= 0:
+                raise InvalidTypeError('any field', args, 'positive integer')
         return operator.itemgetter(*args)
 
     # TODO: raise InvalidValueError!
-    raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
+    raise InvalidTypeError(
+        'domain type', domain.type, (object, Mapping, Sequence))
 
 def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
     """Create a setter operator.
@@ -891,10 +881,10 @@ def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
         return zero
 
     # Get domain
-    dom = stype.create_domain(domain)
+    domain = stype.create_domain(domain)
 
-    # Create setter
-    if dom.type is object:
+    # Create attribute setter
+    if domain.type == object:
         # TODO: check if field names are identifiers
         # check.has_iterable_type(...)
         if len(args) == 1:
@@ -906,14 +896,16 @@ def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
             collections.deque(iterator, maxlen=0) # avoid creation of list
         return attrsetter
 
-    if issubclass(dom.type, Mapping):
+    # Create item setter for mappings
+    if issubclass(domain.type, Mapping):
         # For mappings use the .update() method
         updates = dict(args)
         return lambda obj: obj.update(updates)
 
-    if issubclass(dom.type, Sequence):
-        if dom.frame: # If a frame is given get the item positions from index
-            getid = dom.frame.index
+    # Create item setter for sequences
+    if issubclass(domain.type, Sequence):
+        if domain.frame: # If a frame is given get the item positions from index
+            getid = domain.frame.index
             items = tuple((getid(arg[0]), arg[1]) for arg in args)
         else:
             items = tuple((int(arg[0]), arg[1]) for arg in args) # type: ignore
@@ -923,10 +915,10 @@ def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
         return setitems
 
     # TODO: Use some kind of ValueEror for domain!
-    raise InvalidTypeError('domain', domain, (object, Mapping, Sequence))
+    raise InvalidTypeError(
+        'domain type', domain.type, (object, Mapping, Sequence))
 
-def create_formatter(
-    *args: FieldID, target: stype.DomLike = None) -> AnyOp:
+def create_formatter(*args: FieldID, target: stype.DomLike = None) -> AnyOp:
     """Create a formatter operator.
 
     Args:
@@ -948,17 +940,17 @@ def create_formatter(
 
     """
     # Get target
-    tgt = stype.create_domain(target, defaults={'fields': args})
+    target = stype.create_domain(target, defaults={'fields': args})
 
     # Create formatter
-    if tgt.type == NoneType:
-        return create_identity(domain=(None, 'x'))
-    if tgt.type == tuple:
+    if target.type == NoneType:
+        return Identity()
+    if target.type == tuple:
         return lambda x: x if isinstance(x, tuple) else (x, )
-    if tgt.type == list:
+    if target.type == list:
         return lambda x: list(x) if isinstance(x, tuple) else [x]
-    if tgt.type == dict:
-        frame = tgt.frame
+    if target.type == dict:
+        frame = target.frame
         if not frame:
             raise ValueError() # TODO: ...
         first = frame[0]
@@ -967,7 +959,7 @@ def create_formatter(
         return lambda x: dn(x) if isinstance(x, tuple) else d1(x)
 
     # TODO: raise InvalidValueError!
-    raise InvalidTypeError('target', target, (tuple, list, dict))
+    raise InvalidTypeError('target type', target.type, (tuple, list, dict))
 
 def create_wrapper(**attrs: Any) -> AnyOp:
     """Create a function wrapper that adds attributes.

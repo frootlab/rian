@@ -217,36 +217,32 @@ class TestOperator(ModuleTestCase):
             self.assertTrue(all(map(callable, mapper)))
             self.assertEqual(mapper.components, ('a', 'b', 'c', 'Y'))
 
-    def test_Identity(self) -> None:
-        pass # Implicitely tested by test_create_identity()
-
     def test_Zero(self) -> None:
         pass # Implicitely tested by test_create_zero()
 
     def test_Lambda(self) -> None:
         pass # Implicitely tested by test_create_lambda()
 
-    def test_create_identity(self) -> None:
-        f = operator.create_identity
+    def test_Identity(self) -> None:
+        f = operator.Identity
 
         with self.subTest():
             identity = f()
             self.assertEqual(identity, operator.identity)
+            self.assertEqual(len(identity), 0)
             self.assertFalse(identity)
             self.assertEqual(identity(''), '')
             self.assertEqual(identity(1, 2, 3), (1, 2, 3))
 
-        with self.subTest(domain=(None, 'a')):
-            identity = f(domain=(None, 'a'))
+        with self.subTest(domain=(None, ('x', ))):
+            identity = f(domain=(None, ('x', )))
             self.assertNotEqual(identity, operator.identity)
             self.assertEqual(identity(1), 1)
-            self.assertRaises(TypeError, identity, 1, 2)
 
-        with self.subTest(domain=(None, ('a', 'b'))):
-            identity = f(domain=(None, ('a', 'b')))
+        with self.subTest(domain=(None, ('x', 'y'))):
+            identity = f(domain=(None, ('x', 'y')))
             self.assertNotEqual(identity, operator.identity)
             self.assertEqual(identity(1, 2), (1, 2))
-            self.assertRaises(TypeError, identity, 1)
 
     def test_Projection(self) -> None:
         f = operator.Projection
@@ -308,13 +304,11 @@ class TestOperator(ModuleTestCase):
             getter = f('a')
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1), 1)
-            self.assertRaises(TypeError, getter, 1, 2)
 
         with self.subTest(args=('a', 'b')):
             getter = f('a', 'b')
             self.assertIsInstance(getter, operator.Identity)
             self.assertEqual(getter(1, 2), (1, 2))
-            self.assertRaises(TypeError, getter, 1)
 
         with self.subTest(args=('a', ), domain=(None, ('a', 'b'))):
             getter = f('a', domain=(None, ('a', 'b')))
@@ -372,31 +366,26 @@ class TestOperator(ModuleTestCase):
             formatter = f('a')
             self.assertIsInstance(formatter, operator.Identity)
             self.assertEqual(formatter(1), 1)
-            self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(args=('a', 'b')):
             formatter = f('a', 'b')
             self.assertIsInstance(formatter, operator.Identity)
             self.assertEqual(formatter((1, 2)), (1, 2))
-            self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=tuple):
             formatter = f(target=tuple)
             self.assertEqual(formatter(1), (1, ))
             self.assertEqual(formatter((1, 2)), (1, 2))
-            self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=list):
             formatter = f(target=list)
             self.assertEqual(formatter(1), [1])
             self.assertEqual(formatter((1, 2)), [1, 2])
-            self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=list):
             formatter = f(target=list)
             self.assertEqual(formatter(1), [1])
             self.assertEqual(formatter((1, 2)), [1, 2])
-            self.assertRaises(TypeError, formatter, 1, 2)
 
         with self.subTest(target=dict):
             self.assertRaises(ValueError, f, target=dict)
