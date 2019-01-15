@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import types
 from typing import NewType
-from nemoa.base import attrib, check, pattern
+from nemoa.base import attrib, check, abc
 from nemoa.db import record, cursor
 from nemoa.errors import RowLookupError, ProxyError
 from nemoa.errors import InvalidTypeError
@@ -583,7 +583,7 @@ class Table(attrib.Container):
 # Proxy Class
 #
 
-class Proxy(Table, pattern.Proxy):
+class Proxy(Table, abc.Proxy):
     """Abstract Base Class for Table Proxies.
 
     Args:
@@ -605,7 +605,7 @@ class Proxy(Table, pattern.Proxy):
             self, proxy_mode: OptInt = None,
             parent: OptContainer = None) -> None:
         # Initialize Abstract Proxy
-        pattern.Proxy.__init__(self)
+        abc.Proxy.__init__(self)
 
         # Initialize Empty Table
         Table.__init__(self, parent=parent)

@@ -16,7 +16,7 @@ import importlib
 import logging
 import warnings
 from pathlib import Path
-from nemoa.base import attrib, env, pattern
+from nemoa.base import attrib, env, abc
 from nemoa.errors import ExistsError, NotExistsError
 from nemoa.types import void, Any, AnyOp, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, OptPath, Void
@@ -25,7 +25,7 @@ from nemoa.types import StrOrInt, OptPath, Void
 # Logger Class
 #
 
-class Logger(attrib.Container, pattern.Singleton):
+class Logger(attrib.Container, abc.Singleton):
     """Singleton class for logging.
 
     Args:

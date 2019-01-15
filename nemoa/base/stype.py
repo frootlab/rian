@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Structured type declaration."""
+"""Classes and functions for structured types."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -55,7 +55,10 @@ class Domain(NamedTuple):
         return f"{name}({dtype}, ({fields}))"
 
     def __hash__(self) -> int:
-        return hash((self.type, self.frame, frozenset(self.basis.items())))
+        value = hash(self.type) ^ hash(self.frame)
+        for field in self.basis.items():
+            value ^= hash(field)
+        return value
 
 #
 # Constructors

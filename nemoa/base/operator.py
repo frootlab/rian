@@ -14,13 +14,13 @@ import inspect
 import itertools
 import operator
 import re
-from typing import NamedTuple
+from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
+from typing import Any, Hashable
 import py_expression_eval
-from nemoa.base import check, pattern, stype
+from nemoa.base import check, abc, stype
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Any, Method, Mapping, Sequence, NoneType, Callable
-from nemoa.types import Tuple, SeqHom, SeqOp, AnyOp, Hashable, Union
-from nemoa.types import Optional, OptOp, OptStrTuple, Dict, List
+from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, OptStrTuple
+from nemoa.types import SeqHom, SeqOp, AnyOp
 from nemoa.base.stype import FieldID, Frame
 
 Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
@@ -98,7 +98,7 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 #
 
 class Operator(collections.abc.Callable): # type: ignore
-    """Base Class for operators."""
+    """Abstract Base Class for operators."""
     __slots__: list = ['_domain', '_target']
 
     _domain: stype.Domain
@@ -124,7 +124,7 @@ class Operator(collections.abc.Callable): # type: ignore
         except AttributeError:
             return stype.create_domain()
 
-class Identity(Operator, pattern.Multiton):
+class Identity(Operator, abc.Multiton):
     """Class for identity operators."""
     __slots__: list = []
 
@@ -148,7 +148,7 @@ class Identity(Operator, pattern.Multiton):
             return f'{type(self).__name__}'
         return f'{type(self).__name__}({dom_type.__name__})'
 
-class Projection(Operator, pattern.Multiton):
+class Projection(Operator, abc.Multiton):
     """Class for projection operators.
 
     Args:
@@ -195,7 +195,7 @@ class Projection(Operator, pattern.Multiton):
         except TypeError:
             return f"{name}()"
 
-class Zero(Operator, pattern.Multiton):
+class Zero(Operator, abc.Multiton):
     """Class for zero operators.
 
     A zero operator (or zero morphism) maps all given arguments to the zero
@@ -238,12 +238,22 @@ class Zero(Operator, pattern.Multiton):
         target_type = self._target.type.__name__
         return f"{class_name}({target_type})"
 
-class Mapper(collections.abc.Sequence, Operator, pattern.Multiton):
-    """Class for mapper operators.
+class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
+    """Class for mapping operators.
+
+    Mapping operators are compositions of :func:`getters<create_getter>`
+    and :func:`formatters<create_formatter>` and used to map selected fields
+    from it's operand (or arguments) to the fields of a given target type.
 
     Args:
         *args: Optional definitions of the function components. If provided, any
             component has to be given as a valid :term:`variable definition`.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. The accepted
+            parameter values are documented in :func:`create_getter`.
+        target: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's target. The accepted
+            parameter values are documented in :func:`create_formatter`.
         default: Default operator which is used to map fields to field
             variables. By default the identity is used.
 
@@ -504,12 +514,12 @@ class Lambda(Operator):
             if dom_type == list:
                 mapper = Identity()
             else:
-                mapper = create_mapper(*names, domain=dom_like, target=list)
+                mapper = Mapper(*names, domain=dom_like, target=list)
         else:
             if dom_type == dict:
                 mapper = Identity()
             else:
-                mapper = create_mapper(*names, domain=dom_like, target=dict)
+                mapper = Mapper(*names, domain=dom_like, target=dict)
 
         # If the term is trusted create and compile lambda term. Note, that the
         # lambda term usually may be considered to be a trusted expression, as
@@ -557,6 +567,7 @@ class Lambda(Operator):
         # Create variable
         get_var: AnyOp = lambda field: mapping.get(field, '')
         args = tuple(zip(frame, map(get_var, frame)))
+
         return Mapper(*args)
 
     def _get_valid_expression(self) -> str:
@@ -573,38 +584,38 @@ class Lambda(Operator):
 # Operator Constructors
 #
 
-def create_mapper(
-        *args: VarLike, domain: stype.DomLike = None,
-        target: stype.DomLike = None, default: OptOp = None) -> Mapper:
-    """Create a mapping operator.
-
-    Mapping operators are compositions of :func:`getters<create_getter>`
-    and :func:`formatters<create_formatter>` and used to map selected fields
-    from it's operand (or arguments) to the fields of a given target type.
-
-    Args:
-        *args: Valid :term:`field identifiers <field identifier>` within the
-            domain type.
-        domain: Optional :term:`domain like` parameter, that specifies the type
-            and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in :func:`create_getter`.
-        target: Optional :term:`domain like` parameter, that specifies the type
-            and (if required) the frame of the operator's target. The accepted
-            parameter values are documented in :func:`create_formatter`.
-        default:
-
-    Returns:
-        Operator that maps selected fields from its operand to fields of a
-        given target type.
-
-    """
-    # If no fields are specified, the returned operator is the zero operator of
-    # the target type. If fields are specified, but no domain and no target the
-    # returned operator is the identity with a fixed number of arguments
-    if not args:
-        return Zero(target)
-
-    return Mapper(*args, domain=domain, target=target, default=default)
+# def create_mapper(
+#         *args: VarLike, domain: stype.DomLike = None,
+#         target: stype.DomLike = None, default: OptOp = None) -> Mapper:
+#     """Create a mapping operator.
+#
+#     Mapping operators are compositions of :func:`getters<create_getter>`
+#     and :func:`formatters<create_formatter>` and used to map selected fields
+#     from it's operand (or arguments) to the fields of a given target type.
+#
+#     Args:
+#         *args: Valid :term:`field identifiers <field identifier>` within the
+#             domain type.
+#         domain: Optional :term:`domain like` parameter, that specifies the type
+#             and (if required) the frame of the operator's domain. The accepted
+#             parameter values are documented in :func:`create_getter`.
+#         target: Optional :term:`domain like` parameter, that specifies the type
+#             and (if required) the frame of the operator's target. The accepted
+#             parameter values are documented in :func:`create_formatter`.
+#         default:
+#
+#     Returns:
+#         Operator that maps selected fields from its operand to fields of a
+#         given target type.
+#
+#     """
+#     # If no fields are specified, the returned operator is the zero operator of
+#     # the target type. If fields are specified, but no domain and no target the
+#     # returned operator is the identity with a fixed number of arguments
+#     if not args:
+#         return Zero(target)
+#
+#     return Mapper(*args, domain=domain, target=target, default=default)
 
 @functools.lru_cache(maxsize=64)
 def create_lambda(
@@ -1107,7 +1118,7 @@ def create_aggregator(
     # 2. Create a Matrix from the sequence (a list of rows)
     # 3. Transpose a Matrix (to a tuple of columns)
     # 4. Compose Matrix creation and transposition
-    fetch = create_mapper(*f.fields, domain=domain, target=tuple)
+    fetch = Mapper(*f.fields, domain=domain, target=tuple)
     matrix: SeqOp = lambda seq: list(map(fetch, seq))
     trans: SeqOp = lambda mat: tuple(list(col) for col in zip(*mat))
     columns: SeqOp = lambda seq: trans(matrix(seq))

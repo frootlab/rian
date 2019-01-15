@@ -251,3 +251,9 @@ def sumjoin(*args: dict) -> dict:
             else: dn[k] = v
 
     return dn
+
+# def calc_hash(d: Mapping) -> int:
+#     val = 0
+#     for item in d.items():
+#         val ^= hash(val)
+#     return val

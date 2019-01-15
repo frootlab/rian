@@ -10,7 +10,7 @@ import contextlib
 import io
 from pathlib import Path
 import weakref
-from nemoa.base import env, pattern
+from nemoa.base import env, abc
 from nemoa.errors import PullError, PushError, ConnectError, DisconnectError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
 from nemoa.types import ErrMeta, ErrType, ErrStack, FileAccessor
@@ -161,7 +161,7 @@ class FileConnector:
 # File Proxy Class
 #
 
-class FileProxy(pattern.Proxy):
+class FileProxy(abc.Proxy):
     """File buffer for referenced files.
 
     Creates a temporary file within the :func:`tempdir <tempfile.gettempdir>` of

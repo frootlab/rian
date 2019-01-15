@@ -12,8 +12,8 @@ from unittest import mock
 from pathlib import Path
 import typing
 import numpy as np
-from nemoa.base import array, binary, check, env, literal, mapping
-from nemoa.base import operator, otree, pattern, pkg, stack, stype
+from nemoa.base import abc, array, binary, check, env, literal, mapping
+from nemoa.base import operator, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Any, Module, PathLikeList, StrList
@@ -22,6 +22,39 @@ from nemoa.types import NaN, Method, Function
 #
 # Test Cases
 #
+
+class TestAbc(ModuleTestCase):
+    module = abc
+
+    def test_SingletonMeta(self) -> None:
+        pass # Implicitely tested by test_Singleton()
+
+    def test_Singleton(self) -> None:
+        f = type('Singleton', (abc.Singleton, ), {})
+
+        self.assertTrue(f() is f())
+        self.assertTrue(f(1) is f(2))
+
+    def test_singleton_object(self) -> None:
+
+        @abc.singleton_object
+        class Singleton(metaclass=abc.SingletonMeta):
+            def __init__(self) -> None:
+                self.test = True
+
+        self.assertEqual(Singleton.__name__, type(Singleton).__name__)
+        self.assertTrue(hasattr(Singleton, 'test'))
+        self.assertTrue(Singleton.test)
+
+    def test_MultitonMeta(self) -> None:
+        pass # Implicitely tested by test_Multiton()
+
+    def test_Multiton(self) -> None:
+        f = type('Multiton', (abc.Multiton, ), {})
+
+        self.assertTrue(f() is f())
+        self.assertTrue(f(1) is f(1))
+        self.assertFalse(f(1) is f(2))
 
 class TestArray(ModuleTestCase):
     module = array
@@ -56,39 +89,6 @@ class TestArray(ModuleTestCase):
         tgt = np.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
         new = array.add_cols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
-
-class TestPattern(ModuleTestCase):
-    module = pattern
-
-    def test_SingletonMeta(self) -> None:
-        pass # Implicitely tested by test_Singleton()
-
-    def test_Singleton(self) -> None:
-        f = type('Singleton', (pattern.Singleton, ), {})
-
-        self.assertTrue(f() is f())
-        self.assertTrue(f(1) is f(2))
-
-    def test_singleton_object(self) -> None:
-
-        @pattern.singleton_object
-        class Singleton(metaclass=pattern.SingletonMeta):
-            def __init__(self) -> None:
-                self.test = True
-
-        self.assertEqual(Singleton.__name__, type(Singleton).__name__)
-        self.assertTrue(hasattr(Singleton, 'test'))
-        self.assertTrue(Singleton.test)
-
-    def test_MultitonMeta(self) -> None:
-        pass # Implicitely tested by test_Multiton()
-
-    def test_Multiton(self) -> None:
-        f = type('Multiton', (pattern.Multiton, ), {})
-
-        self.assertTrue(f() is f())
-        self.assertTrue(f(1) is f(1))
-        self.assertFalse(f(1) is f(2))
 
 class TestStype(ModuleTestCase):
     module = stype
@@ -210,6 +210,60 @@ class TestOperator(ModuleTestCase):
 
     def test_Mapper(self) -> None:
         f = operator.Mapper
+        obj = mock.Mock()
+        obj.configure_mock(a=1, b=2)
+        dic = {'a': 1, 'b': 2}
+        seq = [1, 2]
+
+        with self.subTest(args=('a', 'b'), domain=None, target=dict):
+            mapper = f('a', 'b', domain=None, target=dict)
+            self.assertEqual(mapper(1, 2), {'a': 1, 'b': 2})
+
+        with self.subTest(
+                args=('a', 'b'), domain=None, target=(dict, ('_', 1))):
+            mapper = f('a', 'b', domain=None, target=(dict, ('_', 1)))
+            self.assertEqual(mapper(1, 2), {'_': 1, 1: 2})
+
+        with self.subTest(args=('a', 'b'), domain=object, target=tuple):
+            mapper = f('a', 'b', domain=object, target=tuple)
+            self.assertEqual(mapper(obj), (1, 2))
+
+        with self.subTest(args=('a', 'b'), domain=object, target=list):
+            mapper = f('a', 'b', domain=object, target=list)
+            self.assertEqual(mapper(obj), [1, 2])
+
+        with self.subTest(args=('a', 'b'), domain=object, target=dict):
+            mapper = f('a', 'b', domain=object, target=dict)
+            self.assertEqual(mapper(obj), {'a': 1, 'b': 2})
+
+        with self.subTest(
+                args=('a', 'b'), domain=object, target=(dict, ('_', 1))):
+            mapper = f('a', 'b', domain=object, target=(dict, ('_', 1)))
+            self.assertEqual(mapper(obj), {'_': 1, 1: 2})
+
+        with self.subTest(args=('a', 'b'), domain=dict, target=dict):
+            mapper = f('a', 'b', domain=dict, target=dict)
+            self.assertEqual(mapper(dic), {'a': 1, 'b': 2})
+
+        with self.subTest(args=('a', 'b'), domain=dict, target=tuple):
+            mapper = f('a', 'b', domain=dict, target=tuple)
+            self.assertEqual(mapper(dic), (1, 2))
+
+        with self.subTest(args=('a', 'b'), domain=dict, target=list):
+            mapper = f('a', 'b', domain=dict, target=list)
+            self.assertEqual(mapper(dic), [1, 2])
+
+        with self.subTest(args=('a', 'b'), domain=list, target=dict):
+            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=dict)
+            self.assertEqual(mapper(seq), {'a': 1, 'b': 2})
+
+        with self.subTest(args=('a', 'b'), domain=list, target=tuple):
+            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=tuple)
+            self.assertEqual(mapper(seq), (1, 2))
+
+        with self.subTest(args=('a', 'b'), domain=list, target=list):
+            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=list)
+            self.assertEqual(mapper(seq), [1, 2])
 
         with self.subTest(args=('a', ('b', ), ('c', len), ('Y', max, 'd'))):
             mapper = f('a', ('b', ), ('c', len), ('Y', max, 'd'))
@@ -392,61 +446,6 @@ class TestOperator(ModuleTestCase):
             formatter = f('a', 'b', target=dict)
             self.assertEqual(formatter((1, 2)), {'a': 1, 'b': 2})
 
-    def test_create_mapper(self) -> None:
-        f = operator.create_mapper
-        obj = mock.Mock()
-        obj.configure_mock(a=1, b=2)
-        dic = {'a': 1, 'b': 2}
-        seq = [1, 2]
-
-        with self.subTest(domain=None, target=dict):
-            mapper = f('a', 'b', domain=None, target=dict)
-            self.assertEqual(mapper(1, 2), {'a': 1, 'b': 2})
-
-        with self.subTest(domain=None, target=(dict, ('_', 1))):
-            mapper = f('a', 'b', domain=None, target=(dict, ('_', 1)))
-            self.assertEqual(mapper(1, 2), {'_': 1, 1: 2})
-
-        with self.subTest(domain=object, target=tuple):
-            mapper = f('a', 'b', domain=object, target=tuple)
-            self.assertEqual(mapper(obj), (1, 2))
-
-        with self.subTest(domain=object, target=list):
-            mapper = f('a', 'b', domain=object, target=list)
-            self.assertEqual(mapper(obj), [1, 2])
-
-        with self.subTest(domain=object, target=dict):
-            mapper = f('a', 'b', domain=object, target=dict)
-            self.assertEqual(mapper(obj), {'a': 1, 'b': 2})
-
-        with self.subTest(domain=object, target=(dict, ('_', 1))):
-            mapper = f('a', 'b', domain=object, target=(dict, ('_', 1)))
-            self.assertEqual(mapper(obj), {'_': 1, 1: 2})
-
-        with self.subTest(domain=dict, target=dict):
-            mapper = f('a', 'b', domain=dict, target=dict)
-            self.assertEqual(mapper(dic), {'a': 1, 'b': 2})
-
-        with self.subTest(domain=dict, target=tuple):
-            mapper = f('a', 'b', domain=dict, target=tuple)
-            self.assertEqual(mapper(dic), (1, 2))
-
-        with self.subTest(domain=dict, target=list):
-            mapper = f('a', 'b', domain=dict, target=list)
-            self.assertEqual(mapper(dic), [1, 2])
-
-        with self.subTest(domain=list, target=dict):
-            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=dict)
-            self.assertEqual(mapper(seq), {'a': 1, 'b': 2})
-
-        with self.subTest(domain=list, target=tuple):
-            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=tuple)
-            self.assertEqual(mapper(seq), (1, 2))
-
-        with self.subTest(domain=list, target=list):
-            mapper = f('a', 'b', domain=(list, ('a', 'b')), target=list)
-            self.assertEqual(mapper(seq), [1, 2])
-
     def test_create_setter(self) -> Any:
         items = [('name', 'monty'), ('id', 42)]
 
@@ -475,7 +474,7 @@ class TestOperator(ModuleTestCase):
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
             obj.configure_mock(x=i, y=-i)
-        getx = operator.create_mapper('x', domain=object)
+        getx = operator.Mapper('x', domain=object)
         sorter = operator.create_sorter('x', domain=object)
         self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
         sorter = operator.create_sorter('y', domain=object, reverse=True)

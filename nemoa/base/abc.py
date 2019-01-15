@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Metaclasses and abstract base classes for frequently used patterns."""
+"""Metaclasses and Abstract Base Classes for frequently used design patterns."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -7,18 +7,18 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import abc
-import contextlib
 from typing import Any, Dict, Tuple
-from nemoa.errors import DisconnectError
 
 #
-# Persistent Classes (Singletons and Registries of Singletons)
+# Creational Design Patterns
 #
 
 class SingletonMeta(abc.ABCMeta):
     """Metaclass for Singleton Classes.
 
     Singleton Classes create a single instance per application.
+
+    Args:
 
     """
     _registry: Dict[type, object] = {}
@@ -77,7 +77,7 @@ class MultitonMeta(abc.ABCMeta):
         try:
             key = (cls, args, frozenset(kwds.items()))
         except TypeError:
-            print(cls, args, kwds)
+            print(cls, args, kwds) # TODO
             raise
 
         # Check registry for the fingerprint. If the fingerprint is not hashable
@@ -129,8 +129,10 @@ class Proxy(metaclass=abc.ABCMeta):
 
     def __del__(self) -> None:
         """Run destructor for instance."""
-        with contextlib.suppress(DisconnectError):
+        try:
             self.disconnect()
+        finally:
+            pass
 
     @abc.abstractmethod
     def pull(self) -> None:
