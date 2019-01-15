@@ -16,7 +16,7 @@ import importlib
 import logging
 import warnings
 from pathlib import Path
-from nemoa.base import attrib, env
+from nemoa.base import attrib, env, pattern
 from nemoa.errors import ExistsError, NotExistsError
 from nemoa.types import void, Any, AnyOp, ClassVar, PathLike, StrList
 from nemoa.types import StrOrInt, OptPath, Void
@@ -25,8 +25,8 @@ from nemoa.types import StrOrInt, OptPath, Void
 # Logger Class
 #
 
-class Logger(attrib.Container):
-    """Logger class.
+class Logger(attrib.Container, pattern.Singleton):
+    """Singleton class for logging.
 
     Args:
         name: String identifier of Logger, given as a period-separated
@@ -264,34 +264,25 @@ class Logger(attrib.Container):
 # Singleton Accessor Functions
 #
 
-def get_instance() -> Logger:
-    """Get current logger instance."""
-    if not '_logger' in globals():
-        globals()['_logger'] = Logger()
-    return globals()['_logger']
-
-def get_method(name: str) -> AnyOp:
-    """Get method of current logger instance."""
+def _get_lazy_method(name: str) -> AnyOp:
     def wrapper(*args: Any, **kwds: Any) -> Any:
-        self = get_instance()
-        method = getattr(self.logger, name, void)
-        return method(*args, **kwds)
+        return getattr(Logger(), name, void)(*args, **kwds)
     return wrapper
 
-debug: Void = get_method('debug')
+debug: Void = _get_lazy_method('debug')
 """Call :meth:`~logging.Logger.debug` of current Logger instance."""
 
-info: Void = get_method('info')
+info: Void = _get_lazy_method('info')
 """Call :meth:`~logging.Logger.info` of current Logger instance."""
 
-warning: Void = get_method('warning')
+warning: Void = _get_lazy_method('warning')
 """Call :meth:`~logging.Logger.warning` of current Logger instance."""
 
-error: Void = get_method('error')
+error: Void = _get_lazy_method('error')
 """Call :meth:`~logging.Logger.error` of current Logger instance."""
 
-critical: Void = get_method('critical')
+critical: Void = _get_lazy_method('critical')
 """Call :meth:`~logging.Logger.critical` of current Logger instance."""
 
-exception: Void = get_method('exception')
+exception: Void = _get_lazy_method('exception')
 """Call :meth:`~logging.Logger.exceptions` of current Logger instance."""

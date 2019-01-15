@@ -175,7 +175,7 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('x', )):
             var = f('x')
             self.assertEqual(var.name, 'x')
-            self.assertEqual(var.operator, operator.identity)
+            self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x', ))
 
         with self.subTest(args=(('x', list), )):
@@ -187,13 +187,13 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=(('y', 'x'), )):
             var = f(('y', 'x'))
             self.assertEqual(var.name, 'y')
-            self.assertEqual(var.operator, operator.identity)
+            self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x', ))
 
         with self.subTest(args=(('x', ('x1', 'x2')), )):
             var = f(('x', ('x1', 'x2')))
             self.assertEqual(var.name, 'x')
-            self.assertEqual(var.operator, operator.identity)
+            self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x1', 'x2'))
 
         with self.subTest(args=(('y', list, 'x'), )):
@@ -236,7 +236,7 @@ class TestOperator(ModuleTestCase):
 
         with self.subTest():
             identity = f()
-            self.assertEqual(identity, operator.identity)
+            self.assertIsInstance(identity, operator.Identity)
             self.assertEqual(len(identity), 0)
             self.assertFalse(identity)
             self.assertEqual(identity(''), '')
@@ -244,12 +244,12 @@ class TestOperator(ModuleTestCase):
 
         with self.subTest(domain=(None, ('x', ))):
             identity = f(domain=(None, ('x', )))
-            self.assertNotEqual(identity, operator.identity)
+            self.assertNotEqual(identity, operator.Identity())
             self.assertEqual(identity(1), 1)
 
         with self.subTest(domain=(None, ('x', 'y'))):
             identity = f(domain=(None, ('x', 'y')))
-            self.assertNotEqual(identity, operator.identity)
+            self.assertNotEqual(identity, operator.Identity())
             self.assertEqual(identity(1, 2), (1, 2))
 
     def test_Projection(self) -> None:
@@ -560,11 +560,11 @@ class TestOperator(ModuleTestCase):
     def test_compose(self) -> None:
         with self.subTest(args=tuple()):
             op = operator.compose()
-            self.assertEqual(op, operator.identity)
+            self.assertEqual(op, operator.Identity())
 
         with self.subTest(args=(None, None)):
             op = operator.compose(None, None)
-            self.assertEqual(op, operator.identity)
+            self.assertEqual(op, operator.Identity())
 
         with self.subTest(args=(None, lambda x: x)):
             op = operator.compose(None, lambda x: x)

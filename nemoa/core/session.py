@@ -87,7 +87,7 @@ class Session(attrib.Container):
         self.config = self._default_config.copy()
         self._ws = ws.File()
         self.paths = [env.expand(path) for path in self._default_paths]
-        self.logger = log.get_instance()
+        self.logger = log.Logger()
 
         # Bind session to workspace
         self.parent = self._ws

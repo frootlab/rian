@@ -303,8 +303,8 @@ class Cursor(attrib.Container):
             having: PredLike = None) -> None:
 
         if not groupby:
-            self._groupby = operator.identity
-            self._having = operator.identity
+            self._groupby = operator.Identity()
+            self._having = operator.Identity()
             return
 
         # In order to provide a grouped result set, the cursor requires to
@@ -328,7 +328,7 @@ class Cursor(attrib.Container):
             *args, key=groupby, domain=object)
 
         if having is None:
-            self._having = operator.identity
+            self._having = operator.Identity()
             return
 
         if callable(having):
@@ -351,7 +351,7 @@ class Cursor(attrib.Container):
 
         # If sorting is not used, the sorting operator is the identity
         if not (orderby or reverse):
-            self._sorter = operator.identity
+            self._sorter = operator.Identity()
             return
 
         # Validate sorting parameters
@@ -411,7 +411,7 @@ class Cursor(attrib.Container):
         # If the result set is not aggregated, and the target type is not
         # specified (or None), then the rows are returned as records and the
         # mapper is the identity function
-        self._mapper = operator.identity
+        self._mapper = operator.Identity()
 
     def _default_mode(self) -> int:
         if self._sorter:

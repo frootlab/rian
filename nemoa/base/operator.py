@@ -27,10 +27,10 @@ Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
 Key = Optional[Union[FieldID, Frame]]
 Item = Tuple[FieldID, Any]
 VarLike = Union[
-    str,                        # Variable((<name>, ), identity, <name>)
-    Tuple[str],                 # Variable((<name>, ), identity, <name>)
-    Tuple[str, FieldID],        # Variable((<id>, ), identity, <name>)
-    Tuple[str, Frame],          # Variable(<frame>, identity, <name>
+    str,                        # Variable((<name>, ), Identity, <name>)
+    Tuple[str],                 # Variable((<name>, ), Identity, <name>)
+    Tuple[str, FieldID],        # Variable((<id>, ), Identity, <name>)
+    Tuple[str, Frame],          # Variable(<frame>, Identity, <name>
     Tuple[str, AnyOp],          # Variable((<name>, ), <operator>, <name>)
     Tuple[str, AnyOp, FieldID], # Variable((<id>, ), <operator>, <name>)
     Tuple[str, AnyOp, Frame]]   # Variable(<frame>, <operator>, <name>)
@@ -65,7 +65,7 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     check.not_empty('var', var)
 
     # Get Defaults
-    default = default or identity
+    default = default or Identity()
 
     # Get Variable Arguments
     args: VarLike
@@ -218,7 +218,7 @@ class Zero(Operator, pattern.Multiton):
     def __init__(self, target: stype.DomLike = None) -> None:
         super().__init__(domain=None, target=target)
 
-        # Sanity check if target type seems to be valid
+        # Sanity check if the target type has a unique zero object
         target_type = self._target.type
         if not target_type() == target_type():
             raise ValueError(
@@ -502,12 +502,12 @@ class Lambda(Operator):
         mapper: AnyOp
         if assemble:
             if dom_type == list:
-                mapper = identity
+                mapper = Identity()
             else:
                 mapper = create_mapper(*names, domain=dom_like, target=list)
         else:
             if dom_type == dict:
-                mapper = identity
+                mapper = Identity()
             else:
                 mapper = create_mapper(*names, domain=dom_like, target=dict)
 
@@ -638,13 +638,6 @@ def create_lambda(
         assemble=assemble)
 
 #
-# Operator Constants
-#
-
-identity = Identity()
-zero = Zero()
-
-#
 # Operator Inspection Functions
 #
 
@@ -756,9 +749,9 @@ def compose(*args: OptOp, unpack: bool = False) -> AnyOp:
         raise InvalidTypeError('every argument', args, 'callable or None')
 
     # Filter all arguments which evaluate to False. This includes None and the
-    # identity operator, since len(identity) == 0. If no arguments pass the
+    # identity operator, since len(Identity()) == 0. If no arguments pass the
     # filter, the the default operator given by the identity is used.
-    ops = tuple(filter(None, args)) or (identity, )
+    ops = tuple(filter(None, args)) or (Identity(), )
 
     # Create pairwise composition operator and apply it to the remaining
     # arguments
@@ -816,7 +809,7 @@ def create_getter(*args: FieldID, domain: stype.DomLike = None) -> AnyOp:
     # fields are specified, but no domain is specified the returned operator is
     # the argument getter for the specified fields.
     if not args:
-        return zero
+        return Zero()
     if not domain:
         return Identity(domain=(None, args))
 
@@ -892,7 +885,7 @@ def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
     # If no field-value pairs are specified, the returned operator is the zero
     # operator.
     if not args:
-        return zero
+        return Zero()
 
     # Get domain
     domain = stype.create_domain(domain)
@@ -1173,9 +1166,9 @@ def create_group_aggregator(
     Returns:
 
     """
-    # Group aggregators require variables
+    # Group aggregators require variable definitions
     if not args:
-        return identity
+        return Identity(domain=domain)
 
     # Create Grouper
     if key is None:

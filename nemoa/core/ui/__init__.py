@@ -56,10 +56,12 @@ def notify(ntype: str, msg: str, *args: Any, **kwds: Any) -> None:
     # Log message
     ntype = ntype.upper()
     if msg:
-        log.get_instance().log(ntype, msg)
+        log.Logger().log(ntype, msg)
+
     # Check if notification type is to be filtered
     if not is_above_level(ntype):
         return None
+
     # Get hook for given notification type
     func = get_notification_hook(ntype)
     if func:
