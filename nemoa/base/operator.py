@@ -159,8 +159,8 @@ class Zero(Operator, abc.Multiton):
     def __call__(self, *args: Any) -> Any:
         return self._zero
 
-    def __bool__(self) -> bool:
-        return False
+    def __len__(self) -> int:
+        return 0
 
     def __repr__(self) -> str:
         class_name = type(self).__name__
@@ -249,8 +249,8 @@ class Projection(Operator, abc.Multiton):
         super().__init__(domain=domain, target=target)
 
         # Build getter and formatter
-        getter = self._build_getter(*args, domain=self.domain)
-        formatter = create_formatter(*args, target=self.target)
+        getter = self._build_getter(*args, domain=domain)
+        formatter = create_formatter(*args, target=target)
 
         # If the formatter is an identity operator, return getter. If the getter
         # is an identity operator, precede a tuple 'packer' to the formatter
@@ -277,7 +277,10 @@ class Projection(Operator, abc.Multiton):
             return f"{name}()"
 
     def __len__(self) -> int:
-        return len(self._operator) # TODO: Check is it exists
+        try:
+            return len(self._operator)
+        except TypeError:
+            return len(self._target.frame)
 
     def _build_getter(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
 
@@ -342,10 +345,10 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
             component has to be given as a valid :term:`variable definition`.
         domain: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in :func:`create_getter`.
+            parameter values are documented in the class :class:`Projection`.
         target: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's target. The accepted
-            parameter values are documented in :func:`create_formatter`.
+            parameter values are documented in the class :class:`Projection`.
         default: Default operator which is used to map fields to field
             variables. By default the identity is used.
 
@@ -436,7 +439,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # mapper
         ops: List[AnyOp] = []
         for var in self._variables:
-            getter = create_getter(*var.frame, domain=self.domain)
+            getter = Projection(*var.frame, domain=self.domain)
             if isinstance(var.operator, Identity):
                 ops.append(getter)
             elif not var.frame:
@@ -456,21 +459,21 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # target type.
         if not variables:
             self._call_total = Zero(target)
-            return None
+            return
 
         # Check if the mapper can be implemented as a coordinate projection. In
         # this case create and return the projection
-        validate: AnyOp = lambda var: (
+        equal: AnyOp = lambda var: (
             len(var.frame) == 1 and isinstance(var.operator, Identity))
-        is_projection = all(map(validate, variables))
-        if domain.type == target.type and is_projection:
+        if all(map(equal, variables)):
             fields = tuple(var.frame[0] for var in variables)
             projection = Projection(
-                *fields, domain=self.domain, target=target.type)
+                *fields, domain=self.domain, target=self.target)
             if hasattr(projection, '_operator'):
                 self._call_total = projection._operator
             else:
                 self._call_total = projection
+            return
 
         # If the mapper can not be implemented as a projection ...
         # TODO: Implement as follows:
@@ -479,10 +482,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # 3. single formatter
         mapper: AnyOp
         f = self._call_partial
-        if is_projection:
-            fields = tuple(var.frame[0] for var in variables)
-            mapper = create_getter(*fields, domain=self.domain)
-        elif len(self) == 1:
+        if len(self) == 1:
             mapper = f[0]
         elif len(self) == 2:
             mapper = lambda *args: (f[0](*args), f[1](*args))
@@ -677,41 +677,8 @@ class Lambda(Operator):
         return expr
 
 #
-# Operator Constructors
+# Operator Builders
 #
-
-# def create_mapper(
-#         *args: VarLike, domain: stype.DomLike = None,
-#         target: stype.DomLike = None, default: OptOp = None) -> Mapper:
-#     """Create a mapping operator.
-#
-#     Mapping operators are compositions of :func:`getters<create_getter>`
-#     and :func:`formatters<create_formatter>` and used to map selected fields
-#     from it's operand (or arguments) to the fields of a given target type.
-#
-#     Args:
-#         *args: Valid :term:`field identifiers <field identifier>` within the
-#             domain type.
-#         domain: Optional :term:`domain like` parameter, that specifies the type
-#             and (if required) the frame of the operator's domain. The accepted
-#             parameter values are documented in :func:`create_getter`.
-#         target: Optional :term:`domain like` parameter, that specifies the type
-#             and (if required) the frame of the operator's target. The accepted
-#             parameter values are documented in :func:`create_formatter`.
-#         default:
-#
-#     Returns:
-#         Operator that maps selected fields from its operand to fields of a
-#         given target type.
-#
-#     """
-#     # If no fields are specified, the returned operator is the zero operator of
-#     # the target type. If fields are specified, but no domain and no target the
-#     # returned operator is the identity with a fixed number of arguments
-#     if not args:
-#         return Zero(target)
-#
-#     return Mapper(*args, domain=domain, target=target, default=default)
 
 @functools.lru_cache(maxsize=64)
 def create_lambda(
@@ -887,91 +854,6 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
 # Builders for elementary operators
 #
 
-@functools.lru_cache(maxsize=128)
-def create_getter(*args: FieldID, domain: stype.DomLike = None) -> AnyOp:
-    """Create a getter operator.
-
-    This function uses the standard library module :mod:`operator` and returns
-    an operator created by :func:`~operator.attrgetter`,
-    :func:`~operator.itemgetter` or and instance if the class :class:`Identity`.
-
-    Args:
-        *args: Valid :term:`field identifiers <field identifier>` within the
-            domain type.
-        domain: Optional :term:`domain like` parameter, that specifies the type
-            and (if required) the frame of the operator's domain. Supported
-            domain types are :class:`object`, subclasses of the :class:`Mapping
-            class <collection.abs.Mapping>` and subclasses of the
-            :class:`Sequence class <collection.abs.Sequence>`. If no domain type
-            is specified (which is indicated by the default value None) the
-            fields are identified by their argument positions of the operator.
-
-    Returns:
-        Operator that retrieves specified fields from its operand and returns
-        them as a single object for a single specified field or a tuple for
-        multiple specified fields.
-
-    """
-    # If no fields are specified, the returned operator is the zero operator. If
-    # fields are specified, but no domain is specified the returned operator is
-    # the argument getter for the specified fields.
-    if not args:
-        return Zero()
-    if not domain:
-        return Identity(domain=(None, args))
-
-    # Get domain
-    domain = stype.create_domain(domain, defaults={'fields': args})
-
-    # If no domain type is given, return Identity. Otherwise return an
-    # itemgetter, that operates on it's given arguments.
-    if domain.type == NoneType:
-        if not domain.frame or domain.frame == args:
-            return Identity(domain=domain)
-        for arg in args:
-            if arg not in domain.frame:
-                raise ValueError() # TODO: NotInList
-        getter = create_getter(*args, domain=(tuple, domain.frame))
-        return lambda *args: getter(args)
-
-    # If the domain type is object, check if field identifiers are valid
-    # attribute identifiers and return attrgetter() from standard library module
-    # operator
-    if domain.type == object:
-        for arg in args:
-            if not (isinstance(arg, str) and arg.isidentifier):
-                raise InvalidTypeError('field', arg, 'a valid attribute name')
-        return operator.attrgetter(*args) # type: ignore
-
-    # If the domain is a mapping, check if field identifiers are valid mapping
-    # keys and return itemgetter() from standard library module operator
-    if issubclass(domain.type, Mapping):
-        for arg in args:
-            if not isinstance(arg, Hashable):
-                raise InvalidTypeError('field', arg, 'a valid mapping key')
-        return operator.itemgetter(*args)
-
-    # If the domain is a sequence and a frame is given, check that all field
-    # identifiers are contained within the frame. In this case the frame is used
-    # to determine the positions and an itemgetter() from standard library
-    # module operator is returned. If, however, no frame is given the field
-    # identifiers are required to be valid positions. In this case also an
-    # itemgetter() is returned.
-    if issubclass(domain.type, Sequence):
-        if domain.frame:
-            for arg in args:
-                if arg not in domain.frame:
-                    raise ValueError() # TODO: NotInList
-            return operator.itemgetter(*map(domain.frame.index, args))
-        for arg in args:
-            if not isinstance(arg, int) or arg < 0:
-                raise InvalidTypeError('any field', args, 'positive integer')
-        return operator.itemgetter(*args)
-
-    # TODO: raise InvalidValueError!
-    raise InvalidTypeError(
-        'domain type', domain.type, (object, Mapping, Sequence))
-
 def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
     """Create a setter operator.
 
@@ -1105,8 +987,8 @@ def create_wrapper(**attrs: Any) -> AnyOp:
 #
 
 def create_sorter(
-    *args: FieldID, domain: stype.DomLike = None,
-    reverse: bool = False) -> SeqHom:
+        *args: FieldID, domain: stype.DomLike = None,
+        reverse: bool = False) -> SeqHom:
     """Create a sorter with fixed sorting keys.
 
     Sorters are operators, that act on sequences of objects of a given category
@@ -1119,7 +1001,7 @@ def create_sorter(
             identifier` for the domain type.
         domain: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in :func:`create_getter`.
+            parameter values are documented in the class :class:`Projection`.
         reverse: Optional boolean parameter. If set to True, then the sequence
             elements are sorted as if each comparison were reversed.
 
@@ -1135,8 +1017,8 @@ def create_sorter(
     return lambda seq: sorted(seq, key=getter, reverse=reverse)
 
 def create_grouper(
-    *args: FieldID, domain: stype.DomLike = None,
-    presorted: bool = False) -> SeqOp:
+        *args: FieldID, domain: stype.DomLike = None,
+        presorted: bool = False) -> SeqOp:
     """Create a grouping operator with fixed grouping keys.
 
     Args:
@@ -1145,7 +1027,7 @@ def create_grouper(
             required to be a valid :term:`field identifier` for the domain type.
         domain: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in :func:`create_getter`.
+            parameter values are documented in the class :class:`Projection`.
         presorted: The grouping operation splits in two consecutive steps: In
             the first step the input sequence is sorted by the given keys.
             Thereupon in the second step the sorted sequence is partitioned in
@@ -1180,8 +1062,8 @@ def create_grouper(
     return lambda seq: grouper(sorted(seq, key=getter))
 
 def create_aggregator(
-    *args: VarLike, domain: stype.DomLike = None,
-    target: type = tuple) -> SeqOp:
+        *args: VarLike, domain: stype.DomLike = None,
+        target: type = tuple) -> SeqOp:
     """Creates an aggregation operator with specified variables.
 
     Args:
@@ -1217,7 +1099,7 @@ def create_aggregator(
     # 2. Create a Matrix from the sequence (a list of rows)
     # 3. Transpose a Matrix (to a tuple of columns)
     # 4. Compose Matrix creation and transposition
-    fetch = Mapper(*f.fields, domain=domain, target=tuple)
+    fetch = Projection(*f.fields, domain=domain, target=tuple)
     matrix: SeqOp = lambda seq: list(map(fetch, seq))
     trans: SeqOp = lambda mat: tuple(list(col) for col in zip(*mat))
     columns: SeqOp = lambda seq: trans(matrix(seq))
