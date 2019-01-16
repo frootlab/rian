@@ -148,53 +148,6 @@ class Identity(Operator, abc.Multiton):
             return f'{type(self).__name__}'
         return f'{type(self).__name__}({dom_type.__name__})'
 
-class Projection(Operator, abc.Multiton):
-    """Class for projection operators.
-
-    Args:
-        *args:
-        domain:
-
-    """
-    __slots__ = ['_operator']
-
-    _operator: Any
-
-    def __init__(self, *args: FieldID, domain: stype.DomLike = None) -> None:
-
-        # Set domain and target
-        domain = stype.create_domain(domain)
-        target = (domain.type, args)
-        super().__init__(domain=domain, target=target)
-
-        # Create getter and formatter according to domain and target
-        getter = create_getter(*args, domain=domain)
-        formatter = create_formatter(*args, target=target)
-
-        # If the formatter is an identity operator, return getter. If the getter
-        # is an identity operator, precede a tuple 'packer' to the formatter
-        if isinstance(formatter, Identity):
-            self._operator = getter
-        elif isinstance(getter, Identity):
-            self._operator = compose(formatter, lambda *args: args)
-        else:
-            self._operator = compose(formatter, getter)
-
-    def __call__(self, *args: Any) -> Any:
-        return self._operator(*args)
-
-    def __repr__(self) -> str:
-        if isinstance(self._operator, Operator):
-            return repr(self._operator)
-        name = type(self).__name__
-        try:
-            fields = self._operator(self._domain.frame)
-            return f"{name}({', '.join(map(repr, fields))})"
-        except AttributeError:
-            return f"{name}()"
-        except TypeError:
-            return f"{name}()"
-
 class Zero(Operator, abc.Multiton):
     """Class for zero operators.
 
@@ -237,6 +190,137 @@ class Zero(Operator, abc.Multiton):
         class_name = type(self).__name__
         target_type = self._target.type.__name__
         return f"{class_name}({target_type})"
+
+class Projection(Operator, abc.Multiton):
+    """Class for projection operators.
+
+    Args:
+        *args:
+        domain:
+
+        Create a getter operator.
+
+        This function uses the standard library module :mod:`operator` and returns
+        an operator created by :func:`~operator.attrgetter`,
+        :func:`~operator.itemgetter` or and instance if the class :class:`Identity`.
+
+        Args:
+            *args: Valid :term:`field identifiers <field identifier>` within the
+                domain type.
+            domain: Optional :term:`domain like` parameter, that specifies the type
+                and (if required) the frame of the operator's domain. Supported
+                domain types are :class:`object`, subclasses of the :class:`Mapping
+                class <collection.abs.Mapping>` and subclasses of the
+                :class:`Sequence class <collection.abs.Sequence>`. If no domain type
+                is specified (which is indicated by the default value None) the
+                fields are identified by their argument positions of the operator.
+
+        Returns:
+            Operator that retrieves specified fields from its operand and returns
+            them as a single object for a single specified field or a tuple for
+            multiple specified fields.
+
+    """
+    __slots__ = ['_operator']
+
+    _operator: Any
+
+    def __init__(
+            self, *args: FieldID, domain: stype.DomLike = None,
+            target: stype.DomLike = None) -> None:
+
+        # Set domain and target
+        domain = stype.create_domain(domain, defaults={'fields': args})
+        target = stype.create_domain(target, defaults={'fields': args})
+        super().__init__(domain=domain, target=target)
+
+        # If no fields are given, the projection is a zero operator.
+        if not args:
+            self._operator = Zero(target=target)
+            return
+
+        # Build getter and formatter
+        getter = self._build_getter(*args, domain=self.domain)
+        formatter = create_formatter(*args, target=self.target)
+
+        # If the formatter is an identity operator, return getter. If the getter
+        # is an identity operator, precede a tuple 'packer' to the formatter
+        if isinstance(formatter, Identity):
+            self._operator = getter
+        elif isinstance(getter, Identity):
+            self._operator = compose(formatter, lambda *args: args)
+        else:
+            self._operator = compose(formatter, getter)
+
+    def __call__(self, *args: Any) -> Any:
+        return self._operator(*args)
+
+    def __repr__(self) -> str:
+        if isinstance(self._operator, Operator):
+            return repr(self._operator)
+        name = type(self).__name__
+        try:
+            fields = self._operator(self._domain.frame)
+            return f"{name}({', '.join(map(repr, fields))})"
+        except AttributeError:
+            return f"{name}()"
+        except TypeError:
+            return f"{name}()"
+
+    def _build_getter(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
+
+        # If the domain type is NoneType, the returned operator fetches and
+        # returns the fields directly from it's given arguments. In this case,
+        # if the fields equal the domain frame, the returned operator is the
+        # Identity. If the fields, however, do not equal the domain frame, the
+        # returned operator is an item getter, that operates on the tuple of
+        # arguments.
+        if domain.type == NoneType:
+            if domain.frame == args:
+                return Identity(domain=domain)
+            check.is_subset('fields', set(args), 'frame', set(domain.frame))
+            igettr = operator.itemgetter(*map(domain.frame.index, args))
+            return lambda *args: igettr(args)
+
+        # If the domain type is object, check if the given field identifiers are
+        # valid attribute identifiers. In this case return an attribute getter,
+        # (created by attrgetter from the standard library module operator)
+        if domain.type == object:
+            for arg in args:
+                if not (isinstance(arg, str) and arg.isidentifier):
+                    raise InvalidTypeError(
+                        'field', arg, 'a valid attribute name')
+            return operator.attrgetter(*args) # type: ignore
+
+        # If the domain is a mapping, check if field identifiers are valid
+        # mapping keys and return itemgetter() from standard library module
+        # operator
+        if issubclass(domain.type, Mapping):
+            for arg in args:
+                if not isinstance(arg, Hashable):
+                    raise InvalidTypeError('field', arg, 'a valid mapping key')
+            return operator.itemgetter(*args)
+
+        # If the domain is a sequence and a frame is given, check that all field
+        # identifiers are contained within the frame. In this case the frame is
+        # used to determine the positions and an itemgetter() from standard
+        # library module operator is returned. If, however, no frame is given
+        # the field identifiers are required to be valid positions. In this case
+        # also an itemgetter() is returned.
+        if issubclass(domain.type, Sequence):
+            if domain.frame:
+                if not set(args) <= set(domain.frame):
+                    raise ValueError() # TODO: NotInList
+                return operator.itemgetter(*map(domain.frame.index, args))
+            for arg in args:
+                if not isinstance(arg, int) or arg < 0:
+                    raise InvalidTypeError(
+                        'any field', args, 'positive integer')
+            return operator.itemgetter(*args)
+
+        # TODO: raise InvalidValueError!
+        raise InvalidTypeError(
+            'domain type', domain.type, (object, Mapping, Sequence))
 
 class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
     """Class for mapping operators.
@@ -373,7 +457,8 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         is_projection = all(map(validate, variables))
         if domain.type == target.type and is_projection:
             fields = tuple(var.frame[0] for var in variables)
-            projection = Projection(*fields, domain=self.domain)
+            projection = Projection(
+                *fields, domain=self.domain, target=target.type)
             self._call_total = projection._operator
 
         # If the mapper can not be implemented as a projection ...
@@ -788,7 +873,7 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
     return op(**get_parameters(op, *args, **kwds))
 
 #
-# Factory functions for elementary operators
+# Builders for elementary operators
 #
 
 @functools.lru_cache(maxsize=128)
@@ -957,6 +1042,8 @@ def create_formatter(*args: FieldID, target: stype.DomLike = None) -> AnyOp:
         target type.
 
     """
+    debuginfo = (args, target)
+
     # Get target
     target = stype.create_domain(target, defaults={'fields': args})
 
@@ -970,7 +1057,8 @@ def create_formatter(*args: FieldID, target: stype.DomLike = None) -> AnyOp:
     if target.type == dict:
         frame = target.frame
         if not frame:
-            raise ValueError() # TODO: ...
+            raise ValueError(
+                "target type 'dict' requires, that a frame is given")
         first = frame[0]
         d1: AnyOp = lambda x: {first: x} # arg -> dict
         dn: AnyOp = lambda x: dict(zip(frame, x)) # args -> dict

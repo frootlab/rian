@@ -50,7 +50,8 @@ class Domain(NamedTuple):
         if not self.basis:
             return f"{name}({dtype})"
         if len(self.basis) == 1:
-            return f"{name}({dtype}, {repr(self.basis[0])})"
+            field = repr(tuple(self.basis.values())[0])
+            return f"{name}({dtype}, {field})"
         fields = ', '.join(map(repr, map(self.basis.get, self.frame)))
         return f"{name}({dtype}, ({fields}))"
 
@@ -59,6 +60,9 @@ class Domain(NamedTuple):
         for field in self.basis.items():
             value ^= hash(field)
         return value
+
+    def __bool__(self) -> bool:
+        return self.type != NoneType or bool(self.frame) or bool(self.basis)
 
 #
 # Constructors

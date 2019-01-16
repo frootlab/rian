@@ -74,6 +74,7 @@ class Group:
         self._attr_group_prefix = ''
         self._attr_group_parent = parent
         self._attr_group_defaults = {}
+
         if readonly is not None:
             self._attr_group_defaults['readonly'] = readonly
         if remote is not None:
