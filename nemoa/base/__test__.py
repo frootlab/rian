@@ -311,68 +311,70 @@ class TestOperator(ModuleTestCase):
         obj = mock.Mock()
         obj.configure_mock(a=1, b=2)
 
+        with self.subTest():
+            prj = f()
+            self.assertTrue(prj is f())
+            self.assertIsInstance(prj, operator.Identity)
+
         with self.subTest(args=tuple()):
-            getter = f()
-            self.assertIsInstance(getter, operator.Zero)
-            self.assertEqual(getter(1), None)
+            prj = f()
+            self.assertIsInstance(prj, operator.Zero)
+            self.assertEqual(prj(1), None)
 
         with self.subTest(args=('a',)):
-            getter = f('a')
-            self.assertIsInstance(getter, operator.Identity)
-            self.assertEqual(getter(1), 1)
+            prj = f('a')
+            self.assertIsInstance(prj, operator.Identity)
+            self.assertEqual(prj(1), 1)
 
         with self.subTest(args=('a', 'b')):
-            getter = f('a', 'b')
-            self.assertIsInstance(getter, operator.Identity)
-            self.assertEqual(getter(1, 2), (1, 2))
+            prj = f('a', 'b')
+            self.assertIsInstance(prj, operator.Identity)
+            self.assertEqual(prj(1, 2), (1, 2))
 
         with self.subTest(args=('a', ), domain=(None, ('a', 'b'))):
-            getter = f('a', domain=(None, ('a', 'b')))
-            self.assertEqual(getter(1, 2), 1)
-            self.assertRaises(IndexError, getter)
+            prj = f('a', domain=(None, ('a', 'b')))
+            self.assertEqual(prj(1, 2), 1)
+            self.assertRaises(IndexError, prj)
 
         with self.subTest(domain=tuple):
-            getter = f(domain=tuple)
-            self.assertIsInstance(getter, operator.Zero)
+            prj = f(domain=tuple)
+            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=tuple):
-            getter = f('a', 'b', domain=tuple)
-            self.assertEqual(getter((1, 2)), (1, 2))
+            prj = f('a', 'b', domain=tuple)
+            self.assertEqual(prj((1, 2)), (1, 2))
 
         with self.subTest(args=('a', 'b'), domain=(tuple, ('a', 'b', 'c'))):
-            getter = f('a', 'b', domain=(tuple, ('a', 'b', 'c')))
-            self.assertEqual(getter((1, 2, 3)), (1, 2))
+            prj = f('a', 'b', domain=(tuple, ('a', 'b', 'c')))
+            self.assertEqual(prj((1, 2, 3)), (1, 2))
 
         with self.subTest(domain=list):
-            getter = f(domain=list)
-            self.assertIsInstance(getter, operator.Zero)
+            prj = f(domain=list)
+            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=list):
-            getter = f('a', 'b', domain=list)
-            self.assertEqual(getter([1, 2]), (1, 2))
+            prj = f('a', 'b', domain=list)
+            self.assertEqual(prj([1, 2]), (1, 2))
 
         with self.subTest(args=('a', 'b'), domain=(list, ('a', 'b', 'c'))):
-            getter = f('a', 'b', domain=(list, ('a', 'b', 'c')))
-            self.assertEqual(getter([1, 2, 3]), (1, 2))
+            prj = f('a', 'b', domain=(list, ('a', 'b', 'c')))
+            self.assertEqual(prj([1, 2, 3]), (1, 2))
 
         with self.subTest(domain=dict):
-            getter = f(domain=dict)
-            self.assertIsInstance(getter, operator.Zero)
+            prj = f(domain=dict)
+            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=dict):
-            getter = f('a', 'b', domain=dict)
-            self.assertEqual(getter({'a':1, 'b':2}), (1, 2))
+            prj = f('a', 'b', domain=dict)
+            self.assertEqual(prj({'a':1, 'b':2}), (1, 2))
 
         with self.subTest(domain=object):
-            getter = f(domain=object)
-            self.assertIsInstance(getter, operator.Zero)
+            prj = f(domain=object)
+            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=object):
-            getter = f('a', 'b', domain=object)
-            self.assertEqual(getter(obj), (1, 2))
-
-        with self.subTest():
-            self.assertTrue(f() is f())
+            prj = f('a', 'b', domain=object)
+            self.assertEqual(prj(obj), (1, 2))
 
         with self.subTest(args=('x', ), domain=dict):
             prj = f('x', domain=dict)
@@ -390,6 +392,20 @@ class TestOperator(ModuleTestCase):
             prj = f('x', 'z', domain=(None, ('x', 'y', 'z')))
             self.assertEqual(prj(1, 2, 3), (1, 3))
 
+        with self.subTest(args=('a',)):
+            prj = f('a')
+            self.assertIsInstance(prj, operator.Identity)
+            self.assertEqual(prj(1), 1)
+
+        with self.subTest(args=('a', 'b')):
+            prj = f('a', 'b')
+            self.assertIsInstance(prj, operator.Identity)
+            self.assertEqual(prj((1, 2)), (1, 2))
+
+        with self.subTest(args=('a', 'b'), target=dict):
+            prj = f('a', 'b', target=dict)
+            self.assertEqual(prj(1, 2), {'a': 1, 'b': 2})
+
     def test_create_lambda(self) -> None:
         f = operator.create_lambda
 
@@ -403,45 +419,6 @@ class TestOperator(ModuleTestCase):
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
-
-    def test_create_formatter(self) -> None:
-        f = operator.create_formatter
-
-        with self.subTest():
-            formatter = f()
-            self.assertIsInstance(formatter, operator.Identity)
-
-        with self.subTest(args=('a',)):
-            formatter = f('a')
-            self.assertIsInstance(formatter, operator.Identity)
-            self.assertEqual(formatter(1), 1)
-
-        with self.subTest(args=('a', 'b')):
-            formatter = f('a', 'b')
-            self.assertIsInstance(formatter, operator.Identity)
-            self.assertEqual(formatter((1, 2)), (1, 2))
-
-        with self.subTest(target=tuple):
-            formatter = f(target=tuple)
-            self.assertEqual(formatter(1), (1, ))
-            self.assertEqual(formatter((1, 2)), (1, 2))
-
-        with self.subTest(target=list):
-            formatter = f(target=list)
-            self.assertEqual(formatter(1), [1])
-            self.assertEqual(formatter((1, 2)), [1, 2])
-
-        with self.subTest(target=list):
-            formatter = f(target=list)
-            self.assertEqual(formatter(1), [1])
-            self.assertEqual(formatter((1, 2)), [1, 2])
-
-        with self.subTest(target=dict):
-            self.assertRaises(ValueError, f, target=dict)
-
-        with self.subTest(args=('a', 'b'), target=dict):
-            formatter = f('a', 'b', target=dict)
-            self.assertEqual(formatter((1, 2)), {'a': 1, 'b': 2})
 
     def test_create_setter(self) -> Any:
         items = [('name', 'monty'), ('id', 42)]
