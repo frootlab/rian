@@ -124,30 +124,6 @@ class Operator(collections.abc.Callable): # type: ignore
         except AttributeError:
             return stype.create_domain()
 
-class Identity(Operator, abc.Multiton):
-    """Class for identity operators."""
-    __slots__: list = []
-
-    def __init__(self, domain: stype.DomLike = None) -> None:
-        super().__init__(domain=domain, target=domain)
-
-    def __call__(self, *args: Any) -> Any:
-        if not args:
-            return None
-        if len(args) == 1:
-            return args[0]
-        return args
-
-    def __len__(self) -> int:
-        return 0
-
-    def __repr__(self) -> str:
-        name = type(self).__name__
-        dom_type = self.domain.type
-        if dom_type == NoneType:
-            return f'{type(self).__name__}'
-        return f'{type(self).__name__}({dom_type.__name__})'
-
 class Zero(Operator, abc.Multiton):
     """Class for zero operators.
 
@@ -191,53 +167,86 @@ class Zero(Operator, abc.Multiton):
         target_type = self._target.type.__name__
         return f"{class_name}({target_type})"
 
+class Identity(Operator, abc.Multiton):
+    """Class for identity operators."""
+    __slots__: list = []
+
+    def __init__(self, domain: stype.DomLike = None) -> None:
+        super().__init__(domain=domain, target=domain)
+
+    def __call__(self, *args: Any) -> Any:
+        if not args:
+            return None
+        if len(args) == 1:
+            return args[0]
+        return args
+
+    def __len__(self) -> int:
+        return 0
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        dom_type = self.domain.type
+        if dom_type == NoneType:
+            return f'{type(self).__name__}'
+        return f'{type(self).__name__}({dom_type.__name__})'
+
 class Projection(Operator, abc.Multiton):
-    """Class for projection operators.
+    """Class for Projections.
+
+    A projection essentially is a compositions of a `getter`, that specified
+    fields from a given domain and a `representer`, that represents the fetched
+    fields as an object of given target.
 
     Args:
-        *args:
-        domain:
-
-        Create a getter operator.
-
-        This function uses the standard library module :mod:`operator` and returns
-        an operator created by :func:`~operator.attrgetter`,
-        :func:`~operator.itemgetter` or and instance if the class :class:`Identity`.
-
-        Args:
-            *args: Valid :term:`field identifiers <field identifier>` within the
-                domain type.
-            domain: Optional :term:`domain like` parameter, that specifies the type
-                and (if required) the frame of the operator's domain. Supported
-                domain types are :class:`object`, subclasses of the :class:`Mapping
-                class <collection.abs.Mapping>` and subclasses of the
-                :class:`Sequence class <collection.abs.Sequence>`. If no domain type
-                is specified (which is indicated by the default value None) the
-                fields are identified by their argument positions of the operator.
-
-        Returns:
-            Operator that retrieves specified fields from its operand and returns
-            them as a single object for a single specified field or a tuple for
-            multiple specified fields.
+        *args: Valid :term:`field identifiers <field identifier>` within the
+            domain type.
+        domain: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's domain. Supported
+            domain types are :class:`object`, subclasses of the :class:`Mapping
+            class <collection.abs.Mapping>` and subclasses of the
+            :class:`Sequence class <collection.abs.Sequence>`. If no domain type
+            is specified (which is indicated by the default value None) the
+            fields are identified by their argument positions of the operator.
+        target: Optional :term:`domain like` parameter, that specifies the type
+            and (if required) the frame of the operator's target. Supported
+            target types are :class:`tuple`, :class:`list` and :class:`dict`. If
+            no target is specified (which is indicated by the default value
+            None) the target type depends on the arguments, that are passed to
+            the operator. In this case for a single argument, the target type
+            equals the type of the argument and for multiple argumnts, the
+            target type is tuple.
 
     """
     __slots__ = ['_operator']
 
     _operator: Any
 
-    def __init__(
-            self, *args: FieldID, domain: stype.DomLike = None,
+    def __new__(
+            cls, *args: FieldID, domain: stype.DomLike = None,
+            target: stype.DomLike = None) -> Operator:
+
+        domain = stype.create_domain(domain, defaults={'fields': args})
+        target = stype.create_domain(target, defaults={'fields': args})
+
+        # If no fields are given, the projection is a zero operator.
+        if not args:
+            return Zero(target=target)
+
+        # If the domain equals the target (type, frame and basis)
+        if domain == target:
+            return Identity(domain=domain)
+
+        return super().__new__(cls)
+
+    def __init__(self,
+            *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> None:
 
         # Set domain and target
         domain = stype.create_domain(domain, defaults={'fields': args})
         target = stype.create_domain(target, defaults={'fields': args})
         super().__init__(domain=domain, target=target)
-
-        # If no fields are given, the projection is a zero operator.
-        if not args:
-            self._operator = Zero(target=target)
-            return
 
         # Build getter and formatter
         getter = self._build_getter(*args, domain=self.domain)
@@ -260,12 +269,15 @@ class Projection(Operator, abc.Multiton):
             return repr(self._operator)
         name = type(self).__name__
         try:
-            fields = self._operator(self._domain.frame)
-            return f"{name}({', '.join(map(repr, fields))})"
+            frame = self._domain.frame
+            return f"{name}({', '.join(map(repr, frame))})"
         except AttributeError:
             return f"{name}()"
         except TypeError:
             return f"{name}()"
+
+    def __len__(self) -> int:
+        return len(self._operator) # TODO: Check is it exists
 
     def _build_getter(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
 
@@ -324,10 +336,6 @@ class Projection(Operator, abc.Multiton):
 
 class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
     """Class for mapping operators.
-
-    Mapping operators are compositions of :func:`getters<create_getter>`
-    and :func:`formatters<create_formatter>` and used to map selected fields
-    from it's operand (or arguments) to the fields of a given target type.
 
     Args:
         *args: Optional definitions of the function components. If provided, any
@@ -459,7 +467,10 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
             fields = tuple(var.frame[0] for var in variables)
             projection = Projection(
                 *fields, domain=self.domain, target=target.type)
-            self._call_total = projection._operator
+            if hasattr(projection, '_operator'):
+                self._call_total = projection._operator
+            else:
+                self._call_total = projection
 
         # If the mapper can not be implemented as a projection ...
         # TODO: Implement as follows:
@@ -1118,7 +1129,7 @@ def create_sorter(
 
     """
     # Create getter operator for given keys
-    getter = create_getter(*args, domain=domain) if args else None
+    getter = Projection(*args, domain=domain) if args else None
 
     # Create and return sorting operator
     return lambda seq: sorted(seq, key=getter, reverse=reverse)
@@ -1153,7 +1164,7 @@ def create_grouper(
         return lambda seq: [seq]
 
     # Create getter for given keys
-    getter = create_getter(*args, domain=domain)
+    getter = Projection(*args, domain=domain)
 
     # Create list mapper for groups
     group = operator.itemgetter(1)

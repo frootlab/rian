@@ -91,8 +91,8 @@ class MultitonMeta(abc.ABCMeta):
         except KeyError:
             hashable = True
 
-        # Create an instance of the class. (Note, that - if the class does not
-        # implement a constructor - it does not accept arguments)
+        # Create an instance of the class. (Note, that if the class does not
+        # implement a __init__ method, then it does not accept arguments)
         try:
             obj = super(MultitonMeta, cls).__call__(*args, **kwds)
         except TypeError:
