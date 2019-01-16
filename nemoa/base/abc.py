@@ -6,14 +6,14 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import abc
-from typing import Any, Dict, Tuple
+from abc import ABC, ABCMeta, abstractmethod
+from typing import Any, Dict, Tuple, Optional, IO
 
 #
 # Creational Design Patterns
 #
 
-class SingletonMeta(abc.ABCMeta):
+class SingletonMeta(ABCMeta):
     """Metaclass for Singleton Classes.
 
     Singleton Classes create a single instance per application.
@@ -61,7 +61,7 @@ def singleton_object(cls: SingletonMeta) -> object:
     setattr(obj, '__name__', cls.__name__)
     return obj
 
-class MultitonMeta(abc.ABCMeta):
+class MultitonMeta(ABCMeta):
     """Metaclass for Multiton Classes.
 
     Moltiton Classes allow the controlled creation of multiple instances, by
@@ -118,7 +118,7 @@ class Multiton(metaclass=MultitonMeta):
 # Proxies
 #
 
-class Proxy(metaclass=abc.ABCMeta):
+class Proxy(metaclass=ABCMeta):
     """Abstract Base Class for Proxies."""
 
     _connected: bool
@@ -134,22 +134,50 @@ class Proxy(metaclass=abc.ABCMeta):
         finally:
             pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def pull(self) -> None:
         """Pull state changes from source."""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"'{type(self).__name__}' is required "
+            "to implement a method 'pull'")
 
-    @abc.abstractmethod
+    @abstractmethod
     def push(self) -> None:
         """Push state changes to source."""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"'{type(self).__name__}' is required "
+            "to implement a method 'push'")
 
-    @abc.abstractmethod
+    @abstractmethod
     def connect(self, *args: Any, **kwds: Any) -> None:
         """Establish connection to source."""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"'{type(self).__name__}' is required "
+            "to implement a method 'connect'")
 
-    @abc.abstractmethod
+    @abstractmethod
     def disconnect(self) -> None:
         """Close connection to source."""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            f"'{type(self).__name__}' is required "
+            "to implement a method 'disconnect'")
+
+#
+# Accessor
+#
+
+class FileAccessor(ABC):
+    """File Accessor/Opener Base Class."""
+
+    @property
+    @abstractmethod
+    def name(self) -> Optional[str]:
+        raise NotImplementedError(
+            f"'{type(self).__name__}' is required "
+            "to implement a property 'name'")
+
+    @abstractmethod
+    def open(self, *args: Any, **kwds: Any) -> IO[Any]:
+        raise NotImplementedError(
+            f"'{type(self).__name__}' is required "
+            "to implement a method 'open'")

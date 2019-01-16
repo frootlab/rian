@@ -12,11 +12,11 @@ import warnings
 from zipfile import BadZipFile, ZipFile, ZipInfo
 import io
 from pathlib import Path, PurePath
-from nemoa.base import attrib, env
+from nemoa.base import abc, attrib, env
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
 from nemoa.io import ini
 from nemoa.types import BinaryFileLike, BytesLike, ClassVar
-from nemoa.types import List, OptBytes, OptStr, OptPathLike, FileAccessor
+from nemoa.types import List, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, ErrMeta, ErrType, ErrStack
 from nemoa.types import FileLike, StrList, OptPath, Optional
 from nemoa.types import Any, AnyOp
@@ -236,7 +236,7 @@ class File(attrib.Container):
         # Reload saved workpace from file
         self.load(path, pwd=self._pwd)
 
-    def get_file_accessor(self, path: PathLike) -> FileAccessor:
+    def get_file_accessor(self, path: PathLike) -> abc.FileAccessor:
         """Get file accessor to workspace member.
 
         Args:
@@ -248,18 +248,18 @@ class File(attrib.Container):
                 True.
 
         Returns:
-            :class:`File accessor <nemoa.types.FileAccessor>` to workspace
+            :class:`File accessor <nemoa.base.abc.FileAccessor>` to workspace
             member.
 
         """
         def wrap_open(path: PathLike) -> AnyOp:
             def wrapped_open(
-                    obj: FileAccessor, *args: Any, **kwds: Any) -> FileLike:
+                    obj: abc.FileAccessor, *args: Any, **kwds: Any) -> FileLike:
                 return self.open(path, *args, **kwds)
             return wrapped_open
 
         return type( # pylint: disable=E0110
-            'FileAccessor', (FileAccessor,), {
+            'FileAccessor', (abc.FileAccessor, ), {
             'name': str(path),
             'open': wrap_open(path)})()
 

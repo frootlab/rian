@@ -11,12 +11,12 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import attrib, env
+from nemoa.base import abc, attrib, env
 from nemoa.core import log
 from nemoa.io import ini, ws
 from nemoa.types import Any, BytesLike, ClassVar, ErrType, ErrMeta, ErrStack
 from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
-from nemoa.types import PathLike, StrDict, StrList, StrOrInt, FileAccessor
+from nemoa.types import PathLike, StrDict, StrList, StrOrInt
 
 #
 # Structural Types
@@ -154,7 +154,7 @@ class Session(attrib.Container):
         if hasattr(self._ws, 'close'):
             self._ws.close()
 
-    def get_file_accessor(self, path: PathLike) -> FileAccessor:
+    def get_file_accessor(self, path: PathLike) -> abc.FileAccessor:
         """Get file accessor to workspace member.
 
         Args:
@@ -166,8 +166,8 @@ class Session(attrib.Container):
                 True.
 
         Returns:
-            :class:`File accessor <nemoa.types.FileAccessor>` to workspace
-            member.
+            Instance of class :class:`~nemoa.base.abc.FileAccessor`, which
+            points to a workspace member.
 
         """
         return self._ws.get_file_accessor(path)

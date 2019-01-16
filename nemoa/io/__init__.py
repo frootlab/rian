@@ -10,10 +10,10 @@ import contextlib
 import io
 from pathlib import Path
 import weakref
-from nemoa.base import env, abc
+from nemoa.base import abc, env
 from nemoa.errors import PullError, PushError, ConnectError, DisconnectError
 from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
-from nemoa.types import ErrMeta, ErrType, ErrStack, FileAccessor
+from nemoa.types import ErrMeta, ErrType, ErrStack
 from nemoa.types import BinaryFileLike, TextFileLike
 
 #
@@ -26,9 +26,9 @@ class FileInfo:
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
-            to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessor>` or an opened file object in reading
-            or writing mode.
+            to a valid entry in the file system, an instance of the class
+            :class:`~nemoa.base.abc.FileAccessor` or an opened file object in
+            reading or writing mode.
 
     """
 
@@ -90,7 +90,7 @@ class FileConnector:
             return self._open_from_textfile(ref, *args, **kwds)
         if isinstance(ref, io.BufferedIOBase):
             return self._open_from_raw(ref, *args, **kwds)
-        if isinstance(ref, FileAccessor):
+        if isinstance(ref, abc.FileAccessor):
             return self._open_from_accessor(ref, *args, **kwds)
 
         raise TypeError(
@@ -146,7 +146,7 @@ class FileConnector:
         return io.TextIOWrapper(file) # binary -> text (read)
 
     def _open_from_accessor(
-            self, ref: FileAccessor, *args: Any, **kwds: Any) -> FileLike:
+            self, ref: abc.FileAccessor, *args: Any, **kwds: Any) -> FileLike:
         file = ref.open(*args, **kwds)
         self._children.append(weakref.proxy(file))
         return file
@@ -171,9 +171,9 @@ class FileProxy(abc.Proxy):
     Args:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
-            to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessor>` or an opened file object in reading
-            or writing mode.
+            to a valid entry in the file system, an instance of the class
+            :class:`~nemoa.base.abc.FileAccessor` or an opened file object in
+            reading or writing mode.
         mode: String, which characters specify the mode in which the file stream
             is wrapped. If mode contains the character 'r', then a
             :meth:`.pull`-request is executed during the initialisation,
@@ -295,8 +295,8 @@ def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[FileLike]:
 
     Args:
         file: :term:`File reference` that points to a valid filename in the
-            directory structure of the system, a :term:`file object` or a
-            generic :class:`file accessor <nemoa.types.FileAccessor>`.
+            directory structure of the system, a :term:`file object` or an
+            instance of the class :class:`~nemoa.base.abc.FileAccessor`.
         mode: String, which characters specify the mode in which the file stream
             is opened. The default mode is text reading mode. Supported
             characters are:
@@ -323,8 +323,8 @@ def tmpfile(file: FileRef) -> Iterator[Path]:
 
     Args:
         file: :term:`File reference` that points to a valid filename in the
-            directory structure of the system, a :term:`file object` or a
-            generic :class:`file accessor <nemoa.types.FileAccessor>`.
+            directory structure of the system, a :term:`file object` or an
+            instance of the class :class:`~nemoa.base.abc.FileAccessor`.
 
     Yields:
         :term:`path-like object` that points to a temporary file.

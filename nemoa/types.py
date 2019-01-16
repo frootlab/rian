@@ -6,12 +6,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import abc
 import os
 import types
 from typing import Any, Callable, ClassVar, Dict, Hashable, IO, Iterable
 from typing import Iterator, List, Mapping, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized, Generic
+from nemoa.base import abc
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')
@@ -32,21 +32,7 @@ void: Callable[..., None] = lambda *args, **kwds: None
 # Stub Classes
 ################################################################################
 
-class FileAccessor(abc.ABC):
-    """File Accessor/Opener Base Class."""
 
-    @property
-    @abc.abstractmethod
-    def name(self) -> Optional[str]:
-        raise NotImplementedError(
-            f"'type(self).__name__' is required "
-            "to implement a property with name 'name'")
-
-    @abc.abstractmethod
-    def open(self, *args: Any, **kwds: Any) -> IO[Any]:
-        raise NotImplementedError(
-            f"'type(self).__name__' is required "
-            "to implement a method with name 'open'")
 
 ################################################################################
 # Structural Types for Literals and Collections of Literals
@@ -196,7 +182,7 @@ PathLikeList = List[PathLike]
 OptPathLike = Optional[PathLike]
 
 # File References
-FileRef = Union[FileLike, PathLike, FileAccessor]
+FileRef = Union[FileLike, PathLike, abc.FileAccessor]
 
 ################################################################################
 # Structural Types for external Packages

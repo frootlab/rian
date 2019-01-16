@@ -39,7 +39,7 @@ def load(
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessor>` or an opened file object in reading
+            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
             mode.
         scheme: Dictionary of dictionaries, which determines the structure of
             the configuration dictionary. If scheme is None, the INI-file is
@@ -148,7 +148,7 @@ def save(
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessor>` or an opened file object in writing
+            <nemoa.base.abc.FileAccessor>` or an opened file object in writing
             mode.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
@@ -227,7 +227,7 @@ def get_comment(file: FileRef) -> str:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.types.FileAccessor>` or an opened file object in reading
+            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
             or writing mode.
 
     Returns:
