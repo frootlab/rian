@@ -319,7 +319,7 @@ class TestOperator(ModuleTestCase):
 
         with self.subTest(domain=tuple):
             prj = f(domain=tuple)
-            self.assertFalse(prj is f())
+            self.assertTrue(prj is f())
             self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(domain=list):
