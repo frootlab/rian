@@ -94,17 +94,32 @@ class TestAttrib(ModuleTestCase):
     module = attrib
 
     def test_Group(self) -> None:
-        class LeafGroup(attrib.Group):
+
+        class Leaf(attrib.Group):
             __slots__: StrList = []
             data: property = attrib.Content()
             meta: property = attrib.MetaData()
 
-        class CompositeGroup(attrib.Group):
+        class Branch(attrib.Group):
             __slots__: StrList = []
-            group: attrib.Group = attrib.create_group(LeafGroup)
+            leaf: attrib.Group = Leaf()
+            data: property = attrib.Content()
 
-        group = CompositeGroup()
-        self.assertRaises(AttributeError, setattr, group, 'attr', None)
+        class Tree(attrib.Group):
+            __slots__: StrList = []
+            branch: attrib.Group = Branch()
+            temp: property = attrib.Temporary()
+
+        g1 = Tree()
+        g2 = Tree()
+
+        # Check correct usage of __slot__
+        self.assertRaises(AttributeError, setattr, g1, 'attr', None)
+
+        # Check Re-Creation and Instantiation of Subgroups
+        g1.branch.data = 1 # type: ignore
+        self.assertNotEqual(g2.branch.data, 1) # type: ignore
+
 
 class TestStype(ModuleTestCase):
     module = stype

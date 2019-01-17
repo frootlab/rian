@@ -6,6 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import copy
 from typing import Any, Optional, Union, Callable
 from nemoa import errors
 from nemoa.base import check
@@ -417,7 +418,7 @@ class Group:
             'parent': parent, 'readonly': readonly, 'remote': remote,
             'inherit': inherit, 'content': content, 'metadata': metadata}
         self._attr_group_init_state = state
-        self._init_attr_group(**state)
+        self._init_attr_group(state)
 
     #
     # Protected Class Methods
@@ -499,29 +500,9 @@ class Group:
     # Protected Methods
     #
 
-    def _init_attr_group(
-            self, parent: Optional['Group'] = None, readonly: OptBool = None,
-            remote: OptBool = None, inherit: OptBool = None,
-            content: OptStrDict = None, metadata: OptStrDict = None) -> None:
-
-        self._attr_group_name = ''
-        self._attr_group_prefix = ''
-        self._attr_group_parent = parent
-        self._attr_group_defaults = {}
-        self._attr_group_data = content or {}
-        self._attr_group_meta = metadata or {}
-        self._attr_group_temp = {}
-
-        if readonly is not None:
-            self._attr_group_defaults['readonly'] = readonly
-        if remote is not None:
-            self._attr_group_defaults['remote'] = remote
-        if inherit is not None:
-            self._attr_group_defaults['inherit'] = inherit
-
     def _create_attr_group(self) -> None:
 
-        # Create name space for new instance of self
+        # Create name space for new instance
         space: StrDict = {'__slots__': []}
         for attr in self._get_attr_subgroups():
             if '.' in attr:
@@ -530,11 +511,34 @@ class Group:
             obj = getattr(self, attr)
             cls = type(obj)
             new_cls = type(cls.__name__, (cls, ), {'__slots__': []})
-            new_obj = new_cls(**obj._attr_group_init_state)
-            space[attr] = new_obj
+            space[attr] = new_cls(**obj._attr_group_init_state)
+            del obj
 
         cls = self.__class__
         self.__class__ = type(cls.__name__, (cls, ), space)
+
+    def _init_attr_group(self, state: StrDict) -> None:
+
+        # Set Defaults
+        self._attr_group_name = ''
+        self._attr_group_prefix = ''
+        self._attr_group_parent = state.get('parent', None)
+        self._attr_group_defaults = {}
+        self._attr_group_data = {}
+        self._attr_group_meta = {}
+        self._attr_group_temp = {}
+
+        # Update attributes using state
+        if isinstance(state.get('content', None), dict):
+            self._attr_group_data = copy.deepcopy(state['content'])
+        if isinstance(state.get('metadata', None), dict):
+            self._attr_group_meta = copy.deepcopy(state['metadata'])
+        if state.get('readonly', None) is not None:
+            self._attr_group_defaults['readonly'] = state['readonly']
+        if state.get('remote', None) is not None:
+            self._attr_group_defaults['remote'] = state['remote']
+        if state.get('inherit', None) is not None:
+            self._attr_group_defaults['inherit'] = state['inherit']
 
     def _get_attr_group_parent(self) -> Optional['Group']:
         return self._attr_group_parent
