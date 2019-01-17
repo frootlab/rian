@@ -10,15 +10,16 @@ from abc import ABC, ABCMeta, abstractmethod
 from typing import Any, Dict, Tuple, Optional, IO
 
 #
-# Creational Design Patterns
+# Creational Patterns
 #
 
 class SingletonMeta(ABCMeta):
     """Metaclass for Singleton Classes.
 
-    Singleton Classes create a single instance per application.
-
-    Args:
+    Singleton classes only create a single instance per application. This
+    creation behaviour is comparable to global variables and used to ensure the
+    application global uniqueness and accessibility of an object. Usage examples
+    include logging, sentinel objects and application global configurations.
 
     """
     _registry: Dict[type, object] = {}
@@ -40,26 +41,6 @@ class SingletonMeta(ABCMeta):
 class Singleton(metaclass=SingletonMeta):
     """Base Class for Singleton Classes."""
     __slots__: list = []
-
-def singleton_object(cls: SingletonMeta) -> object:
-    """Class decorator that instantiates a Singleton class.
-
-    Args:
-
-    Return:
-
-    """
-    # Adapt init, hash, repr, and reduce from class to allow instantiation,
-    # representation, hashing and pickling
-    setattr(cls, '__call__', lambda self, *args, **kwds: self)
-    setattr(cls, '__hash__', lambda self: hash(cls))
-    setattr(cls, '__repr__', lambda self: cls.__name__)
-    setattr(cls, '__reduce__', lambda self: cls.__name__)
-
-    # Instantiate Singleton class and return instance
-    obj = cls()
-    setattr(obj, '__name__', cls.__name__)
-    return obj
 
 class MultitonMeta(ABCMeta):
     """Metaclass for Multiton Classes.
@@ -104,21 +85,40 @@ class MultitonMeta(ABCMeta):
             cls._registry[key] = obj
         return obj
 
-    @classmethod
-    def __instancecheck__(mcs, obj: object) -> bool:
-        if obj.__class__ is mcs:
-            return True
-        return isinstance(obj.__class__, mcs)
-
 class Multiton(metaclass=MultitonMeta):
     """Base Class for Multiton Classes."""
     __slots__: list = []
+
+def sentinel(cls: SingletonMeta) -> object:
+    """Class decorator that creates a Sentinel from a Singleton class.
+
+    Args:
+        cls: Subclass of the class :class:`Singleton`
+
+    Returns:
+        Instance of the given Singleton class, which adopts a class like
+        behaviour, including the ability of instantion, hashing and its
+        representation.
+
+    """
+    # Wrap class methods to itself (in the original class), to provide a
+    # class like behaviour of the sentinel object, including the ability of
+    # instantion, hashing and its representation.
+    setattr(cls, '__call__', lambda self, *args, **kwds: self)
+    setattr(cls, '__hash__', lambda self: hash(cls))
+    setattr(cls, '__repr__', lambda self: cls.__name__)
+    setattr(cls, '__reduce__', lambda self: cls.__name__)
+
+    # Instantiate Singleton class and return instance
+    obj = cls()
+    setattr(obj, '__name__', cls.__name__)
+    return obj
 
 #
 # Proxies
 #
 
-class Proxy(metaclass=ABCMeta):
+class Proxy(ABC):
     """Abstract Base Class for Proxies."""
 
     _connected: bool

@@ -35,16 +35,16 @@ class TestAbc(ModuleTestCase):
         self.assertTrue(f() is f())
         self.assertTrue(f(1) is f(2))
 
-    def test_singleton_object(self) -> None:
+    def test_sentinel(self) -> None:
 
-        @abc.singleton_object
-        class Singleton(metaclass=abc.SingletonMeta):
+        @abc.sentinel
+        class Sentinel(abc.Singleton):
             def __init__(self) -> None:
                 self.test = True
 
-        self.assertEqual(Singleton.__name__, type(Singleton).__name__)
-        self.assertTrue(hasattr(Singleton, 'test'))
-        self.assertTrue(Singleton.test)
+        self.assertEqual(Sentinel.__name__, type(Sentinel).__name__)
+        self.assertTrue(hasattr(Sentinel, 'test'))
+        self.assertTrue(Sentinel.test)
 
     def test_MultitonMeta(self) -> None:
         pass # Implicitely tested by test_Multiton()
@@ -314,15 +314,30 @@ class TestOperator(ModuleTestCase):
         with self.subTest():
             prj = f()
             self.assertTrue(prj is f())
-            self.assertIsInstance(prj, operator.Identity)
-
-        with self.subTest(args=tuple()):
-            prj = f()
-            self.assertIsInstance(prj, operator.Zero)
             self.assertEqual(prj(1), None)
+            self.assertIsInstance(prj, operator.Zero)
+
+        with self.subTest(domain=tuple):
+            prj = f(domain=tuple)
+            self.assertFalse(prj is f())
+            self.assertIsInstance(prj, operator.Zero)
+
+        with self.subTest(domain=list):
+            prj = f(domain=list)
+            self.assertIsInstance(prj, operator.Zero)
+
+        with self.subTest(domain=dict):
+            prj = f(domain=dict)
+            self.assertIsInstance(prj, operator.Zero)
+
+        with self.subTest(domain=object):
+            prj = f(domain=object)
+            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a',)):
             prj = f('a')
+            self.assertFalse(prj is f())
+            self.assertTrue(prj is f('a'))
             self.assertIsInstance(prj, operator.Identity)
             self.assertEqual(prj(1), 1)
 
@@ -336,10 +351,6 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(prj(1, 2), 1)
             self.assertRaises(IndexError, prj)
 
-        with self.subTest(domain=tuple):
-            prj = f(domain=tuple)
-            self.assertIsInstance(prj, operator.Zero)
-
         with self.subTest(args=('a', 'b'), domain=tuple):
             prj = f('a', 'b', domain=tuple)
             self.assertEqual(prj((1, 2)), (1, 2))
@@ -347,10 +358,6 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('a', 'b'), domain=(tuple, ('a', 'b', 'c'))):
             prj = f('a', 'b', domain=(tuple, ('a', 'b', 'c')))
             self.assertEqual(prj((1, 2, 3)), (1, 2))
-
-        with self.subTest(domain=list):
-            prj = f(domain=list)
-            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=list):
             prj = f('a', 'b', domain=list)
@@ -360,17 +367,9 @@ class TestOperator(ModuleTestCase):
             prj = f('a', 'b', domain=(list, ('a', 'b', 'c')))
             self.assertEqual(prj([1, 2, 3]), (1, 2))
 
-        with self.subTest(domain=dict):
-            prj = f(domain=dict)
-            self.assertIsInstance(prj, operator.Zero)
-
         with self.subTest(args=('a', 'b'), domain=dict):
             prj = f('a', 'b', domain=dict)
             self.assertEqual(prj({'a':1, 'b':2}), (1, 2))
-
-        with self.subTest(domain=object):
-            prj = f(domain=object)
-            self.assertIsInstance(prj, operator.Zero)
 
         with self.subTest(args=('a', 'b'), domain=object):
             prj = f('a', 'b', domain=object)
