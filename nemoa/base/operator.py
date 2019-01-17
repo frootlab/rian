@@ -218,9 +218,9 @@ class Projection(Operator, abc.Multiton):
             target type is tuple.
 
     """
-    __slots__ = ['_operator']
+    __slots__ = ['_built_call']
 
-    _operator: Any
+    _built_call: Any
 
     def __new__(
             cls, *args: FieldID, domain: stype.DomLike = None,
@@ -255,18 +255,18 @@ class Projection(Operator, abc.Multiton):
         # If the formatter is an identity operator, return getter. If the getter
         # is an identity operator, precede a tuple 'packer' to the formatter
         if isinstance(formatter, Identity):
-            self._operator = getter
+            self._built_call = getter
         elif isinstance(getter, Identity):
-            self._operator = compose(formatter, lambda *args: args)
+            self._built_call = compose(formatter, lambda *args: args)
         else:
-            self._operator = compose(formatter, getter)
+            self._built_call = compose(formatter, getter)
 
     def __call__(self, *args: Any) -> Any:
-        return self._operator(*args)
+        return self._built_call(*args)
 
     def __repr__(self) -> str:
-        if isinstance(self._operator, Operator):
-            return repr(self._operator)
+        if isinstance(self._built_call, Operator):
+            return repr(self._built_call)
         name = type(self).__name__
         try:
             frame = self._domain.frame
@@ -278,7 +278,7 @@ class Projection(Operator, abc.Multiton):
 
     def __len__(self) -> int:
         try:
-            return len(self._operator)
+            return len(self._built_call)
         except TypeError:
             return len(self._target.frame)
 
@@ -359,7 +359,6 @@ class Projection(Operator, abc.Multiton):
         # TODO: raise InvalidValueError!
         raise InvalidTypeError('target type', target.type, (tuple, list, dict))
 
-
 class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
     """Class for mapping operators.
 
@@ -376,11 +375,11 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
             variables. By default the identity is used.
 
     """
-    __slots__ = ['_variables', '_call_partial', '_call_total']
+    __slots__ = ['_variables', '_built_components', '_built_call']
 
     _variables: Tuple[Variable, ...]
-    _call_partial: Tuple[AnyOp, ...]
-    _call_total: Any
+    _built_components: Tuple[AnyOp, ...]
+    _built_call: Any
 
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
@@ -390,17 +389,17 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         self._update_variables(*args, default=default)
         self._update_domain(domain)
         self._update_target(target)
-        self._update_call_partial()
-        self._update_call_total()
+        self._build_components()
+        self._build_call()
 
     def __call__(self, *args: Any) -> Any:
-        return self._call_total(*args)
+        return self._built_call(*args)
 
     def __getitem__(self, pos: Union[int, slice]) -> Any:
         if isinstance(pos, int):
-            return self._call_partial[pos]
+            return self._built_components[pos]
         if isinstance(pos, slice):
-            ops = self._call_partial[pos]
+            ops = self._built_components[pos]
             return lambda *args: tuple(op(*args) for op in ops)
         raise InvalidTypeError('pos', pos, (int, slice))
 
@@ -452,7 +451,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         defaults = {'fields': fields}
         self._target = stype.create_domain(target, defaults=defaults)
 
-    def _update_call_partial(self) -> None:
+    def _build_components(self) -> None:
         # Check if all field identifiers are found within the frame. Note that
         # this is also True if no frame is used, since set() <= set()
         if not set(self.fields) <= set(self._domain.frame):
@@ -471,9 +470,9 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
                 ops.append(compose(var.operator, getter))
             else:
                 ops.append(compose(var.operator, getter, unpack=True))
-        self._call_partial = tuple(ops)
+        self._built_components = tuple(ops)
 
-    def _update_call_total(self) -> None:
+    def _build_call(self) -> None:
         variables = self._variables
         domain = self._domain
         target = self._target
@@ -481,7 +480,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # If no variables are specified, the mapper is the zero operator of the
         # target type.
         if not variables:
-            self._call_total = Zero(target)
+            self._built_call = Zero(target)
             return
 
         # Check if the mapper can be implemented as a coordinate projection. In
@@ -492,10 +491,10 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
             fields = tuple(var.frame[0] for var in variables)
             projection = Projection(
                 *fields, domain=self.domain, target=self.target)
-            if hasattr(projection, '_operator'):
-                self._call_total = projection._operator
+            if hasattr(projection, '_built_call'):
+                self._built_call = projection._built_call
             else:
-                self._call_total = projection
+                self._built_call = projection
             return
 
         # If the mapper can not be implemented as a projection ...
@@ -504,7 +503,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # 2. apply all component operators ...
         # 3. single formatter
         mapper: AnyOp
-        f = self._call_partial
+        f = self._built_components
         if len(self) == 1:
             mapper = f[0]
         elif len(self) == 2:
@@ -520,11 +519,11 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # If the formatter is an identity operator, return mapper. If the mapper
         # is an identity operator, precede a tuple 'packer' to the formatter
         if isinstance(formatter, Identity):
-            self._call_total = mapper
+            self._built_call = mapper
         elif isinstance(mapper, Identity):
-            self._call_total = compose(formatter, lambda *args: args)
+            self._built_call = compose(formatter, lambda *args: args)
         else:
-            self._call_total = compose(formatter, mapper)
+            self._built_call = compose(formatter, mapper)
 
 class Lambda(Operator):
     """Class for operators, that are based on arithmetic expressions.
@@ -546,8 +545,10 @@ class Lambda(Operator):
             is compiled after it is parsed.
 
     """
+    __slots__ = ['_expression', '_built_call']
+
     _expression: str
-    _operator: Any
+    _built_call: Any
 
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
@@ -558,21 +559,21 @@ class Lambda(Operator):
 
         # Create Operator
         if expression:
-            self._create_operator(assemble=assemble)
+            self._build_call(assemble=assemble)
         elif callable(default):
-            self._operator = default
+            self._built_call = default
         else:
-            self._operator = Zero()
+            self._built_call = Zero()
 
     def __call__(self, *args: Any) -> Any:
-        return self._operator(*args)
+        return self._built_call(*args)
 
     def __repr__(self) -> str:
         with contextlib.suppress(AttributeError):
             if self._expression:
                 return f"{type(self).__name__}('{self._expression}')"
         with contextlib.suppress(AttributeError):
-            return repr(self._operator)
+            return repr(self._built_call)
         return f"{type(self).__name__}()"
 
     #
@@ -582,7 +583,7 @@ class Lambda(Operator):
     @property
     def variables(self) -> Frame:
         with contextlib.suppress(AttributeError):
-            attrs = self._operator.variables
+            attrs = self._built_call.variables
             if callable(attrs):
                 return tuple(attrs())
             return attrs
@@ -594,7 +595,7 @@ class Lambda(Operator):
     # Protected
     #
 
-    def _create_operator(self, assemble: bool) -> None:
+    def _build_call(self, assemble: bool) -> None:
         expr = self._expression
         dom = self._domain
 
@@ -648,11 +649,11 @@ class Lambda(Operator):
             term = f"lambda {','.join(names)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
-            self._operator = compose(runner, mapper)
+            self._built_call = compose(runner, mapper)
             self._domain = stype.create_domain((dom_type, tuple(names)))
         else:
-            self._operator = compose(expr.evaluate, mapper)
-            setattr(self._operator, 'variables', expr.variables)
+            self._built_call = compose(expr.evaluate, mapper)
+            setattr(self._built_call, 'variables', expr.variables)
 
     def _get_variables(self, expr: str, frame: Frame) -> Mapper:
         if not frame:

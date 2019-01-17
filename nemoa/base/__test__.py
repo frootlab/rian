@@ -442,7 +442,7 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=tuple()):
             op = f()
             self.assertIsInstance(op, operator.Lambda)
-            self.assertIsInstance(op._operator, operator.Zero)
+            self.assertIsInstance(op._built_call, operator.Zero)
 
         with self.subTest(args=('x^2 + y')):
             op = f('x^2 + y')
