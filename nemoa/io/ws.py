@@ -13,6 +13,7 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 import io
 from pathlib import Path, PurePath
 from nemoa.base import abc, attrib, env
+from nemoa.core import dc as dcore
 from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
 from nemoa.io import ini
 from nemoa.types import BinaryFileLike, BytesLike, ClassVar
@@ -71,7 +72,7 @@ class File(attrib.Container):
     # Public Attributes and Attribute Groups
     #
 
-    dc: attrib.Group = attrib.create_group(attrib.DCGroup)
+    dc: attrib.Group = attrib.create_group(dcore.Group)
 
     startup: property = attrib.MetaData(dtype=Path, category='hooks')
     startup.__doc__ = """

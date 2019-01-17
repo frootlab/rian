@@ -12,7 +12,7 @@ __docformat__ = 'google'
 
 from pathlib import Path
 from nemoa.base import abc, attrib, env
-from nemoa.core import log
+from nemoa.core import dc as dcore, log
 from nemoa.io import ini, ws
 from nemoa.types import Any, BytesLike, ClassVar, ErrType, ErrMeta, ErrStack
 from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
@@ -48,7 +48,7 @@ class Session(attrib.Container):
     # Public Attributes and Attribute Groups
     #
 
-    dc: attrib.Group = attrib.create_group(attrib.DCGroup, remote=True)
+    dc: attrib.Group = attrib.create_group(dcore.Group, remote=True)
 
     config: property = attrib.MetaData(dtype=dict)
     config.__doc__ = """Session configuration."""

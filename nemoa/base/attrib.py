@@ -6,19 +6,17 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from typing import Any, Optional, Union, Callable
 from nemoa.base import check
-from datetime import datetime as Date
 from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
-from nemoa.types import Any, OptClassInfo, Optional, TypeHint
-from nemoa.types import OptStr, OptStrDict, OptType, StrDict, StrList, void
-from nemoa.types import OptDict, OptBool, Union, Callable
+from nemoa.types import OptClassInfo, TypeHint, OptStr, OptStrDict, OptType
+from nemoa.types import StrDict, StrList, void, OptDict, OptBool
 
 #
 # Structural Types
 #
 
 OptCallOrStr = Optional[Union[Callable, str]]
-OptGroup = Optional['Group']
 
 #
 # Group Class and Constructor
@@ -57,10 +55,13 @@ class Group:
             are not superseeded.
 
     """
+    __slots__ = [
+        '_attr_group_name', '_attr_group_prefix', '_attr_group_parent',
+        '_attr_group_defaults']
 
     _attr_group_name: str
     _attr_group_prefix: str
-    _attr_group_parent: OptGroup
+    _attr_group_parent: Optional['Group']
     _attr_group_defaults: dict
 
     #
@@ -68,7 +69,7 @@ class Group:
     #
 
     def __init__(
-            self, parent: OptGroup = None, readonly: OptBool = None,
+            self, parent: Optional['Group'] = None, readonly: OptBool = None,
             remote: OptBool = None, inherit: OptBool = None) -> None:
         self._attr_group_name = ''
         self._attr_group_prefix = ''
@@ -81,6 +82,57 @@ class Group:
             self._attr_group_defaults['remote'] = remote
         if inherit is not None:
             self._attr_group_defaults['inherit'] = inherit
+
+    #
+    # Protected Methods
+    #
+
+    @classmethod
+    def _get_attr_subgroups(cls) -> StrDict:
+        def get_groups(cls: type) -> StrDict:
+            groups: StrDict = {}
+            for base in cls.__mro__:
+                for name, obj in base.__dict__.items():
+                    if not isinstance(obj, Group):
+                        continue
+                    groups[name] = obj
+                    for key, val in get_groups(type(obj)).items():
+                        groups[name + '.' + key] = val
+            return groups
+        return get_groups(cls)
+
+    def _get_attr_group_parent(self) -> Optional['Group']:
+        return self._attr_group_parent
+
+    def _set_attr_group_parent(self, group: 'Group') -> None:
+        self._attr_group_parent = group
+        self._upd_attr_subgroup_parent()
+
+    def _upd_attr_subgroup_parent(self) -> None:
+        parent = self._attr_group_parent
+        if not parent:
+            return
+
+        # Update group parents by simultaneously stepping downwards the object
+        # hierachy, within self and within the parent, to obtain the same
+        # attribute hierarchy: e.g. parent.group.attr -> child.group.attr
+        for fqn in self._get_attr_subgroups():
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+                if parent:
+                    parent = getattr(parent, attr, None)
+            obj._attr_group_parent = parent # pylint: disable=W0212
+
+    def _upd_attr_subgroup_defaults(self) -> None:
+        defaults = self._attr_group_defaults
+
+        # Update groups defaults by stepping downwards the object hierarchy
+        for fqn in self._get_attr_subgroups():
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+            obj._attr_group_defaults.update(defaults) # pylint: disable=W0212
 
 def create_group(
         cls: type, parent: Optional[Group] = None, readonly: OptBool = None,
@@ -259,7 +311,7 @@ class Attribute(property):
             fdel=fdel if callable(fdel) else None,
             doc=doc)
 
-        # Check Types of Arguments
+        # Check Types
         check.has_opt_type("'dtype'", dtype, TypeHint)
         check.has_type("'readonly'", readonly, bool)
         check.has_opt_type("'binddict'", binddict, str)
@@ -268,7 +320,7 @@ class Attribute(property):
         check.has_type("'inherit'", inherit, bool)
         check.has_opt_type("'category'", category, str)
 
-        # Bind Instance Attributes to Argument Values
+        # Bind Instance Attributes to given Arguments
         self.sget = fget if isinstance(fget, str) else None
         self.sset = fset if isinstance(fset, str) else None
         self.sdel = fdel if isinstance(fdel, str) else None
@@ -286,7 +338,7 @@ class Attribute(property):
         self.name = name # Set name of the Attribute
 
     def __get__(self, obj: Group, cls: OptType = None) -> Any:
-        # Bypass get requests
+        # Bypass getter requests
         if self._is_remote(obj):
             return self._get_remote(obj)
         if callable(self.fget):
@@ -302,7 +354,7 @@ class Attribute(property):
         return self._get_default(obj)
 
     def __set__(self, obj: Group, val: Any) -> None:
-        # Bypass and type check set requests
+        # Bypass and type check setter requests
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):
@@ -322,7 +374,7 @@ class Attribute(property):
         binddict[bindkey] = val
 
     def __delete__(self, obj: Group) -> None:
-        # Bypass delete requests
+        # Bypass destructor requests
         if self._get_readonly(obj):
             raise ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):
@@ -407,7 +459,7 @@ class Attribute(property):
         delattr(parent, self.name)
 
 #
-# Attribute Container Base Class Standard Attribute Classes for Containers
+# Standard Attribute Classes
 #
 
 class Content(Attribute):
@@ -522,20 +574,6 @@ class Container(Group):
     #
 
     @classmethod
-    def _get_attr_subgroups(cls) -> StrDict:
-        def get_groups(cls: type) -> StrDict:
-            groups: StrDict = {}
-            for base in cls.__mro__:
-                for name, obj in base.__dict__.items():
-                    if not isinstance(obj, Group):
-                        continue
-                    groups[name] = obj
-                    for key, val in get_groups(type(obj)).items():
-                        groups[name + '.' + key] = val
-            return groups
-        return get_groups(cls)
-
-    @classmethod
     def _get_attr_names(
             cls, group: OptStr = None, classinfo: OptClassInfo = None,
             category: OptStr = None) -> StrList:
@@ -593,13 +631,6 @@ class Container(Group):
                 types[name] = getattr(obj, 'classinfo', None)
         return types
 
-    def _get_attr_group_parent(self) -> Optional[Group]:
-        return self._attr_group_parent
-
-    def _set_attr_group_parent(self, group: Group) -> None:
-        self._attr_group_parent = group
-        self._upd_attr_subgroup_parent()
-
     def _get_attr_group_defaults(self) -> OptDict:
         return self._attr_group_defaults
 
@@ -621,32 +652,6 @@ class Container(Group):
             setattr(obj, '_data_content', self._data_content)
             setattr(obj, '_data_metadata', self._data_metadata)
             setattr(obj, '_data_temporary', self._data_temporary)
-
-    def _upd_attr_subgroup_parent(self) -> None:
-        parent = self._attr_group_parent
-        if not parent:
-            return
-
-        # Update group parents by simultaneously stepping downwards the object
-        # hierachy, within self and within the parent, to obtain the same
-        # attribute hierarchy: e.g. parent.group.attr -> child.group.attr
-        for fqn in self._get_attr_subgroups():
-            obj = self
-            for attr in fqn.split('.'):
-                obj = getattr(obj, attr)
-                if parent:
-                    parent = getattr(parent, attr, None)
-            obj._attr_group_parent = parent # pylint: disable=W0212
-
-    def _upd_attr_subgroup_defaults(self) -> None:
-        defaults = self._attr_group_defaults
-
-        # Update groups defaults by stepping downwards the object hierarchy
-        for fqn in self._get_attr_subgroups():
-            obj = self
-            for attr in fqn.split('.'):
-                obj = getattr(obj, attr)
-            obj._attr_group_defaults.update(defaults) # pylint: disable=W0212
 
     def _get_attr_values(self,
             group: OptStr = None, classinfo: OptClassInfo = None,
@@ -693,150 +698,3 @@ class Container(Group):
         # Set attributes within the respective attribute group
         for key, val in data.items():
             setattr(obj, key, val)
-
-#
-# Dublin Core (DC) Attributes
-#
-
-class DCAttr(MetaData):
-    """Dublin Core Metadata Attribute."""
-
-    def __init__(self, *args: Any, **kwds: Any) -> None:
-        """Initialize default values of attribute descriptor."""
-        super().__init__(*args, **kwds)
-        self.dtype = self.dtype or str
-        self.inherit = True
-
-class DCGroup(Group):
-    """Dublin Core Metadata Element Set, Version 1.1.
-
-    The Dublin Core Metadata Element Set is a vocabulary of fifteen properties
-    for use in resource description. The name "Dublin" is due to its origin at a
-    1995 invitational workshop in Dublin, Ohio; "core" because its elements are
-    broad and generic, usable for describing a wide range of resources.
-
-    The fifteen element "Dublin Core" described in this standard is part of a
-    larger set of metadata vocabularies and technical specifications maintained
-    by the Dublin Core Metadata Initiative (DCMI). The full set of vocabularies,
-    DCMI Metadata Terms [DCMI-TERMS]_, also includes sets of resource classes
-    (including the DCMI Type Vocabulary [DCMI-TYPE]_), vocabulary encoding
-    schemes, and syntax encoding schemes. The terms in DCMI vocabularies are
-    intended to be used in combination with terms from other, compatible
-    vocabularies in the context of application profiles and on the basis of the
-    DCMI Abstract Model [DCAM]_.
-    """
-
-    title: property = DCAttr(category='content')
-    title.__doc__ = """
-    A name given to the resource. Typically, a Title will be a name by which the
-    resource is formally known.
-    """
-
-    subject: property = DCAttr(category='content')
-    subject.__doc__ = """
-    The topic of the resource. Typically, the subject will be represented using
-    keywords, key phrases, or classification codes. Recommended best practice is
-    to use a controlled vocabulary.
-    """
-
-    description: property = DCAttr(category='content')
-    description.__doc__ = """
-    An account of the resource. Description may include - but is not limited to
-    - an abstract, a table of contents, a graphical representation, or a
-    free-text account of the resource.
-    """
-
-    type: property = DCAttr(category='content')
-    type.__doc__ = """
-    The nature or genre of the resource. Recommended best practice is to use a
-    controlled vocabulary such as the DCMI Type Vocabulary [DCMI-TYPE]_. To
-    describe the file format, physical medium, or dimensions of the resource,
-    use the Format element.
-    """
-
-    source: property = DCAttr(category='content')
-    source.__doc__ = """
-    A related resource from which the described resource is derived. The
-    described resource may be derived from the related resource in whole or in
-    part. Recommended best practice is to identify the related resource by means
-    of a string conforming to a formal identification system.
-    """
-
-    coverage: property = DCAttr(category='content')
-    coverage.__doc__ = """
-    The spatial or temporal topic of the resource, the spatial applicability of
-    the resource, or the jurisdiction under which the resource is relevant.
-    Spatial topic and spatial applicability may be a named place or a location
-    specified by its geographic coordinates. Temporal topic may be a named
-    period, date, or date range. A jurisdiction may be a named administrative
-    entity or a geographic place to which the resource applies. Recommended best
-    practice is to use a controlled vocabulary such as the Thesaurus of
-    Geographic Names [TGN]_. Where appropriate, named places or time periods can
-    be used in preference to numeric identifiers such as sets of coordinates or
-    date ranges.
-    """
-
-    relation: property = DCAttr(category='content')
-    relation.__doc__ = """
-    A related resource. Recommended best practice is to identify the related
-    resource by means of a string conforming to a formal identification system.
-    """
-
-    creator: property = DCAttr(category='property')
-    creator.__doc__ = """
-    An entity primarily responsible for making the resource. Examples of a
-    Creator include a person, an organization, or a service. Typically, the name
-    of a Creator should be used to indicate the otree.
-    """
-
-    publisher: property = DCAttr(category='property')
-    publisher.__doc__ = """
-    An entity responsible for making the resource available. Examples of a
-    Publisher include a person, an organization, or a service. Typically, the
-    name of a Publisher should be used to indicate the otree.
-    """
-
-    contributor: property = DCAttr(category='property')
-    contributor.__doc__ = """
-    An entity responsible for making contributions to the resource. Examples of
-    a Contributor include a person, an organization, or a service. Typically,
-    the name of a Contributor should be used to indicate the otree.
-    """
-
-    rights: property = DCAttr(category='property')
-    rights.__doc__ = """
-    Information about rights held in and over the resource. Typically, rights
-    information includes a statement about various property rights associated
-    with the resource, including intellectual property rights.
-    """
-
-    identifier: property = DCAttr(category='instance')
-    identifier.__doc__ = """
-    An unambiguous reference to the resource within a given context. Recommended
-    best practice is to identify the resource by means of a string or number
-    conforming to a formal identification system. Examples of formal
-    identification systems include the Uniform Resource Identifier (URI)
-    (including the Uniform Resource Locator (URL), the Digital Object Identifier
-    (DOI) and the International Standard Book Number (ISBN).
-    """
-
-    format: property = DCAttr(category='instance')
-    format.__doc__ = """
-    The file format, physical medium, or dimensions of the resource. Examples of
-    dimensions include size and duration. Recommended best practice is to use a
-    controlled vocabulary such as the list of Internet Media Types [MIME]_.
-    """
-
-    language: property = DCAttr(category='instance')
-    language.__doc__ = """
-    A language of the resource. Recommended best practice is to use a controlled
-    vocabulary such as :RFC:`4646`.
-    """
-
-    date: property = DCAttr(dtype=Date, factory=Date.now, category='instance')
-    date.__doc__ = """
-    A point or period of time associated with an event in the lifecycle of the
-    resource. Date may be used to express temporal information at any level of
-    granularity. Recommended best practice is to use an encoding scheme, such as
-    the W3CDTF profile of ISO 8601 [W3CDTF]_.
-    """
