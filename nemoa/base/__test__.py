@@ -12,7 +12,7 @@ from unittest import mock
 from pathlib import Path
 import typing
 import numpy as np
-from nemoa.base import abc, array, binary, check, env, literal, mapping
+from nemoa.base import abc, array, attrib, binary, check, env, literal, mapping
 from nemoa.base import operator, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
@@ -89,6 +89,22 @@ class TestArray(ModuleTestCase):
         tgt = np.array([(1., 2), (3., 4)], dtype=[('x', float), ('y', int)])
         new = array.add_cols(tgt, src, 'z')
         self.assertEqual(new['z'][0], 'a')
+
+class TestAttrib(ModuleTestCase):
+    module = attrib
+
+    def test_Group(self) -> None:
+        class LeafGroup(attrib.Group):
+            __slots__: StrList = []
+            data: property = attrib.Content()
+            meta: property = attrib.MetaData()
+
+        class CompositeGroup(attrib.Group):
+            __slots__: StrList = []
+            group: attrib.Group = attrib.create_group(LeafGroup)
+
+        group = CompositeGroup()
+        self.assertRaises(AttributeError, setattr, group, 'attr', None)
 
 class TestStype(ModuleTestCase):
     module = stype

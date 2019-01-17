@@ -7,8 +7,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from typing import Any, Optional, Union, Callable
+from nemoa import errors
 from nemoa.base import check
-from nemoa.errors import InvalidAttrError, MissingKwError, ReadOnlyAttrError
 from nemoa.types import OptClassInfo, TypeHint, OptStr, OptStrDict, OptType
 from nemoa.types import StrDict, StrList, void, OptDict, OptBool
 
@@ -17,168 +17,6 @@ from nemoa.types import StrDict, StrList, void, OptDict, OptBool
 #
 
 OptCallOrStr = Optional[Union[Callable, str]]
-
-#
-# Group Class and Constructor
-#
-
-class Group:
-    """Base Class for Attribute Groups.
-
-    Attribute Groups are used to group a set of attribute declarations, so that
-    they can be incorporated as a group into complex type definitions. Attribute
-    Groups also allow superseeding the settings of their contained attributes to
-    control the group behaviour in different applications.
-
-    Args:
-        parent: Reference to parent :class:'attribute group
-            <nemoa.base.attrib.Group>', which is used for inheritance and
-            shared attributes. By default no parent is referenced.
-        readonly: Boolean value, which superseeds the contained attributes
-            read-only behaviour. For the values True or False, all contained
-            attributes respectively are read-only or read-writable. By the
-            default value None, the attributes' settings are not superseeded.
-        remote: Boolean value, which superseeds the contained attributes remote
-            behaviour. For the value True, all contained attributes are shared
-            attributes of the parent attribute group, which must be referenced
-            and contain the respetive attributes, or an error is raised. For the
-            value False, all contained atributes are handled locally, regardless
-            of a parent group. By the default value None, the attributes'
-            settings are not superseeded.
-        inherit: Boolean value, which superseeds the contained attributes
-            inheritance behaviour. For the value True, all contained attributes
-            inherit their default values from the attribute values of the parent
-            attribute group, which must be referenced and contain the respetive
-            attributes, or an error is raised. For the value False, the default
-            values of the contained atributes are handled locally, regardless of
-            a parent group. By the default value None, the attributes settings
-            are not superseeded.
-
-    """
-    __slots__ = [
-        '_attr_group_name', '_attr_group_prefix', '_attr_group_parent',
-        '_attr_group_defaults']
-
-    _attr_group_name: str
-    _attr_group_prefix: str
-    _attr_group_parent: Optional['Group']
-    _attr_group_defaults: dict
-
-    #
-    # Special Methods
-    #
-
-    def __init__(
-            self, parent: Optional['Group'] = None, readonly: OptBool = None,
-            remote: OptBool = None, inherit: OptBool = None) -> None:
-        self._attr_group_name = ''
-        self._attr_group_prefix = ''
-        self._attr_group_parent = parent
-        self._attr_group_defaults = {}
-
-        if readonly is not None:
-            self._attr_group_defaults['readonly'] = readonly
-        if remote is not None:
-            self._attr_group_defaults['remote'] = remote
-        if inherit is not None:
-            self._attr_group_defaults['inherit'] = inherit
-
-    #
-    # Protected Methods
-    #
-
-    @classmethod
-    def _get_attr_subgroups(cls) -> StrDict:
-        def get_groups(cls: type) -> StrDict:
-            groups: StrDict = {}
-            for base in cls.__mro__:
-                for name, obj in base.__dict__.items():
-                    if not isinstance(obj, Group):
-                        continue
-                    groups[name] = obj
-                    for key, val in get_groups(type(obj)).items():
-                        groups[name + '.' + key] = val
-            return groups
-        return get_groups(cls)
-
-    def _get_attr_group_parent(self) -> Optional['Group']:
-        return self._attr_group_parent
-
-    def _set_attr_group_parent(self, group: 'Group') -> None:
-        self._attr_group_parent = group
-        self._upd_attr_subgroup_parent()
-
-    def _upd_attr_subgroup_parent(self) -> None:
-        parent = self._attr_group_parent
-        if not parent:
-            return
-
-        # Update group parents by simultaneously stepping downwards the object
-        # hierachy, within self and within the parent, to obtain the same
-        # attribute hierarchy: e.g. parent.group.attr -> child.group.attr
-        for fqn in self._get_attr_subgroups():
-            obj = self
-            for attr in fqn.split('.'):
-                obj = getattr(obj, attr)
-                if parent:
-                    parent = getattr(parent, attr, None)
-            obj._attr_group_parent = parent # pylint: disable=W0212
-
-    def _upd_attr_subgroup_defaults(self) -> None:
-        defaults = self._attr_group_defaults
-
-        # Update groups defaults by stepping downwards the object hierarchy
-        for fqn in self._get_attr_subgroups():
-            obj = self
-            for attr in fqn.split('.'):
-                obj = getattr(obj, attr)
-            obj._attr_group_defaults.update(defaults) # pylint: disable=W0212
-
-def create_group(
-        cls: type, parent: Optional[Group] = None, readonly: OptBool = None,
-        remote: OptBool = None, inherit: OptBool = None) -> Group:
-    """Create new Attribute Group.
-
-    Creates a new Attribute Group of a given Attribute Group Class with given,
-    group settings. The instantiation by this contructor is mandatory for
-    independent Attribute Groups of same classes, since the class has to be
-    created per instance.
-
-    Args:
-        cls: Subclass of the :class:'Group class <nemoa.base.attrib.Group>'
-        parent: Reference to parent object, which is used for attribute
-            inheritance and remote/shared attributes. If provided, the parent
-            object is required to by an instance of a subclass of the
-            :class:'Group class <nemoa.base.attrib.Group>'. By default no parent
-            object is referenced.
-        readonly: Boolean value, which superseeds the contained attributes
-            read-only behaviour. For the values True or False, all contained
-            attributes respectively are read-only or read-writable. By the
-            default value None, the attributes' settings are not superseeded.
-        remote: Boolean value, which superseeds the contained attributes remote
-            behaviour. For the value True, all contained attributes are shared
-            attributes of the parent attribute group, which must be referenced
-            and contain the respetive attributes, or an error is raised. For the
-            value False, all contained atributes are handled locally, regardless
-            of a parent group. By the default value None, the attributes'
-            settings are not superseeded.
-        inherit: Boolean value, which superseeds the contained attributes
-            inheritance behaviour. For the value True, all contained attributes
-            inherit their default values from the attribute values of the parent
-            attribute group, which must be referenced and contain the respetive
-            attributes, or an error is raised. For the value False, the default
-            values of the contained atributes are handled locally, regardless of
-            a parent group. By the default value None, the attributes settings
-            are not superseeded.
-
-    Returns:
-        New Attribute Group instance of given Attribute Group Class.
-
-    """
-    new_cls = type(cls.__name__, (cls,), {})
-    new_obj = new_cls(readonly=readonly, remote=remote, inherit=inherit)
-
-    return new_obj
 
 #
 # Attribute Class
@@ -337,7 +175,7 @@ class Attribute(property):
     def __set_name__(self, cls: type, name: str) -> None:
         self.name = name # Set name of the Attribute
 
-    def __get__(self, obj: Group, cls: OptType = None) -> Any:
+    def __get__(self, obj: 'Group', cls: OptType = None) -> Any:
         # Bypass getter requests
         if self._is_remote(obj):
             return self._get_remote(obj)
@@ -353,10 +191,10 @@ class Attribute(property):
             pass
         return self._get_default(obj)
 
-    def __set__(self, obj: Group, val: Any) -> None:
+    def __set__(self, obj: 'Group', val: Any) -> None:
         # Bypass and type check setter requests
         if self._get_readonly(obj):
-            raise ReadOnlyAttrError(obj, self.name)
+            raise errors.ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):
             self._set_remote(obj, val)
             return
@@ -373,10 +211,10 @@ class Attribute(property):
         bindkey = self._get_bindkey(obj)
         binddict[bindkey] = val
 
-    def __delete__(self, obj: Group) -> None:
+    def __delete__(self, obj: 'Group') -> None:
         # Bypass destructor requests
         if self._get_readonly(obj):
-            raise ReadOnlyAttrError(obj, self.name)
+            raise errors.ReadOnlyAttrError(obj, self.name)
         if self._is_remote(obj):
             self._del_remote(obj)
             return
@@ -394,7 +232,7 @@ class Attribute(property):
     # Protected Methods
     #
 
-    def _get_bindict(self, obj: Group) -> dict:
+    def _get_bindict(self, obj: 'Group') -> dict:
         binddict = self.binddict
         if not binddict:
             return obj.__dict__
@@ -402,14 +240,14 @@ class Attribute(property):
         check.has_type(binddict, getattr(obj, binddict), dict)
         return getattr(obj, binddict)
 
-    def _get_bindkey(self, obj: Group) -> str:
+    def _get_bindkey(self, obj: 'Group') -> str:
         prefix = obj._attr_group_prefix # pylint: disable=W0212
         name = self.bindkey or self.name
         if prefix:
             return '.'.join([prefix, name])
         return name
 
-    def _get_default(self, obj: Group) -> Any:
+    def _get_default(self, obj: 'Group') -> Any:
         group = obj._attr_group_defaults # pylint: disable=W0212
 
         # Inherit default value from parent
@@ -428,31 +266,31 @@ class Attribute(property):
 
         return self.default
 
-    def _get_readonly(self, obj: Group) -> bool:
+    def _get_readonly(self, obj: 'Group') -> bool:
         if obj is None:
             return self.readonly
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'readonly', self.readonly)
 
-    def _is_remote(self, obj: Group) -> bool:
+    def _is_remote(self, obj: 'Group') -> bool:
         if obj is None:
             return self.remote
         return obj._attr_group_defaults.get( # pylint: disable=W0212
             'remote', self.remote)
 
-    def _get_remote(self, obj: Group) -> bool:
+    def _get_remote(self, obj: 'Group') -> bool:
         parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
             raise ReferenceError() # TODO
         return getattr(parent, self.name, self.default)
 
-    def _set_remote(self, obj: Group, val: Any) -> None:
+    def _set_remote(self, obj: 'Group', val: Any) -> None:
         parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
             raise ReferenceError() # TODO
         setattr(parent, self.name, val)
 
-    def _del_remote(self, obj: Group) -> None:
+    def _del_remote(self, obj: 'Group') -> None:
         parent = obj._attr_group_parent # pylint: disable=W0212
         if not parent:
             raise ReferenceError() # TODO
@@ -468,7 +306,7 @@ class Content(Attribute):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        self.binddict = '_data_content'
+        self.binddict = '_attr_group_data'
 
 class MetaData(Attribute):
     """Attributes for persistent metadata storage objects."""
@@ -477,7 +315,7 @@ class MetaData(Attribute):
         """Initialize default values of attribute descriptor."""
         kwds['inherit'] = kwds.get('inherit', True)
         super().__init__(*args, **kwds)
-        self.binddict = '_data_metadata'
+        self.binddict = '_attr_group_meta'
 
 class Temporary(Attribute):
     """Attributes for non persistent storage objects."""
@@ -485,7 +323,7 @@ class Temporary(Attribute):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        self.binddict = '_data_temporary'
+        self.binddict = '_attr_group_temp'
 
 class Virtual(Attribute):
     """Attributes for non persistent virtual objects."""
@@ -495,21 +333,30 @@ class Virtual(Attribute):
         super().__init__(*args, **kwds)
         if not callable(self.fget):
             if not isinstance(self.sget, str):
-                raise MissingKwError('fget', self)
+                raise errors.MissingKwError('fget', self)
         self.readonly = not (callable(self.fset) or isinstance(self.sget, str))
 
-class Container(Group):
-    """Base class for Attribute Containers.
+#
+# Attribute Groups
+#
 
-    Attribute Containers are Attribute Groups, which support Standard Attribute
-    Classes for Content, MetaData, Temporary Data and Virtual Attributes.
-    Thereupon Attribute Containers provide a public interface to access and
-    control it's contained Attributes and Attribute Groups.
+class Group:
+    """Class for Attribute Groups.
+
+    Attribute Groups are used to bind attributes and furter attribute groups
+    into tree structured objects with a hierarchical control structure. This
+    includes a common interface to access and mutate the values of it's
+    contained (sub)attributes as well as a common interface to superseed the
+    settings of it's contained (sub)groups to control the group behaviour in
+    different applications.
 
     Args:
-        parent: Reference to parent :class:'attribute group
+        parent: Reference to logical parent :class:'attribute group
             <nemoa.base.attrib.Group>', which is used for inheritance and
-            shared attributes. By default no parent is referenced.
+            shared attributes. By default no parent is referenced. Note: The
+            logical parent does not denote the attribute group, that contains
+            this group, but an equally structured attribute, which is used
+            to infere dynamical values for the attributes.
         readonly: Boolean value, which superseeds the contained attributes
             read-only behaviour. For the values True or False, all contained
             attributes respectively are read-only or read-writable. By the
@@ -533,45 +380,62 @@ class Container(Group):
         metadata:
 
     """
+    __slots__ = [
+        '_attr_group_init_state', '_attr_group_name', '_attr_group_prefix',
+        '_attr_group_parent', '_attr_group_defaults', '_attr_group_data',
+        '_attr_group_meta', '_attr_group_temp']
 
-    _data_content: StrDict
-    _data_metadata: StrDict
-    _data_temporary: StrDict
-
-    #
-    # Public Attributes
-    #
-
-    parent: property = Virtual(fget='_get_attr_group_parent',
-        fset='_set_attr_group_parent', dtype=Group)
-    parent.__doc__ = """Reference to parent Attribute Group."""
+    _attr_group_init_state: StrDict
+    _attr_group_name: str
+    _attr_group_prefix: str
+    _attr_group_parent: Optional['Group']
+    _attr_group_defaults: StrDict
+    _attr_group_data: StrDict
+    _attr_group_meta: StrDict
+    _attr_group_temp: StrDict
 
     #
     # Special Methods
     #
 
     def __init__(
-            self, parent: Optional[Group] = None, readonly: OptBool = None,
+            self, parent: Optional['Group'] = None, readonly: OptBool = None,
             remote: OptBool = None, inherit: OptBool = None,
             content: OptStrDict = None, metadata: OptStrDict = None) -> None:
-        """Initialize Instance Variables."""
-        # Initialize Attribute Group
-        super().__init__(
-            parent=parent, readonly=readonly, remote=remote, inherit=inherit)
 
-        # Initialize dictinaries for content, metadata and temporary fields
-        self._data_content = content or {}
-        self._data_metadata = metadata or {}
-        self._data_temporary = {}
+        # When an Attribute Group countains furter Attribute Groups as
+        # Subgroups, the Subgroups are bound to the Class and therefore shared
+        # among the instances. To avoid this behaviour, the group
+        # class for any instance is inherited from itself and created as a new
+        # class.
+        self._create_attr_group()
 
-        # Bind Attribute Subgroups to fields and update Subgroup Settings
-        self._bind_attr_subgroups()
-        self._upd_attr_subgroup_parent()
-        self._upd_attr_subgroup_defaults()
+        # Store initial state to allow later re-initialization, when
+        # re-creating the Subgroups. Afterward initialize the instance with
+        # initation states for settings, content, metadata and temporary storage
+        state = {
+            'parent': parent, 'readonly': readonly, 'remote': remote,
+            'inherit': inherit, 'content': content, 'metadata': metadata}
+        self._attr_group_init_state = state
+        self._init_attr_group(**state)
 
     #
-    # Access Attributes by their group name, ClassInfo and category
+    # Protected Class Methods
     #
+
+    @classmethod
+    def _get_attr_subgroups(cls) -> StrDict:
+        def get_groups(cls: type) -> StrDict:
+            groups: StrDict = {}
+            for base in cls.__mro__:
+                for name, obj in base.__dict__.items():
+                    if not isinstance(obj, Group):
+                        continue
+                    groups[name] = obj
+                    for key, val in get_groups(type(obj)).items():
+                        groups[name + '.' + key] = val
+            return groups
+        return get_groups(cls)
 
     @classmethod
     def _get_attr_names(
@@ -583,7 +447,7 @@ class Container(Group):
         if group:
             groups = cls._get_attr_subgroups()
             if not group in groups:
-                raise InvalidAttrError(cls, group)
+                raise errors.InvalidAttrError(cls, group)
             root = type(groups[group])
         else:
             root = cls
@@ -612,7 +476,7 @@ class Container(Group):
         if group:
             groups = cls._get_attr_subgroups()
             if not group in groups:
-                raise InvalidAttrError(cls, group)
+                raise errors.InvalidAttrError(cls, group)
             root = type(groups[group])
         else:
             root = cls
@@ -631,6 +495,80 @@ class Container(Group):
                 types[name] = getattr(obj, 'classinfo', None)
         return types
 
+    #
+    # Protected Methods
+    #
+
+    def _init_attr_group(
+            self, parent: Optional['Group'] = None, readonly: OptBool = None,
+            remote: OptBool = None, inherit: OptBool = None,
+            content: OptStrDict = None, metadata: OptStrDict = None) -> None:
+
+        self._attr_group_name = ''
+        self._attr_group_prefix = ''
+        self._attr_group_parent = parent
+        self._attr_group_defaults = {}
+        self._attr_group_data = content or {}
+        self._attr_group_meta = metadata or {}
+        self._attr_group_temp = {}
+
+        if readonly is not None:
+            self._attr_group_defaults['readonly'] = readonly
+        if remote is not None:
+            self._attr_group_defaults['remote'] = remote
+        if inherit is not None:
+            self._attr_group_defaults['inherit'] = inherit
+
+    def _create_attr_group(self) -> None:
+
+        # Create name space for new instance of self
+        space: StrDict = {'__slots__': []}
+        for attr in self._get_attr_subgroups():
+            if '.' in attr:
+                continue
+
+            obj = getattr(self, attr)
+            cls = type(obj)
+            new_cls = type(cls.__name__, (cls, ), {'__slots__': []})
+            new_obj = new_cls(**obj._attr_group_init_state)
+            space[attr] = new_obj
+
+        cls = self.__class__
+        self.__class__ = type(cls.__name__, (cls, ), space)
+
+    def _get_attr_group_parent(self) -> Optional['Group']:
+        return self._attr_group_parent
+
+    def _set_attr_group_parent(self, group: 'Group') -> None:
+        self._attr_group_parent = group
+        self._upd_attr_subgroup_parent()
+
+    def _upd_attr_subgroup_parent(self) -> None:
+        parent = self._attr_group_parent
+        if not parent:
+            return
+
+        # Update group parents by simultaneously stepping downwards the object
+        # hierachy, within self and within the parent, to obtain the same
+        # attribute hierarchy: e.g. parent.group.attr -> child.group.attr
+        for fqn in self._get_attr_subgroups():
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+                if parent:
+                    parent = getattr(parent, attr, None)
+            obj._attr_group_parent = parent # pylint: disable=W0212
+
+    def _upd_attr_subgroup_defaults(self) -> None:
+        defaults = self._attr_group_defaults
+
+        # Update groups defaults by stepping downwards the object hierarchy
+        for fqn in self._get_attr_subgroups():
+            obj = self
+            for attr in fqn.split('.'):
+                obj = getattr(obj, attr)
+            obj._attr_group_defaults.update(defaults) # pylint: disable=W0212
+
     def _get_attr_group_defaults(self) -> OptDict:
         return self._attr_group_defaults
 
@@ -643,15 +581,13 @@ class Container(Group):
             for attr in fqn.split('.'):
                 obj = getattr(obj, attr)
 
-            # Set group name and prefix to avoid namespace collision
-            # within dictionary buffers
+            # Set group name and prefix to avoid namespace collision within
+            # dictionary buffers and bind dictionary buffers
             setattr(obj, '_attr_group_name', fqn.rsplit('.', 1)[-1])
             setattr(obj, '_attr_group_prefix', fqn)
-
-            # Bind dictionary buffers
-            setattr(obj, '_data_content', self._data_content)
-            setattr(obj, '_data_metadata', self._data_metadata)
-            setattr(obj, '_data_temporary', self._data_temporary)
+            setattr(obj, '_attr_group_data', self._attr_group_data)
+            setattr(obj, '_attr_group_meta', self._attr_group_meta)
+            setattr(obj, '_attr_group_temp', self._attr_group_temp)
 
     def _get_attr_values(self,
             group: OptStr = None, classinfo: OptClassInfo = None,
@@ -698,3 +634,122 @@ class Container(Group):
         # Set attributes within the respective attribute group
         for key, val in data.items():
             setattr(obj, key, val)
+
+
+def create_group(
+        cls: type, parent: Optional[Group] = None, readonly: OptBool = None,
+        remote: OptBool = None, inherit: OptBool = None,
+        content: OptStrDict = None, metadata: OptStrDict = None) -> Group:
+    """Create new Attribute Group.
+
+    Creates a new Attribute Group of a given Attribute Group Class with given,
+    group settings. The instantiation by this contructor is mandatory for
+    independent Attribute Groups of same classes, since the class has to be
+    created per instance.
+
+    Args:
+        cls: Subclass of the :class:'Group class <nemoa.base.attrib.Group>'
+        parent: Reference to parent object, which is used for attribute
+            inheritance and remote/shared attributes. If provided, the parent
+            object is required to by an instance of a subclass of the
+            :class:'Group class <nemoa.base.attrib.Group>'. By default no parent
+            object is referenced.
+        readonly: Boolean value, which superseeds the contained attributes
+            read-only behaviour. For the values True or False, all contained
+            attributes respectively are read-only or read-writable. By the
+            default value None, the attributes' settings are not superseeded.
+        remote: Boolean value, which superseeds the contained attributes remote
+            behaviour. For the value True, all contained attributes are shared
+            attributes of the parent attribute group, which must be referenced
+            and contain the respetive attributes, or an error is raised. For the
+            value False, all contained atributes are handled locally, regardless
+            of a parent group. By the default value None, the attributes'
+            settings are not superseeded.
+        inherit: Boolean value, which superseeds the contained attributes
+            inheritance behaviour. For the value True, all contained attributes
+            inherit their default values from the attribute values of the parent
+            attribute group, which must be referenced and contain the respetive
+            attributes, or an error is raised. For the value False, the default
+            values of the contained atributes are handled locally, regardless of
+            a parent group. By the default value None, the attributes settings
+            are not superseeded.
+        content:
+        metadata:
+
+    Returns:
+        New Attribute Group instance of given Attribute Group Class.
+
+    """
+    new_cls = type(cls.__name__, (cls,), {'__slots__': []})
+    new_obj = new_cls(
+        readonly=readonly, remote=remote, inherit=inherit, content=content,
+        metadata=metadata)
+
+    return new_obj
+
+#
+# Attribute Containers
+#
+
+class Container(Group):
+    """Base class for Attribute Containers.
+
+    Attribute Containers are Attribute Groups, which support Standard Attribute
+    Classes for Content, MetaData, Temporary Data and Virtual Attributes.
+    Thereupon Attribute Containers provide a public interface to access and
+    control it's contained Attributes and Attribute Groups.
+
+    Args:
+        parent: Reference to parent :class:'attribute group
+            <nemoa.base.attrib.Group>', which is used for inheritance and
+            shared attributes. By default no parent is referenced.
+        readonly: Boolean value, which superseeds the contained attributes
+            read-only behaviour. For the values True or False, all contained
+            attributes respectively are read-only or read-writable. By the
+            default value None, the attributes' settings are not superseeded.
+        remote: Boolean value, which superseeds the contained attributes remote
+            behaviour. For the value True, all contained attributes are shared
+            attributes of the parent attribute group, which must be referenced
+            and contain the respetive attributes, or an error is raised. For the
+            value False, all contained atributes are handled locally, regardless
+            of a parent group. By the default value None, the attributes'
+            settings are not superseeded.
+        inherit: Boolean value, which superseeds the contained attributes
+            inheritance behaviour. For the value True, all contained attributes
+            inherit their default values from the attribute values of the parent
+            attribute group, which must be referenced and contain the respetive
+            attributes, or an error is raised. For the value False, the default
+            values of the contained atributes are handled locally, regardless of
+            a parent group. By the default value None, the attributes settings
+            are not superseeded.
+        content:
+        metadata:
+
+    """
+
+    #
+    # Public Attributes
+    #
+
+    parent: property = Virtual(fget='_get_attr_group_parent',
+        fset='_set_attr_group_parent', dtype=Group)
+    parent.__doc__ = """Reference to parent Attribute Group."""
+
+    #
+    # Special Methods
+    #
+
+    def __init__(
+            self, parent: Optional[Group] = None, readonly: OptBool = None,
+            remote: OptBool = None, inherit: OptBool = None,
+            content: OptStrDict = None, metadata: OptStrDict = None) -> None:
+        """Initialize Instance Variables."""
+        # Initialize Attribute Group
+        super().__init__(
+            parent=parent, readonly=readonly, remote=remote, inherit=inherit,
+            content=content, metadata=metadata)
+
+        # Bind Attribute Subgroups to fields and update Subgroup Settings
+        self._bind_attr_subgroups()
+        self._upd_attr_subgroup_parent()
+        self._upd_attr_subgroup_defaults()
