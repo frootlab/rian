@@ -344,8 +344,8 @@ class Virtual(Attribute):
 class Group:
     """Class for Attribute Groups.
 
-    Attribute Groups are used to bind attributes and furter attribute groups
-    into tree structured objects with a hierarchical control structure. This
+    Attribute Groups are used to bind attributes (and other attribute groups)
+    into tree structured objects with a hierarchical control interface. This
     includes a common interface to access and mutate the values of it's
     contained (sub)attributes as well as a common interface to superseed the
     settings of it's contained (sub)groups to control the group behaviour in
@@ -540,6 +540,13 @@ class Group:
         if state.get('inherit', None) is not None:
             self._attr_group_defaults['inherit'] = state['inherit']
 
+        # Bind data dictionaries of subgroups
+        self._bind_attr_subgroups()
+
+        # Update Subgroup Settings
+        self._upd_attr_subgroup_parent()
+        self._upd_attr_subgroup_defaults()
+
     def _get_attr_group_parent(self) -> Optional['Group']:
         return self._attr_group_parent
 
@@ -639,58 +646,6 @@ class Group:
         for key, val in data.items():
             setattr(obj, key, val)
 
-
-def create_group(
-        cls: type, parent: Optional[Group] = None, readonly: OptBool = None,
-        remote: OptBool = None, inherit: OptBool = None,
-        content: OptStrDict = None, metadata: OptStrDict = None) -> Group:
-    """Create new Attribute Group.
-
-    Creates a new Attribute Group of a given Attribute Group Class with given,
-    group settings. The instantiation by this contructor is mandatory for
-    independent Attribute Groups of same classes, since the class has to be
-    created per instance.
-
-    Args:
-        cls: Subclass of the :class:'Group class <nemoa.base.attrib.Group>'
-        parent: Reference to parent object, which is used for attribute
-            inheritance and remote/shared attributes. If provided, the parent
-            object is required to by an instance of a subclass of the
-            :class:'Group class <nemoa.base.attrib.Group>'. By default no parent
-            object is referenced.
-        readonly: Boolean value, which superseeds the contained attributes
-            read-only behaviour. For the values True or False, all contained
-            attributes respectively are read-only or read-writable. By the
-            default value None, the attributes' settings are not superseeded.
-        remote: Boolean value, which superseeds the contained attributes remote
-            behaviour. For the value True, all contained attributes are shared
-            attributes of the parent attribute group, which must be referenced
-            and contain the respetive attributes, or an error is raised. For the
-            value False, all contained atributes are handled locally, regardless
-            of a parent group. By the default value None, the attributes'
-            settings are not superseeded.
-        inherit: Boolean value, which superseeds the contained attributes
-            inheritance behaviour. For the value True, all contained attributes
-            inherit their default values from the attribute values of the parent
-            attribute group, which must be referenced and contain the respetive
-            attributes, or an error is raised. For the value False, the default
-            values of the contained atributes are handled locally, regardless of
-            a parent group. By the default value None, the attributes settings
-            are not superseeded.
-        content:
-        metadata:
-
-    Returns:
-        New Attribute Group instance of given Attribute Group Class.
-
-    """
-    new_cls = type(cls.__name__, (cls,), {'__slots__': []})
-    new_obj = new_cls(
-        readonly=readonly, remote=remote, inherit=inherit, content=content,
-        metadata=metadata)
-
-    return new_obj
-
 #
 # Attribute Containers
 #
@@ -738,22 +693,3 @@ class Container(Group):
     parent: property = Virtual(fget='_get_attr_group_parent',
         fset='_set_attr_group_parent', dtype=Group)
     parent.__doc__ = """Reference to parent Attribute Group."""
-
-    #
-    # Special Methods
-    #
-
-    def __init__(
-            self, parent: Optional[Group] = None, readonly: OptBool = None,
-            remote: OptBool = None, inherit: OptBool = None,
-            content: OptStrDict = None, metadata: OptStrDict = None) -> None:
-        """Initialize Instance Variables."""
-        # Initialize Attribute Group
-        super().__init__(
-            parent=parent, readonly=readonly, remote=remote, inherit=inherit,
-            content=content, metadata=metadata)
-
-        # Bind Attribute Subgroups to fields and update Subgroup Settings
-        self._bind_attr_subgroups()
-        self._upd_attr_subgroup_parent()
-        self._upd_attr_subgroup_defaults()

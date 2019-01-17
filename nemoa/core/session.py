@@ -48,7 +48,7 @@ class Session(attrib.Container):
     # Public Attributes and Attribute Groups
     #
 
-    dc: attrib.Group = attrib.create_group(dcore.Group, remote=True)
+    dc: attrib.Group = dcore.Group(remote=True)
 
     config: property = attrib.MetaData(dtype=dict)
     config.__doc__ = """Session configuration."""
@@ -494,40 +494,3 @@ def get_instance() -> Session:
     if not '_session' in globals():
         globals()['_session'] = Session()
     return globals()['_session']
-
-# from nemoa.types import Any
-#
-# def cur():
-#     """Get current session instance."""
-#     if '_cur' not in globals():
-#         globals()['_cur'] = new()
-#     return globals()['_cur']
-#
-# def get(*args: Any, **kwds: Any) -> Any:
-#     """Get meta information and content from current session."""
-#     return cur().get(*args, **kwds)
-#
-# def log(*args, **kwds):
-#     """Log message in current session."""
-#     return cur().log(*args, **kwds)
-#
-# def new(*args, **kwds):
-#     """Create session instance from session dictionary."""
-#     from nemoa.session import classes
-#     return classes.new(*args, **kwds)
-#
-# def open(*args, **kwds):
-#     """Open object in current session."""
-#     return cur().open(*args, **kwds)
-#
-# def path(*args: Any, **kwds: Any) -> str:
-#     """Get path for given object in current session."""
-#     return cur().path(*args, **kwds)
-#
-# def run(*args, **kwds):
-#     """Run script in current session."""
-#     return cur().run(*args, **kwds)
-#
-# def set(*args, **kwds):
-#     """Set configuration parameter and env var in current session."""
-#     return cur().set(*args, **kwds)

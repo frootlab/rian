@@ -72,7 +72,7 @@ class File(attrib.Container):
     # Public Attributes and Attribute Groups
     #
 
-    dc: attrib.Group = attrib.create_group(dcore.Group)
+    dc: attrib.Group = dcore.Group()
 
     startup: property = attrib.MetaData(dtype=Path, category='hooks')
     startup.__doc__ = """
