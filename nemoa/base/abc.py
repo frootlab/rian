@@ -86,6 +86,18 @@ class Multiton(metaclass=MultitonMeta):
     """Base Class for Multiton Classes."""
     __slots__: list = []
 
+def objectify(cls: SingletonMeta) -> object:
+    """Class decorator that objectifies a Singleton class.
+
+    Args:
+        cls: Subclass of the class :class:`Singleton`
+
+    Returns:
+        Instance of the given Singleton class
+
+    """
+    return cls()
+
 def sentinel(cls: SingletonMeta) -> object:
     """Class decorator that creates a Sentinel from a Singleton class.
 

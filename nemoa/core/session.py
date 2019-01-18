@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Session management.
-
-This module implements process global session management by a singleton object.
-
-"""
+"""Session management."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import dataclasses
 import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Dict, Optional, NamedTuple
+from typing import Any, ClassVar, Dict, List, Optional
 import weakref
 from nemoa import errors
 from nemoa.base import abc, attrib, env
@@ -23,13 +20,35 @@ from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
 from nemoa.types import PathLike, StrDict, StrList, StrOrInt
 
 #
-# Immutable Parameter Class for Session Register Entries
+# Session Records
 #
 
-class SessionInfo(NamedTuple):
-    """Class for Session Register Entries."""
+@dataclasses.dataclass
+class Record:
+    """Class for Session Records."""
     ref: weakref.ReferenceType
     date: datetime.datetime
+
+#
+# Session Store
+#
+
+@abc.objectify
+class Store(dict, abc.Singleton):
+    """Singleton Class for the Storage of Session Records."""
+
+#
+# Session Manager
+#
+
+# class Manager(abc.Singleton):
+#     """Singleton Class for Session Manager."""
+#
+#     def list(self) -> List[Record]:
+#         return sorted(SessionMeta.store.items()) # type: ignore
+#
+#     def add(self) -> None:
+#         returnn
 
 #
 # Meta Class for Session Base Classes
@@ -42,14 +61,14 @@ class SessionMeta(abc.ABCMeta):
     related to the Multiton Pattern.
 
     """
-    _registry: Dict[Optional[int], SessionInfo] = {}
+    #store: Dict[Optional[int], Record] = {}
 
     def __call__(
             cls, *args: Any, sid: Optional[int] = None, **kwds: Any) -> object:
         # Search for SessionID in registry and - if found - return a refrence
         # to the session instance
         try:
-            return cls._registry[sid].ref()
+            return Store[sid].ref() # type: ignore
         except KeyError:
             pass
 
@@ -66,7 +85,7 @@ class SessionMeta(abc.ABCMeta):
         sid = id(obj)
         ref = weakref.ref(obj)
         date = datetime.datetime.now()
-        cls._registry[sid] = SessionInfo(ref, date)
+        Store[sid] = Record(ref, date) # type: ignore
 
         return obj
 

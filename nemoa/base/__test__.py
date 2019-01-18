@@ -35,6 +35,14 @@ class TestAbc(ModuleTestCase):
         self.assertTrue(f() is f())
         self.assertTrue(f(1) is f(2))
 
+    def test_objectify(self) -> None:
+
+        @abc.objectify
+        class Dict(dict, abc.Singleton):
+            pass
+
+        self.assertIsInstance(Dict, dict)
+
     def test_sentinel(self) -> None:
 
         @abc.sentinel
