@@ -9,12 +9,12 @@ __docformat__ = 'google'
 import dataclasses
 import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, List, Optional
 import weakref
 from nemoa import errors
 from nemoa.base import abc, attrib, env
-from nemoa.core import dc as dcore, log
-from nemoa.io import ini, ws
+from nemoa.core import dcmeta, log, ws
+from nemoa.io import ini
 from nemoa.types import BytesLike, ErrType, ErrMeta, ErrStack
 from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
 from nemoa.types import PathLike, StrDict, StrList, StrOrInt
@@ -45,23 +45,23 @@ class Manager(abc.Singleton):
     _store: Store = Store()
 
     def list(self) -> List[Record]:
-        return sorted(self._store.items())
+        return sorted(self._store.items()) # type: ignore
 
     def get(self, sid: Optional[int]) -> 'Session':
-        return self._store[sid].ref()
+        return self._store[sid].ref() # pylint: disable=E1136
 
     def add(self, session: 'Session') -> None:
         sid = id(session)
-        if sid in self._store:
+        if sid in self._store: # pylint: disable=E1135
             raise errors.FoundError(
                 f"session with id {sid} does already exist")
         ref = weakref.ref(session)
         date = datetime.datetime.now()
         rec = Record(ref=ref, date=date)
-        self._store[sid] = rec
+        self._store[sid] = rec # pylint: disable=E1137
 
     def remove(self, sid: Optional[int]) -> None:
-        del self._store[sid]
+        del self._store[sid] # pylint: disable=E1138
 
 #
 # Meta Class for Session Base Classes
@@ -131,7 +131,7 @@ class Session(attrib.Container, SessionType):
     # Public Attributes and Attribute Groups
     #
 
-    dc: attrib.Group = dcore.Group(remote=True)
+    dc: attrib.Group = dcmeta.Group(remote=True)
 
     config: property = attrib.MetaData(dtype=dict)
     config.__doc__ = """Session configuration."""
@@ -148,14 +148,12 @@ class Session(attrib.Container, SessionType):
     path: property = attrib.Virtual('_get_path')
     path.__doc__ = """Filepath of the current workspace."""
 
-    logger: property = attrib.Temporary(dtype=log.Logger)
-    logger.__doc__ = """Logger instance."""
-
     #
     # Protected Attributes
     #
 
-    _ws: property = attrib.Content(dtype=ws.File)
+    _logger: property = attrib.Temporary(dtype=log.Logger)
+    _file: property = attrib.Content(dtype=ws.Workspace)
 
     #
     # Special Methods
@@ -168,12 +166,12 @@ class Session(attrib.Container, SessionType):
 
         # Initialize instance variables with default values
         self.config = self._default_config.copy()
-        self._ws = ws.File()
+        self._file = ws.Workspace()
+        self._logger = log.Logger()
         self.paths = [env.expand(path) for path in self._default_paths]
-        self.logger = log.Logger()
 
         # Bind session to workspace
-        self.parent = self._ws
+        self.parent = self._file
 
         # Load session configuration from file
         if env.is_file(self._config_file_path):
@@ -216,12 +214,12 @@ class Session(attrib.Container, SessionType):
 
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
-        self._ws = ws.File(filepath=path, pwd=pwd)
-        self.parent = self._ws
+        self._file = ws.Workspace(filepath=path, pwd=pwd)
+        self.parent = self._file
 
     def save(self) -> None:
         """Save Workspace to current file."""
-        self._ws.save()
+        self._file.save()
 
     def saveas(self, filepath: PathLike) -> None:
         """Save the workspace to a file.
@@ -231,14 +229,14 @@ class Session(attrib.Container, SessionType):
                 name of a workspace file.
 
         """
-        self._ws.saveas(filepath)
+        self._file.saveas(filepath)
 
     def close(self) -> None:
         """Close current session."""
-        if self.config.get('autosave_on_exit') and self._ws.changed:
+        if self.config.get('autosave_on_exit') and self._file.changed:
             self.save()
-        if hasattr(self._ws, 'close'):
-            self._ws.close()
+        if hasattr(self._file, 'close'):
+            self._file.close()
 
     def get_file_accessor(self, path: PathLike) -> abc.FileAccessor:
         """Get file accessor to workspace member.
@@ -256,7 +254,7 @@ class Session(attrib.Container, SessionType):
             points to a workspace member.
 
         """
-        return self._ws.get_file_accessor(path)
+        return self._file.get_file_accessor(path)
 
     def open(
             self, filepath: PathLike, workspace: OptPathLike = None,
@@ -296,10 +294,10 @@ class Session(attrib.Container, SessionType):
         """
         if workspace:
             path = self._locate_path(workspace=workspace, basedir=basedir)
-            ws_file = ws.File(filepath=path, pwd=pwd)
+            ws_file = ws.Workspace(filepath=path, pwd=pwd)
             return ws_file.open(
                 filepath, mode=mode, encoding=encoding, is_dir=is_dir)
-        return self._ws.open(
+        return self._file.open(
             filepath, mode=mode, encoding=encoding, is_dir=is_dir)
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
@@ -321,7 +319,7 @@ class Session(attrib.Container, SessionType):
             Boolean value which is True if the file has been appended.
 
         """
-        return self._ws.append(source, target=target)
+        return self._file.append(source, target=target)
 
     def unlink(self, filepath: PathLike, ignore_missing: bool = True) -> bool:
         """Remove file from the current workspace.
@@ -340,7 +338,7 @@ class Session(attrib.Container, SessionType):
             Boolean value, which is True if the given file was removed.
 
         """
-        return self._ws.unlink(filepath, ignore_missing=ignore_missing)
+        return self._file.unlink(filepath, ignore_missing=ignore_missing)
 
     def mkdir(self, dirpath: PathLike, ignore_exists: bool = False) -> bool:
         """Create a new directory in current workspace.
@@ -358,7 +356,7 @@ class Session(attrib.Container, SessionType):
             Boolean value, which is True if the given directory was created.
 
         """
-        return self._ws.mkdir(dirpath, ignore_exists=ignore_exists)
+        return self._file.mkdir(dirpath, ignore_exists=ignore_exists)
 
     def rmdir(
             self, dirpath: PathLike, recursive: bool = False,
@@ -383,7 +381,7 @@ class Session(attrib.Container, SessionType):
             Boolean value, which is True if the given directory was removed.
 
         """
-        return self._ws.rmdir(
+        return self._file.rmdir(
             dirpath, recursive=recursive, ignore_missing=ignore_missing)
 
     def search(self, pattern: OptStr = None) -> StrList:
@@ -402,7 +400,7 @@ class Session(attrib.Container, SessionType):
             workspace, that match the search pattern.
 
         """
-        return self._ws.search(pattern)
+        return self._file.search(pattern)
 
     def copy(self, source: PathLike, target: PathLike) -> bool:
         """Copy file within current workspace.
@@ -422,7 +420,7 @@ class Session(attrib.Container, SessionType):
             Boolean value which is True if the file was copied.
 
         """
-        return self._ws.copy(source, target)
+        return self._file.copy(source, target)
 
     def move(self, source: PathLike, target: PathLike) -> bool:
         """Move file within current workspace.
@@ -442,7 +440,7 @@ class Session(attrib.Container, SessionType):
             Boolean value which is True if the file has been moved.
 
         """
-        return self._ws.move(source, target)
+        return self._file.move(source, target)
 
     def read_text(self, filepath: PathLike, encoding: OptStr = None) -> str:
         """Read text from file in current workspace.
@@ -459,7 +457,7 @@ class Session(attrib.Container, SessionType):
             Contents of the given filepath encoded as string.
 
         """
-        return self._ws.read_text(filepath, encoding=encoding)
+        return self._file.read_text(filepath, encoding=encoding)
 
     def read_bytes(self, filepath: PathLike) -> bytes:
         """Read bytes from file in current workspace.
@@ -473,7 +471,7 @@ class Session(attrib.Container, SessionType):
             Contents of the given filepath as bytes.
 
         """
-        return self._ws.read_bytes(filepath)
+        return self._file.read_bytes(filepath)
 
     def write_text(
             self, text: str, filepath: PathLike,
@@ -492,7 +490,7 @@ class Session(attrib.Container, SessionType):
             Number of characters, that are written to the file.
 
         """
-        return self._ws.write_text(text, filepath, encoding=encoding)
+        return self._file.write_text(text, filepath, encoding=encoding)
 
     def write_bytes(self, data: BytesLike, filepath: PathLike) -> int:
         """Write bytes to file.
@@ -506,7 +504,7 @@ class Session(attrib.Container, SessionType):
             Number of bytes, that are written to the file.
 
         """
-        return self._ws.write_bytes(data, filepath)
+        return self._file.write_bytes(data, filepath)
 
     def log(self, level: StrOrInt, msg: str, *args: Any, **kwds: Any) -> None:
         """Log event.
@@ -526,7 +524,7 @@ class Session(attrib.Container, SessionType):
             **kwds: Additional Keywords, used by the function `Logger.log()`_.
 
         """
-        self.logger.log(level, msg, *args, **kwds)
+        self._logger.log(level, msg, *args, **kwds)
 
     #
     # Protected Methods
@@ -544,13 +542,13 @@ class Session(attrib.Container, SessionType):
         ini.save(config, self._config_file_path)
 
     def _get_path(self) -> OptPath:
-        return self._ws.path
+        return self._file.path
 
     def _get_files(self) -> StrList:
-        return self._ws.search()
+        return self._file.search()
 
     def _get_folders(self) -> StrList:
-        return self._ws.folders
+        return self._file.folders
 
     def _locate_path(
             self, workspace: OptPathLike = None,

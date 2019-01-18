@@ -1,148 +1,109 @@
 # -*- coding: utf-8 -*-
-"""Workspace-file I/O."""
+"""Zip Archive I/O."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import datetime
 import time
 import warnings
 from zipfile import BadZipFile, ZipFile, ZipInfo
 import io
 from pathlib import Path, PurePath
-from nemoa.base import abc, attrib, env
-from nemoa.core import dc as dcore
-from nemoa.errors import DirNotEmptyError, FileNotGivenError, FileFormatError
-from nemoa.io import ini
-from nemoa.types import BinaryFileLike, BytesLike, ClassVar
-from nemoa.types import List, OptBytes, OptStr, OptPathLike
+from typing import Any, List, Optional
+from nemoa.base import abc, env
+from nemoa.errors import DirNotEmptyError, FileNotGivenError
+from nemoa.types import BinaryFileLike, BytesLike, OptBytes, OptStr, OptPathLike
 from nemoa.types import PathLike, PathLikeList, ErrMeta, ErrType, ErrStack
-from nemoa.types import FileLike, StrList, OptPath, Optional
-from nemoa.types import Any, AnyOp
+from nemoa.types import FileLike, StrList, OptPath, AnyOp
 
 #
-# Structural Types
+# Class for ZipFiles
 #
 
-ConfigDict = ini.ConfigDict
-ZipInfoList = List[ZipInfo]
-
-#
-# Workspace File Class
-#
-
-class File(attrib.Container):
-    """Workspace File.
-
-    Workspace files are Zip-Archives, that contain a INI-formatted
-    configuration file 'workspace.ini' in the archives root, and arbitrary
-    resource files within subfolders.
+class File:
+    """In-Memory Zip Archives.
 
     Args:
         filepath: String or :term:`path-like object`, that points to a valid
-            workspace file or None. If the filepath points to a valid workspace
-            file, then the class instance is initialized with a memory copy of
-            the file. If the given file, however, does not exist, isn't a valid
-            ZipFile, or does not contain a workspace configuration, respectively
-            one of the errors FileNotFoundError, BadZipFile or FileFormatError
-            is raised. The default behaviour, if the filepath is None, is to
-            create an empty workspace in the memory, that uses the default
-            folders layout. In this case the attribute maintainer is initialized
-            with the current username.
-        pwd: Bytes representing password of workspace file.
+            ZipFile or None. If the filepath points to a valid ZipFile, then the
+            class instance is initialized with a memory copy of the file. If the
+            given file, however, does not exist or isn't a valid ZipFile,
+            respectively one of the errors FileNotFoundError or BadZipFile is
+            raised. The default behaviour, if the filepath is None, is to create
+            an empty ZipFile in the memory.
+        pwd: Bytes representing password of ZipFile.
 
     """
-
-    #
-    # Protected Class Variables
-    #
-
-    _config_file: ClassVar[Path] = Path('workspace.ini')
-    _default_config: ClassVar[ConfigDict] = {
-        'dc': {
-            'creator': env.get_username(),
-            'date': datetime.datetime.now()}}
-    _default_dir_layout: ClassVar[StrList] = [
-        'dataset', 'network', 'system', 'model', 'script']
-    _default_encoding = env.get_encoding()
-
-    #
-    # Public Attributes and Attribute Groups
-    #
-
-    dc: attrib.Group = dcore.Group()
-
-    startup: property = attrib.MetaData(dtype=Path, category='hooks')
-    startup.__doc__ = """
-    The startup script is a path, that points to a python script inside the
-    workspace, which is executed after loading the workspace.
-    """
-
-    path: property = attrib.Virtual(fget='_get_path')
-    path.__doc__ = """Filepath of the workspace."""
-
-    name: property = attrib.Virtual(fget='_get_name')
-    name.__doc__ = """Filename of the workspace without file extension."""
-
-    files: property = attrib.Virtual(fget='search')
-    files.__doc__ = """List of all files within the workspace."""
-
-    folders: property = attrib.Virtual(fget='_get_folders')
-    folders.__doc__ = """List of all folders within the workspace."""
-
-    changed: property = attrib.Virtual(fget='_get_changed')
-    changed.__doc__ = """Tells whether the workspace file has been changed."""
-
-    #
-    # Protected Attributes
-    #
-
-    _file: property = attrib.Content(dtype=ZipFile)
-    _buffer: property = attrib.Content(dtype=io.BufferedIOBase)
-    _path: property = attrib.Temporary(dtype=Path)
-    _pwd: property = attrib.Temporary(dtype=bytes)
-    _changed: property = attrib.Temporary(dtype=bool, default=False)
+    _file: ZipFile
+    _buffer: io.BytesIO
+    _path: Optional[Path]
+    _pwd: Optional[bytes]
+    _changed: bool
 
     #
     # Special Methods
     #
 
     def __init__(
-            self, filepath: OptPathLike = None, pwd: OptBytes = None,
-            parent: Optional[attrib.Container] = None) -> None:
-        """Load Workspace from file."""
-        super().__init__()
+            self, filepath: OptPathLike = None, pwd: OptBytes = None) -> None:
         if filepath:
             self.load(filepath, pwd=pwd)
         else:
             self._create_new()
 
     def __enter__(self) -> 'File':
-        """Enter with statement."""
         return self
 
     def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
-        """Close workspace file and buffer."""
         self.close()
 
     #
     # Public Methods
     #
 
+    @property
+    def name(self) -> OptStr:
+        """Filename of the ZipFile without file extension."""
+        return getattr(self._path, 'stem', None)
+
+    @property
+    def path(self) -> OptPath:
+        """Filepath of the ZipFile."""
+        return self._path
+
+    @property
+    def changed(self) -> bool:
+        """Tells whether the ZipFile has been changed."""
+        return self._changed
+
+    @property
+    def files(self) -> StrList:
+        """List of all files within the ZipFile."""
+        return self.search()
+
+    @property
+    def folders(self) -> StrList:
+        """List of all folders within the ZipFile."""
+        names: StrList = []
+        for zinfo in self._file.infolist():
+            if getattr(zinfo, 'is_dir')():
+                name = PurePath(zinfo.filename).as_posix() + '/'
+                names.append(name)
+        return sorted(names)
+
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
         """Load Workspace from file.
 
         Args:
             filepath: String or :term:`path-like object`, that points to a valid
-                workspace file. If the filepath points to a valid workspace
-                file, then the class instance is initialized with a memory copy
-                of the file. If the given file, however, does not exist, isn't a
-                valid ZipFile, or does not contain a workspace configuration,
-                respectively one of the errors FileNotFoundError, BadZipFile or
-                FileFormatError is raised.
-            pwd: Bytes representing password of workspace file.
+                ZipFile file. If the filepath points to a valid ZipFile, then
+                the class instance is initialized with a memory copy of the
+                file. If the given file, however, does not exist or isn't a
+                valid ZipFile respectively one of the errors FileNotFoundError
+                or BadZipFile is raised.
+            pwd: Bytes representing password of ZipFile.
 
         """
         # Initialize instance Variables, Buffer and buffered ZipFile
@@ -152,11 +113,14 @@ class File(attrib.Container):
         self._buffer = io.BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
 
+        if not self._path:
+            raise ValueError('') # TODO
+
         # Copy contents from ZipFile to buffered ZipFile
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             try:
-                with ZipFile(self.path, mode='r') as fh:
+                with ZipFile(self._path, mode='r') as fh:
                     for zinfo in fh.infolist():
                         data = fh.read(zinfo, pwd=pwd)
                         # TODO (patrick.michl@gmail.com): The zipfile standard
@@ -174,47 +138,24 @@ class File(attrib.Container):
                 raise BadZipFile(
                     f"file '{self.path}' is not a valid ZIP file") from err
 
-        # Try to open and load workspace configuration from buffer
-        scheme = {
-            'dc': self._get_attr_types(group='dc'),
-            'hooks': self._get_attr_types(category='hooks')}
-        try:
-            with self.open(self._config_file) as file:
-                cfg = ini.load(file, scheme=scheme)
-        except KeyError as err:
-            raise FileFormatError(self.path, 'nemoa workspace') from err
-
-        # Link configuration
-        self._set_attr_values(cfg.get('dc', {}), group='dc') # type: ignore
-
     def save(self) -> None:
-        """Save the workspace to it's filepath."""
+        """Save the ZipFile to it's filepath."""
         if isinstance(self.path, Path):
             self.saveas(self.path)
         else:
             raise FileNotGivenError(
-                "use saveas() to save the workspace to a file")
+                "use saveas() to save the ZipFile to a filepath")
 
     def saveas(self, filepath: PathLike) -> None:
-        """Save the workspace to a file.
+        """Save the ZipFile to a file.
 
         Args:
             filepath: String or :term:`path-like object`, that represents the
-                name of a workspace file.
+                name of a ZipFile.
 
         """
-        path = env.expand(filepath)
 
-        # Update datetime
-        self.date = datetime.datetime.now()
-
-        # Update 'workspace.ini'
-        with self.open(self._config_file, mode='w') as file:
-            ini.save({
-                'dc': self._get_attr_values(group='dc'),
-                'hooks': self._get_attr_values(category='hooks')}, file)
-
-        # Remove duplicates from workspace
+        # Remove duplicates from ZipFile
         self._remove_duplicates()
 
         # Mark plattform, which created the files as Windows
@@ -225,9 +166,10 @@ class File(attrib.Container):
         # Close ZipArchive (to allow to read the buffer)
         self._file.close()
 
-        # Read buffer and write workspace file
+        # Read buffer and write ZipFile
         if not isinstance(self._buffer, io.BytesIO):
             raise TypeError("buffer has not been initialized")
+        path = env.expand(filepath)
         with open(path, 'wb') as file:
             file.write(self._buffer.getvalue())
 
@@ -238,18 +180,17 @@ class File(attrib.Container):
         self.load(path, pwd=self._pwd)
 
     def get_file_accessor(self, path: PathLike) -> abc.FileAccessor:
-        """Get file accessor to workspace member.
+        """Get file accessor to ZipFile member.
 
         Args:
             path: String or :term:`path-like object`, that represents a
-                workspace member. In reading mode the path has to point to a
-                valid workspace file, or a FileNotFoundError is raised. In
-                writing mode the path by default is treated as a file path. New
-                directories can be written by setting the argument is_dir to
-                True.
+                ZipFile member. In reading mode the path has to point to a valid
+                ZipFile, or a FileNotFoundError is raised. In writing mode the
+                path by default is treated as a file path. New directories can
+                be written by setting the argument is_dir to True.
 
         Returns:
-            :class:`File accessor <nemoa.base.abc.FileAccessor>` to workspace
+            :class:`File accessor <nemoa.base.abc.FileAccessor>` to ZipFile
             member.
 
         """
@@ -267,15 +208,14 @@ class File(attrib.Container):
     def open(
             self, path: PathLike, mode: str = 'r', encoding: OptStr = None,
             is_dir: bool = False) -> FileLike:
-        """Open file within the workspace.
+        """Open file within the ZipFile.
 
         Args:
             path: String or :term:`path-like object`, that represents a
-                workspace member. In reading mode the path has to point to a
-                valid workspace file, or a FileNotFoundError is raised. In
-                writing mode the path by default is treated as a file path. New
-                directories can be written by setting the argument is_dir to
-                True.
+                ZipFile member. In reading mode the path has to point to a valid
+                ZipFile, or a FileNotFoundError is raised. In writing mode the
+                path by default is treated as a file path. New directories can
+                be written by setting the argument is_dir to True.
             mode: String, which characters specify the mode in which the file is
                 to be opened. The default mode is reading in text mode. Suported
                 characters are:
@@ -290,18 +230,18 @@ class File(attrib.Container):
                 the preferred encoding of the operating system is used.
             is_dir: Boolean value which determines, if the path is to be treated
                 as a directory or not. This information is required for writing
-                directories to the workspace. The default behaviour is not to
+                directories to the ZipFile. The default behaviour is not to
                 treat paths as directories.
 
         Returns:
             :term:`File object` in reading or writing mode.
 
         Examples:
-            >>> with self.open('workspace.ini') as file:
+            >>> with self.open('config.ini') as file:
             >>>     print(file.read())
 
         """
-        # Open file handler to workspace member
+        # Open file handler to ZipFile member
         if 'w' in mode:
             if 'r' in mode:
                 raise ValueError(
@@ -319,27 +259,27 @@ class File(attrib.Container):
                     "characters 'b' AND 't'")
             return file
         return io.TextIOWrapper(
-            file, encoding=encoding or self._default_encoding,
+            file, encoding=encoding or env.get_encoding(),
             write_through=True)
 
     def close(self) -> None:
-        """Close current workspace and buffer."""
+        """Close current ZipFile and buffer."""
         if hasattr(self._file, 'close'):
             self._file.close()
         if hasattr(self._buffer, 'close'):
             self._buffer.close()
 
     def copy(self, source: PathLike, target: PathLike) -> bool:
-        """Copy file within workspace.
+        """Copy file within ZipFile.
 
         Args:
             source: String or :term:`path-like object`, that points to a file in
-                the directory structure of the workspace. If the file does not
+                the directory structure of the ZipFile. If the file does not
                 exist, a FileNotFoundError is raised. If the filepath points to
                 a directory, an IsADirectoryError is raised.
             target: String or :term:`path-like object`, that points to a new
                 filename or an existing directory in the directory structure of
-                the workspace. If the target is a directory the target file
+                the ZipFile. If the target is a directory the target file
                 consists of the directory and the basename of the source file.
                 If the target file already exists a FileExistsError is raised.
 
@@ -351,12 +291,10 @@ class File(attrib.Container):
         src_file = PurePath(source).as_posix()
         src_infos = self._locate(source)
         if not src_infos:
-            raise FileNotFoundError(
-                f"workspace file '{src_file}' does not exist")
+            raise FileNotFoundError(f"file '{src_file}' does not exist")
         src_info = src_infos[-1]
         if getattr(src_info, 'is_dir')():
-            raise IsADirectoryError(
-                f"'{src_file}/' is a directory not a file")
+            raise IsADirectoryError(f"'{src_file}/' is a directory not a file")
 
         # If target is a directory get name of target file from
         # source filename
@@ -372,8 +310,7 @@ class File(attrib.Container):
 
         # Check if target file already exists
         if self._locate(tgt_file):
-            raise FileExistsError(
-                f"workspace file '{tgt_file}' already exist.")
+            raise FileExistsError(f"file '{tgt_file}' already exist.")
 
         # Read binary data from source file
         data = self._file.read(src_info, pwd=self._pwd)
@@ -395,16 +332,16 @@ class File(attrib.Container):
         return bool(self._locate(tgt_file))
 
     def move(self, source: PathLike, target: PathLike) -> bool:
-        """Move file within workspace.
+        """Move file within ZipFile.
 
         Args:
             source: String or :term:`path-like object`, that points to a file in
-                the directory structure of the workspace. If the file does not
+                the directory structure of the ZipFile. If the file does not
                 exist, a FileNotFoundError is raised. If the filepath points to
                 a directory, an IsADirectoryError is raised.
             target: String or :term:`path-like object`, that points to a new
                 filename or an existing directory in the directory structure of
-                the workspace. If the target is a directory the target file
+                the ZipFile. If the target is a directory the target file
                 consists of the directory and the basename of the source file.
                 If the target file already exists a FileExistsError is raised.
 
@@ -417,7 +354,7 @@ class File(attrib.Container):
         return self.copy(source, target) and self.unlink(source)
 
     def append(self, source: PathLike, target: OptPathLike = None) -> bool:
-        """Append file to the workspace.
+        """Append file to the ZipFile.
 
         Args:
             source: String or :term:`path-like object`, that points to a valid
@@ -425,7 +362,7 @@ class File(attrib.Container):
                 not exist, a FileNotFoundError is raised. If the filepath points
                 to a directory, a IsADirectoryError is raised.
             target: String or :term:`path-like object`, that points to a valid
-                directory in the directory structure of the workspace. By
+                directory in the directory structure of the ZipFile. By
                 default the root directory is used. If the directory does not
                 exist, a FileNotFoundError is raised. If the target directory
                 already contains a file, which name equals the filename of the
@@ -446,14 +383,13 @@ class File(attrib.Container):
         if target:
             tgt_dir = PurePath(target).as_posix() + '/'
             if not self._locate(tgt_dir):
-                raise FileNotFoundError(
-                    f"workspace directory '{tgt_dir}' does not exist")
+                raise FileNotFoundError(f"directory '{tgt_dir}' does not exist")
         else:
             tgt_dir = '.'
         tgt_file = Path(tgt_dir, src_file.name)
         if self._locate(tgt_file):
             raise FileExistsError(
-                f"workspace directory '{tgt_dir}' already contains a file "
+                f"directory '{tgt_dir}' already contains a file "
                 f"with name '{src_file.name}'")
 
         # Create ZipInfo entry from source file
@@ -478,7 +414,7 @@ class File(attrib.Container):
 
         Args:
             filepath: String or :term:`path-like object`, that points to a valid
-                file in the directory structure of the workspace. If the file
+                file in the directory structure of the ZipFile. If the file
                 does not exist a FileNotFoundError is raised.
             encoding: Specifies the name of the encoding, which is used to
                 decode the stream’s bytes into strings. By default the preferred
@@ -499,7 +435,7 @@ class File(attrib.Container):
 
         Args:
             filepath: String or :term:`path-like object`, that points to a valid
-                file in the dirctory structure of the workspace. If the file
+                file in the dirctory structure of the ZipFile. If the file
                 does not exist a FileNotFoundError is raised.
 
         Returns:
@@ -520,7 +456,7 @@ class File(attrib.Container):
         Args:
             text: String, which has to be written to the given file.
             filepath: String or :term:`path-like object`, that represents a
-                valid filename in the dirctory structure of the workspace.
+                valid filename in the dirctory structure of the ZipFile.
             encoding: Specifies the name of the encoding, which is used to
                 encode strings into bytes. By default the preferred encoding of
                 the operating system is used.
@@ -540,7 +476,7 @@ class File(attrib.Container):
         Args:
             blob: Bytes, which are to be written to the given file.
             filepath: String or :term:`path-like object`, that represents a
-                valid filename in the dirctory structure of the workspace.
+                valid filename in the dirctory structure of the ZipFile.
 
         Returns:
             Number of bytes, that are written to the file.
@@ -552,11 +488,11 @@ class File(attrib.Container):
         return 0
 
     def unlink(self, filepath: PathLike, ignore_missing: bool = True) -> bool:
-        """Remove file from workspace.
+        """Remove file from ZipFile.
 
         Args:
             filepath: String or :term:`path-like object`, that points to a file
-                in the directory structure of the workspace. If the filepath
+                in the directory structure of the ZipFile. If the filepath
                 points to a directory, an IsADirectoryError is raised. For the
                 case, that the file does not exist, the argument ignore_missing
                 determines, if a FileNotFoundError is raised.
@@ -584,7 +520,7 @@ class File(attrib.Container):
 
         Args:
             dirpath: String or :term:`path-like object`, that represents a valid
-                directory name in the directory structure of the workspace. If
+                directory name in the directory structure of the ZipFile. If
                 the directory already exists, the argument ignore_exists
                 determines, if a FileExistsError is raised.
             ignore_exists: Boolean value which determines, if FileExistsError is
@@ -607,11 +543,11 @@ class File(attrib.Container):
     def rmdir(
             self, dirpath: PathLike, recursive: bool = False,
             ignore_missing: bool = False) -> bool:
-        """Remove directory from workspace.
+        """Remove directory from ZipFile.
 
         Args:
             dirpath: String or :term:`path-like object`, that points to a
-                directory in the directory structure of the workspace. If the
+                directory in the directory structure of the ZipFile. If the
                 directory does not exist, the argument ignore_missing
                 determines, if a FileNotFoundError is raised.
             ignore_missing: Boolean value which determines, if FileNotFoundError
@@ -644,7 +580,7 @@ class File(attrib.Container):
         return self._remove_members(allmatches)
 
     def search(self, pattern: OptStr = None) -> StrList:
-        """Search for files in the workspace.
+        """Search for files in the ZipFile.
 
         Args:
             pattern: Search pattern that contains Unix shell-style wildcards:
@@ -656,10 +592,10 @@ class File(attrib.Container):
 
         Returns:
             List of files and directories in the directory structure of the
-            workspace, that match the search pattern.
+            ZipFile, that match the search pattern.
 
         """
-        # Get list of normalized unique paths of workspace members
+        # Get list of normalized unique paths of ZipFile members
         paths: PathLikeList = []
         for zinfo in self._file.infolist():
             path = PurePath(zinfo.filename).as_posix()
@@ -681,32 +617,32 @@ class File(attrib.Container):
 
     def _create_new(self) -> None:
         # Initialize instance Variables, Buffer and buffered ZipFile
-        self._set_attr_values(self._default_config['dc'], group='dc')
         self._path = None
         self._changed = False
         self._pwd = None
         self._buffer = io.BytesIO()
         self._file = ZipFile(self._buffer, mode='w')
 
-        # Create folders
-        for folder in self._default_dir_layout:
-            self.mkdir(folder)
+        # # Create folders
+        # self._set_attr_values(self._default_config['dc'], group='dc')
+        # for folder in self._default_dir_layout:
+        #     self.mkdir(folder)
 
     def _open_read(self, path: PathLike) -> BinaryFileLike:
-        # Locate workspace member by it's path
+        # Locate ZipFile member by it's path
         # and open file handler for reading the file
         matches = self._locate(path)
         if not matches:
             fname = PurePath(path).as_posix()
             raise FileNotFoundError(
-                f"workspace member with filename '{fname}' does not exist")
+                f"archive member with filename '{fname}' does not exist")
         # Select latest version of file
         zinfo = matches[-1]
         return self._file.open(zinfo, pwd=self._pwd, mode='r')
 
     def _open_write(
             self, path: PathLike, is_dir: bool = False) -> BinaryFileLike:
-        # Determine workspace member name from path
+        # Determine ZipFile member name from path
         # and get ZipInfo with local time as date_time
         filename = PurePath(path).as_posix()
         if is_dir:
@@ -728,7 +664,7 @@ class File(attrib.Container):
         self._changed = True
         return file
 
-    def _locate(self, path: PathLike, sort: bool = True) -> ZipInfoList:
+    def _locate(self, path: PathLike, sort: bool = True) -> List[ZipInfo]:
         # Get list of member zipinfos
         zinfos = self._file.infolist()
         # Match members by path-like filenames
@@ -739,29 +675,12 @@ class File(attrib.Container):
         # Return sorted matches
         return matches
 
-    def _get_name(self) -> OptStr:
-        return getattr(self._path, 'stem', None)
-
-    def _get_path(self) -> OptPath:
-        return self._path
-
-    def _get_changed(self) -> bool:
-        return self._changed
-
-    def _get_folders(self) -> StrList:
-        names: StrList = []
-        for zinfo in self._file.infolist():
-            if getattr(zinfo, 'is_dir')():
-                name = PurePath(zinfo.filename).as_posix() + '/'
-                names.append(name)
-        return sorted(names)
-
-    def _remove_members(self, zinfos: ZipInfoList) -> bool:
+    def _remove_members(self, zinfos: List[ZipInfo]) -> bool:
         # Return True if list of members is empty
         if not zinfos:
             return True
 
-        # Remove entries in the list of members from workspace
+        # Remove entries in the list of members from ZipFile
         new_zinfos = []
         zids = [(zinfo.filename, zinfo.date_time) for zinfo in zinfos]
         for zinfo in self._file.infolist():
@@ -775,19 +694,18 @@ class File(attrib.Container):
         if zids:
             names = [zid[0] for zid in zids]
             raise FileNotFoundError(
-                f"could not locate workspace members: {names}")
+                f"could not locate archive members: {names}")
 
         # Create new ZipArchive in Memory
         new_buffer = io.BytesIO()
         new_file = ZipFile(new_buffer, mode='w')
 
-        # Copy all workspace members on the new list from current
-        # to new workspace
+        # Copy all ZipFile members on the new list from current to new ZipFile
         for zinfo in new_zinfos:
             data = self._file.read(zinfo, pwd=self._pwd)
             new_file.writestr(zinfo, data)
 
-        # Close current workspace and buffer and link new workspace and buffer
+        # Close current ZipFile and buffer and link new ZipFile and buffer
         self._file.close()
         self._buffer.close()
         self._buffer = new_buffer
@@ -798,7 +716,7 @@ class File(attrib.Container):
 
     def _remove_duplicates(self) -> bool:
         # Get list of duplicates
-        zinfos: ZipInfoList = []
+        zinfos: List[ZipInfo] = []
         for filename in self.files:
             zinfos += self._locate(filename, sort=True)[:-1]
 

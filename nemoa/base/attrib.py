@@ -420,6 +420,9 @@ class Group:
         self._attr_group_init_state = state
         self._init_attr_group(state)
 
+    def __repr__(self) -> str:
+        return self.__class__.__name__
+
     #
     # Protected Class Methods
     #
