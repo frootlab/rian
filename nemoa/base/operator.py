@@ -15,12 +15,12 @@ import itertools
 import operator
 import re
 from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
-from typing import Any, Hashable
+from typing import Any, Hashable, Match
 import py_expression_eval
 from nemoa.base import check, abc, stype
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, OptStrTuple
-from nemoa.types import SeqHom, SeqOp, AnyOp, StrList
+from nemoa.types import SeqHom, SeqOp, AnyOp, StrList, StrTuple
 from nemoa.base.stype import FieldID, Frame
 
 Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
@@ -555,10 +555,11 @@ class Lambda(Operator, abc.Multiton):
 
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
-            default: OptOp = None, assemble: bool = True) -> None:
+            variables: StrTuple = tuple(), default: OptOp = None,
+            assemble: bool = True) -> None:
 
         # Initialize Operator Base Class
-        Operator.__init__(self, domain=domain, target=None)
+        Operator.__init__(self, *variables, domain=domain, target=None)
 
         # Bind Attributes
         self._expression = expression
@@ -575,11 +576,15 @@ class Lambda(Operator, abc.Multiton):
         return self._built_call(*args)
 
     def __repr__(self) -> str:
-        with contextlib.suppress(AttributeError):
+        try:
             if self._expression:
                 return f"{type(self).__name__}('{self._expression}')"
-        with contextlib.suppress(AttributeError):
+        except AttributeError:
+            pass
+        try:
             return repr(self._built_call)
+        except AttributeError:
+            pass
         return f"{type(self).__name__}()"
 
     #
@@ -602,50 +607,30 @@ class Lambda(Operator, abc.Multiton):
     #
 
     def _build_call(self, assemble: bool) -> None:
-        expr = self._expression
+
+        # Parse expression and get expression object
+        expr = self._get_expr()
+
+        # Update Domain to Variables
         dom = self._domain
-
-        # If the domain uses a frame (e.g. if in create_lambda() the argument
-        # 'variables' is given) create a mapping from the field identifiers
-        # within the frame to valid variable names.
-        var = self._get_variables(expr, dom.frame)
-
-        # If the
-        if var.components:
-            pass
-
-        # def repl(mo) -> str:
-        #     if mo.group('var')
-        #     ...
-        # repl: AnyOp = lambda mo: 'x' if mo.group('var') else mo.group('text')
-        # re_str = '"[^"]+"'
-        # re_var = re.escape(var)
-        # pattern = f"(?P<str>{re_str})|(?P<var>{re_var})"
-        # new_expr = re.sub(pattern, repl, string)
-        # get_var: AnyOp = lambda obj: obj.group('var')
-        # while any(map(get_var, re.finditer(pattern, expr)))
-
-        # Parse Expression
-        parser = py_expression_eval.Parser()
-        valid_expression = self._get_valid_expression()
-        expr = parser.parse(valid_expression).simplify({})
-
-        # Create Mapper
         names = tuple(expr.variables())
-        dom_type = self._domain.type
-        dom_frame = var.fields or names
-        dom_like = (dom_type, dom_frame)
-        mapper: AnyOp
+        if not dom.frame:
+            self._domain = stype.create_domain((dom.type, tuple(names)))
+            dom = self._domain
+
+        # Create Getter
+        getter: AnyOp
         if assemble:
-            if dom_type == list:
-                mapper = Identity()
+            if dom.type == list:
+                getter = Identity()
             else:
-                mapper = Mapper(*names, domain=dom_like, target=list)
+                getter = Projection(*dom.frame, domain=dom, target=list)
         else:
-            if dom_type == dict:
-                mapper = Identity()
+            if dom.type == dict:
+                getter = Identity()
             else:
-                mapper = Mapper(*names, domain=dom_like, target=dict)
+                getter = Projection(
+                    *dom.frame, domain=dom, target=(dict, names))
 
         # If the term is trusted create and compile lambda term. Note, that the
         # lambda term usually may be considered to be a trusted expression, as
@@ -655,15 +640,30 @@ class Lambda(Operator, abc.Multiton):
             term = f"lambda {','.join(names)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
-            self._built_call = compose(runner, mapper)
-            self._domain = stype.create_domain((dom_type, tuple(names)))
+            self._built_call = compose(runner, getter)
         else:
-            self._built_call = compose(expr.evaluate, mapper)
+            self._built_call = compose(expr.evaluate, getter)
             setattr(self._built_call, 'variables', expr.variables)
 
-    def _get_variables(self, expr: str, frame: Frame) -> Mapper:
+    def _get_expr(self) -> Expr:
+        # If the domain uses a frame, the given field IDs of the domain are not
+        # required to be valid variable names. In the first step a mapping from
+        # field IDs to valid variable names is created.
+        expr = self._expression
+        frame = self._domain.frame
+        vmap = self._get_var_mapping(expr, frame)
+
+        # Therupon the mapping is used to replace all occurences of the field
+        # IDs by the respective variable names.
+        expr = self._replace_vars(expr, vmap)
+
+        # Create expression Parser instance and return expression object
+        parser = py_expression_eval.Parser()
+        return parser.parse(expr).simplify({})
+
+    def _get_var_mapping(self, expr: str, frame: Frame) -> dict:
         if not frame:
-            return Mapper()
+            return {}
 
         # Create an operator that checks, if a given variable name <var> is
         # already occupied by the expression. Thereby ignore appearances within
@@ -671,7 +671,8 @@ class Lambda(Operator, abc.Multiton):
         expr = self._expression
         quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
         raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
-        matches: AnyOp = lambda var: re.finditer(raw.format(var=var), expr)
+        fmt: AnyOp = lambda var: raw.format(var=re.escape(var))
+        matches: AnyOp = lambda var: re.finditer(fmt(var), expr)
         hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
         occupied: AnyOp = lambda var: any(map(hit, matches(var)))
 
@@ -681,65 +682,44 @@ class Lambda(Operator, abc.Multiton):
         mapping: Dict[FieldID, str] = {}
         var_counter = itertools.count()
         next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
-        var_name = next_var()
         for field in fields:
             if isinstance(field, str) and field.isidentifier():
                 mapping[field] = field
                 continue
+            var_name = next_var()
             while occupied(var_name):
                 var_name = next_var()
             mapping[field] = var_name
 
-        # Create variable
+        # Create and return variable mapping
         get_var: AnyOp = lambda field: mapping.get(field, '')
-        args = tuple(zip(frame, map(get_var, frame)))
+        return dict(zip(frame, map(get_var, frame)))
 
-        return Mapper(*args)
+    def _replace_vars(self, expr: str, mapping: dict) -> str:
 
-    def _get_valid_expression(self) -> str:
-        expr = self._expression
-        frame = self._domain.frame
-        variables = self._get_variables(expr, frame).components
-        for orig, subst in zip(frame, variables):
-            if orig == subst:
+        # Declare replacement function
+        def repl(mo: Match) -> str:
+            if mo.group('var'):
+                return mapping.get(mo.group('var'), mo.group('var'))
+            if mo.group('str2'):
+                return mo.group('str2')
+            return mo.group('str1')
+
+        # Build operator that creates an regex pattern for a given field ID
+        re_str1 = "(?P<str1>\"[^\"]+\")" # RegEx for double quoted terms
+        re_str2 = "(?P<str2>'[^']+')" # RegEx for single quoted terms
+        re_var = "(?P<var>{var})" # Unformated RegEx for variable
+        raw = '|'.join([re_str1, re_str2, re_var]) # Unformated RegEx
+        pattern: AnyOp = lambda var: raw.format(var=re.escape(var))
+
+        # Iterate all field ids and succesively replace invalid variable names
+        new_expr = expr
+        for field, var in mapping.items():
+            if field == var:
                 continue
-            expr = expr.replace(str(orig), subst)
-        return expr
+            new_expr = re.sub(pattern(field), repl, new_expr)
 
-# #
-# # Operator Builders
-# #
-#
-# @functools.lru_cache(maxsize=64)
-# def create_lambda(
-#         expression: str = '', domain: stype.DomLike = None,
-#         variables: OptStrTuple = None, default: OptOp = None,
-#         assemble: bool = True) -> Lambda:
-#     """Create a lambda operator.
-#
-#     Args:
-#         expression:
-#         domain: Optional domain category of the operator. If provided, the
-#             category has to be given as a :class:`type`. Supported types are
-#             :class:`object`, subclasses of the class:`Mapping class
-#             <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-#             class <collection.abs.Sequence>`. The default domain is object.
-#         variables: Optional tuple with variable names. This parameter is only
-#             required, if the domain category is a subclass of the
-#             :class:`Sequence class <collection.abs.Sequence>`. In this case the
-#             variable names are used to map the fields (given as names) to their
-#             indices within the domain tuple.
-#         default:
-#         assemble: Optional Boolean parameter, which determines if the operator
-#             is compiled after it is parsed.
-#
-#     Returns:
-#
-#     """
-#     domain = stype.create_domain(domain, defaults={'fields': variables})
-#     return Lambda(
-#         expression=expression, domain=domain, default=default,
-#         assemble=assemble)
+        return new_expr
 
 #
 # Operator Inspection Functions
