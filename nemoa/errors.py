@@ -216,13 +216,16 @@ class FileFormatError(NemoaAssert, OSError):
 ################################################################################
 
 class ExistsError(NemoaAssert, LookupError):
-    """Raise when an existing unique object shall be created."""
+    """Raise when an already existing unique object shall be created."""
+
+class FoundError(NemoaAssert, LookupError):
+    """Raise when an already registered unique object shall be registered."""
 
 class NotExistsError(NemoaAssert, LookupError):
     """Raise when a non existing unique object is requested."""
 
 class NotFoundError(NemoaAssert, LookupError):
-    """Raise when a unique object is not found in a singleton registry."""
+    """Raise when a unique object is not found in a registry."""
 
 ################################################################################
 # Table Errors

@@ -33,7 +33,6 @@ class Record:
 # Session Store
 #
 
-@abc.objectify
 class Store(dict, abc.Singleton):
     """Singleton Class for the Storage of Session Records."""
 
@@ -41,51 +40,62 @@ class Store(dict, abc.Singleton):
 # Session Manager
 #
 
-# class Manager(abc.Singleton):
-#     """Singleton Class for Session Manager."""
-#
-#     def list(self) -> List[Record]:
-#         return sorted(SessionMeta.store.items()) # type: ignore
-#
-#     def add(self) -> None:
-#         returnn
+class Manager(abc.Singleton):
+    """Singleton Class for Session Manager."""
+    _store: Store = Store()
+
+    def list(self) -> List[Record]:
+        return sorted(self._store.items())
+
+    def get(self, sid: Optional[int]) -> 'Session':
+        return self._store[sid].ref()
+
+    def add(self, session: 'Session') -> None:
+        sid = id(session)
+        if sid in self._store:
+            raise errors.FoundError(
+                f"session with id {sid} does already exist")
+        ref = weakref.ref(session)
+        date = datetime.datetime.now()
+        rec = Record(ref=ref, date=date)
+        self._store[sid] = rec
+
+    def remove(self, sid: Optional[int]) -> None:
+        del self._store[sid]
 
 #
 # Meta Class for Session Base Classes
 #
 
-class SessionMeta(abc.ABCMeta):
+class Meta(abc.ABCMeta):
     """Metaclass for Session Base Classes.
 
     Session Instances require an instanciation per SessionID, which is closely
     related to the Multiton Pattern.
 
     """
-    #store: Dict[Optional[int], Record] = {}
+    _manager: Manager = Manager()
 
     def __call__(
             cls, *args: Any, sid: Optional[int] = None, **kwds: Any) -> object:
-        # Search for SessionID in registry and - if found - return a refrence
+        # Search for SessionID in registry and if found return a reference
         # to the session instance
         try:
-            return Store[sid].ref() # type: ignore
+            return Meta._manager.get(sid)
         except KeyError:
             pass
 
         # If the SessionID is given (not None), then the session ether has
         # been destroyed by the garbage collector or manually been removed by
         # the Session Manager. In any such case a lookup error is raised.
-        if isinstance(sid, int):
+        if sid is not None:
             raise errors.NotFoundError(f"session id {sid} is not valid")
 
         # If the SessionID could not be found, create a new entry in the
         # registry and return a reference to the instance
         # TODO: Make Thread safe!
-        obj = super(SessionMeta, cls).__call__(*args, **kwds)
-        sid = id(obj)
-        ref = weakref.ref(obj)
-        date = datetime.datetime.now()
-        Store[sid] = Record(ref, date) # type: ignore
+        obj = super(Meta, cls).__call__(*args, **kwds)
+        Meta._manager.add(obj)
 
         return obj
 
@@ -93,7 +103,7 @@ class SessionMeta(abc.ABCMeta):
 # Abstract Base Class for Sessions
 #
 
-class SessionType(metaclass=SessionMeta):
+class SessionType(metaclass=Meta):
     """Abstract Base Class for Sessions."""
     __slots__: list = []
 
