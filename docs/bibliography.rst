@@ -9,6 +9,7 @@ Bibliography
 .. [HINTON1986]
     "Learning representations by back-propagating errors",
     Rumelhart, D. E., Hinton, G. E., Williams, R. J. (1986)
+.. [ISO 8601] https://https://www.iso.org/iso-8601-date-and-time-format
 .. [IEEE754] https://ieeexplore.ieee.org/document/4610935/
 .. [MIME] http://www.iana.org/assignments/media-types/
 .. [TGN] http://www.getty.edu/research/tools/vocabulary/tgn/

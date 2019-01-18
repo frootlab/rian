@@ -16,7 +16,7 @@ from nemoa.base import abc, array, attrib, binary, check, env, literal, mapping
 from nemoa.base import operator, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
-from nemoa.types import Any, Module, PathLikeList, StrList
+from nemoa.types import Module, PathLikeList, StrList
 from nemoa.types import NaN, Method, Function
 
 #
@@ -450,7 +450,7 @@ class TestOperator(ModuleTestCase):
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
 
-    def test_create_setter(self) -> Any:
+    def test_create_setter(self) -> typing.Any:
         items = [('name', 'monty'), ('id', 42)]
 
         with self.subTest(domain=object):
@@ -1290,13 +1290,15 @@ class TestLiteral(ModuleTestCase):
                 kwds={'charset': 'uax-31'}, value='ab')])
 
     def test_estimate(self) -> None:
+        Date = datetime.datetime
         self.assertAllEqual(literal.estimate, [
             Case(args=('text', ), value=None),
             Case(args=(repr('text'), ), value=str),
             Case(args=(repr(True), ), value=bool),
             Case(args=(repr(1), ), value=int),
             Case(args=(repr(1.), ), value=float),
-            Case(args=(repr(1j), ), value=complex)])
+            Case(args=(repr(1j), ), value=complex),
+            Case(args=(str(Date.now()), ), value=Date)])
 
 class TestStack(ModuleTestCase):
     module = stack

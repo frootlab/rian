@@ -45,7 +45,7 @@ class MultitonMeta(ABCMeta):
     Multiton Classes only create a single instance per given arguments. This
     allows a controlled creation of multiple objects, that are globally
     accessible and unique. Multiton classes may be regarded as generalizations
-    of Singleton Classes in the sense of a 'Registry of Singletons'. Common
+    of Singleton Classes in the sense of a 'Collection of Singletons'. Common
     use cases comprise application global configurations, caching and
     collections of constants (given as immutable objects).
 

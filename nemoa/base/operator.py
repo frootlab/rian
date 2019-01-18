@@ -938,50 +938,6 @@ def create_setter(*args: Item, domain: stype.DomLike = object) -> AnyOp:
     raise InvalidTypeError(
         'domain type', domain.type, (object, Mapping, Sequence))
 
-# def create_formatter(*args: FieldID, target: stype.DomLike = None) -> AnyOp:
-#     """Create a formatter operator.
-#
-#     Args:
-#         *args: Valid :term:`field identifiers <field identifier>` within the
-#             target type.
-#         target: Optional :term:`domain like` parameter, that specifies the
-#             type and (if required) the frame of the operator's target. Supported
-#             target types are :class:`tuple`, :class:`list` and :dict:'dict'. If
-#             no target is specified (which is indicated by the default value
-#             None) the target type depends on the arguments, that are passed to
-#             the operator. In this case for a single argument, the target type
-#             equals the type of the argument and for multiple argumnts, the
-#             target type is tuple.
-#
-#     Returns:
-#         Operator that represents fields, ether given as a non-tuple argument
-#         for a single field or a tuple argument for multiple fields, in a given
-#         target type.
-#
-#     """
-#     # Get target
-#     target = stype.create_domain(target, defaults={'fields': args})
-#
-#     # Create formatter
-#     if target.type == NoneType:
-#         return Identity()
-#     if target.type == tuple:
-#         return lambda x: x if isinstance(x, tuple) else (x, )
-#     if target.type == list:
-#         return lambda x: list(x) if isinstance(x, tuple) else [x]
-#     if target.type == dict:
-#         frame = target.frame
-#         if not frame:
-#             raise ValueError(
-#                 "target type 'dict' requires, that a frame is given")
-#         first = frame[0]
-#         d1: AnyOp = lambda x: {first: x} # arg -> dict
-#         dn: AnyOp = lambda x: dict(zip(frame, x)) # args -> dict
-#         return lambda x: dn(x) if isinstance(x, tuple) else d1(x)
-#
-#     # TODO: raise InvalidValueError!
-#     raise InvalidTypeError('target type', target.type, (tuple, list, dict))
-
 def create_wrapper(**attrs: Any) -> AnyOp:
     """Create a function wrapper that adds attributes.
 

@@ -10,29 +10,83 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import datetime
 from pathlib import Path
+from typing import Any, ClassVar, Dict, Optional, NamedTuple
+import weakref
+from nemoa import errors
 from nemoa.base import abc, attrib, env
 from nemoa.core import dc as dcore, log
 from nemoa.io import ini, ws
-from nemoa.types import Any, BytesLike, ClassVar, ErrType, ErrMeta, ErrStack
+from nemoa.types import BytesLike, ErrType, ErrMeta, ErrStack
 from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
 from nemoa.types import PathLike, StrDict, StrList, StrOrInt
 
 #
-# Structural Types
+# Immutable Parameter Class for Session Register Entries
 #
 
-SecDict = ini.SecDict
+class SessionInfo(NamedTuple):
+    """Class for Session Register Entries."""
+    ref: weakref.ReferenceType
+    date: datetime.datetime
 
 #
-# Classes
+# Meta Class for Session Base Classes
 #
 
-class Session(attrib.Container):
+class SessionMeta(abc.ABCMeta):
+    """Metaclass for Session Base Classes.
+
+    Session Instances require an instanciation per SessionID, which is closely
+    related to the Multiton Pattern.
+
+    """
+    _registry: Dict[Optional[int], SessionInfo] = {}
+
+    def __call__(
+            cls, *args: Any, sid: Optional[int] = None, **kwds: Any) -> object:
+        # Search for SessionID in registry and - if found - return a refrence
+        # to the session instance
+        try:
+            return cls._registry[sid].ref()
+        except KeyError:
+            pass
+
+        # If the SessionID is given (not None), then the session ether has
+        # been destroyed by the garbage collector or manually been removed by
+        # the Session Manager. In any such case a lookup error is raised.
+        if isinstance(sid, int):
+            raise errors.NotFoundError(f"session id {sid} is not valid")
+
+        # If the SessionID could not be found, create a new entry in the
+        # registry and return a reference to the instance
+        # TODO: Make Thread safe!
+        obj = super(SessionMeta, cls).__call__(*args, **kwds)
+        sid = id(obj)
+        ref = weakref.ref(obj)
+        date = datetime.datetime.now()
+        cls._registry[sid] = SessionInfo(ref, date)
+
+        return obj
+
+#
+# Abstract Base Class for Sessions
+#
+
+class SessionType(metaclass=SessionMeta):
+    """Abstract Base Class for Sessions."""
+    __slots__: list = []
+
+#
+# Session Class
+#
+
+class Session(attrib.Container, SessionType):
     """Session Class."""
 
     _config_file_path: ClassVar[str] = '%user_config_dir%/nemoa.ini'
-    _config_file_struct: ClassVar[SecDict] = {
+    _config_file_struct: ClassVar[ini.SecDict] = {
         'session': {
             'path': Path,
             'restore_on_startup': bool,
@@ -113,6 +167,9 @@ class Session(attrib.Container):
     def __exit__(self, cls: ErrMeta, obj: ErrType, tb: ErrStack) -> None:
         self.close() # Close Workspace
         self._save_config() # Save config
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}(sid={id(self)})'
 
     #
     # Public Methods

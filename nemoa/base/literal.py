@@ -70,7 +70,7 @@ def from_str(text: str, charset: OptStr = None, spacer: OptStr = None) -> str:
 def decode(
         text: str, target: OptType = None, undef: OptStr = 'None',
         **kwds: Any) -> Any:
-    """Decode literal text representation to object of given target type.
+    """Decode text representation of object to object.
 
     Args:
         text: String representing the value of a given type in it's respective
@@ -311,11 +311,14 @@ def as_path(text: str, expand: bool = True) -> Path:
     return Path(text)
 
 def as_datetime(text: str, fmt: OptStr = None) -> Date:
-    """Convert text into list.
+    """Convert text to datetime.
 
     Args:
-        text: String representing datetime.
-        fmt:
+        text: String representation of datetime
+        fmt: Optional string parameter, that specifies the format, which is
+            used to decode the text to datetime. The default format is the [ISO
+            8601]_ format, given by the string `%Y-%m-%d %H:%M:%S.%f`.
+
 
     Returns:
         Value of the text as datetime.
@@ -323,7 +326,9 @@ def as_datetime(text: str, fmt: OptStr = None) -> Date:
     """
     # Check types of Arguments
     check.has_type("first argument 'text'", text, str)
-    fmt = '%Y-%m-%d %H:%M:%S.%f'
+
+    # Convert text to datetime
+    fmt = fmt or '%Y-%m-%d %H:%M:%S.%f'
     return Date.strptime(text, fmt)
 
 def estimate(text: str) -> OptType:
@@ -336,7 +341,19 @@ def estimate(text: str) -> OptType:
         Type of text or None, if the type could not be determined.
 
     """
+    # Test if the given text is a literal
     try:
         return type(ast.literal_eval(text))
     except ValueError:
-        return None
+        pass
+    except SyntaxError:
+        pass
+
+    # Test if the given text is a datetime in ISO 8601 format
+    try:
+        dtime = as_datetime(text)
+        return Date
+    except ValueError:
+        pass
+
+    return None
