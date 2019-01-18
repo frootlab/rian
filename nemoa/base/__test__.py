@@ -322,7 +322,18 @@ class TestOperator(ModuleTestCase):
             self.assertRaises(ValueError, f, object)
 
     def test_Lambda(self) -> None:
-        pass # Implicitely tested by test_create_lambda()
+        f = operator.Lambda
+
+        with self.subTest(args=tuple()):
+            op = f()
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertIsInstance(op._built_call, operator.Zero)
+
+        with self.subTest(args=('x^2 + y')):
+            op = f('x^2 + y')
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(TypeError, op, 1)
+            self.assertEqual(int(op(2, -4)), 0)
 
     def test_Identity(self) -> None:
         f = operator.Identity
@@ -443,20 +454,6 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('a', 'b'), target=dict):
             prj = f('a', 'b', target=dict)
             self.assertEqual(prj(1, 2), {'a': 1, 'b': 2})
-
-    def test_create_lambda(self) -> None:
-        f = operator.create_lambda
-
-        with self.subTest(args=tuple()):
-            op = f()
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertIsInstance(op._built_call, operator.Zero)
-
-        with self.subTest(args=('x^2 + y')):
-            op = f('x^2 + y')
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertRaises(TypeError, op, 1)
-            self.assertEqual(int(op(2, -4)), 0)
 
     def test_create_setter(self) -> typing.Any:
         items = [('name', 'monty'), ('id', 42)]

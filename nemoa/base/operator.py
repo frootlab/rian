@@ -20,7 +20,7 @@ import py_expression_eval
 from nemoa.base import check, abc, stype
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, OptStrTuple
-from nemoa.types import SeqHom, SeqOp, AnyOp
+from nemoa.types import SeqHom, SeqOp, AnyOp, StrList
 from nemoa.base.stype import FieldID, Frame
 
 Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
@@ -56,6 +56,8 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     """Create variable from variable definition.
 
     Args:
+        var:
+        default:
 
     Returns:
 
@@ -99,16 +101,17 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 
 class Operator(collections.abc.Callable): # type: ignore
     """Abstract Base Class for operators."""
-    __slots__: list = ['_domain', '_target']
+    __slots__: StrList = ['_domain', '_target']
 
     _domain: stype.Domain
     _target: stype.Domain
 
     def __init__(
-        self, domain: stype.DomLike = None,
-        target: stype.DomLike = None) -> None:
-        self._domain = stype.create_domain(domain)
-        self._target = stype.create_domain(target)
+            self, *args: FieldID, domain: stype.DomLike = None,
+            target: stype.DomLike = None) -> None:
+
+        self._domain = stype.create_domain(domain, defaults={'fields': args})
+        self._target = stype.create_domain(target, defaults={'fields': args})
 
     @property
     def domain(self) -> stype.Domain:
@@ -145,7 +148,7 @@ class Zero(Operator, abc.Multiton):
     _zero: Any
 
     def __init__(self, target: stype.DomLike = None) -> None:
-        super().__init__(domain=None, target=target)
+        Operator.__init__(self, domain=None, target=target)
 
         # Sanity check if the target type has a unique zero object
         target_type = self._target.type
@@ -169,10 +172,10 @@ class Zero(Operator, abc.Multiton):
 
 class Identity(Operator, abc.Multiton):
     """Class for identity operators."""
-    __slots__: list = []
+    __slots__: StrList = []
 
     def __init__(self, domain: stype.DomLike = None) -> None:
-        super().__init__(domain=domain, target=domain)
+        Operator.__init__(self, domain=domain, target=domain)
 
     def __call__(self, *args: Any) -> Any:
         if not args:
@@ -243,14 +246,12 @@ class Projection(Operator, abc.Multiton):
             *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> None:
 
-        # Set domain and target
-        domain = stype.create_domain(domain, defaults={'fields': args})
-        target = stype.create_domain(target, defaults={'fields': args})
-        super().__init__(domain=domain, target=target)
+        # Initialize Operator Base Class
+        Operator.__init__(self, *args, domain=domain, target=target)
 
         # Build getter and formatter
-        getter = self._build_getter(*args, domain=domain)
-        formatter = self._build_formatter(*args, target=target)
+        getter = self._build_getter(*args, domain=self.domain)
+        formatter = self._build_formatter(*args, target=self.target)
 
         # If the formatter is an identity operator, return getter. If the getter
         # is an identity operator, precede a tuple 'packer' to the formatter
@@ -384,7 +385,9 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> None:
-        super().__init__()
+
+        # Initialize Operator Base Class
+        Operator.__init__(self)
 
         self._update_variables(*args, default=default)
         self._update_domain(domain)
@@ -525,7 +528,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         else:
             self._built_call = compose(formatter, mapper)
 
-class Lambda(Operator):
+class Lambda(Operator, abc.Multiton):
     """Class for operators, that are based on arithmetic expressions.
 
     Args:
@@ -553,8 +556,11 @@ class Lambda(Operator):
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
             default: OptOp = None, assemble: bool = True) -> None:
-        super().__init__(domain=domain, target=None)
 
+        # Initialize Operator Base Class
+        Operator.__init__(self, domain=domain, target=None)
+
+        # Bind Attributes
         self._expression = expression
 
         # Create Operator
@@ -700,40 +706,40 @@ class Lambda(Operator):
             expr = expr.replace(str(orig), subst)
         return expr
 
+# #
+# # Operator Builders
+# #
 #
-# Operator Builders
+# @functools.lru_cache(maxsize=64)
+# def create_lambda(
+#         expression: str = '', domain: stype.DomLike = None,
+#         variables: OptStrTuple = None, default: OptOp = None,
+#         assemble: bool = True) -> Lambda:
+#     """Create a lambda operator.
 #
-
-@functools.lru_cache(maxsize=64)
-def create_lambda(
-        expression: str = '', domain: stype.DomLike = None,
-        variables: OptStrTuple = None, default: OptOp = None,
-        assemble: bool = True) -> Lambda:
-    """Create a lambda operator.
-
-    Args:
-        expression:
-        domain: Optional domain category of the operator. If provided, the
-            category has to be given as a :class:`type`. Supported types are
-            :class:`object`, subclasses of the class:`Mapping class
-            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-            class <collection.abs.Sequence>`. The default domain is object.
-        variables: Optional tuple with variable names. This parameter is only
-            required, if the domain category is a subclass of the
-            :class:`Sequence class <collection.abs.Sequence>`. In this case the
-            variable names are used to map the fields (given as names) to their
-            indices within the domain tuple.
-        default:
-        assemble: Optional Boolean parameter, which determines if the operator
-            is compiled after it is parsed.
-
-    Returns:
-
-    """
-    domain = stype.create_domain(domain, defaults={'fields': variables})
-    return Lambda(
-        expression=expression, domain=domain, default=default,
-        assemble=assemble)
+#     Args:
+#         expression:
+#         domain: Optional domain category of the operator. If provided, the
+#             category has to be given as a :class:`type`. Supported types are
+#             :class:`object`, subclasses of the class:`Mapping class
+#             <collection.abs.Mapping>` and subclasses of the :class:`Sequence
+#             class <collection.abs.Sequence>`. The default domain is object.
+#         variables: Optional tuple with variable names. This parameter is only
+#             required, if the domain category is a subclass of the
+#             :class:`Sequence class <collection.abs.Sequence>`. In this case the
+#             variable names are used to map the fields (given as names) to their
+#             indices within the domain tuple.
+#         default:
+#         assemble: Optional Boolean parameter, which determines if the operator
+#             is compiled after it is parsed.
+#
+#     Returns:
+#
+#     """
+#     domain = stype.create_domain(domain, defaults={'fields': variables})
+#     return Lambda(
+#         expression=expression, domain=domain, default=default,
+#         assemble=assemble)
 
 #
 # Operator Inspection Functions

@@ -293,7 +293,7 @@ class Cursor(attrib.Container):
             return
 
         if isinstance(where, str):
-            self._where = operator.create_lambda(where, domain=object)
+            self._where = operator.Lambda(where, domain=object)
             return
 
         raise InvalidTypeError('where', where, (type(None), str)) # TODO: Type!
@@ -341,7 +341,7 @@ class Cursor(attrib.Container):
         names = tuple(var.name for var in variables)
 
         if isinstance(having, str):
-            self._having = operator.create_lambda(having, domain=(tuple, names))
+            self._having = operator.Lambda(having, domain=(tuple, names))
             return
 
         raise InvalidTypeError('having', having, (type(None), str)) # TODO
