@@ -12,6 +12,7 @@ from unittest import mock
 from pathlib import Path
 import typing
 import numpy as np
+from nemoa import errors
 from nemoa.base import abc, array, attrib, binary, check, env, literal, mapping
 from nemoa.base import operator, otree, pkg, stack, stype
 from nemoa.base import nbase
@@ -329,11 +330,51 @@ class TestOperator(ModuleTestCase):
             self.assertIsInstance(op, operator.Lambda)
             self.assertIsInstance(op._built_call, operator.Zero)
 
-        with self.subTest(args=('x^2 + y')):
+        with self.subTest(args=('x^2 + y', )):
             op = f('x^2 + y')
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
+
+        with self.subTest(args=('{x}', )):
+            self.assertRaises(Exception, f, '{x}')
+
+        with self.subTest(args=('{x}', ), variables=('{x}', )):
+            op = f('{x}', variables=('{x}', ))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertEqual(int(op(1)), 1)
+
+        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', )):
+            self.assertRaises(
+                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ))
+
+        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', 'y')):
+            op = f('{x}^2 + y', variables=('{x}', 'y'))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(TypeError, op, 1)
+            self.assertEqual(int(op(2, -4)), 0)
+
+        with self.subTest(
+                args=('{x}^2 + y', ), variables=('{x}', 'y'),
+                domain=(None, ('{x}', '{y}'))):
+            self.assertRaises(
+                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ),
+                domain=(None, ('{x}', '{y}')))
+
+        with self.subTest(
+                args=('{x}^2 + y', ), variables=('{x}', 'y'),
+                domain=(None, ('y', '{x}'))):
+            op = f('{x}^2 + y', variables=('{x}', 'y'),
+                domain=(None, ('y', '{x}')))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(TypeError, op, 1)
+            self.assertEqual(int(op(-4, 2)), 0)
+
+        with self.subTest(args=('{x}^2', ), variables=('{x}', 'y')):
+            op = f('{x}^2', variables=('{x}', 'y'))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertEqual(int(op(2)), 4)
+            self.assertEqual(int(op(2, 2)), 4)
 
     def test_Identity(self) -> None:
         f = operator.Identity

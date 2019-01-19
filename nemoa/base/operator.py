@@ -608,54 +608,56 @@ class Lambda(Operator, abc.Multiton):
 
     def _build_call(self, assemble: bool) -> None:
 
-        # Parse expression and get expression object
-        expr = self._get_expr()
+        # If the domain uses a frame, the given field IDs of the domain are not
+        # required to be valid variable names. In the first step a mapping from
+        # field IDs to valid variable names is created.
+        frame = self._domain.frame
+        varmap = self._get_var_mapping(self._expression, frame)
 
-        # Update Domain to Variables
+        # Substitute the expression using the variable mapping and parse it.
+        # Therupon get the variables of the expression and the corresponding
+        # original field IDs.
+        expr = self._get_expr(varmap)
+        variables = tuple(expr.variables())
+        invert = dict((v, f) for f, v in varmap.items())
+        fields = tuple(invert.get(v, v) for v in variables)
+
+        # If the Domain frame is not given, create and bind a new domain with a
+        # frame, that is given by the field names.
         dom = self._domain
-        names = tuple(expr.variables())
         if not dom.frame:
-            self._domain = stype.create_domain((dom.type, tuple(names)))
+            self._domain = stype.create_domain((dom.type, tuple(fields)))
             dom = self._domain
 
-        # Create Getter
+        # If the term is trusted create and compile lambda term. Note, that the
+        # lambda term usually may be considered to be a trusted expression, as
+        # it has been created by using the expression parser
         getter: AnyOp
         if assemble:
             if dom.type == list:
                 getter = Identity()
             else:
-                getter = Projection(*dom.frame, domain=dom, target=list)
+                getter = Projection(
+                    *fields, domain=dom, target=(tuple, variables))
+            term = expr.toString().replace('^', '**')
+            term = f"lambda {','.join(variables)}:{term}"
+            compiled = eval(term) # pylint: disable=W0123
+            runner: AnyOp = lambda x: compiled(*x)
+            self._built_call = compose(runner, getter)
         else:
             if dom.type == dict:
                 getter = Identity()
             else:
                 getter = Projection(
-                    *dom.frame, domain=dom, target=(dict, names))
-
-        # If the term is trusted create and compile lambda term. Note, that the
-        # lambda term usually may be considered to be a trusted expression, as
-        # it has been created by using the expression parser
-        if assemble:
-            term = expr.toString().replace('^', '**')
-            term = f"lambda {','.join(names)}:{term}"
-            compiled = eval(term) # pylint: disable=W0123
-            runner: AnyOp = lambda x: compiled(*x)
-            self._built_call = compose(runner, getter)
-        else:
+                    *fields, domain=dom, target=(dict, variables))
             self._built_call = compose(expr.evaluate, getter)
             setattr(self._built_call, 'variables', expr.variables)
 
-    def _get_expr(self) -> Expr:
-        # If the domain uses a frame, the given field IDs of the domain are not
-        # required to be valid variable names. In the first step a mapping from
-        # field IDs to valid variable names is created.
-        expr = self._expression
-        frame = self._domain.frame
-        vmap = self._get_var_mapping(expr, frame)
+    def _get_expr(self, vmap: dict) -> Expr:
 
         # Therupon the mapping is used to replace all occurences of the field
         # IDs by the respective variable names.
-        expr = self._replace_vars(expr, vmap)
+        expr = self._replace_vars(self._expression, vmap)
 
         # Create expression Parser instance and return expression object
         parser = py_expression_eval.Parser()

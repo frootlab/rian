@@ -54,31 +54,36 @@ class MultitonMeta(ABCMeta):
 
     def __call__(cls, *args: Any, **kwds: Any) -> object:
         # Create 'fingerprint' of instance. Beware: The fingerprint is only
-        # hashable if all given arguments and keywords are hashable
-        key = (cls, args, frozenset(kwds.items()))
-
+        # hashable if all given arguments and keywords are hashable. Therupon
         # Check registry for the fingerprint. If the fingerprint is not hashable
         # create and return and an instance of the class. If the the fingerprint
         # could not not be found in the registry, create a class instance, add
         # it to the registry and return the instance.
         try:
+            key = (cls, args, frozenset(kwds.items()))
             return cls._registry[key]
-        except TypeError:
-            hashable = False
+        except TypeError as err:
+            if 'unhashable' in str(err):
+                register = False
+            else:
+                raise
         except KeyError:
-            hashable = True
+            register = True
 
         # Create an instance of the class. Note, that if the class does not
         # implement a __init__ method, then it does not accept arguments. In
         # this case a TypeError is raised.
         try:
             obj = super(MultitonMeta, cls).__call__(*args, **kwds)
-        except TypeError:
-            obj = super(MultitonMeta, cls).__call__()
+        except TypeError as err:
+            if 'takes no arguments' in str(err):
+                obj = super(MultitonMeta, cls).__call__()
+            else:
+                raise
 
         # If the fingerprint is hashable, add the instance to the registry and
         # finally return it.
-        if hashable:
+        if register:
             cls._registry[key] = obj
         return obj
 
