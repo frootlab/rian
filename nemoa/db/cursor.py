@@ -396,7 +396,7 @@ class Cursor(attrib.Container):
         # acts on tuples as an itemgetter, which requires the specification of
         # the tuple variables.
         if self._groupby:
-            self._mapper = operator.Mapper(
+            self._mapper = operator.Getter(
                 *names, domain=(tuple, names), target=dtype)
             return
 
@@ -404,8 +404,7 @@ class Cursor(attrib.Container):
         # then the mapper acts on record objects as an attribute getter with
         # a subsequent converter
         if dtype:
-            self._mapper = operator.Mapper(
-                *names, domain=object, target=dtype)
+            self._mapper = operator.Getter(*names, domain=object, target=dtype)
             return
 
         # If the result set is not aggregated, and the target type is not

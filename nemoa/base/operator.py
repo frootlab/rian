@@ -101,10 +101,11 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 
 class Operator(collections.abc.Callable): # type: ignore
     """Abstract Base Class for operators."""
-    __slots__: StrList = ['_domain', '_target']
+    __slots__: StrList = ['_domain', '_target', '_built']
 
     _domain: stype.Domain
     _target: stype.Domain
+    _built: Any
 
     def __init__(
             self, *args: FieldID, domain: stype.DomLike = None,
@@ -194,12 +195,13 @@ class Identity(Operator, abc.Multiton):
             return f'{type(self).__name__}'
         return f'{type(self).__name__}({dom_type.__name__})'
 
-class Projection(Operator, abc.Multiton):
-    """Class for Projections.
+class Getter(Operator, abc.Multiton):
+    """Class for Getters.
 
-    A projection essentially is a compositions of a `getter`, that specified
-    fields from a given domain and a `representer`, that represents the fetched
-    fields as an object of given target.
+    A getter essentially is the composition of a `fetch` operation, that
+    specifies the fields of a given domain type and a `representer`, that
+    represents the fetched fields as an object of given target type, by using
+    the target frame (if given) as field identifiers.
 
     Args:
         *args: Valid :term:`field identifiers <field identifier>` within the
@@ -221,9 +223,7 @@ class Projection(Operator, abc.Multiton):
             target type is tuple.
 
     """
-    __slots__ = ['_built_call']
-
-    _built_call: Any
+    __slots__: StrList = []
 
     def __new__(
             cls, *args: FieldID, domain: stype.DomLike = None,
@@ -249,25 +249,25 @@ class Projection(Operator, abc.Multiton):
         # Initialize Operator Base Class
         Operator.__init__(self, *args, domain=domain, target=target)
 
-        # Build getter and formatter
-        getter = self._build_getter(*args, domain=self.domain)
+        # Build fetch and format operators
+        fetch = self._build_fetch(*args, domain=self.domain)
         formatter = self._build_formatter(*args, target=self.target)
 
         # If the formatter is an identity operator, return getter. If the getter
         # is an identity operator, precede a tuple 'packer' to the formatter
         if isinstance(formatter, Identity):
-            self._built_call = getter
-        elif isinstance(getter, Identity):
-            self._built_call = compose(formatter, lambda *args: args)
+            self._built = fetch
+        elif isinstance(fetch, Identity):
+            self._built = compose(formatter, lambda *args: args)
         else:
-            self._built_call = compose(formatter, getter)
+            self._built = compose(formatter, fetch)
 
     def __call__(self, *args: Any) -> Any:
-        return self._built_call(*args)
+        return self._built(*args)
 
     def __repr__(self) -> str:
-        if isinstance(self._built_call, Operator):
-            return repr(self._built_call)
+        if isinstance(self._built, Operator):
+            return repr(self._built)
         name = type(self).__name__
         try:
             frame = self._domain.frame
@@ -279,11 +279,11 @@ class Projection(Operator, abc.Multiton):
 
     def __len__(self) -> int:
         try:
-            return len(self._built_call)
+            return len(self._built)
         except TypeError:
             return len(self._target.frame)
 
-    def _build_getter(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
+    def _build_fetch(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
 
         # If the domain type is NoneType, the returned operator fetches and
         # returns the fields directly from it's given arguments. In this case,
@@ -360,27 +360,26 @@ class Projection(Operator, abc.Multiton):
         # TODO: raise InvalidValueError!
         raise InvalidTypeError('target type', target.type, (tuple, list, dict))
 
-class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
-    """Class for mapping operators.
+class Composite(collections.abc.Sequence, Operator, abc.Multiton):
+    """Class for composite operators.
 
     Args:
         *args: Optional definitions of the function components. If provided, any
             component has to be given as a valid :term:`variable definition`.
         domain: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in the class :class:`Projection`.
+            parameter values are documented in the class :class:`Getter`.
         target: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's target. The accepted
-            parameter values are documented in the class :class:`Projection`.
+            parameter values are documented in the class :class:`Getter`.
         default: Default operator which is used to map fields to field
             variables. By default the identity is used.
 
     """
-    __slots__ = ['_variables', '_built_components', '_built_call']
+    __slots__ = ['_variables', '_built_components']
 
     _variables: Tuple[Variable, ...]
     _built_components: Tuple[AnyOp, ...]
-    _built_call: Any
 
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
@@ -396,7 +395,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         self._build_call()
 
     def __call__(self, *args: Any) -> Any:
-        return self._built_call(*args)
+        return self._built(*args)
 
     def __getitem__(self, pos: Union[int, slice]) -> Any:
         if isinstance(pos, int):
@@ -464,7 +463,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # mapper
         ops: List[AnyOp] = []
         for var in self._variables:
-            getter = Projection(*var.frame, domain=self.domain)
+            getter = Getter(*var.frame, domain=self.domain)
             if isinstance(var.operator, Identity):
                 ops.append(getter)
             elif not var.frame:
@@ -483,7 +482,7 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
         # If no variables are specified, the mapper is the zero operator of the
         # target type.
         if not variables:
-            self._built_call = Zero(target)
+            self._built = Zero(target)
             return
 
         # Check if the mapper can be implemented as a coordinate projection. In
@@ -492,12 +491,11 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
             len(var.frame) == 1 and isinstance(var.operator, Identity))
         if all(map(equal, variables)):
             fields = tuple(var.frame[0] for var in variables)
-            projection = Projection(
-                *fields, domain=self.domain, target=self.target)
-            if hasattr(projection, '_built_call'):
-                self._built_call = projection._built_call
+            getter = Getter(*fields, domain=self.domain, target=self.target)
+            if hasattr(getter, '_built'):
+                self._built = getter._built
             else:
-                self._built_call = projection
+                self._built = getter
             return
 
         # If the mapper can not be implemented as a projection ...
@@ -517,16 +515,16 @@ class Mapper(collections.abc.Sequence, Operator, abc.Multiton):
             mapper = lambda *args: tuple(comp(*args) for comp in f)
 
         # Create formatter
-        formatter = Projection(*self.components, target=self.target)
+        formatter = Getter(*self.components, target=self.target)
 
         # If the formatter is an identity operator, return mapper. If the mapper
         # is an identity operator, precede a tuple 'packer' to the formatter
         if isinstance(formatter, Identity):
-            self._built_call = mapper
+            self._built = mapper
         elif isinstance(mapper, Identity):
-            self._built_call = compose(formatter, lambda *args: args)
+            self._built = compose(formatter, lambda *args: args)
         else:
-            self._built_call = compose(formatter, mapper)
+            self._built = compose(formatter, mapper)
 
 class Lambda(Operator, abc.Multiton):
     """Class for operators, that are based on arithmetic expressions.
@@ -548,10 +546,9 @@ class Lambda(Operator, abc.Multiton):
             is compiled after it is parsed.
 
     """
-    __slots__ = ['_expression', '_built_call']
+    __slots__ = ['_expression']
 
     _expression: str
-    _built_call: Any
 
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
@@ -568,12 +565,12 @@ class Lambda(Operator, abc.Multiton):
         if expression:
             self._build_call(assemble=assemble)
         elif callable(default):
-            self._built_call = default
+            self._built = default
         else:
-            self._built_call = Zero()
+            self._built = Zero()
 
     def __call__(self, *args: Any) -> Any:
-        return self._built_call(*args)
+        return self._built(*args)
 
     def __repr__(self) -> str:
         try:
@@ -582,7 +579,7 @@ class Lambda(Operator, abc.Multiton):
         except AttributeError:
             pass
         try:
-            return repr(self._built_call)
+            return repr(self._built)
         except AttributeError:
             pass
         return f"{type(self).__name__}()"
@@ -594,7 +591,7 @@ class Lambda(Operator, abc.Multiton):
     @property
     def variables(self) -> Frame:
         with contextlib.suppress(AttributeError):
-            attrs = self._built_call.variables
+            attrs = self._built.variables
             if callable(attrs):
                 return tuple(attrs())
             return attrs
@@ -634,24 +631,16 @@ class Lambda(Operator, abc.Multiton):
         # it has been created by using the expression parser
         getter: AnyOp
         if assemble:
-            if dom.type == list:
-                getter = Identity()
-            else:
-                getter = Projection(
-                    *fields, domain=dom, target=(tuple, variables))
+            getter = Getter(*fields, domain=dom, target=(tuple, variables))
             term = expr.toString().replace('^', '**')
             term = f"lambda {','.join(variables)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
-            self._built_call = compose(runner, getter)
+            self._built = compose(runner, getter)
         else:
-            if dom.type == dict:
-                getter = Identity()
-            else:
-                getter = Projection(
-                    *fields, domain=dom, target=(dict, variables))
-            self._built_call = compose(expr.evaluate, getter)
-            setattr(self._built_call, 'variables', expr.variables)
+            getter = Getter(*fields, domain=dom, target=(dict, variables))
+            self._built = compose(expr.evaluate, getter)
+            setattr(self._built, 'variables', expr.variables)
 
     def _get_expr(self, vmap: dict) -> Expr:
 
@@ -967,7 +956,7 @@ def create_sorter(
             identifier` for the domain type.
         domain: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in the class :class:`Projection`.
+            parameter values are documented in the class :class:`Getter`.
         reverse: Optional boolean parameter. If set to True, then the sequence
             elements are sorted as if each comparison were reversed.
 
@@ -977,7 +966,7 @@ def create_sorter(
 
     """
     # Create getter operator for given keys
-    getter = Projection(*args, domain=domain) if args else None
+    getter = Getter(*args, domain=domain) if args else None
 
     # Create and return sorting operator
     return lambda seq: sorted(seq, key=getter, reverse=reverse)
@@ -993,7 +982,7 @@ def create_grouper(
             required to be a valid :term:`field identifier` for the domain type.
         domain: Optional :term:`domain like` parameter, that specifies the type
             and (if required) the frame of the operator's domain. The accepted
-            parameter values are documented in the class :class:`Projection`.
+            parameter values are documented in the class :class:`Getter`.
         presorted: The grouping operation splits in two consecutive steps: In
             the first step the input sequence is sorted by the given keys.
             Thereupon in the second step the sorted sequence is partitioned in
@@ -1012,7 +1001,7 @@ def create_grouper(
         return lambda seq: [seq]
 
     # Create getter for given keys
-    getter = Projection(*args, domain=domain)
+    getter = Getter(*args, domain=domain)
 
     # Create list mapper for groups
     group = operator.itemgetter(1)
@@ -1057,16 +1046,16 @@ def create_aggregator(
     if not args:
         return Zero(target)
 
-    # Create mapper object
-    f = Mapper(*args, default=operator.itemgetter(0))
+    # Create composite operator using the variable definitions
+    f = Composite(*args, default=operator.itemgetter(0))
 
     # Create an operator, that converts data stored in rows to columns.
     # 1. At first fetch the rows from the input sequence
     # 2. Create a Matrix from the sequence (a list of rows)
     # 3. Transpose a Matrix (to a tuple of columns)
     # 4. Compose Matrix creation and transposition
-    fetch = Projection(*f.fields, domain=domain, target=tuple)
-    matrix: SeqOp = lambda seq: list(map(fetch, seq))
+    getter = Getter(*f.fields, domain=domain, target=tuple)
+    matrix: SeqOp = lambda seq: list(map(getter, seq))
     trans: SeqOp = lambda mat: tuple(list(col) for col in zip(*mat))
     columns: SeqOp = lambda seq: trans(matrix(seq))
 
