@@ -121,7 +121,7 @@ class NotSupportedError(DatabaseError):
 # DB-API 2.0 Cursor Class
 #
 
-class Cursor(attrib.Container, ABC):
+class Cursor(attrib.Group, ABC):
     """Database Cursor.
 
     These objects represent a database cursor, which is used to manage the
@@ -187,7 +187,6 @@ class Cursor(attrib.Container, ABC):
         method, the interface should throw an exception in case the method is
         used.
         """
-        pass
 
     @abstractmethod
     def close(self) -> None:
@@ -197,7 +196,6 @@ class Cursor(attrib.Container, ABC):
         subclass) exception will be raised if any operation is attempted with
         the cursor.
         """
-        pass
 
     @abstractmethod
     def execute(self, operation: str, *args: Any) -> Any:
@@ -223,7 +221,6 @@ class Cursor(attrib.Container, ABC):
         multiple rows in a single operation, but this kind of usage is
         deprecated: .executemany() should be used instead.
         """
-        pass
 
     @abstractmethod
     def executemany(self, operation: str, seq_of_parameters: list) -> Any:
@@ -242,7 +239,6 @@ class Cursor(attrib.Container, ABC):
         (but not required) to raise an exception when it detects that a result
         set has been created by an invocation of the operation.
         """
-        pass
 
     @abstractmethod
     def fetchone(self) -> OptList:
@@ -254,7 +250,7 @@ class Cursor(attrib.Container, ABC):
         An Error (or subclass) exception is raised if the previous call to
         `execute` did not produce any result set or no call was issued yet.
         """
-        pass
+
 
     @abstractmethod
     def fetchmany(self, size: OptInt) -> list:
@@ -278,7 +274,6 @@ class Cursor(attrib.Container, ABC):
         `arraysize` attribute. If the size parameter is used, then it is best
         for it to retain the same value from one `fetchmany` call to the next.
         """
-        pass
 
     @abstractmethod
     def fetchall(self) -> list:
@@ -291,7 +286,6 @@ class Cursor(attrib.Container, ABC):
         An Error (or subclass) exception is raised if the previous call to
         `execute` did not produce any result set or no call was issued yet.
         """
-        pass
 
     @abstractmethod
     def nextset(self) -> OptBool:
@@ -311,7 +305,6 @@ class Cursor(attrib.Container, ABC):
         method, the interface should throw an exception in case the method is
         used.
         """
-        pass
 
     @abstractmethod
     def setinputsizes(self, sizes: list) -> None:
@@ -329,7 +322,6 @@ class Cursor(attrib.Container, ABC):
         Implementations are free to have this method do nothing and users are
         free to not use it.
         """
-        pass
 
     @abstractmethod
     def setoutputsize(self, size: int, column: OptInt) -> None:
@@ -343,7 +335,6 @@ class Cursor(attrib.Container, ABC):
         Implementations are free to have this method do nothing and users are
         free to not use it.
         """
-        pass
 
     #
     # Protected Methods
@@ -361,7 +352,7 @@ class Cursor(attrib.Container, ABC):
 # DB-API 2.0 Connection Class
 #
 
-class Connection(attrib.Container, ABC):
+class Connection(attrib.Group, ABC):
     """Database Connection."""
 
     @abstractmethod
@@ -374,7 +365,6 @@ class Connection(attrib.Container, ABC):
         connection. Note that closing a connection without committing the
         changes first will cause an implicit rollback to be performed.
         """
-        pass
 
     @abstractmethod
     def commit(self) -> None:
@@ -385,7 +375,6 @@ class Connection(attrib.Container, ABC):
         Database modules that do not support transactions should implement this
         method with void functionality.
         """
-        pass
 
     @abstractmethod
     def rollback(self) -> None:
@@ -396,7 +385,6 @@ class Connection(attrib.Container, ABC):
         connection without committing the changes first will cause an implicit
         rollback to be performed.
         """
-        pass
 
     @abstractmethod
     def cursor(self) -> Cursor:
@@ -406,4 +394,3 @@ class Connection(attrib.Container, ABC):
         will have to emulate cursors using other means to the extent needed by
         this specification.
         """
-        pass

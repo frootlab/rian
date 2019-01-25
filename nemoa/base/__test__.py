@@ -10,15 +10,14 @@ from collections import OrderedDict
 import datetime
 from unittest import mock
 from pathlib import Path
-import typing
+from typing import Any, Callable, Union
 import numpy as np
 from nemoa import errors
 from nemoa.base import abc, array, attrib, binary, check, env, literal, mapping
 from nemoa.base import operator, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
-from nemoa.types import Module, PathLikeList, StrList
-from nemoa.types import NaN, Method, Function
+from nemoa.types import Module, PathLikeList, StrList, NaN, Method, Function
 
 #
 # Test Cases
@@ -102,6 +101,149 @@ class TestArray(ModuleTestCase):
 class TestAttrib(ModuleTestCase):
     module = attrib
 
+    def test_Content(self) -> None:
+        Group = type('Group', (attrib.Group, ), {'data': attrib.Content()})
+        group = Group()
+        group.data = 'test'
+        self.assertEqual(group._attr_group_data['data'], 'test')
+
+    def test_MetaData(self) -> None:
+        Group = type('Group', (attrib.Group, ), {'meta': attrib.MetaData()})
+        group = Group()
+        group.meta = 'test'
+        self.assertEqual(group._attr_group_meta['meta'], 'test')
+
+    def test_Temporary(self) -> None:
+        Group = type('Group', (attrib.Group, ), {'temp': attrib.Temporary()})
+        group = Group()
+        group.temp = 'test'
+        self.assertEqual(group._attr_group_temp['temp'], 'test')
+
+    def test_Virtual(self) -> None:
+        val: Any
+
+        class Group(attrib.Group):
+
+            def fget(self) -> str:
+                return getattr(self, 'val', None)
+            def fset(self, val: Any) -> None:
+                self.val = val
+
+            v1: property = attrib.Attribute(fget)
+            v2: property = attrib.Attribute(fget, fset)
+
+        group = Group()
+
+        with self.subTest(fget=group.fget):
+            self.assertEqual(group.v1, None)
+            self.assertRaises(AttributeError, setattr, group, 'v1', True)
+
+        with self.subTest(fget=group.fget, fset=group.fset):
+            self.assertEqual(group.v2, None)
+            group.v2 = True
+            self.assertEqual(group.v2, True)
+            self.assertEqual(group.val, True)
+
+    def test_Attribute(self) -> None:
+
+        def factory() -> str:
+            return 'ok'
+
+        class Parent(attrib.Group):
+            a6: property = attrib.Attribute(default='ok')
+            a7: property = attrib.Attribute(default='ok')
+
+        class Group(attrib.Group):
+            store: dict
+            key: Any
+
+            def __init__(self, parent: attrib.Group) -> None:
+                super().__init__(parent=parent)
+                self.store = {'a5': 'ok'}
+                self.key = 'ok'
+
+            def fget(self) -> str:
+                return 'ok'
+
+            def fset(self, val: Any) -> None:
+                self.store['a9'] = val
+
+            a0: property = attrib.Attribute(fget)
+            a1: property = attrib.Attribute('fget')
+            a2: property = attrib.Attribute(default='ok')
+            a3: property = attrib.Attribute(factory=factory)
+            a4: property = attrib.Attribute(bindkey='key')
+            a5: property = attrib.Attribute(binddict='store')
+            a6: property = attrib.Attribute(remote=True)
+            a7: property = attrib.Attribute(inherit=True)
+            a8: property = attrib.Attribute(dtype=str)
+            a9: property = attrib.Attribute(fset='fset')
+            aa: property = attrib.Attribute(category='test')
+            ab: property = attrib.Attribute(readonly=True)
+
+        parent = Parent()
+        group = Group(parent=parent)
+
+        with self.subTest(fget=group.fget):
+            self.assertEqual(group.a0, 'ok')
+            group.a0 = None
+            self.assertEqual(group.a0, 'ok')
+            self.assertEqual(group.__dict__['a0'], None)
+
+        with self.subTest(fget='fget'):
+            self.assertEqual(group.a1, 'ok')
+            group.a1 = None
+            self.assertEqual(group.a1, 'ok')
+            self.assertEqual(group.__dict__['a1'], None)
+
+        with self.subTest(default= 'ok'):
+            self.assertEqual(group.a2, 'ok')
+            group.a2 = None
+            self.assertEqual(group.a2, None)
+
+        with self.subTest(factory=factory):
+            self.assertEqual(group.a3, 'ok')
+            group.a3 = None
+            self.assertEqual(group.a3, None)
+
+        with self.subTest(bindkey='key'):
+            self.assertEqual(group.a4, 'ok')
+            group.a4 = None
+            self.assertEqual(group.a4, None)
+            self.assertEqual(group.key, None)
+
+        with self.subTest(binddict='store'):
+            self.assertEqual(group.a5, 'ok')
+            group.a5 = None
+            self.assertEqual(group.a5, None)
+            self.assertEqual(group.store['a5'], None)
+
+        with self.subTest(remote=True):
+            self.assertEqual(group.a6, 'ok')
+            group.a6 = None
+            self.assertEqual(group.a6, None)
+            self.assertEqual(parent.a6, None)
+
+        with self.subTest(inherit=True):
+            self.assertEqual(group.a7, 'ok')
+            group.a7 = None
+            self.assertEqual(group.a7, None)
+            self.assertEqual(parent.a7, 'ok')
+
+        with self.subTest(dtype=int):
+            self.assertRaises(TypeError, setattr, group, 'a8', True)
+
+        with self.subTest(fset='fset'):
+            group.a9 = 'ok'
+            self.assertEqual(group.store['a9'], 'ok')
+
+        with self.subTest(category='test'):
+            attrs = group._get_attr_names(category='test')
+            self.assertEqual(attrs, ['aa'])
+
+        with self.subTest(category='test'):
+            self.assertRaises(AttributeError, setattr, group, 'ab', True)
+
     def test_Group(self) -> None:
 
         class Leaf(attrib.Group):
@@ -128,7 +270,6 @@ class TestAttrib(ModuleTestCase):
         # Check Re-Creation and Instantiation of Subgroups
         g1.branch.data = 1 # type: ignore
         self.assertNotEqual(g2.branch.data, 1) # type: ignore
-
 
 class TestStype(ModuleTestCase):
     module = stype
@@ -507,7 +648,7 @@ class TestOperator(ModuleTestCase):
             f = F('a', 'b', target=dict)
             self.assertEqual(f(1, 2), {'a': 1, 'b': 2})
 
-    def test_create_setter(self) -> typing.Any:
+    def test_create_setter(self) -> Any:
         items = [('name', 'monty'), ('id', 42)]
 
         with self.subTest(domain=object):
@@ -760,15 +901,15 @@ class TestCheck(ModuleTestCase):
             Case(args=('', '', str)),
             Case(args=('', list(), list)),
             Case(args=('', dict(), dict)),
-            Case(args=('', object, typing.Callable)),
-            Case(args=('', object, typing.Any))])
+            Case(args=('', object, Callable)),
+            Case(args=('', object, Any))])
 
         self.assertAllRaises(TypeError, check.has_type, [
             Case(args=('', '', int)),
             Case(args=('', 1., int)),
             Case(args=('', 1, float)),
             Case(args=('', dict(), list)),
-            Case(args=('', None, typing.Callable))])
+            Case(args=('', None, Callable))])
 
     def test_is_identifier(self) -> None:
         self.assertNoneRaises(ValueError, check.is_identifier, [
@@ -813,14 +954,14 @@ class TestCheck(ModuleTestCase):
         self.assertNoneRaises(TypeError, check.is_typehint, [
             Case(args=('', str)),
             Case(args=('', (int, float))),
-            Case(args=('', typing.Any)),
-            Case(args=('', typing.Callable))])
+            Case(args=('', Any)),
+            Case(args=('', Callable))])
 
         self.assertAllRaises(TypeError, check.is_typehint, [
             Case(args=('', None)),
             Case(args=('', 0)),
             Case(args=('', '')),
-            Case(args=('', typing.Union))])
+            Case(args=('', Union))])
 
     def test_is_class(self) -> None:
         self.assertNoneRaises(TypeError, check.is_class, [

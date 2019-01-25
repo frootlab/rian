@@ -275,7 +275,7 @@ class Writer(HandlerBase):
 # CSV File Class
 #
 
-class File(attrib.Container):
+class File(attrib.Group):
     """File Class for text files containing delimiter-separated values.
 
     Args:

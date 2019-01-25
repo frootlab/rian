@@ -115,7 +115,7 @@ class SessionType(metaclass=Meta):
 # Session Class
 #
 
-class Session(attrib.Container, SessionType):
+class Session(attrib.Group, SessionType):
     """Session Class."""
     __slots__: list = []
 
@@ -176,7 +176,7 @@ class Session(attrib.Container, SessionType):
         self.paths = [env.expand(path) for path in self._default_paths]
 
         # Bind session to workspace
-        self.parent = self._file
+        self._set_attr_group_parent(self._file)
 
         # Load session configuration from file
         if env.is_file(self._config_file_path):
@@ -220,7 +220,7 @@ class Session(attrib.Container, SessionType):
         """
         path = self._locate_path(workspace=workspace, basedir=basedir)
         self._file = ws.Workspace(filepath=path, pwd=pwd)
-        self.parent = self._file
+        self._set_attr_group_parent(self._file)
 
     def save(self) -> None:
         """Save Workspace to current file."""

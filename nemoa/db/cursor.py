@@ -40,7 +40,6 @@ class ModeError(CursorError):
 PredLike = Optional[Union[str, BoolOp]]
 OrderByType = Optional[Union[str, StrList, StrTuple, SeqOp]]
 GroupByType = OrderByType
-OptContainer = Optional[attrib.Container]
 AggAttr = Union[str, Tuple[str, AnyOp]]
 OptSeqOp = Optional[SeqOp]
 
@@ -69,7 +68,7 @@ MODE_RANDOM = 0b1000
 # Cursor Class
 #
 
-class Cursor(attrib.Container):
+class Cursor(attrib.Group):
     """Cursor Class.
 
     Args:
@@ -165,9 +164,9 @@ class Cursor(attrib.Container):
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, dtype: OptType = None,
             index: OptIntList = None, getter: OptOp = None,
-            mode: OptStr = None, parent: OptContainer = None) -> None:
+            mode: OptStr = None, parent: Optional[attrib.Group] = None) -> None:
 
-        # Initialize Attribute Container with parent Attribute Group
+        # Initialize Attribute Group with parent Attribute Group
         super().__init__(parent=parent)
 
         # Update Cursor Parameters (The order is important)

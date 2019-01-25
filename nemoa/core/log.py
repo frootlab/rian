@@ -25,7 +25,7 @@ from nemoa.types import StrOrInt, OptPath, Void
 # Logger Class
 #
 
-class Logger(attrib.Container, abc.Singleton):
+class Logger(attrib.Group, abc.Singleton):
     """Singleton class for logging.
 
     Args:

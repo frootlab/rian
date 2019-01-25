@@ -15,7 +15,7 @@ from nemoa.errors import FileFormatError
 from nemoa.io import ini, zip as archive
 from nemoa.types import StrList, PathLike, OptBytes, OptPathLike
 
-class Workspace(archive.File, attrib.Container):
+class Workspace(archive.File, attrib.Group):
     """Workspaces.
 
     Workspaces are in-memory Zip-Archives with a given archive directory
@@ -61,7 +61,6 @@ class Workspace(archive.File, attrib.Container):
     workspace, which is executed after loading the workspace.
     """
 
-
     def __init__(
             self, filepath: OptPathLike = None, pwd: OptBytes = None,
             parent: Optional[attrib.Group] = None) -> None:
@@ -70,8 +69,7 @@ class Workspace(archive.File, attrib.Container):
         archive.File.__init__(self, filepath=filepath, pwd=pwd)
 
         # Initialize Attribute Group
-        attrib.Container.__init__(self, parent=parent)
-
+        attrib.Group.__init__(self, parent=parent)
 
     def load(self, filepath: PathLike, pwd: OptBytes = None) -> None:
         """Load Workspace from file.

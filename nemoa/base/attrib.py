@@ -23,7 +23,7 @@ OptCallOrStr = Optional[Union[Callable, str]]
 # Attribute Class
 #
 
-class Attribute(property):
+class Attribute(property, abc.Isolated):
     """Extended data descriptor for Attributes.
 
     Data descriptors are classes, used for binding attributes to fields and
@@ -146,7 +146,7 @@ class Attribute(property):
         # Initialize Property Class
         super().__init__( # type: ignore
             fget=fget if callable(fget) else None,
-            fset=fget if callable(fset) else None,
+            fset=fset if callable(fset) else None,
             fdel=fdel if callable(fdel) else None,
             doc=doc)
 
@@ -332,9 +332,8 @@ class Virtual(Attribute):
     def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initialize default values of attribute descriptor."""
         super().__init__(*args, **kwds)
-        if not callable(self.fget):
-            if not isinstance(self.sget, str):
-                raise errors.MissingKwError('fget', self)
+        if not callable(self.fget) and not isinstance(self.sget, str):
+            raise errors.MissingKwError('fget', self)
         self.readonly = not (callable(self.fset) or isinstance(self.sget, str))
 
 #
@@ -648,50 +647,48 @@ class Group(abc.Isolated):
         for key, val in data.items():
             setattr(obj, key, val)
 
+# #
+# # Attribute Root Groups
+# #
 #
-# Attribute Containers
+# class Root(Group):
+#     """Base class for Attribute Root Groups.
 #
-
-class Container(Group):
-    """Base class for Attribute Containers.
-
-    Attribute Containers are Attribute Groups, which support Standard Attribute
-    Classes for Content, MetaData, Temporary Data and Virtual Attributes.
-    Thereupon Attribute Containers provide a public interface to access and
-    control it's contained Attributes and Attribute Groups.
-
-    Args:
-        parent: Reference to parent :class:'attribute group
-            <nemoa.base.attrib.Group>', which is used for inheritance and
-            shared attributes. By default no parent is referenced.
-        readonly: Boolean value, which superseeds the contained attributes
-            read-only behaviour. For the values True or False, all contained
-            attributes respectively are read-only or read-writable. By the
-            default value None, the attributes' settings are not superseeded.
-        remote: Boolean value, which superseeds the contained attributes remote
-            behaviour. For the value True, all contained attributes are shared
-            attributes of the parent attribute group, which must be referenced
-            and contain the respetive attributes, or an error is raised. For the
-            value False, all contained atributes are handled locally, regardless
-            of a parent group. By the default value None, the attributes'
-            settings are not superseeded.
-        inherit: Boolean value, which superseeds the contained attributes
-            inheritance behaviour. For the value True, all contained attributes
-            inherit their default values from the attribute values of the parent
-            attribute group, which must be referenced and contain the respetive
-            attributes, or an error is raised. For the value False, the default
-            values of the contained atributes are handled locally, regardless of
-            a parent group. By the default value None, the attributes settings
-            are not superseeded.
-        content:
-        metadata:
-
-    """
-
-    #
-    # Public Attributes
-    #
-
-    parent: property = Virtual(fget='_get_attr_group_parent',
-        fset='_set_attr_group_parent', dtype=Group)
-    parent.__doc__ = """Reference to parent Attribute Group."""
+#     Attribute Root Groups are Attribute Groups, which provide a public interface
+#     to access and control it's contained Attributes and Attribute Groups.
+#
+#     Args:
+#         parent: Reference to parent :class:'attribute group
+#             <nemoa.base.attrib.Group>', which is used for inheritance and
+#             shared attributes. By default no parent is referenced.
+#         readonly: Boolean value, which superseeds the contained attributes
+#             read-only behaviour. For the values True or False, all contained
+#             attributes respectively are read-only or read-writable. By the
+#             default value None, the attributes' settings are not superseeded.
+#         remote: Boolean value, which superseeds the contained attributes remote
+#             behaviour. For the value True, all contained attributes are shared
+#             attributes of the parent attribute group, which must be referenced
+#             and contain the respetive attributes, or an error is raised. For the
+#             value False, all contained atributes are handled locally, regardless
+#             of a parent group. By the default value None, the attributes'
+#             settings are not superseeded.
+#         inherit: Boolean value, which superseeds the contained attributes
+#             inheritance behaviour. For the value True, all contained attributes
+#             inherit their default values from the attribute values of the parent
+#             attribute group, which must be referenced and contain the respetive
+#             attributes, or an error is raised. For the value False, the default
+#             values of the contained atributes are handled locally, regardless of
+#             a parent group. By the default value None, the attributes settings
+#             are not superseeded.
+#         content:
+#         metadata:
+#
+#     """
+#
+#     #
+#     # Public Attributes
+#     #
+#
+#     parent: property = Virtual(fget='_get_attr_group_parent',
+#         fset='_set_attr_group_parent', dtype=Group)
+#     parent.__doc__ = """Reference to parent Attribute Group."""

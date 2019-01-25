@@ -22,7 +22,6 @@ from nemoa.types import Mapping, OptMapping
 
 # Various
 OrderByType = Optional[Union[str, StrList, StrTuple, SeqOp]]
-OptContainer = Optional[attrib.Container]
 
 # MappingProxy
 MappingProxy = types.MappingProxyType
@@ -59,7 +58,7 @@ PROXY_MODE_FLAG_READONLY = 0b0100
 # Table Class
 #
 
-class Table(attrib.Container):
+class Table(attrib.Group):
     """Table Class.
 
     Args:
@@ -138,8 +137,9 @@ class Table(attrib.Container):
 
     def __init__(
             self, name: OptStr = None, columns: OptColsDef = None,
-            metadata: OptMapping = None, parent: OptContainer = None) -> None:
-        super().__init__(parent=parent) # Initialize Container Parameters
+            metadata: OptMapping = None,
+            parent: Optional[attrib.Group] = None) -> None:
+        super().__init__(parent=parent) # Initialize Attribute Group
 
         # Initialize Table Structure
         if columns:
@@ -605,8 +605,9 @@ class Proxy(Table, abc.Proxy):
 
     def __init__(
             self, proxy_mode: OptInt = None,
-            parent: OptContainer = None) -> None:
-        # Initialize Abstract Proxy
+            parent: Optional[attrib.Group] = None) -> None:
+
+        # Initialize Proxy Base Class
         abc.Proxy.__init__(self)
 
         # Initialize Empty Table
