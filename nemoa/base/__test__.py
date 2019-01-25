@@ -129,8 +129,8 @@ class TestAttrib(ModuleTestCase):
             def fset(self, val: Any) -> None:
                 self.val = val
 
-            v1: property = attrib.Attribute(fget)
-            v2: property = attrib.Attribute(fget, fset)
+            v1: property = attrib.Virtual(fget)
+            v2: property = attrib.Virtual(fget, fset)
 
         group = Group()
 
