@@ -295,28 +295,36 @@ class Getter(Operator, abc.Multiton):
             *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> None:
 
-        # Initialize Operator Base Class
+        # Initialize Base Class
         Operator.__init__(self, *args, domain=domain, target=target)
 
+        # Build Getter Operator
+        self._build(*args)
+
+    def _build(self, *args: Any) -> None:
+
         # Build fetch and format operators
-        fetch = self._build_fetch(*args, domain=self.domain)
-        formatter = self._build_formatter(*args, target=self.target)
+        fetch = self._build_fetch(*args, domain=self._domain)
+        formatter = self._build_formatter(*args, target=self._target)
 
-        # If the formatter is an identity operator, return getter. If the getter
-        # is an identity operator, precede a tuple 'packer' to the formatter
+        # Build a getter operator by composing the fetch and the formatter
+        # operator. If the formatter is an identity operator, return getter. If
+        # the fetch operator is an identity operator, precede a 'boxing'
+        # operator to the formatter
+        getter: AnyOp
         if isinstance(formatter, Identity):
-            self._built = fetch
+            getter = fetch
         elif isinstance(fetch, Identity):
-            self._built = compose(formatter, lambda *args: args)
+            getter = compose(formatter, lambda self, *args: args)
         else:
-            self._built = compose(formatter, fetch)
+            getter = compose(formatter, fetch)
 
-    def __call__(self, *args: Any) -> Any:
-        return self._built(*args)
+        # Bind the getter operator to the method __call__. Note: This is only
+        # possible, since the Multiton base class implements class isolation.
+        meth = types.MethodType(getter, self)
+        setattr(type(self), '__call__', meth)
 
     def __repr__(self) -> str:
-        if isinstance(self._built, Operator):
-            return repr(self._built)
         name = type(self).__name__
         try:
             frame = self._domain.frame
@@ -327,10 +335,7 @@ class Getter(Operator, abc.Multiton):
             return f"{name}()"
 
     def __len__(self) -> int:
-        try:
-            return len(self._built)
-        except TypeError:
-            return len(self._target.frame)
+        return len(self._target.frame)
 
     def _build_fetch(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
 
@@ -344,8 +349,8 @@ class Getter(Operator, abc.Multiton):
             if domain.frame == args:
                 return Identity(domain=domain)
             check.is_subset('fields', set(args), 'frame', set(domain.frame))
-            igettr = operator.itemgetter(*map(domain.frame.index, args))
-            return lambda *args: igettr(args)
+            itemgetter = operator.itemgetter(*map(domain.frame.index, args))
+            return lambda self, *args: itemgetter(args)
 
         # If the domain type is object, check if the given field identifiers are
         # valid attribute identifiers. In this case return an attribute getter,
@@ -355,7 +360,8 @@ class Getter(Operator, abc.Multiton):
                 if not (isinstance(arg, str) and arg.isidentifier):
                     raise InvalidTypeError(
                         'field', arg, 'a valid attribute name')
-            return operator.attrgetter(*args) # type: ignore
+            attrgetter = operator.attrgetter(*args) # type: ignore
+            return lambda self, obj: attrgetter(obj)
 
         # If the domain is a mapping, check if field identifiers are valid
         # mapping keys and return itemgetter() from standard library module
@@ -364,7 +370,8 @@ class Getter(Operator, abc.Multiton):
             for arg in args:
                 if not isinstance(arg, Hashable):
                     raise InvalidTypeError('field', arg, 'a valid mapping key')
-            return operator.itemgetter(*args)
+            itemgetter = operator.itemgetter(*args)
+            return lambda self, mapping: itemgetter(mapping)
 
         # If the domain is a sequence and a frame is given, check that all field
         # identifiers are contained within the frame. In this case the frame is
@@ -376,12 +383,15 @@ class Getter(Operator, abc.Multiton):
             if domain.frame:
                 if not set(args) <= set(domain.frame):
                     raise ValueError() # TODO: NotInList
-                return operator.itemgetter(*map(domain.frame.index, args))
+                pos = map(domain.frame.index, args)
+                itemgetter = operator.itemgetter(*pos)
+                return lambda self, seq: itemgetter(seq)
             for arg in args:
                 if not isinstance(arg, int) or arg < 0:
                     raise InvalidTypeError(
                         'any field', args, 'positive integer')
-            return operator.itemgetter(*args)
+            itemgetter = operator.itemgetter(*args)
+            return lambda self, seq: itemgetter(seq)
 
         # TODO: raise InvalidValueError!
         raise InvalidTypeError(
