@@ -9,7 +9,7 @@ __docformat__ = 'google'
 import copy
 from typing import Any, Optional, Union, Callable
 from nemoa import errors
-from nemoa.base import check
+from nemoa.base import abc, check
 from nemoa.types import OptClassInfo, TypeHint, OptStr, OptStrDict, OptType
 from nemoa.types import StrDict, StrList, void, OptDict, OptBool
 
@@ -341,7 +341,7 @@ class Virtual(Attribute):
 # Attribute Groups
 #
 
-class Group:
+class Group(abc.Isolated):
     """Class for Attribute Groups.
 
     Attribute Groups are used to bind attributes (and other attribute groups)

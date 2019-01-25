@@ -67,10 +67,10 @@ class Manager(abc.Singleton):
 # Meta Class for Session Base Classes
 #
 
-class Meta(abc.ABCMeta):
+class Meta(abc.IsolatedMeta): # TODO: Use abc.MultitonMeta
     """Metaclass for Session Base Classes.
 
-    Session Instances require an instanciation per SessionID, which is closely
+    Session objects require an instanciation per SessionID, which is closely
     related to the Multiton Pattern.
 
     """

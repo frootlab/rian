@@ -13,17 +13,51 @@ from typing import Any, Dict, Tuple, Optional, IO
 # Creational Patterns
 #
 
-class SingletonMeta(ABCMeta):
-    """Metaclass for Singletons.
+class IsolatedMeta(ABCMeta):
+    """Metaclass for isolated classes.
 
-    Singleton classes only create a single instance per application. This
-    creation behaviour is comparable to global variables and used to ensure the
-    application global uniqueness and accessibility of an object. Common use
-    cases for Singletons comprise logging, sentinel objects and application
-    global constants (given as immutable objects).
+    Isolated classes create a new subclass for any instance to allow the
+    modification of class methods without side effects. Common use cases for
+    isolated classes include Singletons, Multitons and built classes, that avoid
+    generic programming in favor of higher efficiency or lower memory usage.
 
     """
-    _instance: Optional[type] = None
+    def __call__(cls, *args: Any, **kwds: Any) -> object:
+        # Create new subclass of the given class. Set the attribute '__slots__'
+        # to an empty list, to allow the usage of slots.
+        subcls = IsolatedMeta(cls.__name__, (cls, ), {'__slots__': []})
+
+        # Create an instance of the new subclass. Note, that if the class does
+        # not implement an __init__ method a TypeError is raised. In this case
+        # the class is called without arguments.
+        try:
+            return super(IsolatedMeta, subcls).__call__(*args, **kwds)
+        except TypeError as err:
+            if 'takes no arguments' in str(err):
+                return super(IsolatedMeta, subcls).__call__()
+            raise
+
+class Isolated(metaclass=IsolatedMeta):
+    """Abstract Base Class for per-instance isolated classes.
+
+    The Isolated base class is a helper class, which is included to allow
+    instance checking against the IsolatedMeta metaclass.
+
+    """
+    __slots__: list = []
+
+class SingletonMeta(IsolatedMeta):
+    """Metaclass for Singletons.
+
+    Singleton classes only create a single instance per application and
+    therefore may be regarded as a special case of isolated classes. This
+    creation pattern ensures the application global uniqueness and accessibility
+    of instances, comparably to global variables. Common use cases comprise
+    logging, sentinel objects and application global constants (given as
+    immutable objects).
+
+    """
+    _instance: Optional[object] = None
 
     def __call__(cls, *args: Any, **kwds: Any) -> object:
         if not cls._instance:
@@ -47,38 +81,6 @@ class Singleton(metaclass=SingletonMeta):
 
     The Singleton base class is a helper class, which is included to allow
     instance checking against the SingletonMeta metaclass.
-
-    """
-    __slots__: list = []
-
-class IsolatedMeta(ABCMeta):
-    """Metaclass for per-instance class Isolation.
-
-    Isolated classes create a new subclass for any instance and therefore allow
-    the modification of class methods per instance. Common use cases for
-    isolated classes include built classes, that avoid generic programming in
-    favor of higher efficiency or lower memory usage.
-
-    """
-    def __call__(cls, *args: Any, **kwds: Any) -> object:
-        # Create new subclass of the given class.
-        subcls = IsolatedMeta(cls.__name__, (cls, ), {})
-
-        # Create an instance of the new subclass. Note, that if the class does
-        # not implement an __init__ method a TypeError is raised. In this case
-        # the class is called without arguments.
-        try:
-            return super(IsolatedMeta, subcls).__call__(*args, **kwds)
-        except TypeError as err:
-            if 'takes no arguments' in str(err):
-                return super(IsolatedMeta, subcls).__call__()
-            raise
-
-class Isolated(metaclass=IsolatedMeta):
-    """Abstract Base Class for per-instance isolated classes.
-
-    The Isolated base class is a helper class, which is included to allow
-    instance checking against the IsolatedMeta metaclass.
 
     """
     __slots__: list = []
