@@ -7,14 +7,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import types
-from typing import NewType
+from typing import Any, NewType, Tuple, List, Optional, Iterator, Union
 from nemoa.base import attrib, check, abc
 from nemoa.db import record, cursor
 from nemoa.errors import RowLookupError, ProxyError
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Tuple, StrList, StrTuple, OptOp, SeqOp, OptType
-from nemoa.types import OptStrTuple, OptInt, List, OptStr, Iterator, Any
-from nemoa.types import Mapping, OptMapping, Union, Optional
+from nemoa.types import StrList, StrTuple, OptOp, SeqOp, OptType
+from nemoa.types import OptStrTuple, OptInt, OptStr
+from nemoa.types import Mapping, OptMapping
 
 #
 # Structural Types
@@ -35,6 +35,8 @@ OptFieldTuple = Optional[Tuple[record.Field, ...]]
 SelColA = str # Select Column: name
 SelColB = Tuple[str, SeqOp] # Select Column: name, aggregator
 SelCol = Union[SelColA, SelColB] # Select Column
+ColsDef = Tuple[record.ColDef, ...]
+OptColsDef = Optional[ColsDef]
 
 # Rows
 Row = NewType('Row', record.Record)
@@ -135,7 +137,7 @@ class Table(attrib.Container):
     #
 
     def __init__(
-            self, name: OptStr = None, columns: record.OptColsDef = None,
+            self, name: OptStr = None, columns: OptColsDef = None,
             metadata: OptMapping = None, parent: OptContainer = None) -> None:
         super().__init__(parent=parent) # Initialize Container Parameters
 
@@ -164,7 +166,7 @@ class Table(attrib.Container):
     #
 
     def create(
-            self, name: OptStr, columns: record.ColsDef,
+            self, name: OptStr, columns: ColsDef,
             metadata: OptMapping = None) -> None:
         """Create table structure.
 
@@ -203,7 +205,7 @@ class Table(attrib.Container):
         """
         self._set_name(name) # Set Name of the Table
         self._create_metadata(metadata) # Set supplementary Metadata of Table
-        self._build_record_class(columns) # Build Record Class
+        self._build_record_class(*columns) # Build Record Class
 
     def drop(self) -> None:
         """Delete table data and table structure.
@@ -505,9 +507,9 @@ class Table(attrib.Container):
         del self._metadata_proxy
         del self._metadata
 
-    def _build_record_class(self, columns: record.ColsDef) -> None:
+    def _build_record_class(self, *args: record.ColDef) -> None:
         # Dynamically create a new record class
-        self._record = record.build(columns,
+        self._record = record.build(*args,
             newid=self._get_new_rowid,
             delete=self._remove_rowid,
             restore=self._append_rowid,

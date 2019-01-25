@@ -10,10 +10,10 @@ import abc
 import contextlib
 import itertools
 import dataclasses
+from typing import Any, Union, Tuple, Type
 from nemoa.base import check
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Tuple, StrDict, StrList, StrTuple, void
-from nemoa.types import OptOp, Any, Type, Union, Optional, TypeHint
+from nemoa.types import StrDict, StrList, void, OptOp, TypeHint
 
 #
 # Structural Types
@@ -26,8 +26,6 @@ ColDefB = Tuple[str, type] # Column definition: name and type
 ColDefC = Tuple[str, type, StrDict] # Column definition: name, type, constraints
 ColDefD = Tuple[str, type, Field] # Column definition: name, type, constraints
 ColDef = Union[ColDefA, ColDefB, ColDefC, ColDefD] # Column definition
-ColsDef = Tuple[ColDef, ...]
-OptColsDef = Optional[ColsDef]
 
 #
 # Constants
@@ -51,12 +49,15 @@ class Record(abc.ABC):
             definitions of derived :mod:'dataclasses'.
 
     """
-
-    __slots__: StrTuple = ('_id', '_name', '_state')
+    __slots__ = ['_id', '_name', '_state']
 
     _id: int
     _name: str
     _state: int
+
+    @abc.abstractmethod
+    def __init__(self, *args: Any) -> None:
+        raise NotImplementedError()
 
     def __post_init__(self, *args: Any, **kwds: Any) -> None:
         self._validate()
@@ -120,20 +121,20 @@ class Record(abc.ABC):
 # Builder, Constructor and helper functions
 #
 
-def build(columns: ColsDef, newid: OptOp = None, **kwds: Any) -> Type[Record]:
+def build(*args: ColDef, newid: OptOp = None, **kwds: Any) -> Type[Record]:
     """Create a new subclass of the Record class.
 
     Args:
-        columns: Tuple of *column definitions*. All column definitions
-            independent from each other can be given in one of the following
-            formats: (1) In order to only specify the name of the column,
-            without further information, the colum definition has to be given as
-            a string `<name>`. Thereby the choice of `<name>` is restricted to
-            valid identifiers, described by [UAX31]_. (2) If, additionally to
-            the name, also the data type of the column shall be specified, then
-            the column definition has to be given as a tuple `(<name>, <type>)`.
-            Thereby `<type>` is required to by a valid :class:`type`, like
-            like :class:`str`, :class:`int`, :class:`float` or :class:`Date
+        *args: *column definitions*. All column definitions independent from
+            each other can be given in one of the following formats: (1) In
+            order to only specify the name of the column, without further
+            information, the colum definition has to be given as a string
+            `<name>`. Thereby the choice of `<name>` is restricted to valid
+            identifiers, described by [UAX31]_. (2) If, additionally to the
+            name, also the data type of the column shall be specified, then the
+            column definition has to be given as a tuple `(<name>, <type>)`.
+            Thereby `<type>` is required to by a valid :class:`type`, like like
+            :class:`str`, :class:`int`, :class:`float` or :class:`Date
             <datetime.datetime>`. (3) Finally the column definition may also
             contain supplementary constraints and metadata. In this case the
             definition has to be given as a tuple `(<name>, <type>, <dict>)`,
@@ -152,30 +153,29 @@ def build(columns: ColsDef, newid: OptOp = None, **kwds: Any) -> Type[Record]:
     """
     # Check column defnitions and convert them to field descriptors, as required
     # by dataclasses.make_dataclass()
-    check.has_type("'columns'", columns, tuple)
     fields: list = []
     names: StrList = []
-    for column in columns:
-        if isinstance(column, str):
-            fields.append(column)
-            names.append(column)
+    for arg in args:
+        if isinstance(arg, str):
+            fields.append(arg)
+            names.append(arg)
             continue
-        check.has_type(f'column {column}', column, tuple)
-        check.has_size(f'column {column}', column, min_size=2, max_size=3)
-        check.has_type('first argument', column[0], str)
-        check.has_type('second argument', column[1], TypeHint)
-        if len(column) == 2:
-            fields.append(column)
-            names.append(column[0])
+        check.has_type(f'column {arg}', arg, tuple)
+        check.has_size(f'column {arg}', arg, min_size=2, max_size=3)
+        check.has_type('first argument', arg[0], str)
+        check.has_type('second argument', arg[1], TypeHint)
+        if len(arg) == 2:
+            fields.append(arg)
+            names.append(arg[0])
             continue
-        check.has_type('third argument', column[2], (Field, dict))
-        if isinstance(column[2], Field):
-            fields.append(column)
-            names.append(column[0])
+        check.has_type('third argument', arg[2], (Field, dict))
+        if isinstance(arg[2], Field):
+            fields.append(arg)
+            names.append(arg[0])
             continue
-        field = dataclasses.field(**column[2])
-        names.append(column[0])
-        fields.append(column[:2] + (field,))
+        field = dataclasses.field(**arg[2])
+        names.append(arg[0])
+        fields.append(arg[:2] + (field,))
 
     # Dynamically create a dataclass, which is inherited from Record class.
     # Thereby create an ampty '__slots__' attribute to avoid collision with
@@ -201,6 +201,7 @@ def build(columns: ColsDef, newid: OptOp = None, **kwds: Any) -> Type[Record]:
     return type(dataclass.__name__, (dataclass,), {'__slots__': names})
 
 def create_from(record: Record, **changes: Any) -> Record:
+    """Create new record instance, using an existing record."""
     if not is_record(record):
         raise InvalidTypeError('record', record, Record)
     newrec = dataclasses.replace(record, **changes)
@@ -213,6 +214,7 @@ def create_from(record: Record, **changes: Any) -> Record:
     return newrec
 
 def is_record(record: object) -> bool:
+    """Check if a given object is a record."""
     if not isinstance(record, Record):
         return False
     if not dataclasses.is_dataclass(record):
@@ -220,4 +222,5 @@ def is_record(record: object) -> bool:
     return True
 
 def get_fields(record: Record) -> FieldTuple:
+    """Get field definitions of record."""
     return dataclasses.fields(record)
