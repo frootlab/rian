@@ -485,12 +485,20 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('a',)):
             f = F('a')
             self.assertIsInstance(f, operator.Identity)
+            self.assertRaises(TypeError, f)
             self.assertEqual(f(1), 1)
 
         with self.subTest(args=('a', 'b')):
             f = F('a', 'b')
             self.assertIsInstance(f, operator.Identity)
-            self.assertEqual(f((1, 2)), (1, 2))
+            self.assertRaises(TypeError, f, 1)
+            self.assertEqual(f(1, 2), (1, 2))
+
+        with self.subTest(args=('a', 'b', 'c')):
+            f = F('a', 'b', 'c')
+            self.assertIsInstance(f, operator.Identity)
+            self.assertRaises(TypeError, f, 1, 2)
+            self.assertEqual(f(1, 2, 3), (1, 2, 3))
 
         with self.subTest(args=('a', 'b'), target=dict):
             f = F('a', 'b', target=dict)

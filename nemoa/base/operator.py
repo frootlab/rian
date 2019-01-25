@@ -184,13 +184,55 @@ class Identity(Operator, abc.Multiton):
 
     def __init__(self, domain: stype.DomLike = None) -> None:
         Operator.__init__(self, domain=domain, target=domain)
+        self._build()
 
-    def __call__(self, *args: Any) -> Any:
-        if not args:
-            return None
-        if len(args) == 1:
-            return args[0]
-        return args
+    def _build(self) -> None:
+        # Declare identity functions for (A) a variable number of arguments, (B)
+        # a single argument (C) two argumnts (D) four argumnts (E) for multiple
+        # arguments
+        def func_varargs(self: Identity, *args: Any) -> Any:
+            if not args:
+                return None
+            if len(args) == 1:
+                return args[0]
+            return args
+        def func_1arg(self: Identity, arg: Any) -> Any:
+            return arg
+        def func_2arg(self: Identity, arg1: Any, arg2: Any) -> Tuple[Any, Any]:
+            return (arg1, arg2)
+        def func_3arg(
+                self: Identity, arg1: Any, arg2: Any,
+                arg3: Any) -> Tuple[Any, Any, Any]:
+            return (arg1, arg2, arg3)
+        def func_args(self: Identity, *args: Any) -> Tuple[Any, ...]:
+            return args
+
+        # Build an identity operator by using the type and the frame size of the
+        # domain. If a domain type is given, then the function allways expects a
+        # single object of given type. If, however, the domain type is NoneType,
+        # then the number of argumnts depends on the size of the domain frame.
+        # If no frame is specified, that the number is variable.
+        # TODO: dynamically build operator with argument names and types, taken
+        # from domain
+        dom = self._domain
+        func: AnyOp
+        if dom.type is not NoneType:
+            func = func_1arg
+        elif not dom.frame:
+            func = func_varargs
+        elif len(dom.frame) == 1:
+            func = func_1arg
+        elif len(dom.frame) == 2:
+            func = func_2arg
+        elif len(dom.frame) == 3:
+            func = func_3arg
+        else:
+            func = func_args
+
+        # Bind the identity operator to the method __call__. Note: This is only
+        # possible, since the Multiton base class implements class isolation.
+        meth = types.MethodType(func, self)
+        setattr(type(self), '__call__', meth)
 
     def __len__(self) -> int:
         return 0
