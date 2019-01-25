@@ -43,9 +43,10 @@ class TestCursor(ModuleTestCase):
         pass
 
     def test_Cursor_fetch(self) -> None:
+        create = self.create_cursor
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
-                cur = self.create_cursor(mode=mode)
+                cur = create(mode=mode)
                 self.assertIsInstance(cur.fetch()[0], record.Record)
                 self.assertEqual(len(cur.fetch(4)), 4)
                 if mode.split()[0] == 'random':
@@ -55,9 +56,10 @@ class TestCursor(ModuleTestCase):
                     self.assertEqual(cur.fetch(), [])
 
     def test_Cursor_reset(self) -> None:
+        create = self.create_cursor
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
-                cur = self.create_cursor(mode=mode)
+                cur = create(mode=mode)
                 if mode.split()[0] == 'random':
                     self.assertNotRaises(Exception, cur.reset)
                 else:
@@ -67,22 +69,24 @@ class TestCursor(ModuleTestCase):
                     self.assertEqual(len(cur.fetch(-1)), len(self.table))
 
     def test_Cursor_batchsize(self) -> None:
+        create = self.create_cursor
         for mode in self.cursor_modes:
             with self.subTest(mode=mode):
-                cur = self.create_cursor(mode=mode, batchsize=5)
+                cur = create(mode=mode, batchsize=5)
                 self.assertEqual(len(cur.fetch()), 5)
                 cur.batchsize = 1
                 self.assertEqual(len(cur.fetch()), 1)
                 if mode.split()[0] != 'random':
                     cur.batchsize = -1
                     self.assertEqual(len(cur.fetch()), len(self.table) - 6)
-                cur = self.create_cursor(mode=mode, batchsize=100)
+                cur = create(mode=mode, batchsize=100)
                 if mode.split()[0] == 'random':
                     self.assertEqual(len(cur.fetch()), 100)
                 else:
                     self.assertEqual(len(cur.fetch()), len(self.table))
 
     def test_Cursor_where(self) -> None:
+        create = self.create_cursor
         for where, matches in [
             (lambda row: row._id < 5, 5), # pylint: disable=W0212
             (lambda row: row.name in 'abc', 3),
@@ -90,7 +94,7 @@ class TestCursor(ModuleTestCase):
             ('uid < 6 and gid == 1', 2)]:
             for mode in self.cursor_modes:
                 with self.subTest(mode=mode, where=where):
-                    cur = self.create_cursor(mode=mode, where=where)
+                    cur = create(mode=mode, where=where)
                     size = len(cur.fetch(10))
                     if mode.split()[0] == 'random':
                         self.assertEqual(size, 10)
@@ -98,64 +102,64 @@ class TestCursor(ModuleTestCase):
                         self.assertEqual(size, matches)
 
     def test_Cursor_groupby(self) -> None:
+        create = self.create_cursor
         args = ('gid', ('count', len, 'gid'), ('max(uid)', max, 'uid'))
         for mode in self.cursor_modes:
             with self.subTest(mode=mode, groupby='gid'):
                 self.assertRaises(
-                    cursor.CursorError, self.create_cursor,
-                    mode=mode, groupby='gid')
+                    cursor.CursorError, create, mode=mode, groupby='gid')
             with self.subTest(args=args, mode=mode, groupby='gid'):
                 if (mode.split()[0] == 'random'
                     or mode.split()[1] != 'static'):
                     self.assertRaises(
-                        cursor.CursorError, self.create_cursor,
-                        *args, mode=mode, groupby='gid')
+                        cursor.CursorError, create, *args, mode=mode,
+                        groupby='gid')
                 else:
-                    cur = self.create_cursor(*args, mode=mode, groupby='gid')
+                    cur = create(*args, mode=mode, groupby='gid')
                     self.assertEqual(
                         list(cur), [(0, 18, 52), (1, 17, 50), (2, 17, 51)])
 
     def test_Cursor_having(self) -> None:
+        create = self.create_cursor
         args = ('gid', ('count', len, 'gid'), ('max(uid)', max, 'uid'))
         for mode in self.cursor_modes:
-            with self.subTest(
-                mode=mode, groupby='gid', having='max(uid)<52'):
+            with self.subTest(mode=mode, groupby='gid', having='max(uid)<52'):
                 self.assertRaises(
-                    cursor.CursorError, self.create_cursor,
+                    cursor.CursorError, create,
                     mode=mode, groupby='gid', having='max(uid)<52')
             with self.subTest(
                 args=args, mode=mode, groupby='gid', having='max(uid)<52'):
                 if (mode.split()[0] == 'random'
                     or mode.split()[1] != 'static'):
                     self.assertRaises(
-                        cursor.CursorError, self.create_cursor,
+                        cursor.CursorError, create,
                         *args, mode=mode, groupby='gid', having='max(uid)<52')
                 else:
-                    cur = self.create_cursor(
+                    cur = create(
                         *args, mode=mode, groupby='gid', having='max(uid)<52')
                     self.assertEqual(
                         list(cur), [(1, 17, 50), (2, 17, 51)])
 
     def test_Cursor_orderby(self) -> None:
+        create = self.create_cursor
         for mode in self.cursor_modes:
             with self.subTest(mode=mode, orderby='uid'):
                 if (mode.split()[0] == 'random'
                     or mode.split()[1] != 'static'):
                     self.assertRaises(
-                        cursor.CursorError, self.create_cursor,
+                        cursor.CursorError, create,
                         mode=mode, orderby='uid')
                     continue
-                cur = self.create_cursor(
-                    mode=mode, orderby='uid', reverse=False)
-                rcur = self.create_cursor(
-                    mode=mode, orderby='uid', reverse=True)
+                cur = create(mode=mode, orderby='uid', reverse=False)
+                rcur = create(mode=mode, orderby='uid', reverse=True)
                 self.assertEqual(cur.fetch(-1), rcur.fetch(-1)[::-1])
 
     def test_Cursor_dtype(self) -> None:
+        create = self.create_cursor
         for dtype in [tuple, dict]:
             for mode in self.cursor_modes:
                 with self.subTest('uid', mode=mode, dtype=dtype):
-                    cur = self.create_cursor('uid', mode=mode, dtype=dtype)
+                    cur = create('uid', mode=mode, dtype=dtype)
                     row = cur.fetch()[0]
                     self.assertEqual(type(row), dtype)
 

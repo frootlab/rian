@@ -277,7 +277,13 @@ class Cursor(attrib.Container):
         ops = [lambda seq: map(self._getter, seq)] # Getter
         if self._where:
             ops.append(lambda seq: filter(self._where, seq)) # Row filter
-        ops.extend([self._groupby, self._having, self._sorter, list])
+        if self._groupby:
+            ops.append(self._groupby)
+        if self._having:
+            ops.append(lambda seq: filter(self._having, seq))
+        if self._sorter:
+            ops.append(self._sorter)
+        ops.append(list)
 
         # Compose and apply the operators to the index
         self._buffer = operator.compose(*ops[::-1])(self._index)
