@@ -89,10 +89,10 @@ class MultitonMeta(IsolatedMeta):
     """Metaclass for Multitons.
 
     Multiton Classes only create a single instance per given arguments by using
-    a new subclass for object isolation. This allows a controlled creation of
-    multiple objects, that are globally accessible and unique. Multiton classes
-    may be regarded as generalizations of Singleton Classes in the sense of a
-    'Collection of Singletons'. Common use cases comprise application global
+    a new subclass for class isolation. This allows a controlled creation of
+    multiple distinct objects, that are globally accessible and unique. Multiton
+    classes may be regarded as a generalization of Singletons in the sense of
+    'Collections of Singletons'. Common use cases comprise application global
     configurations, caching and collections of constants (given as immutable
     objects).
 

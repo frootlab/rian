@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Operators and helper functions."""
+"""Classes and functions for functional programming."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,6 +14,7 @@ import inspect
 import itertools
 import operator
 import re
+import types
 from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable, Match
 import py_expression_eval
@@ -114,6 +115,9 @@ class Operator(collections.abc.Callable): # type: ignore
         self._domain = stype.create_domain(domain, defaults={'fields': args})
         self._target = stype.create_domain(target, defaults={'fields': args})
 
+    def __call__(self, *args: Any) -> Any:
+        raise NotImplementedError() # TODO
+
     @property
     def domain(self) -> stype.Domain:
         try:
@@ -144,32 +148,35 @@ class Zero(Operator, abc.Multiton):
             object is None.
 
     """
-    __slots__ = ['_zero']
-
-    _zero: Any
+    __slots__: StrList = []
 
     def __init__(self, target: stype.DomLike = None) -> None:
         Operator.__init__(self, domain=None, target=target)
+        self._build()
 
-        # Sanity check if the target type has a unique zero object
+    def _build(self) -> None:
+        # Sanity check if the target type has a unique empty object
         target_type = self._target.type
         if not target_type() == target_type():
             raise ValueError(
                 f"target type '{target_type.__name__}' is not supported: "
                 "zero object is not unique") # TODO
 
-        self._zero = self._target.type() # Create zero object in target type
-
-    def __call__(self, *args: Any) -> Any:
-        return self._zero
+        # Create zero object in target type, build a zero morphism and bind it
+        # to the method __call__. Note: This is only possible, since the
+        # Multiton base class implements class isolation.
+        zero = target_type()
+        func = lambda self, *args: zero
+        meth = types.MethodType(func, self)
+        setattr(type(self), '__call__', meth)
 
     def __len__(self) -> int:
         return 0
 
     def __repr__(self) -> str:
-        class_name = type(self).__name__
+        name = type(self).__name__
         target_type = self._target.type.__name__
-        return f"{class_name}({target_type})"
+        return f"{name}({target_type})"
 
 class Identity(Operator, abc.Multiton):
     """Class for identity operators."""

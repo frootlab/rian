@@ -48,20 +48,20 @@ class Manager(abc.Singleton):
         return sorted(self._store.items()) # type: ignore
 
     def get(self, sid: Optional[int]) -> 'Session':
-        return self._store[sid].ref() # pylint: disable=E1136
+        return self._store[sid].ref()
 
-    def add(self, session: 'Session') -> None:
+    def add(self, session: object) -> None:
         sid = id(session)
-        if sid in self._store: # pylint: disable=E1135
+        if sid in self._store:
             raise errors.FoundError(
                 f"session with id {sid} does already exist")
         ref = weakref.ref(session)
         date = datetime.datetime.now()
         rec = Record(ref=ref, date=date)
-        self._store[sid] = rec # pylint: disable=E1137
+        self._store[sid] = rec
 
     def remove(self, sid: Optional[int]) -> None:
-        del self._store[sid] # pylint: disable=E1138
+        del self._store[sid]
 
 #
 # Meta Class for Session Base Classes
@@ -98,7 +98,7 @@ class Meta(abc.MultitonMeta):
         # session manager.
         # TODO: Make creation of sessions thread safe!
         subcls = Meta(cls.__name__, (cls, ), {'__slots__': []})
-        obj = super(Meta, cls).__call__(*args, **kwds)
+        obj = super(Meta, subcls).__call__(*args, **kwds)
         Meta._manager.add(obj)
 
         return obj
