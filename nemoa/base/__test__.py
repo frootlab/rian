@@ -31,10 +31,18 @@ class TestAbc(ModuleTestCase):
         pass # Implicitely tested by test_Singleton()
 
     def test_Singleton(self) -> None:
-        f = type('Singleton', (abc.Singleton, ), {})
+        T = type('Singleton', (abc.Singleton, ), {})
 
-        self.assertTrue(f() is f())
-        self.assertTrue(f(1) is f(2))
+        self.assertTrue(T() is T())
+        self.assertTrue(T(1) is T(2))
+
+    def test_IsolatedMeta(self) -> None:
+        pass # Implicitely tested by test_Isolated()
+
+    def test_Isolated(self) -> None:
+        T = type('Isolated', (abc.Isolated, ), {})
+
+        self.assertFalse(type(T()) is type(T()))
 
     def test_sentinel(self) -> None:
 
