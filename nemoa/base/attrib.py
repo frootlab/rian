@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Attributes, Attribute Groups and Containers."""
+"""Attributes and Attribute Groups."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'

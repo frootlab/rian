@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Metaclasses and Abstract Base Classes for frequently used patterns."""
+"""Metaclasses and Abstract Base Classes for frequently used design patterns."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -14,7 +14,7 @@ from typing import Any, Dict, Tuple, Optional, IO
 #
 
 class SingletonMeta(ABCMeta):
-    """Metaclass for Singleton Classes.
+    """Metaclass for Singletons.
 
     Singleton classes only create a single instance per application. This
     creation behaviour is comparable to global variables and used to ensure the
@@ -27,14 +27,51 @@ class SingletonMeta(ABCMeta):
 
     def __call__(cls, *args: Any, **kwds: Any) -> object:
         if not cls._instance:
-            cls._instance = super(SingletonMeta, cls).__call__(*args, **kwds)
+
+            # Create an instance of the class. Note, that if the class does not
+            # implement an __init__ method a TypeError is raised. In this case
+            # the class is called without arguments.
+            try:
+                obj = super(SingletonMeta, cls).__call__(*args, **kwds)
+            except TypeError as err:
+                if 'takes no arguments' in str(err):
+                    obj = super(SingletonMeta, cls).__call__()
+                else:
+                    raise
+            cls._instance = obj
+
         return cls._instance
 
 class Singleton(metaclass=SingletonMeta):
-    """Base Class for Singleton Classes.
+    """Base Class for Singletons.
 
-    The usage of a Singleton base class allows the usage if :func:`isinstance`
-    to check the type of an object against Singleton.
+    The Singlen Base Class is a helper class, which is included to allow
+    instance checking against the Singleton Pattern.
+
+    """
+    __slots__: list = []
+
+class IsolatedMeta(ABCMeta):
+    """Metaclass for per-instance class Isolation."""
+    def __call__(cls, *args: Any, **kwds: Any) -> object:
+        # Create new subclass of the given class.
+        subcls = IsolatedMeta(cls.__name__, (cls, ), {})
+
+        # Create an instance of the new subclass. Note, that if the class does
+        # not implement an __init__ method a TypeError is raised. In this case
+        # the class is called without arguments.
+        try:
+            return super(IsolatedMeta, subcls).__call__(*args, **kwds)
+        except TypeError as err:
+            if 'takes no arguments' in str(err):
+                return super(IsolatedMeta, subcls).__call__()
+            raise
+
+class Isolated(metaclass=IsolatedMeta):
+    """Base Class for per-instance isolated Classes.
+
+    The Isolated Base Class is a helper class, which is included to allow
+    instance checking against per-instance isolated Classes.
 
     """
     __slots__: list = []
@@ -71,8 +108,8 @@ class MultitonMeta(ABCMeta):
             register = True
 
         # Create an instance of the class. Note, that if the class does not
-        # implement a __init__ method, then it does not accept arguments. In
-        # this case a TypeError is raised.
+        # implement an __init__ method a TypeError is raised. In this case the
+        # class is called without arguments.
         try:
             obj = super(MultitonMeta, cls).__call__(*args, **kwds)
         except TypeError as err:
@@ -90,18 +127,6 @@ class MultitonMeta(ABCMeta):
 class Multiton(metaclass=MultitonMeta):
     """Base Class for Multiton Classes."""
     __slots__: list = []
-
-# def objectify(cls: SingletonMeta) -> object:
-#     """Class decorator that objectifies a Singleton class.
-#
-#     Args:
-#         cls: Subclass of the class :class:`Singleton`
-#
-#     Returns:
-#         Instance of the given Singleton class
-#
-#     """
-#     return cls()
 
 def sentinel(cls: SingletonMeta) -> object:
     """Class decorator that creates a Sentinel from a Singleton class.
