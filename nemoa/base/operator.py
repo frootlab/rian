@@ -101,11 +101,10 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 
 class Operator(collections.abc.Callable): # type: ignore
     """Abstract Base Class for operators."""
-    __slots__: StrList = ['_domain', '_target', '_built']
+    __slots__: StrList = ['_domain', '_target']
 
     _domain: stype.Domain
     _target: stype.Domain
-    _built: Any
 
     def __init__(
             self, *args: FieldID, domain: stype.DomLike = None,
@@ -446,9 +445,6 @@ class Vector(collections.abc.Sequence, Operator, abc.Multiton):
         self._build_components()
         self._build()
 
-    def __call__(self, *args: Any) -> Any:
-        return self._built(*args)
-
     def __getitem__(self, pos: Union[int, slice]) -> Any:
         if isinstance(pos, int):
             return self._built_components[pos]
@@ -600,40 +596,41 @@ class Lambda(Operator, abc.Multiton):
             is compiled after it is parsed.
 
     """
-    __slots__ = ['_expression']
+    __slots__ = ['_expression', '_variables']
 
     _expression: str
+    _variables: StrTuple
+
+    def __new__(
+            cls, expression: str = '', domain: stype.DomLike = None,
+            variables: StrTuple = tuple(), default: OptOp = None,
+            assemble: bool = True) -> Operator:
+
+        # If no expression and no default operator is given, the lambda operator
+        # is a zero operator.
+        if not expression and not default:
+            return Zero()
+
+        return super().__new__(cls)
 
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
             variables: StrTuple = tuple(), default: OptOp = None,
             assemble: bool = True) -> None:
 
-        # Initialize Operator Base Class
+        # Initialize Base Class
         Operator.__init__(self, *variables, domain=domain, target=None)
 
         # Bind Attributes
         self._expression = expression
 
-        # Create Operator
-        if expression:
-            self._build(assemble=assemble)
-        elif callable(default):
-            self._built = default
-        else:
-            self._built = Zero()
-
-    def __call__(self, *args: Any) -> Any:
-        return self._built(*args)
+        # Build Operator
+        self._build(assemble=assemble, default=default)
 
     def __repr__(self) -> str:
         try:
             if self._expression:
                 return f"{type(self).__name__}('{self._expression}')"
-        except AttributeError:
-            pass
-        try:
-            return repr(self._built)
         except AttributeError:
             pass
         return f"{type(self).__name__}()"
@@ -644,20 +641,22 @@ class Lambda(Operator, abc.Multiton):
 
     @property
     def variables(self) -> Frame:
-        with contextlib.suppress(AttributeError):
-            attrs = self._built.variables
-            if callable(attrs):
-                return tuple(attrs())
-            return attrs
-        with contextlib.suppress(AttributeError):
+        try:
+            return self._variables
+        except AttributeError:
             return self._domain.frame
-        return None
 
     #
     # Protected
     #
 
-    def _build(self, assemble: bool) -> None:
+    def _build(self, assemble: bool, default: OptOp = None) -> None:
+        # If no expression is provided, use the default operator, or if also not
+        # provided the Zero(None) operator.
+        if not self._expression:
+            default = default or Zero().__call__
+            setattr(type(self), '__call__', staticmethod(default))
+            return
 
         # If the domain uses a frame, the given field IDs of the domain are not
         # required to be valid variable names. In the first step a mapping from
@@ -670,6 +669,7 @@ class Lambda(Operator, abc.Multiton):
         # original field IDs.
         expr = self._get_expr(varmap)
         variables = tuple(expr.variables())
+        self._variables = variables
         invert = dict((v, f) for f, v in varmap.items())
         fields = tuple(invert.get(v, v) for v in variables)
 
@@ -684,17 +684,19 @@ class Lambda(Operator, abc.Multiton):
         # lambda term usually may be considered to be a trusted expression, as
         # it has been created by using the expression parser
         getter: AnyOp
+        func: AnyOp
         if assemble:
             getter = Getter(*fields, domain=dom, target=(tuple, variables))
             term = expr.toString().replace('^', '**')
             term = f"lambda {','.join(variables)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
-            self._built = compose(runner, getter)
+            func = compose(runner, getter)
         else:
             getter = Getter(*fields, domain=dom, target=(dict, variables))
-            self._built = compose(expr.evaluate, getter)
-            setattr(self._built, 'variables', expr.variables)
+            func = compose(expr.evaluate, getter)
+
+        setattr(type(self), '__call__', staticmethod(func))
 
     def _get_expr(self, vmap: dict) -> Expr:
 
