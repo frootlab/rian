@@ -248,8 +248,12 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(var.operator, list)
             self.assertEqual(var.frame, ('x1', 'x2'))
 
-    def test_Composite(self) -> None:
-        Op = operator.Composite
+    def test_Operator(self) -> None:
+        Op = operator.Operator
+        pass
+
+    def test_Vector(self) -> None:
+        Op = operator.Vector
         obj = mock.Mock()
         obj.configure_mock(a=1, b=2)
         dic = {'a': 1, 'b': 2}
@@ -532,7 +536,7 @@ class TestOperator(ModuleTestCase):
         seq = list(mock.Mock() for i in range(10))
         for i, obj in enumerate(seq):
             obj.configure_mock(x=i, y=-i)
-        getx = operator.Composite('x', domain=object)
+        getx = operator.Vector('x', domain=object)
         sorter = operator.create_sorter('x', domain=object)
         self.assertEqual(list(map(getx, sorter(seq))), list(range(10)))
         sorter = operator.create_sorter('y', domain=object, reverse=True)

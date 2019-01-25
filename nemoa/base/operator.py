@@ -14,7 +14,6 @@ import inspect
 import itertools
 import operator
 import re
-import types
 from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable, Match
 import py_expression_eval
@@ -166,8 +165,8 @@ class Zero(Operator, abc.Multiton):
         # to the method __call__. Note: This is only possible, since the
         # Multiton base class implements class isolation.
         zero = target_type()
-        func = lambda self, *args: zero
-        meth = types.MethodType(func, self)
+        func = lambda *args: zero
+        meth = staticmethod(func)
         setattr(type(self), '__call__', meth)
 
     def __len__(self) -> int:
@@ -190,21 +189,19 @@ class Identity(Operator, abc.Multiton):
         # Declare identity functions for (A) a variable number of arguments, (B)
         # a single argument (C) two argumnts (D) four argumnts (E) for multiple
         # arguments
-        def func_varargs(self: Identity, *args: Any) -> Any:
+        def func_varargs(*args: Any) -> Any:
             if not args:
                 return None
             if len(args) == 1:
                 return args[0]
             return args
-        def func_1arg(self: Identity, arg: Any) -> Any:
+        def func_1arg(arg: Any) -> Any:
             return arg
-        def func_2arg(self: Identity, arg1: Any, arg2: Any) -> Tuple[Any, Any]:
+        def func_2arg(arg1: Any, arg2: Any) -> Tuple[Any, Any]:
             return (arg1, arg2)
-        def func_3arg(
-                self: Identity, arg1: Any, arg2: Any,
-                arg3: Any) -> Tuple[Any, Any, Any]:
+        def func_3arg(arg1: Any, arg2: Any, arg3: Any) -> Tuple[Any, Any, Any]:
             return (arg1, arg2, arg3)
-        def func_args(self: Identity, *args: Any) -> Tuple[Any, ...]:
+        def func_args(*args: Any) -> Tuple[Any, ...]:
             return args
 
         # Build an identity operator by using the type and the frame size of the
@@ -229,10 +226,10 @@ class Identity(Operator, abc.Multiton):
         else:
             func = func_args
 
-        # Bind the identity operator to the method __call__. Note: This is only
-        # possible, since the Multiton base class implements class isolation.
-        meth = types.MethodType(func, self)
-        setattr(type(self), '__call__', meth)
+        # Bind the identity operator as a static method to the attribute
+        # __call__. Note: This is only possible, since the Multiton base class
+        # implements class isolation.
+        setattr(type(self), '__call__', staticmethod(func))
 
     def __len__(self) -> int:
         return 0
@@ -315,14 +312,14 @@ class Getter(Operator, abc.Multiton):
         if isinstance(formatter, Identity):
             getter = fetch
         elif isinstance(fetch, Identity):
-            getter = compose(formatter, lambda self, *args: args)
+            getter = compose(formatter, lambda *args: args)
         else:
             getter = compose(formatter, fetch)
 
-        # Bind the getter operator to the method __call__. Note: This is only
-        # possible, since the Multiton base class implements class isolation.
-        meth = types.MethodType(getter, self)
-        setattr(type(self), '__call__', meth)
+        # Bind the identity operator as a static method to the attribute
+        # __call__. Note: This is only possible, since the Multiton base class
+        # implements class isolation.
+        setattr(type(self), '__call__', staticmethod(getter))
 
     def __repr__(self) -> str:
         name = type(self).__name__
@@ -350,7 +347,7 @@ class Getter(Operator, abc.Multiton):
                 return Identity(domain=domain)
             check.is_subset('fields', set(args), 'frame', set(domain.frame))
             itemgetter = operator.itemgetter(*map(domain.frame.index, args))
-            return lambda self, *args: itemgetter(args)
+            return lambda *args: itemgetter(args)
 
         # If the domain type is object, check if the given field identifiers are
         # valid attribute identifiers. In this case return an attribute getter,
@@ -360,8 +357,7 @@ class Getter(Operator, abc.Multiton):
                 if not (isinstance(arg, str) and arg.isidentifier):
                     raise InvalidTypeError(
                         'field', arg, 'a valid attribute name')
-            attrgetter = operator.attrgetter(*args) # type: ignore
-            return lambda self, obj: attrgetter(obj)
+            return operator.attrgetter(*args) # type: ignore
 
         # If the domain is a mapping, check if field identifiers are valid
         # mapping keys and return itemgetter() from standard library module
@@ -370,8 +366,7 @@ class Getter(Operator, abc.Multiton):
             for arg in args:
                 if not isinstance(arg, Hashable):
                     raise InvalidTypeError('field', arg, 'a valid mapping key')
-            itemgetter = operator.itemgetter(*args)
-            return lambda self, mapping: itemgetter(mapping)
+            return operator.itemgetter(*args)
 
         # If the domain is a sequence and a frame is given, check that all field
         # identifiers are contained within the frame. In this case the frame is
@@ -384,14 +379,12 @@ class Getter(Operator, abc.Multiton):
                 if not set(args) <= set(domain.frame):
                     raise ValueError() # TODO: NotInList
                 pos = map(domain.frame.index, args)
-                itemgetter = operator.itemgetter(*pos)
-                return lambda self, seq: itemgetter(seq)
+                return operator.itemgetter(*pos)
             for arg in args:
                 if not isinstance(arg, int) or arg < 0:
                     raise InvalidTypeError(
                         'any field', args, 'positive integer')
-            itemgetter = operator.itemgetter(*args)
-            return lambda self, seq: itemgetter(seq)
+            return operator.itemgetter(*args)
 
         # TODO: raise InvalidValueError!
         raise InvalidTypeError(
@@ -419,8 +412,8 @@ class Getter(Operator, abc.Multiton):
         # TODO: raise InvalidValueError!
         raise InvalidTypeError('target type', target.type, (tuple, list, dict))
 
-class Composite(collections.abc.Sequence, Operator, abc.Multiton):
-    """Class for composite operators.
+class Vector(collections.abc.Sequence, Operator, abc.Multiton):
+    """Class for vectorial functions.
 
     Args:
         *args: Optional definitions of the function components. If provided, any
@@ -444,14 +437,14 @@ class Composite(collections.abc.Sequence, Operator, abc.Multiton):
             self, *args: VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> None:
 
-        # Initialize Operator Base Class
+        # Initialize Base Class
         Operator.__init__(self)
 
         self._update_variables(*args, default=default)
         self._update_domain(domain)
         self._update_target(target)
         self._build_components()
-        self._build_call()
+        self._build()
 
     def __call__(self, *args: Any) -> Any:
         return self._built(*args)
@@ -533,7 +526,8 @@ class Composite(collections.abc.Sequence, Operator, abc.Multiton):
                 ops.append(compose(var.operator, getter, unpack=True))
         self._built_components = tuple(ops)
 
-    def _build_call(self) -> None:
+    def _build(self) -> None:
+        func: AnyOp
         variables = self._variables
         domain = self._domain
         target = self._target
@@ -541,7 +535,8 @@ class Composite(collections.abc.Sequence, Operator, abc.Multiton):
         # If no variables are specified, the mapper is the zero operator of the
         # target type.
         if not variables:
-            self._built = Zero(target)
+            func = Zero(target)
+            setattr(type(self), '__call__', staticmethod(func))
             return
 
         # Check if the mapper can be implemented as a coordinate projection. In
@@ -551,10 +546,8 @@ class Composite(collections.abc.Sequence, Operator, abc.Multiton):
         if all(map(equal, variables)):
             fields = tuple(var.frame[0] for var in variables)
             getter = Getter(*fields, domain=self.domain, target=self.target)
-            if hasattr(getter, '_built'):
-                self._built = getter._built
-            else:
-                self._built = getter
+            func = getattr(getter, '__call__', getter)
+            setattr(type(self), '__call__', staticmethod(func))
             return
 
         # If the mapper can not be implemented as a projection ...
@@ -579,11 +572,13 @@ class Composite(collections.abc.Sequence, Operator, abc.Multiton):
         # If the formatter is an identity operator, return mapper. If the mapper
         # is an identity operator, precede a tuple 'packer' to the formatter
         if isinstance(formatter, Identity):
-            self._built = mapper
+            func = mapper
         elif isinstance(mapper, Identity):
-            self._built = compose(formatter, lambda *args: args)
+            func = compose(formatter.__call__, lambda *args: args)
         else:
-            self._built = compose(formatter, mapper)
+            func = compose(formatter.__call__, mapper)
+
+        setattr(type(self), '__call__', staticmethod(func))
 
 class Lambda(Operator, abc.Multiton):
     """Class for operators, that are based on arithmetic expressions.
@@ -622,7 +617,7 @@ class Lambda(Operator, abc.Multiton):
 
         # Create Operator
         if expression:
-            self._build_call(assemble=assemble)
+            self._build(assemble=assemble)
         elif callable(default):
             self._built = default
         else:
@@ -662,7 +657,7 @@ class Lambda(Operator, abc.Multiton):
     # Protected
     #
 
-    def _build_call(self, assemble: bool) -> None:
+    def _build(self, assemble: bool) -> None:
 
         # If the domain uses a frame, the given field IDs of the domain are not
         # required to be valid variable names. In the first step a mapping from
@@ -1105,8 +1100,8 @@ def create_aggregator(
     if not args:
         return Zero(target)
 
-    # Create composite operator using the variable definitions
-    f = Composite(*args, default=operator.itemgetter(0))
+    # Create vectorial operator using the variable definitions
+    f = Vector(*args, default=operator.itemgetter(0))
 
     # Create an operator, that converts data stored in rows to columns.
     # 1. At first fetch the rows from the input sequence
