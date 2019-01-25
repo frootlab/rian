@@ -406,9 +406,8 @@ class Group(abc.Isolated):
 
         # When an Attribute Group countains furter Attribute Groups as
         # Subgroups, the Subgroups are bound to the Class and therefore shared
-        # among the instances. To avoid this behaviour, the group
-        # class for any instance is inherited from itself and created as a new
-        # class.
+        # among the instances. To avoid this behaviour, the group class for any
+        # instance is inherited from itself and created as a new class.
         self._create_attr_group()
 
         # Store initial state to allow later re-initialization, when

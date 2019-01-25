@@ -50,9 +50,9 @@ class SingletonMeta(IsolatedMeta):
     """Metaclass for Singletons.
 
     Singleton classes only create a single instance per application and
-    therefore may be regarded as a special case of isolated classes. This
-    creation pattern ensures the application global uniqueness and accessibility
-    of instances, comparably to global variables. Common use cases comprise
+    therefore by definition are special case of isolated classes. This creation
+    pattern ensures the application global uniqueness and accessibility of
+    instances, comparably to global variables. Common use cases comprise
     logging, sentinel objects and application global constants (given as
     immutable objects).
 
@@ -85,15 +85,16 @@ class Singleton(metaclass=SingletonMeta):
     """
     __slots__: list = []
 
-class MultitonMeta(ABCMeta):
+class MultitonMeta(IsolatedMeta):
     """Metaclass for Multitons.
 
-    Multiton Classes only create a single instance per given arguments. This
-    allows a controlled creation of multiple objects, that are globally
-    accessible and unique. Multiton classes may be regarded as generalizations
-    of Singleton Classes in the sense of a 'Collection of Singletons'. Common
-    use cases comprise application global configurations, caching and
-    collections of constants (given as immutable objects).
+    Multiton Classes only create a single instance per given arguments by using
+    a new subclass for object isolation. This allows a controlled creation of
+    multiple objects, that are globally accessible and unique. Multiton classes
+    may be regarded as generalizations of Singleton Classes in the sense of a
+    'Collection of Singletons'. Common use cases comprise application global
+    configurations, caching and collections of constants (given as immutable
+    objects).
 
     """
     _registry: Dict[Tuple[type, tuple, Any], object] = {}
@@ -115,6 +116,10 @@ class MultitonMeta(ABCMeta):
                 raise
         except KeyError:
             register = True
+
+        # Create new subclass of the given class. Set the attribute '__slots__'
+        # to an empty list, to allow the usage of slots.
+        subcls = MultitonMeta(cls.__name__, (cls, ), {'__slots__': []})
 
         # Create an instance of the class. Note, that if the class does not
         # implement an __init__ method a TypeError is raised. In this case the

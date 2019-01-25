@@ -67,7 +67,7 @@ class Manager(abc.Singleton):
 # Meta Class for Session Base Classes
 #
 
-class Meta(abc.IsolatedMeta): # TODO: Use abc.MultitonMeta
+class Meta(abc.MultitonMeta):
     """Metaclass for Session Base Classes.
 
     Session objects require an instanciation per SessionID, which is closely
@@ -85,15 +85,19 @@ class Meta(abc.IsolatedMeta): # TODO: Use abc.MultitonMeta
         except KeyError:
             pass
 
-        # If the SessionID is given (not None), then the session ether has
-        # been destroyed by the garbage collector or manually been removed by
-        # the Session Manager. In any such case a lookup error is raised.
+        # If the SessionID is given (not None), but could not be found in the
+        # registry, then the session ether has been destroyed by the garbage
+        # collector or manually been removed by the Session Manager. In any such
+        # case a NotFoundError is raised.
         if sid is not None:
             raise errors.NotFoundError(f"session id {sid} is not valid")
 
-        # If the SessionID could not be found, create a new entry in the
-        # registry and return a reference to the instance
-        # TODO: Make Thread safe!
+        # If the SessionID could not be found, create a new subclass of the
+        # session class (for class isolation) and a new instance of the session
+        # subclass. Finally add the session to the session store by using the
+        # session manager.
+        # TODO: Make creation of sessions thread safe!
+        subcls = Meta(cls.__name__, (cls, ), {'__slots__': []})
         obj = super(Meta, cls).__call__(*args, **kwds)
         Meta._manager.add(obj)
 
@@ -113,6 +117,7 @@ class SessionType(metaclass=Meta):
 
 class Session(attrib.Container, SessionType):
     """Session Class."""
+    __slots__: list = []
 
     _config_file_path: ClassVar[str] = '%user_config_dir%/nemoa.ini'
     _config_file_struct: ClassVar[ini.SecDict] = {
