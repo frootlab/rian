@@ -43,16 +43,23 @@ class SingletonMeta(ABCMeta):
         return cls._instance
 
 class Singleton(metaclass=SingletonMeta):
-    """Base Class for Singletons.
+    """Abstract Base Class for Singletons.
 
-    The Singlen Base Class is a helper class, which is included to allow
-    instance checking against the Singleton Pattern.
+    The Singleton base class is a helper class, which is included to allow
+    instance checking against the SingletonMeta metaclass.
 
     """
     __slots__: list = []
 
 class IsolatedMeta(ABCMeta):
-    """Metaclass for per-instance class Isolation."""
+    """Metaclass for per-instance class Isolation.
+
+    Isolated classes create a new subclass for any instance and therefore allow
+    the modification of class methods per instance. Common use cases for
+    isolated classes include built classes, that avoid generic programming in
+    favor of higher efficiency or lower memory usage.
+
+    """
     def __call__(cls, *args: Any, **kwds: Any) -> object:
         # Create new subclass of the given class.
         subcls = IsolatedMeta(cls.__name__, (cls, ), {})
@@ -68,16 +75,16 @@ class IsolatedMeta(ABCMeta):
             raise
 
 class Isolated(metaclass=IsolatedMeta):
-    """Base Class for per-instance isolated Classes.
+    """Abstract Base Class for per-instance isolated classes.
 
-    The Isolated Base Class is a helper class, which is included to allow
-    instance checking against per-instance isolated Classes.
+    The Isolated base class is a helper class, which is included to allow
+    instance checking against the IsolatedMeta metaclass.
 
     """
     __slots__: list = []
 
 class MultitonMeta(ABCMeta):
-    """Metaclass for Multiton Classes.
+    """Metaclass for Multitons.
 
     Multiton Classes only create a single instance per given arguments. This
     allows a controlled creation of multiple objects, that are globally
@@ -125,7 +132,12 @@ class MultitonMeta(ABCMeta):
         return obj
 
 class Multiton(metaclass=MultitonMeta):
-    """Base Class for Multiton Classes."""
+    """Abstract Base Class for Multiton Classes.
+
+    The Multiton base class is a helper class, which is included to allow
+    instance checking against the MultitonMeta metaclass.
+
+    """
     __slots__: list = []
 
 def sentinel(cls: SingletonMeta) -> object:
