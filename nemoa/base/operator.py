@@ -26,13 +26,15 @@ Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
 Key = Optional[Union[FieldID, Frame]]
 Item = Tuple[FieldID, Any]
 VarLike = Union[
-    str,                        # Variable((<name>, ), Identity, <name>)
-    Tuple[str],                 # Variable((<name>, ), Identity, <name>)
-    Tuple[str, FieldID],        # Variable((<id>, ), Identity, <name>)
-    Tuple[str, Frame],          # Variable(<frame>, Identity, <name>
-    Tuple[str, AnyOp],          # Variable((<name>, ), <operator>, <name>)
-    Tuple[str, AnyOp, FieldID], # Variable((<id>, ), <operator>, <name>)
-    Tuple[str, AnyOp, Frame]]   # Variable(<frame>, <operator>, <name>)
+    str,                        # Variable(<name>, Identity, (<name>, ))
+    Tuple[str],                 # Variable(<name>, Identity, (<name>, ))
+    Tuple[str, FieldID],        # Variable(<name>, Identity, (<id>, ))
+    Tuple[str, Frame],          # Variable(<name>, Identity, <frame>)
+    Tuple[str, AnyOp],          # Variable(<name>, <operator>, (<name>, ))
+    Tuple[str, AnyOp, FieldID], # Variable(<name>, <operator>, (<id>, ))
+    Tuple[str, AnyOp, Frame],   # Variable(<name>, <operator>, <frame>)
+    Tuple[str, str, FieldID],   # Variable(<name>, <lambda>, (<id>, ))
+    Tuple[str, str, Frame]]     # Variable(<name>, <lambda>, <frame>)
 
 #
 # Variables
@@ -55,7 +57,7 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     """Create variable from variable definition.
 
     Args:
-        var:
+        var: Variable defintion
         default:
 
     Returns:
@@ -71,7 +73,11 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
     # Get Variable Arguments
     args: VarLike
     if isinstance(var, str):
-        args = (var, default, (var, ))
+        if var.isidentifier():
+            args = (var, default, (var, ))
+        else:
+            op = Lambda(expression=var)
+            args = (var, op, op.variables)
     elif len(var) == 1:
         args = (var[0], default, (var[0], ))
     elif len(var) == 2:
@@ -81,10 +87,17 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
             args = (var[0], default, var[1])
         else:
             args = (var[0], default, (var[1], ))
+    elif callable(var[1]):
+        if isinstance(var[2], tuple):
+            args = (var[0], var[1], var[2])
+        else:
+            args = (var[0], var[1], (var[2], ))
     elif isinstance(var[2], tuple):
-        args = (var[0], var[1], var[2])
+        op = Lambda(expression=var[1], domain=(None, var[2]))
+        args = (var[0], op, var[2])
     else:
-        args = (var[0], var[1], (var[2], ))
+        op = Lambda(expression=var[1], domain=(None, (var[2], )))
+        args = (var[0], op, (var[2], ))
 
     # Check Variable Arguments
     check.has_type('variable name', args[0], str)
@@ -98,7 +111,7 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 # Operator Classes
 #
 
-class Operator(collections.abc.Callable): # type: ignore
+class Operator(collections.abc.Callable, abc.Multiton): # type: ignore
     """Abstract Base Class for operators."""
     __slots__: StrList = ['_domain', '_target']
 
@@ -129,7 +142,7 @@ class Operator(collections.abc.Callable): # type: ignore
         except AttributeError:
             return stype.create_domain()
 
-class Zero(Operator, abc.Multiton):
+class Zero(Operator):
     """Class for zero operators.
 
     A zero operator (or zero morphism) maps all given arguments to the zero
@@ -175,8 +188,13 @@ class Zero(Operator, abc.Multiton):
         target_type = self._target.type.__name__
         return f"{name}({target_type})"
 
-class Identity(Operator, abc.Multiton):
-    """Class for identity operators."""
+class Identity(Operator):
+    """Class for identity operators.
+
+    Args:
+        domain:
+
+    """
     __slots__: StrList = []
 
     def __init__(self, domain: stype.DomLike = None) -> None:
@@ -236,10 +254,10 @@ class Identity(Operator, abc.Multiton):
         name = type(self).__name__
         dom_type = self.domain.type
         if dom_type == NoneType:
-            return f'{type(self).__name__}'
-        return f'{type(self).__name__}({dom_type.__name__})'
+            return f'{name}'
+        return f'{name}({dom_type.__name__})'
 
-class Getter(Operator, abc.Multiton):
+class Getter(Operator):
     """Class for Getters.
 
     A getter essentially is the composition of a `fetch` operation, that
@@ -272,7 +290,6 @@ class Getter(Operator, abc.Multiton):
     def __new__(
             cls, *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> Operator:
-
         domain = stype.create_domain(domain, defaults={'fields': args})
         target = stype.create_domain(target, defaults={'fields': args})
 
@@ -289,16 +306,14 @@ class Getter(Operator, abc.Multiton):
     def __init__(self,
             *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> None:
-
         # Initialize Base Class
-        Operator.__init__(self, *args, domain=domain, target=target)
+        super().__init__(*args, domain=domain, target=target)
 
         # Build Getter Operator
         self._build(*args)
 
     @classmethod
     def __subclasshook__(cls, other: type) -> bool:
-
         # Handle Zero and Identity as Virtual Subclasses
         if cls is Getter and issubclass(other, (Zero, Identity)):
             return True
@@ -319,7 +334,6 @@ class Getter(Operator, abc.Multiton):
         return len(self._target.frame)
 
     def _build(self, *args: Any) -> None:
-
         # Build fetch and format operators
         fetch = self._build_fetch(*args, domain=self._domain)
         formatter = self._build_formatter(*args, target=self._target)
@@ -342,7 +356,6 @@ class Getter(Operator, abc.Multiton):
         setattr(type(self), '__call__', staticmethod(getter))
 
     def _build_fetch(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
-
         # If the domain type is NoneType, the returned operator fetches and
         # returns the fields directly from it's given arguments. In this case,
         # if the fields equal the domain frame, the returned operator is the
@@ -398,7 +411,6 @@ class Getter(Operator, abc.Multiton):
             'domain type', domain.type, (object, Mapping, Sequence))
 
     def _build_formatter(self, *args: FieldID, target: stype.Domain) -> AnyOp:
-
         # Create formatter
         if target.type == NoneType:
             return Identity()
@@ -419,7 +431,197 @@ class Getter(Operator, abc.Multiton):
         # TODO: raise InvalidValueError!
         raise InvalidTypeError('target type', target.type, (tuple, list, dict))
 
-class Vector(collections.abc.Sequence, Operator, abc.Multiton):
+class Lambda(Operator):
+    """Class for operators, that are based on arithmetic expressions.
+
+    Args:
+        expression:
+        domain: Optional domain category of the operator. If provided, the
+            category has to be given as a :class:`type`. Supported types are
+            :class:`object`, subclasses of the class:`Mapping class
+            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
+            class <collection.abs.Sequence>`. The default domain is object.
+        variables: Tuple of variable names. This parameter is only required, if
+            the domain category is a subclass of the :class:`Sequence class
+            <collection.abs.Sequence>`. In this case the variable names are used
+            to map the fields (given as names) to their indices within the
+            domain tuple.
+        default:
+        assemble: Optional Boolean parameter, which determines if the operator
+            is compiled after it is parsed.
+
+    """
+    __slots__ = ['_expression', '_variables']
+
+    _expression: str
+    _variables: StrTuple
+
+    def __new__(
+            cls, expression: str = '', domain: stype.DomLike = None,
+            variables: StrTuple = tuple(), default: OptOp = None,
+            assemble: bool = True) -> Operator:
+        # If no expression and no default operator is given, the lambda operator
+        # is a zero operator.
+        if not expression and not default:
+            return Zero()
+
+        return super().__new__(cls)
+
+    def __init__(
+            self, expression: str = '', domain: stype.DomLike = None,
+            variables: StrTuple = tuple(), default: OptOp = None,
+            assemble: bool = True) -> None:
+        # Initialize Base Class
+        super().__init__(*variables, domain=domain, target=None)
+
+        # Bind Attributes
+        self._expression = expression
+
+        # Build Operator
+        self._build(assemble=assemble, default=default)
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        try:
+            return f"{name}('{self._expression}')"
+        except AttributeError:
+            return f"{name}()"
+
+    #
+    # Public
+    #
+
+    @property
+    def variables(self) -> Frame:
+        try:
+            return self._variables
+        except AttributeError:
+            return self._domain.frame
+
+    #
+    # Protected
+    #
+
+    def _build(self, assemble: bool, default: OptOp = None) -> None:
+        # If no expression is provided, use the default operator, or if also not
+        # provided the Zero(None) operator.
+        if not self._expression:
+            default = default or Zero().__call__
+            setattr(type(self), '__call__', staticmethod(default))
+            return
+
+        # If the domain uses a frame, the given field IDs of the domain are not
+        # required to be valid variable names. In the first step a mapping from
+        # field IDs to valid variable names is created.
+        frame = self._domain.frame
+        varmap = self._get_var_mapping(self._expression, frame)
+
+        # Substitute the expression using the variable mapping and parse it.
+        # Therupon get the variables of the expression and the corresponding
+        # original field IDs.
+        expr = self._get_expr(varmap)
+        variables = tuple(expr.variables())
+        self._variables = variables
+        invert = dict((v, f) for f, v in varmap.items())
+        fields = tuple(invert.get(v, v) for v in variables)
+
+        # If the Domain frame is not given, create and bind a new domain with a
+        # frame, that is given by the field names.
+        dom = self._domain
+        if not dom.frame:
+            self._domain = stype.create_domain((dom.type, tuple(fields)))
+            dom = self._domain
+
+        # If the term is trusted create and compile lambda term. Note, that the
+        # lambda term usually may be considered to be a trusted expression, as
+        # it has been created by using the expression parser
+        getter: AnyOp
+        func: AnyOp
+        if assemble:
+            getter = Getter(*fields, domain=dom, target=(tuple, variables))
+            term = expr.toString().replace('^', '**')
+            term = f"lambda {','.join(variables)}:{term}"
+            compiled = eval(term) # pylint: disable=W0123
+            runner: AnyOp = lambda x: compiled(*x)
+            func = compose(runner, getter)
+        else:
+            getter = Getter(*fields, domain=dom, target=(dict, variables))
+            func = compose(expr.evaluate, getter)
+
+        setattr(type(self), '__call__', staticmethod(func))
+
+    def _get_expr(self, vmap: dict) -> Expr:
+        # Therupon the mapping is used to replace all occurences of the field
+        # IDs by the respective variable names.
+        expr = self._replace_vars(self._expression, vmap)
+
+        # Create expression Parser instance and return expression object
+        parser = py_expression_eval.Parser()
+        return parser.parse(expr).simplify({})
+
+    def _get_var_mapping(self, expr: str, frame: Frame) -> dict:
+        if not frame:
+            return {}
+
+        # Create an operator that checks, if a given variable name <var> is
+        # already occupied by the expression. Thereby ignore appearances within
+        # quoted (single or double) terms.
+        expr = self._expression
+        quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
+        raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
+        fmt: AnyOp = lambda var: raw.format(var=re.escape(var))
+        matches: AnyOp = lambda var: re.finditer(fmt(var), expr)
+        hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
+        occupied: AnyOp = lambda var: any(map(hit, matches(var)))
+
+        # Use the operator to create a field mapping from the set of field IDs
+        # in the frame to valid variable names.
+        fields = set(frame)
+        mapping: Dict[FieldID, str] = {}
+        var_counter = itertools.count()
+        next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
+        for field in fields:
+            if isinstance(field, str) and field.isidentifier():
+                mapping[field] = field
+                continue
+            var_name = next_var()
+            while occupied(var_name):
+                var_name = next_var()
+            mapping[field] = var_name
+
+        # Create and return variable mapping
+        get_var: AnyOp = lambda field: mapping.get(field, '')
+        return dict(zip(frame, map(get_var, frame)))
+
+    def _replace_vars(self, expr: str, mapping: dict) -> str:
+        # Declare replacement function
+        def repl(mo: Match) -> str:
+            if mo.group('var'):
+                return mapping.get(mo.group('var'), mo.group('var'))
+            if mo.group('str2'):
+                return mo.group('str2')
+            return mo.group('str1')
+
+        # Build operator that creates an regex pattern for a given field ID
+        re_str1 = "(?P<str1>\"[^\"]+\")" # RegEx for double quoted terms
+        re_str2 = "(?P<str2>'[^']+')" # RegEx for single quoted terms
+        re_var = "(?P<var>{var})" # Unformated RegEx for variable
+        raw = '|'.join([re_str1, re_str2, re_var]) # Unformated RegEx
+        pattern: AnyOp = lambda var: raw.format(var=re.escape(var))
+
+        # Iterate all field ids and succesively replace invalid variable names
+        new_expr = expr
+        for field, var in mapping.items():
+            if field == var:
+                continue
+            new_expr = re.sub(pattern(field), repl, new_expr)
+
+        return new_expr
+
+# class Scalar(Operator):
+#     pass
+
+class Vector(collections.abc.Sequence, Operator):
     """Class for vectorial functions.
 
     Args:
@@ -443,8 +645,7 @@ class Vector(collections.abc.Sequence, Operator, abc.Multiton):
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> None:
-
-        # Initialize Base Class
+        # Initialize Operator Base Class
         Operator.__init__(self)
 
         self._update_variables(*args, default=default)
@@ -583,198 +784,6 @@ class Vector(collections.abc.Sequence, Operator, abc.Multiton):
             func = compose(formatter.__call__, mapper)
 
         setattr(type(self), '__call__', staticmethod(func))
-
-class Lambda(Operator, abc.Multiton):
-    """Class for operators, that are based on arithmetic expressions.
-
-    Args:
-        expression:
-        domain: Optional domain category of the operator. If provided, the
-            category has to be given as a :class:`type`. Supported types are
-            :class:`object`, subclasses of the class:`Mapping class
-            <collection.abs.Mapping>` and subclasses of the :class:`Sequence
-            class <collection.abs.Sequence>`. The default domain is object.
-        variables: Tuple of variable names. This parameter is only required, if
-            the domain category is a subclass of the :class:`Sequence class
-            <collection.abs.Sequence>`. In this case the variable names are used
-            to map the fields (given as names) to their indices within the
-            domain tuple.
-        default:
-        assemble: Optional Boolean parameter, which determines if the operator
-            is compiled after it is parsed.
-
-    """
-    __slots__ = ['_expression', '_variables']
-
-    _expression: str
-    _variables: StrTuple
-
-    def __new__(
-            cls, expression: str = '', domain: stype.DomLike = None,
-            variables: StrTuple = tuple(), default: OptOp = None,
-            assemble: bool = True) -> Operator:
-
-        # If no expression and no default operator is given, the lambda operator
-        # is a zero operator.
-        if not expression and not default:
-            return Zero()
-
-        return super().__new__(cls)
-
-    def __init__(
-            self, expression: str = '', domain: stype.DomLike = None,
-            variables: StrTuple = tuple(), default: OptOp = None,
-            assemble: bool = True) -> None:
-
-        # Initialize Base Class
-        Operator.__init__(self, *variables, domain=domain, target=None)
-
-        # Bind Attributes
-        self._expression = expression
-
-        # Build Operator
-        self._build(assemble=assemble, default=default)
-
-    def __repr__(self) -> str:
-        try:
-            if self._expression:
-                return f"{type(self).__name__}('{self._expression}')"
-        except AttributeError:
-            pass
-        return f"{type(self).__name__}()"
-
-    #
-    # Public
-    #
-
-    @property
-    def variables(self) -> Frame:
-        try:
-            return self._variables
-        except AttributeError:
-            return self._domain.frame
-
-    #
-    # Protected
-    #
-
-    def _build(self, assemble: bool, default: OptOp = None) -> None:
-        # If no expression is provided, use the default operator, or if also not
-        # provided the Zero(None) operator.
-        if not self._expression:
-            default = default or Zero().__call__
-            setattr(type(self), '__call__', staticmethod(default))
-            return
-
-        # If the domain uses a frame, the given field IDs of the domain are not
-        # required to be valid variable names. In the first step a mapping from
-        # field IDs to valid variable names is created.
-        frame = self._domain.frame
-        varmap = self._get_var_mapping(self._expression, frame)
-
-        # Substitute the expression using the variable mapping and parse it.
-        # Therupon get the variables of the expression and the corresponding
-        # original field IDs.
-        expr = self._get_expr(varmap)
-        variables = tuple(expr.variables())
-        self._variables = variables
-        invert = dict((v, f) for f, v in varmap.items())
-        fields = tuple(invert.get(v, v) for v in variables)
-
-        # If the Domain frame is not given, create and bind a new domain with a
-        # frame, that is given by the field names.
-        dom = self._domain
-        if not dom.frame:
-            self._domain = stype.create_domain((dom.type, tuple(fields)))
-            dom = self._domain
-
-        # If the term is trusted create and compile lambda term. Note, that the
-        # lambda term usually may be considered to be a trusted expression, as
-        # it has been created by using the expression parser
-        getter: AnyOp
-        func: AnyOp
-        if assemble:
-            getter = Getter(*fields, domain=dom, target=(tuple, variables))
-            term = expr.toString().replace('^', '**')
-            term = f"lambda {','.join(variables)}:{term}"
-            compiled = eval(term) # pylint: disable=W0123
-            runner: AnyOp = lambda x: compiled(*x)
-            func = compose(runner, getter)
-        else:
-            getter = Getter(*fields, domain=dom, target=(dict, variables))
-            func = compose(expr.evaluate, getter)
-
-        setattr(type(self), '__call__', staticmethod(func))
-
-    def _get_expr(self, vmap: dict) -> Expr:
-
-        # Therupon the mapping is used to replace all occurences of the field
-        # IDs by the respective variable names.
-        expr = self._replace_vars(self._expression, vmap)
-
-        # Create expression Parser instance and return expression object
-        parser = py_expression_eval.Parser()
-        return parser.parse(expr).simplify({})
-
-    def _get_var_mapping(self, expr: str, frame: Frame) -> dict:
-        if not frame:
-            return {}
-
-        # Create an operator that checks, if a given variable name <var> is
-        # already occupied by the expression. Thereby ignore appearances within
-        # quoted (single or double) terms.
-        expr = self._expression
-        quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
-        raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
-        fmt: AnyOp = lambda var: raw.format(var=re.escape(var))
-        matches: AnyOp = lambda var: re.finditer(fmt(var), expr)
-        hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
-        occupied: AnyOp = lambda var: any(map(hit, matches(var)))
-
-        # Use the operator to create a field mapping from the set of field IDs
-        # in the frame to valid variable names.
-        fields = set(frame)
-        mapping: Dict[FieldID, str] = {}
-        var_counter = itertools.count()
-        next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
-        for field in fields:
-            if isinstance(field, str) and field.isidentifier():
-                mapping[field] = field
-                continue
-            var_name = next_var()
-            while occupied(var_name):
-                var_name = next_var()
-            mapping[field] = var_name
-
-        # Create and return variable mapping
-        get_var: AnyOp = lambda field: mapping.get(field, '')
-        return dict(zip(frame, map(get_var, frame)))
-
-    def _replace_vars(self, expr: str, mapping: dict) -> str:
-
-        # Declare replacement function
-        def repl(mo: Match) -> str:
-            if mo.group('var'):
-                return mapping.get(mo.group('var'), mo.group('var'))
-            if mo.group('str2'):
-                return mo.group('str2')
-            return mo.group('str1')
-
-        # Build operator that creates an regex pattern for a given field ID
-        re_str1 = "(?P<str1>\"[^\"]+\")" # RegEx for double quoted terms
-        re_str2 = "(?P<str2>'[^']+')" # RegEx for single quoted terms
-        re_var = "(?P<var>{var})" # Unformated RegEx for variable
-        raw = '|'.join([re_str1, re_str2, re_var]) # Unformated RegEx
-        pattern: AnyOp = lambda var: raw.format(var=re.escape(var))
-
-        # Iterate all field ids and succesively replace invalid variable names
-        new_expr = expr
-        for field, var in mapping.items():
-            if field == var:
-                continue
-            new_expr = re.sub(pattern(field), repl, new_expr)
-
-        return new_expr
 
 #
 # Operator Inspection Functions
