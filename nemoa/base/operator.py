@@ -478,10 +478,16 @@ class Lambda(Operator):
             cls, expression: str = '', domain: stype.DomLike = None,
             variables: StrTuple = tuple(), default: OptOp = None,
             assemble: bool = True) -> Operator:
-        # If no expression and no default operator is given, the lambda operator
+        # If no expression and no default operator is given, the Lambda operator
         # is a zero operator.
         if not expression and not default:
             return Zero()
+
+        # If the expression ether is an identifier or contained within the
+        # domain frame, the Lambda operator is a Getter operator
+        domain = stype.create_domain(domain, defaults={'fields': variables})
+        if expression.isidentifier() or expression in domain.frame:
+            return Getter(expression, domain=domain, target=(None, expression))
 
         return super().__new__(cls)
 
@@ -504,6 +510,13 @@ class Lambda(Operator):
             return f"{name}('{self._expression}')"
         except AttributeError:
             return f"{name}()"
+
+    @classmethod
+    def __subclasshook__(cls, other: type) -> bool:
+        # Pretend that the Getter class are subclasses
+        if cls is Lambda and issubclass(other, Getter):
+            return True
+        return NotImplemented
 
     #
     # Public

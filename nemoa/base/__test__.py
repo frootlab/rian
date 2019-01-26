@@ -27,7 +27,7 @@ class TestAbc(ModuleTestCase):
     module = abc
 
     def test_SingletonMeta(self) -> None:
-        pass # Implicitely tested by test_Singleton()
+        pass # Implicitly tested by test_Singleton()
 
     def test_Singleton(self) -> None:
         T = type('Singleton', (abc.Singleton, ), {})
@@ -36,7 +36,7 @@ class TestAbc(ModuleTestCase):
         self.assertTrue(T(1) is T(2))
 
     def test_IsolatedMeta(self) -> None:
-        pass # Implicitely tested by test_Isolated()
+        pass # Implicitly tested by test_Isolated()
 
     def test_Isolated(self) -> None:
         T = type('Isolated', (abc.Isolated, ), {})
@@ -55,7 +55,7 @@ class TestAbc(ModuleTestCase):
         self.assertTrue(Sentinel.test)
 
     def test_MultitonMeta(self) -> None:
-        pass # Implicitely tested by test_Multiton()
+        pass # Implicitly tested by test_Multiton()
 
     def test_Multiton(self) -> None:
         f = type('Multiton', (abc.Multiton, ), {})
@@ -275,7 +275,7 @@ class TestStype(ModuleTestCase):
     module = stype
 
     def test_Field(self) -> None:
-        pass # Implicitely tested by test_create_domain()
+        pass # Implicitly tested by test_create_domain()
 
     def test_create_field(self) -> None:
         f = stype.create_field
@@ -316,7 +316,7 @@ class TestStype(ModuleTestCase):
             self.assertTrue('y' in basis)
 
     def test_Domain(self) -> None:
-        pass # Implicitely tested by test_create_domain()
+        pass # Implicitly tested by test_create_domain()
 
     def test_create_domain(self) -> None:
         f = stype.create_domain
@@ -345,7 +345,7 @@ class TestOperator(ModuleTestCase):
     module = operator
 
     def test_Variable(self) -> None:
-        pass # Implicitely tested by test_create_variable()
+        pass # Implicitly tested by test_create_variable()
 
     def test_create_variable(self) -> None:
         create = operator.create_variable
@@ -561,32 +561,38 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(f(1, 2), {'a': 1, 'b': 2})
 
     def test_Lambda(self) -> None:
-        f = operator.Lambda
+        create = operator.Lambda
 
         with self.subTest(args=tuple()):
-            op = f()
+            op = create()
+            self.assertIsInstance(op, operator.Lambda)
             self.assertIsInstance(op, operator.Zero)
 
+        with self.subTest(args=('x', )):
+            op = create('x')
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertIsInstance(op, operator.Identity)
+
         with self.subTest(args=('x^2 + y', )):
-            op = f('x^2 + y')
+            op = create('x^2 + y')
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
 
         with self.subTest(args=('{x}', )):
-            self.assertRaises(Exception, f, '{x}')
+            self.assertRaises(Exception, create, '{x}')
 
         with self.subTest(args=('{x}', ), variables=('{x}', )):
-            op = f('{x}', variables=('{x}', ))
+            op = create('{x}', variables=('{x}', ))
             self.assertIsInstance(op, operator.Lambda)
             self.assertEqual(int(op(1)), 1)
 
         with self.subTest(args=('{x}^2 + y', ), variables=('{x}', )):
             self.assertRaises(
-                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ))
+                errors.NoSubsetError, create, '{x}^2 + y', variables=('{x}', ))
 
         with self.subTest(args=('{x}^2 + y', ), variables=('{x}', 'y')):
-            op = f('{x}^2 + y', variables=('{x}', 'y'))
+            op = create('{x}^2 + y', variables=('{x}', 'y'))
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
@@ -595,20 +601,20 @@ class TestOperator(ModuleTestCase):
                 args=('{x}^2 + y', ), variables=('{x}', 'y'),
                 domain=(None, ('{x}', '{y}'))):
             self.assertRaises(
-                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ),
+                errors.NoSubsetError, create, '{x}^2 + y', variables=('{x}', ),
                 domain=(None, ('{x}', '{y}')))
 
         with self.subTest(
                 args=('{x}^2 + y', ), variables=('{x}', 'y'),
                 domain=(None, ('y', '{x}'))):
-            op = f('{x}^2 + y', variables=('{x}', 'y'),
+            op = create('{x}^2 + y', variables=('{x}', 'y'),
                 domain=(None, ('y', '{x}')))
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(IndexError, op, 1)
             self.assertEqual(int(op(-4, 2)), 0)
 
         with self.subTest(args=('{x}^2', ), variables=('{x}', 'y')):
-            op = f('{x}^2', variables=('{x}', 'y'))
+            op = create('{x}^2', variables=('{x}', 'y'))
             self.assertIsInstance(op, operator.Lambda)
             self.assertEqual(int(op(2)), 4)
             self.assertEqual(int(op(2, 2)), 4)
