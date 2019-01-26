@@ -390,71 +390,7 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(var.frame, ('x1', 'x2'))
 
     def test_Operator(self) -> None:
-        Op = operator.Operator
-        pass
-
-    def test_Vector(self) -> None:
-        Op = operator.Vector
-        obj = mock.Mock()
-        obj.configure_mock(a=1, b=2)
-        dic = {'a': 1, 'b': 2}
-        seq = [1, 2]
-
-        with self.subTest(args=('a', 'b'), domain=None, target=dict):
-            f = Op('a', 'b', domain=None, target=dict)
-            self.assertEqual(f(1, 2), {'a': 1, 'b': 2})
-
-        with self.subTest(
-                args=('a', 'b'), domain=None, target=(dict, ('_', 1))):
-            f = Op('a', 'b', domain=None, target=(dict, ('_', 1)))
-            self.assertEqual(f(1, 2), {'_': 1, 1: 2})
-
-        with self.subTest(args=('a', 'b'), domain=object, target=tuple):
-            f = Op('a', 'b', domain=object, target=tuple)
-            self.assertEqual(f(obj), (1, 2))
-
-        with self.subTest(args=('a', 'b'), domain=object, target=list):
-            f = Op('a', 'b', domain=object, target=list)
-            self.assertEqual(f(obj), [1, 2])
-
-        with self.subTest(args=('a', 'b'), domain=object, target=dict):
-            f = Op('a', 'b', domain=object, target=dict)
-            self.assertEqual(f(obj), {'a': 1, 'b': 2})
-
-        with self.subTest(
-                args=('a', 'b'), domain=object, target=(dict, ('_', 1))):
-            f = Op('a', 'b', domain=object, target=(dict, ('_', 1)))
-            self.assertEqual(f(obj), {'_': 1, 1: 2})
-
-        with self.subTest(args=('a', 'b'), domain=dict, target=dict):
-            f = Op('a', 'b', domain=dict, target=dict)
-            self.assertEqual(f(dic), {'a': 1, 'b': 2})
-
-        with self.subTest(args=('a', 'b'), domain=dict, target=tuple):
-            f = Op('a', 'b', domain=dict, target=tuple)
-            self.assertEqual(f(dic), (1, 2))
-
-        with self.subTest(args=('a', 'b'), domain=dict, target=list):
-            f = Op('a', 'b', domain=dict, target=list)
-            self.assertEqual(f(dic), [1, 2])
-
-        with self.subTest(args=('a', 'b'), domain=list, target=dict):
-            f = Op('a', 'b', domain=(list, ('a', 'b')), target=dict)
-            self.assertEqual(f(seq), {'a': 1, 'b': 2})
-
-        with self.subTest(args=('a', 'b'), domain=list, target=tuple):
-            f = Op('a', 'b', domain=(list, ('a', 'b')), target=tuple)
-            self.assertEqual(f(seq), (1, 2))
-
-        with self.subTest(args=('a', 'b'), domain=list, target=list):
-            f = Op('a', 'b', domain=(list, ('a', 'b')), target=list)
-            self.assertEqual(f(seq), [1, 2])
-
-        with self.subTest(args=('a', ('b', ), ('c', len), ('Y', max, 'd'))):
-            f = Op('a', ('b', ), ('c', len), ('Y', max, 'd'))
-            self.assertEqual(f.fields, ('a', 'b', 'c', 'd'))
-            self.assertTrue(all(map(callable, f)))
-            self.assertEqual(f.components, ('a', 'b', 'c', 'Y'))
+        pass # Already tested within subclasses
 
     def test_Zero(self) -> None:
         f = operator.Zero
@@ -466,59 +402,6 @@ class TestOperator(ModuleTestCase):
 
         with self.subTest(target=object):
             self.assertRaises(ValueError, f, object)
-
-    def test_Lambda(self) -> None:
-        f = operator.Lambda
-
-        with self.subTest(args=tuple()):
-            op = f()
-            self.assertIsInstance(op, operator.Zero)
-
-        with self.subTest(args=('x^2 + y', )):
-            op = f('x^2 + y')
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertRaises(TypeError, op, 1)
-            self.assertEqual(int(op(2, -4)), 0)
-
-        with self.subTest(args=('{x}', )):
-            self.assertRaises(Exception, f, '{x}')
-
-        with self.subTest(args=('{x}', ), variables=('{x}', )):
-            op = f('{x}', variables=('{x}', ))
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertEqual(int(op(1)), 1)
-
-        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', )):
-            self.assertRaises(
-                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ))
-
-        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', 'y')):
-            op = f('{x}^2 + y', variables=('{x}', 'y'))
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertRaises(TypeError, op, 1)
-            self.assertEqual(int(op(2, -4)), 0)
-
-        with self.subTest(
-                args=('{x}^2 + y', ), variables=('{x}', 'y'),
-                domain=(None, ('{x}', '{y}'))):
-            self.assertRaises(
-                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ),
-                domain=(None, ('{x}', '{y}')))
-
-        with self.subTest(
-                args=('{x}^2 + y', ), variables=('{x}', 'y'),
-                domain=(None, ('y', '{x}'))):
-            op = f('{x}^2 + y', variables=('{x}', 'y'),
-                domain=(None, ('y', '{x}')))
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertRaises(IndexError, op, 1)
-            self.assertEqual(int(op(-4, 2)), 0)
-
-        with self.subTest(args=('{x}^2', ), variables=('{x}', 'y')):
-            op = f('{x}^2', variables=('{x}', 'y'))
-            self.assertIsInstance(op, operator.Lambda)
-            self.assertEqual(int(op(2)), 4)
-            self.assertEqual(int(op(2, 2)), 4)
 
     def test_Identity(self) -> None:
         f = operator.Identity
@@ -551,6 +434,7 @@ class TestOperator(ModuleTestCase):
             self.assertTrue(f is F())
             self.assertEqual(f(1), None)
             self.assertIsInstance(f, operator.Zero)
+            self.assertIsInstance(f, operator.Getter)
 
         with self.subTest(domain=tuple):
             f = F(domain=tuple)
@@ -573,8 +457,9 @@ class TestOperator(ModuleTestCase):
             f = F('a')
             self.assertFalse(f is F())
             self.assertTrue(f is F('a'))
-            self.assertIsInstance(f, operator.Identity)
             self.assertEqual(f(1), 1)
+            self.assertIsInstance(f, operator.Identity)
+            self.assertIsInstance(f, operator.Getter)
 
         with self.subTest(args=('a', 'b')):
             f = F('a', 'b')
@@ -647,6 +532,122 @@ class TestOperator(ModuleTestCase):
         with self.subTest(args=('a', 'b'), target=dict):
             f = F('a', 'b', target=dict)
             self.assertEqual(f(1, 2), {'a': 1, 'b': 2})
+
+    def test_Lambda(self) -> None:
+        f = operator.Lambda
+
+        with self.subTest(args=tuple()):
+            op = f()
+            self.assertIsInstance(op, operator.Zero)
+
+        with self.subTest(args=('x^2 + y', )):
+            op = f('x^2 + y')
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(TypeError, op, 1)
+            self.assertEqual(int(op(2, -4)), 0)
+
+        with self.subTest(args=('{x}', )):
+            self.assertRaises(Exception, f, '{x}')
+
+        with self.subTest(args=('{x}', ), variables=('{x}', )):
+            op = f('{x}', variables=('{x}', ))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertEqual(int(op(1)), 1)
+
+        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', )):
+            self.assertRaises(
+                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ))
+
+        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', 'y')):
+            op = f('{x}^2 + y', variables=('{x}', 'y'))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(TypeError, op, 1)
+            self.assertEqual(int(op(2, -4)), 0)
+
+        with self.subTest(
+                args=('{x}^2 + y', ), variables=('{x}', 'y'),
+                domain=(None, ('{x}', '{y}'))):
+            self.assertRaises(
+                errors.NoSubsetError, f, '{x}^2 + y', variables=('{x}', ),
+                domain=(None, ('{x}', '{y}')))
+
+        with self.subTest(
+                args=('{x}^2 + y', ), variables=('{x}', 'y'),
+                domain=(None, ('y', '{x}'))):
+            op = f('{x}^2 + y', variables=('{x}', 'y'),
+                domain=(None, ('y', '{x}')))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertRaises(IndexError, op, 1)
+            self.assertEqual(int(op(-4, 2)), 0)
+
+        with self.subTest(args=('{x}^2', ), variables=('{x}', 'y')):
+            op = f('{x}^2', variables=('{x}', 'y'))
+            self.assertIsInstance(op, operator.Lambda)
+            self.assertEqual(int(op(2)), 4)
+            self.assertEqual(int(op(2, 2)), 4)
+
+    def test_Vector(self) -> None:
+        Op = operator.Vector
+        obj = mock.Mock()
+        obj.configure_mock(a=1, b=2)
+        dic = {'a': 1, 'b': 2}
+        seq = [1, 2]
+
+        with self.subTest(args=('a', 'b'), domain=None, target=dict):
+            f = Op('a', 'b', domain=None, target=dict)
+            self.assertEqual(f(1, 2), {'a': 1, 'b': 2})
+
+        with self.subTest(
+                args=('a', 'b'), domain=None, target=(dict, ('_', 1))):
+            f = Op('a', 'b', domain=None, target=(dict, ('_', 1)))
+            self.assertEqual(f(1, 2), {'_': 1, 1: 2})
+
+        with self.subTest(args=('a', 'b'), domain=object, target=tuple):
+            f = Op('a', 'b', domain=object, target=tuple)
+            self.assertEqual(f(obj), (1, 2))
+
+        with self.subTest(args=('a', 'b'), domain=object, target=list):
+            f = Op('a', 'b', domain=object, target=list)
+            self.assertEqual(f(obj), [1, 2])
+
+        with self.subTest(args=('a', 'b'), domain=object, target=dict):
+            f = Op('a', 'b', domain=object, target=dict)
+            self.assertEqual(f(obj), {'a': 1, 'b': 2})
+
+        with self.subTest(
+                args=('a', 'b'), domain=object, target=(dict, ('_', 1))):
+            f = Op('a', 'b', domain=object, target=(dict, ('_', 1)))
+            self.assertEqual(f(obj), {'_': 1, 1: 2})
+
+        with self.subTest(args=('a', 'b'), domain=dict, target=dict):
+            f = Op('a', 'b', domain=dict, target=dict)
+            self.assertEqual(f(dic), {'a': 1, 'b': 2})
+
+        with self.subTest(args=('a', 'b'), domain=dict, target=tuple):
+            f = Op('a', 'b', domain=dict, target=tuple)
+            self.assertEqual(f(dic), (1, 2))
+
+        with self.subTest(args=('a', 'b'), domain=dict, target=list):
+            f = Op('a', 'b', domain=dict, target=list)
+            self.assertEqual(f(dic), [1, 2])
+
+        with self.subTest(args=('a', 'b'), domain=list, target=dict):
+            f = Op('a', 'b', domain=(list, ('a', 'b')), target=dict)
+            self.assertEqual(f(seq), {'a': 1, 'b': 2})
+
+        with self.subTest(args=('a', 'b'), domain=list, target=tuple):
+            f = Op('a', 'b', domain=(list, ('a', 'b')), target=tuple)
+            self.assertEqual(f(seq), (1, 2))
+
+        with self.subTest(args=('a', 'b'), domain=list, target=list):
+            f = Op('a', 'b', domain=(list, ('a', 'b')), target=list)
+            self.assertEqual(f(seq), [1, 2])
+
+        with self.subTest(args=('a', ('b', ), ('c', len), ('Y', max, 'd'))):
+            f = Op('a', ('b', ), ('c', len), ('Y', max, 'd'))
+            self.assertEqual(f.fields, ('a', 'b', 'c', 'd'))
+            self.assertTrue(all(map(callable, f)))
+            self.assertEqual(f.components, ('a', 'b', 'c', 'Y'))
 
     def test_create_setter(self) -> Any:
         items = [('name', 'monty'), ('id', 42)]

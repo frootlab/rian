@@ -8,7 +8,6 @@ __docformat__ = 'google'
 
 import ast
 import collections
-import contextlib
 import functools
 import inspect
 import itertools
@@ -19,8 +18,8 @@ from typing import Any, Hashable, Match
 import py_expression_eval
 from nemoa.base import check, abc, stype
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, OptStrTuple
-from nemoa.types import SeqHom, SeqOp, AnyOp, StrList, StrTuple
+from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, SeqHom
+from nemoa.types import SeqOp, AnyOp, StrList, StrTuple
 from nemoa.base.stype import FieldID, Frame
 
 Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
@@ -297,6 +296,28 @@ class Getter(Operator, abc.Multiton):
         # Build Getter Operator
         self._build(*args)
 
+    @classmethod
+    def __subclasshook__(cls, other: type) -> bool:
+
+        # Handle Zero and Identity as Virtual Subclasses
+        if cls is Getter and issubclass(other, (Zero, Identity)):
+            return True
+
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        try:
+            frame = self._domain.frame
+            return f"{name}({', '.join(map(repr, frame))})"
+        except AttributeError:
+            return f"{name}()"
+        except TypeError:
+            return f"{name}()"
+
+    def __len__(self) -> int:
+        return len(self._target.frame)
+
     def _build(self, *args: Any) -> None:
 
         # Build fetch and format operators
@@ -319,19 +340,6 @@ class Getter(Operator, abc.Multiton):
         # __call__. Note: This is only possible, since the Multiton base class
         # implements class isolation.
         setattr(type(self), '__call__', staticmethod(getter))
-
-    def __repr__(self) -> str:
-        name = type(self).__name__
-        try:
-            frame = self._domain.frame
-            return f"{name}({', '.join(map(repr, frame))})"
-        except AttributeError:
-            return f"{name}()"
-        except TypeError:
-            return f"{name}()"
-
-    def __len__(self) -> int:
-        return len(self._target.frame)
 
     def _build_fetch(self, *args: FieldID, domain: stype.Domain) -> AnyOp:
 
