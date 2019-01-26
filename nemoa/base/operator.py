@@ -112,7 +112,14 @@ def create_variable(var: VarLike, default: OptOp = None) -> Variable:
 #
 
 class Operator(collections.abc.Callable, abc.Multiton): # type: ignore
-    """Abstract Base Class for operators."""
+    """Abstract Base Class for operators.
+
+    Args:
+        *args:
+        domain:
+        target:
+
+    """
     __slots__: StrList = ['_domain', '_target']
 
     _domain: stype.Domain
@@ -121,9 +128,17 @@ class Operator(collections.abc.Callable, abc.Multiton): # type: ignore
     def __init__(
             self, *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> None:
-
         self._domain = stype.create_domain(domain, defaults={'fields': args})
         self._target = stype.create_domain(target, defaults={'fields': args})
+
+        # If a target frame is given, build a len function and bind it to the
+        # method __call__. Note: This is only possible, since the Multiton base
+        # class isolates classes per instances.
+        if self._target.frame:
+            size = len(self._target.frame)
+            func: AnyOp = lambda: size
+            meth = staticmethod(func)
+            setattr(type(self), '__len__', meth)
 
     def __call__(self, *args: Any) -> Any:
         raise NotImplementedError() # TODO
@@ -161,24 +176,9 @@ class Zero(Operator):
     __slots__: StrList = []
 
     def __init__(self, target: stype.DomLike = None) -> None:
-        Operator.__init__(self, domain=None, target=target)
+        super().__init__(domain=None, target=target)
+        self._validate()
         self._build()
-
-    def _build(self) -> None:
-        # Sanity check if the target type has a unique empty object
-        target_type = self._target.type
-        if not target_type() == target_type():
-            raise ValueError(
-                f"target type '{target_type.__name__}' is not supported: "
-                "zero object is not unique") # TODO
-
-        # Create zero object in target type, build a zero morphism and bind it
-        # to the method __call__. Note: This is only possible, since the
-        # Multiton base class implements class isolation.
-        zero = target_type()
-        func = lambda *args: zero
-        meth = staticmethod(func)
-        setattr(type(self), '__call__', meth)
 
     def __len__(self) -> int:
         return 0
@@ -187,6 +187,29 @@ class Zero(Operator):
         name = type(self).__name__
         target_type = self._target.type.__name__
         return f"{name}({target_type})"
+
+    def _validate(self) -> None:
+        tgt = self._target
+
+        # Zero operators require an empty target frame
+        if tgt.frame:
+            raise ValueError(
+                "the target frame is required to be empty")
+
+        # Sanity check if the target type has a unique empty object
+        if not tgt.type() == tgt.type():
+            raise ValueError(
+                f"target type '{tgt.type.__name__}' is not supported: "
+                "zero object is not unique")
+
+    def _build(self) -> None:
+        # Create zero object in target type, build a zero morphism and bind it
+        # to the method __call__. Note: This is only possible, since the
+        # Multiton base class implements class isolation.
+        zero = self._target.type()
+        func = lambda *args: zero
+        meth = staticmethod(func)
+        setattr(type(self), '__call__', meth)
 
 class Identity(Operator):
     """Class for identity operators.
@@ -198,7 +221,7 @@ class Identity(Operator):
     __slots__: StrList = []
 
     def __init__(self, domain: stype.DomLike = None) -> None:
-        Operator.__init__(self, domain=domain, target=domain)
+        super().__init__(domain=domain, target=domain)
         self._build()
 
     def _build(self) -> None:
@@ -247,23 +270,20 @@ class Identity(Operator):
         # implements class isolation.
         setattr(type(self), '__call__', staticmethod(func))
 
-    def __len__(self) -> int:
-        return 0
-
     def __repr__(self) -> str:
         name = type(self).__name__
-        dom_type = self.domain.type
-        if dom_type == NoneType:
+        dtype = self.domain.type
+        if dtype == NoneType:
             return f'{name}'
-        return f'{name}({dom_type.__name__})'
+        return f'{name}({dtype.__name__})'
 
 class Getter(Operator):
     """Class for Getters.
 
     A getter essentially is the composition of a `fetch` operation, that
-    specifies the fields of a given domain type and a `representer`, that
-    represents the fetched fields as an object of given target type, by using
-    the target frame (if given) as field identifiers.
+    specifies the fields of a given domain type and a subsequent
+    `representation` of the fetched fields as an object of given target type, by
+    using the target frame (if given) as field identifiers.
 
     Args:
         *args: Valid :term:`field identifiers <field identifier>` within the
@@ -293,18 +313,20 @@ class Getter(Operator):
         domain = stype.create_domain(domain, defaults={'fields': args})
         target = stype.create_domain(target, defaults={'fields': args})
 
-        # If no fields are given, the projection is a zero operator.
+        # If no fields are given, the Getter operator is a Zero morphism onto
+        # the target
         if not args:
             return Zero(target=target)
 
-        # If the domain equals the target (type, frame and basis)
+        # If the domain equals the target (type, frame and basis), then the
+        # Getter operator is the Identity operator of the domain
         if domain == target:
             return Identity(domain=domain)
 
         return super().__new__(cls)
 
-    def __init__(self,
-            *args: FieldID, domain: stype.DomLike = None,
+    def __init__(
+            self, *args: FieldID, domain: stype.DomLike = None,
             target: stype.DomLike = None) -> None:
         # Initialize Base Class
         super().__init__(*args, domain=domain, target=target)
@@ -314,10 +336,9 @@ class Getter(Operator):
 
     @classmethod
     def __subclasshook__(cls, other: type) -> bool:
-        # Handle Zero and Identity as Virtual Subclasses
+        # Pretend that the Zero and Identity class are subclasses
         if cls is Getter and issubclass(other, (Zero, Identity)):
             return True
-
         return NotImplemented
 
     def __repr__(self) -> str:
@@ -329,9 +350,6 @@ class Getter(Operator):
             return f"{name}()"
         except TypeError:
             return f"{name}()"
-
-    def __len__(self) -> int:
-        return len(self._target.frame)
 
     def _build(self, *args: Any) -> None:
         # Build fetch and format operators
@@ -472,7 +490,7 @@ class Lambda(Operator):
             variables: StrTuple = tuple(), default: OptOp = None,
             assemble: bool = True) -> None:
         # Initialize Base Class
-        super().__init__(*variables, domain=domain, target=None)
+        super().__init__(*variables, domain=domain, target=(None, expression))
 
         # Bind Attributes
         self._expression = expression
@@ -663,7 +681,7 @@ class Vector(collections.abc.Sequence, Operator):
         raise InvalidTypeError('pos', pos, (int, slice))
 
     def __len__(self) -> int:
-        return len(self._variables)
+        return len(self._target.frame)
 
     def __repr__(self) -> str:
         name = type(self).__name__
@@ -892,14 +910,14 @@ def compose(*args: OptOp, unpack: bool = False) -> AnyOp:
         arguments evaluate to False, the identity operator is returned.
 
     """
-    # Check type of arguments
+    # Check types of arguments
     if not all(map(lambda arg: arg is None or callable(arg), args)):
         raise InvalidTypeError('every argument', args, 'callable or None')
 
-    # Filter all arguments which evaluate to False. This includes None and the
-    # identity operator, since len(Identity()) == 0. If no arguments pass the
-    # filter, the the default operator given by the identity is used.
-    ops = tuple(filter(None, args)) or (Identity(), )
+    # Filter None and identity operators. If no arguments pass the filter, the
+    # the default operator given by the identity is used.
+    use: AnyOp = lambda op: not(op is None or isinstance(args, Identity))
+    ops = tuple(filter(use, args)) or (Identity(), )
 
     # Create pairwise composition operator and apply it to the remaining
     # arguments
@@ -920,6 +938,8 @@ def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
         operator: Callable object
         *args: Arbitrary arguments
         **kwds: Arbitrary keyword arguments
+
+    Returns:
 
     """
     return op(**get_parameters(op, *args, **kwds))
@@ -1011,7 +1031,7 @@ def create_wrapper(**attrs: Any) -> AnyOp:
     return wrapper
 
 #
-# Factory functions for sequence operators
+# Builders for sequence operators
 #
 
 def create_sorter(

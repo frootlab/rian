@@ -7,13 +7,12 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import random
-from typing import NewType
+from typing import List, NewType, Tuple, Union, Optional
 from nemoa.base import attrib, operator
 from nemoa.db import record
 from nemoa.errors import InvalidTypeError, NemoaError
-from nemoa.types import Tuple, StrList, StrTuple, OptIntList, OptOp, Callable
-from nemoa.types import OptInt, List, OptStr, Iterator, Mapping, Union, Optional
-from nemoa.types import SeqOp, AnyOp, OptType, BoolOp
+from nemoa.types import StrList, StrTuple, OptIntList, OptOp, Callable, OptInt
+from nemoa.types import OptStr, Iterator, Mapping, SeqOp, AnyOp, OptType, BoolOp
 
 #
 # Exceptions
@@ -165,13 +164,12 @@ class Cursor(attrib.Group):
             batchsize: OptInt = None, dtype: OptType = None,
             index: OptIntList = None, getter: OptOp = None,
             mode: OptStr = None, parent: Optional[attrib.Group] = None) -> None:
-
         # Initialize Attribute Group with parent Attribute Group
         super().__init__(parent=parent)
 
         # Update Cursor Parameters (The order is important)
         self._set_mode(mode)
-        self._getter = getter # Bind getter
+        self._getter = getter
         self._set_filter(where)
         self._set_aggregator(*args, groupby=groupby, having=having)
         self._set_sorter(orderby, reverse=reverse)
@@ -308,8 +306,8 @@ class Cursor(attrib.Group):
             having: PredLike = None) -> None:
 
         if not groupby:
-            self._groupby = operator.Identity()
-            self._having = operator.Identity()
+            self._groupby = None
+            self._having = None
             return
 
         # In order to provide a grouped result set, the cursor requires to
@@ -333,7 +331,7 @@ class Cursor(attrib.Group):
             *args, key=groupby, domain=object)
 
         if having is None:
-            self._having = operator.Identity()
+            self._having = None
             return
 
         if callable(having):
@@ -356,7 +354,7 @@ class Cursor(attrib.Group):
 
         # If sorting is not used, the sorting operator is the identity
         if not (orderby or reverse):
-            self._sorter = operator.Identity()
+            self._sorter = None
             return
 
         # Validate sorting parameters
@@ -386,7 +384,6 @@ class Cursor(attrib.Group):
             *keys, domain=domain, reverse=reverse)
 
     def _set_mapper(self, *args: VarLike, dtype: OptType = None) -> None:
-
         # Validate Arguments
         if dtype and not args:
             raise CursorError(
@@ -415,7 +412,7 @@ class Cursor(attrib.Group):
         # If the result set is not aggregated, and the target type is not
         # specified (or None), then the rows are returned as records and the
         # mapper is the identity function
-        self._mapper = operator.Identity()
+        self._mapper = None
 
     def _default_mode(self) -> int:
         if self._sorter:

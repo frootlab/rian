@@ -348,79 +348,106 @@ class TestOperator(ModuleTestCase):
         pass # Implicitely tested by test_create_variable()
 
     def test_create_variable(self) -> None:
-        f = operator.create_variable
+        create = operator.create_variable
 
         with self.subTest(args=tuple()):
-            self.assertRaises(TypeError, f)
+            self.assertRaises(TypeError, create)
 
         with self.subTest(args=('x', )):
-            var = f('x')
+            var = create('x')
             self.assertEqual(var.name, 'x')
             self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x', ))
 
+        with self.subTest(args=('x^2', )):
+            var = create('x^2')
+            self.assertEqual(var.name, 'x^2')
+            self.assertIsInstance(var.operator, operator.Lambda)
+            self.assertEqual(var.frame, ('x', ))
+            self.assertEqual(int(var(0)), 0)
+            self.assertEqual(int(var(1)), 1)
+            self.assertEqual(int(var(2)), 4)
+
         with self.subTest(args=(('x', list), )):
-            var = f(('x', list))
+            var = create(('x', list))
             self.assertEqual(var.name, 'x')
             self.assertEqual(var.operator, list)
             self.assertEqual(var.frame, ('x', ))
 
         with self.subTest(args=(('y', 'x'), )):
-            var = f(('y', 'x'))
+            var = create(('y', 'x'))
             self.assertEqual(var.name, 'y')
             self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x', ))
 
         with self.subTest(args=(('x', ('x1', 'x2')), )):
-            var = f(('x', ('x1', 'x2')))
+            var = create(('x', ('x1', 'x2')))
             self.assertEqual(var.name, 'x')
             self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x1', 'x2'))
 
         with self.subTest(args=(('y', list, 'x'), )):
-            var = f(('y', list, 'x'))
+            var = create(('y', list, 'x'))
             self.assertEqual(var.name, 'y')
             self.assertEqual(var.operator, list)
             self.assertEqual(var.frame, ('x', ))
 
         with self.subTest(args=(('y', list), ('x1', 'x2'))):
-            var = f(('y', list, ('x1', 'x2')))
+            var = create(('y', list, ('x1', 'x2')))
             self.assertEqual(var.name, 'y')
             self.assertEqual(var.operator, list)
             self.assertEqual(var.frame, ('x1', 'x2'))
+
+        with self.subTest(args=(('y', 'x^2', 'x'), )):
+            var = create(('y', 'x^2', 'x'))
+            self.assertEqual(var.name, 'y')
+            self.assertIsInstance(var.operator, operator.Lambda)
+            self.assertEqual(var.frame, ('x', ))
+            self.assertEqual(int(var(0)), 0)
+            self.assertEqual(int(var(1)), 1)
+            self.assertEqual(int(var(2)), 4)
+
+        with self.subTest(args=(('y', 'max(x)^2', ('max(x)', 'z')), )):
+            var = create(('y', 'max(x)^2', ('max(x)', 'z')))
+            self.assertEqual(var.name, 'y')
+            self.assertIsInstance(var.operator, operator.Lambda)
+            self.assertEqual(var.frame, ('max(x)', 'z'))
+            self.assertEqual(int(var(2, 0)), 4)
+            self.assertEqual(int(var(2, 1)), 4)
+            self.assertEqual(int(var(3, 2)), 9)
 
     def test_Operator(self) -> None:
         pass # Already tested within subclasses
 
     def test_Zero(self) -> None:
-        f = operator.Zero
+        create = operator.Zero
 
         for target in [set, tuple, list, dict]:
             with self.subTest(target=target):
-                zero = f(target)
+                zero = create(target)
                 self.assertEqual(zero(), target())
 
         with self.subTest(target=object):
-            self.assertRaises(ValueError, f, object)
+            self.assertRaises(ValueError, create, object)
 
     def test_Identity(self) -> None:
-        f = operator.Identity
+        create = operator.Identity
 
         with self.subTest():
-            identity = f()
+            identity = create()
             self.assertIsInstance(identity, operator.Identity)
-            self.assertEqual(len(identity), 0)
-            self.assertFalse(identity)
+            self.assertRaises(TypeError, len, identity)
+            self.assertTrue(identity)
             self.assertEqual(identity(''), '')
             self.assertEqual(identity(1, 2, 3), (1, 2, 3))
 
         with self.subTest(domain=(None, ('x', ))):
-            identity = f(domain=(None, ('x', )))
+            identity = create(domain=(None, ('x', )))
             self.assertNotEqual(identity, operator.Identity())
             self.assertEqual(identity(1), 1)
 
         with self.subTest(domain=(None, ('x', 'y'))):
-            identity = f(domain=(None, ('x', 'y')))
+            identity = create(domain=(None, ('x', 'y')))
             self.assertNotEqual(identity, operator.Identity())
             self.assertEqual(identity(1, 2), (1, 2))
 
