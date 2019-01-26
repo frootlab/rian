@@ -767,6 +767,7 @@ class Vector(collections.abc.Sequence, Operator):
         variables = self._variables
         domain = self._domain
         target = self._target
+        components = self.components
 
         # If no variables are specified, the mapper is the zero operator of the
         # target type.
@@ -775,13 +776,13 @@ class Vector(collections.abc.Sequence, Operator):
             setattr(type(self), '__call__', staticmethod(func))
             return
 
-        # Check if the mapper can be implemented as a coordinate projection. In
-        # this case create and return the projection
+        # Check if the vector operator can be implemented as a Getter. In
+        # this case create and return the Getter
         equal: AnyOp = lambda var: (
             len(var.frame) == 1 and isinstance(var.operator, Identity))
         if all(map(equal, variables)):
             fields = tuple(var.frame[0] for var in variables)
-            getter = Getter(*fields, domain=self.domain, target=self.target)
+            getter = Getter(*fields, domain=domain, target=target)
             func = getattr(getter, '__call__', getter)
             setattr(type(self), '__call__', staticmethod(func))
             return
@@ -803,18 +804,22 @@ class Vector(collections.abc.Sequence, Operator):
             mapper = lambda *args: tuple(comp(*args) for comp in f)
 
         # Create formatter
-        formatter = Getter(*self.components, target=self.target)
+        formatter = Getter(
+            *components, domain=(None, components), target=target)
 
         # If the formatter is an identity operator, return mapper. If the mapper
         # is an identity operator, precede a tuple 'packer' to the formatter
         if isinstance(formatter, Identity):
             func = mapper
         elif isinstance(mapper, Identity):
-            func = compose(formatter.__call__, lambda *args: args)
+            func = formatter
+        elif len(self) == 1:
+            func = compose(formatter, mapper)
         else:
-            func = compose(formatter.__call__, mapper)
+            func = compose(formatter, mapper, unpack=True)
 
-        setattr(type(self), '__call__', staticmethod(func))
+        meth = staticmethod(func)
+        setattr(type(self), '__call__', meth)
 
 #
 # Operator Inspection Functions
