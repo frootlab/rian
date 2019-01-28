@@ -8,8 +8,9 @@ __docformat__ = 'google'
 
 import random
 from typing import List, NewType, Tuple, Union, Optional
-from nemoa.base import attrib, operator
+from nemoa.base import attrib
 from nemoa.db import record
+from nemoa.math import operator
 from nemoa.errors import InvalidTypeError, NemoaError
 from nemoa.types import StrList, StrTuple, OptIntList, OptOp, Callable, OptInt
 from nemoa.types import OptStr, Iterator, Mapping, SeqOp, AnyOp, OptType, BoolOp
