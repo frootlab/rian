@@ -21,6 +21,12 @@ class TestCurve(MathTestCase, ModuleTestCase):
     def setUp(self) -> None:
         self.x = np.array([[0.0, 0.5], [1.0, -1.0]])
 
+    def test_Bell(self) -> None:
+        pass # Data Class
+
+    def test_Sigmoid(self) -> None:
+        pass # Data Class
+
     def test_sigmoids(self) -> None:
         funcs = curve.sigmoids()
         self.assertIsInstance(funcs, list)
