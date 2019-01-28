@@ -274,6 +274,26 @@ class TestAttrib(ModuleTestCase):
 class TestCatalog(ModuleTestCase):
     module = catalog
 
+    def test_Category(self) -> None:
+        pass # Implicitly tested in test_category
+
+    def test_category(self) -> None:
+        @catalog.category
+        class Test:
+            id: str = 'test'
+            name: str
+            tags: list
+
+        cat_man = catalog.Manager()
+        self.assertTrue(cat_man.has_category('test'))
+        cat = cat_man.get_category('test')
+        cat_meta = cat('a', tags=[]) # type: ignore
+        self.assertEqual(cat_meta.name, 'a')
+        self.assertEqual(cat_meta.tags, [])
+
+    def test_Record(self) -> None:
+        pass # Implicetly tested in test_Manager
+
     def test_search(self) -> None:
         self.assertEqual(
             len(catalog.search(catalog, name='search')), 1)

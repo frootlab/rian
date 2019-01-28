@@ -12,10 +12,87 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import pkg, stack
-from nemoa.types import Any, Callable, Module, OptStr, OptStrList, Optional
+import dataclasses
+from typing import Any, Callable, Dict, Hashable, List, Optional
+import weakref
+from nemoa.base import abc, pkg, stack
+from nemoa.types import Module, OptStr, OptStrList
 
 OptModule = Optional[Module]
+
+#
+# Catalog Records
+#
+
+@dataclasses.dataclass(frozen=True)
+class Record:
+    """Class for Catalog Records."""
+    catid: Hashable
+    meta: Dict[str, Any]
+    ref: weakref.ReferenceType
+
+#
+# Catalog Categories
+#
+
+class Category(abc.ABC):
+    """Abstract Base class for catalog categories."""
+
+def category(cls: type) -> Category:
+    """Decorate class as catalog Category."""
+
+    if not hasattr(cls, 'id'):
+        raise AttributeError(
+            f"{cls.__name__} is required to have an attribute 'id'")
+    if not isinstance(cls.id, Hashable): # type: ignore
+        raise TypeError(
+            f"{cls.__name__}.id is required to be hashable")
+
+    # Create category class as dataclass, using the base class Category
+    space = dict(cls.__dict__)
+    catid = space['id']
+    space.pop('id')
+    space['__annotations__'].pop('id', None)
+    cat = type(cls.__name__, (cls, Category), dict(cls.__dict__))
+    cat = dataclasses.dataclass(frozen=True)(cat)
+
+    # Register the category if it is not yet registered in the Catalog
+    catalog = Manager()
+    if not catalog.has_category(cls.id): # type: ignore
+        catalog.add_category(cls.id, cat) # type: ignore
+
+    return cat # type: ignore
+
+#
+# Catalog Manager
+#
+
+class Manager(abc.Singleton):
+    """Singleton Class for Catalog Manager."""
+    _recs: List[Record]
+    _cats: Dict[Hashable, Category]
+
+    def __init__(self) -> None:
+        self._recs = []
+        self._cats = {}
+
+    def add_category(self, catid: Hashable, cat: Category) -> None:
+        if catid in self._cats:
+            raise ValueError() # TODO
+        self._cats[catid] = cat
+
+    def del_category(self, catid: Hashable) -> None:
+        self._cats.pop(catid, None)
+
+    def get_category(self, catid: Hashable) -> Category:
+        return self._cats[catid]
+
+    def has_category(self, catid: Hashable) -> bool:
+        return catid in self._cats
+
+#
+# Helper functions
+#
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
