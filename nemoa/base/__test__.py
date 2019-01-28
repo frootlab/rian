@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any, Callable, Union
 import numpy as np
 from nemoa import errors
-from nemoa.base import abc, array, attrib, binary, check, env, literal, mapping
-from nemoa.base import operator, otree, pkg, stack, stype
+from nemoa.base import abc, array, attrib, binary, call, check, env, literal
+from nemoa.base import mapping, operator, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Module, PathLikeList, StrList, NaN, Method, Function
@@ -809,23 +809,25 @@ class TestOperator(ModuleTestCase):
             op = operator.compose(lambda x: x + 1, lambda x: x - 1)
             self.assertEqual(op(1), 1)
 
-    def test_evaluate(self) -> None:
-        func = operator.get_parameters
-        self.assertAllEqual(operator.evaluate, [
-            Case(args=(func, list), value=OrderedDict()),
-            Case(args=(func, list), kwds={'test': True}, value=OrderedDict())])
+class TestCall(ModuleTestCase):
+    module = call
 
-    def test_get_parameters(self) -> None:
-        func = operator.get_parameters
-        self.assertAllEqual(func, [
-            Case(args=(func, ), value=OrderedDict()),
-            Case(args=(func, list), value=OrderedDict([('op', list)])),
-            Case(args=(func, list), kwds={'test': True},
+    def test_safe_call(self) -> None:
+        f = call.parameters
+        self.assertAllEqual(call.safe_call, [
+            Case(args=(f, list), value=OrderedDict()),
+            Case(args=(f, list), kwds={'test': True}, value=OrderedDict())])
+
+    def test_parameters(self) -> None:
+        f = call.parameters
+        self.assertAllEqual(call.parameters, [
+            Case(args=(f, ), value=OrderedDict()),
+            Case(args=(f, list), value=OrderedDict([('op', list)])),
+            Case(args=(f, list), kwds={'test': True},
                 value=OrderedDict([('op', list), ('test', True)]))])
 
-    def test_parse_call(self) -> None:
-        self.assertEqual(
-            operator.parse_call("f(1., 'a', b = 2)"),
+    def test_parse(self) -> None:
+        self.assertEqual(call.parse("f(1., 'a', b = 2)"),
             ('f', (1.0, 'a'), {'b': 2}))
 
 class TestOtree(ModuleTestCase):

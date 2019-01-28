@@ -6,10 +6,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import ast
 import collections
 import functools
-import inspect
 import itertools
 import operator
 import re
@@ -652,6 +650,7 @@ class Lambda(Operator):
 # class Scalar(Operator):
 #     pass
 
+
 class Vector(collections.abc.Sequence, Operator):
     """Class for vectorial functions.
 
@@ -672,6 +671,19 @@ class Vector(collections.abc.Sequence, Operator):
 
     _variables: Tuple[Variable, ...]
     _built_components: Tuple[AnyOp, ...]
+
+
+    def __new__(
+            cls, *args: VarLike, domain: stype.DomLike = None,
+            target: stype.DomLike = None, default: OptOp = None) -> Operator:
+        # If no variables are defined, the returned operator is the Zero
+        # morphism onto the target's empty object.
+        if not args:
+            return Zero(target)
+
+        # TODO: Check if the Vector can be implemented as a Getter
+
+        return super().__new__(cls)
 
     def __init__(
             self, *args: VarLike, domain: stype.DomLike = None,
@@ -769,13 +781,6 @@ class Vector(collections.abc.Sequence, Operator):
         target = self._target
         components = self.components
 
-        # If no variables are specified, the mapper is the zero operator of the
-        # target type.
-        if not variables:
-            func = Zero(target)
-            setattr(type(self), '__call__', staticmethod(func))
-            return
-
         # Check if the vector operator can be implemented as a Getter. In
         # this case create and return the Getter
         equal: AnyOp = lambda var: (
@@ -825,92 +830,6 @@ class Vector(collections.abc.Sequence, Operator):
 # Operator Inspection Functions
 #
 
-def get_parameters(
-        op: AnyOp, *args: Any, **kwds: Any) -> collections.OrderedDict:
-    """Get parameters of an operator.
-
-    Args:
-        op: Callable object
-        *args: Arbitrary arguments, that are zipped into the returned
-            parameter dictionary.
-        **kwds: Arbitrary keyword arguments, that respectively - if declared
-            within the callable object - are merged into the returned parameter
-            dictionary. If the callable object allows a variable number of
-            keyword arguments, all given keyword arguments are merged into the
-            parameter dictionary.
-
-    Returns:
-        Ordered Dictionary of parameters.
-
-    Examples:
-        >>> get_parameters(get_parameters)
-        OrderedDict()
-        >>> get_parameters(get_parameters, list)
-        OrderedDict([('operator', list)])
-
-    """
-    # Get all arguments
-    spec = inspect.getfullargspec(op)
-    spec_args = spec.args
-    spec_defaults = spec.defaults or []
-    args_list = list(zip(spec_args, args))
-
-    # Update Defaults
-    args_keys = dict(args_list).keys()
-    defaults_list = list(zip(spec_args, spec_defaults[::-1]))[::-1]
-    for key, val in defaults_list:
-        if key not in args_keys:
-            args_list.append((key, val))
-    params = collections.OrderedDict(args_list)
-
-    # Update Keyword Arguments
-    if spec.varkw:
-        params.update(kwds)
-    else:
-        for key, val in kwds.items():
-            if key in spec.args:
-                params[key] = val
-
-    # TODO: Split parameters in args and kwds
-    return params
-
-def parse_call(text: str) -> Tuple[str, tuple, dict]:
-    """Split an function call in the function name, it's arguments and keywords.
-
-    Args:
-        text: Function call given as valid Python code.
-
-    Returns:
-        A tuple consisting of the function name as string, the arguments as
-        tuple and the keywords as dictionary.
-
-    """
-    # Get function name
-    try:
-        tree = ast.parse(text)
-        obj = getattr(tree.body[0], 'value')
-        name = getattr(getattr(obj, 'func'), 'id')
-    except SyntaxError as err:
-        raise ValueError(f"'{text}' is not a valid function call") from err
-    except AttributeError as err:
-        raise ValueError(f"'{text}' is not a valid function call") from err
-
-    # Get Arguments
-    args = []
-    for ast_arg in getattr(obj, 'args'):
-        typ = ast_arg._fields[0]
-        val = getattr(ast_arg, typ)
-        args.append(val)
-
-    # Get Keyword Arguments
-    kwds = []
-    for ast_kwd in getattr(obj, 'keywords'):
-        typ = ast_kwd.value._fields[0]
-        key = ast_kwd.arg
-        val = getattr(ast_kwd.value, typ)
-        kwds.append((key, val))
-
-    return name, tuple(args), dict(kwds)
 
 #
 # Operators that act on Operators
@@ -945,22 +864,6 @@ def compose(*args: OptOp, unpack: bool = False) -> AnyOp:
     else:
         circ = lambda f, g: lambda *p: f(g(*p))
     return functools.reduce(circ, ops)
-
-def evaluate(op: AnyOp, *args: Any, **kwds: Any) -> Any:
-    """Evaluate operator for given parameter values.
-
-    Securely evaluates an operator for the subset of given parameters, which is
-    known to the operators signature.
-
-    Args:
-        operator: Callable object
-        *args: Arbitrary arguments
-        **kwds: Arbitrary keyword arguments
-
-    Returns:
-
-    """
-    return op(**get_parameters(op, *args, **kwds))
 
 #
 # Builders for elementary operators

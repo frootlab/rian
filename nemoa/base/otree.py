@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 import inspect
 from typing import Collection
-from nemoa.base import check, literal, mapping, operator
+from nemoa.base import call, check, literal, mapping
 from nemoa.types import Any, ClassInfo, OptStr, OptDictOfKeyOps
 from nemoa.types import RecDict, Union, StrDict
 from nemoa.types import DictOfRecDicts, StrOrType
@@ -41,7 +41,7 @@ def call_attr(obj: object, attr: str, *args: Any, **kwds: Any) -> Any:
     check.has_attr(obj, name)
     func = getattr(obj, name)
     check.is_callable(attr, func)
-    return operator.evaluate(func, *args, **kwds)
+    return call.safe_call(func, *args, **kwds)
 
 def get_members(
         obj: object, pattern: OptStr = None, classinfo: ClassInfo = object,
