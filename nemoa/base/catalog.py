@@ -13,7 +13,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import dataclasses
-from typing import Any, Callable, Dict, Hashable, Optional, Union
+import fnmatch
+from typing import Any, Callable, Dict, Hashable, List, Optional, Union
 from nemoa.base import abc, pkg, stack
 from nemoa.types import Module, OptStr, OptStrList
 
@@ -29,7 +30,9 @@ VERIFIED = 1
 @dataclasses.dataclass
 class Record:
     """Class for Catalog Records."""
-    cid: Optional[Hashable]
+    category: Optional[Hashable]
+    name: Optional[str]
+    module: Optional[str]
     meta: Dict[str, Any]
     reference: object
     state: int = REGISTERED
@@ -93,15 +96,16 @@ class Manager(abc.Singleton):
     def has_category(self, cid: Optional[Hashable]) -> bool:
         return cid in self._categories
 
-    def add_record(
-            self, cid: Optional[Hashable], meta: dict, obj: type) -> None:
+    def add(self, cid: Optional[Hashable], meta: dict, obj: type) -> None:
         path = obj.__module__ + '.' + obj.__qualname__
-        rec = Record(cid, meta, obj)
-        if self.has_category(cid):
+        rec = Record(
+            category=cid, name=obj.__name__, module=obj.__module__,
+            meta=meta, reference=obj)
+        if cid in self._categories:
             self.verify(rec)
         self._records[path] = rec
 
-    def get_record(self, path: Union[str, Callable]) -> Record:
+    def get(self, path: Union[str, Callable]) -> Record:
         if callable(path):
             path = path.__module__ + '.' + path.__qualname__
         rec = self._records[path]
@@ -113,23 +117,45 @@ class Manager(abc.Singleton):
         if rec.state == VERIFIED:
             return
 
-        cat = self._categories[rec.cid]
+        cat = self._categories[rec.category]
         meta = cat(**rec.meta) # type: ignore
         rec.meta.update(dataclasses.asdict(meta))
         rec.state = VERIFIED
 
+    def search(
+            self, path: Optional[str] = None,
+            category: Optional[Hashable] = None, # pylint: disable=W0621
+            **kwds: Any) -> List[str]:
+        results: List[str] = []
+        for key, rec in self._records.items():
+            if rec.state != VERIFIED:
+                self.verify(rec)
+            if path and not fnmatch.fnmatch(key, path):
+                continue
+            if category and rec.category != category:
+                continue
+            if kwds and rec.meta:
+                if not kwds.items() <= rec.meta.items():
+                    continue
+            results.append(key)
+        return results
+
+#
+# Helper functions
+#
+
 def register(cid: Optional[Hashable] = None, **kwds: Any) -> Callable:
-    """Decorator to register objects in the catalog."""
+    """Decorator to register classes and functions in the catalog."""
     def add(obj: type): # type: ignore
-        Manager().add_record(cid, kwds, obj)
+        Manager().add(cid, kwds, obj)
         # TODO: DO NOT set attributes any more!
         obj.__dict__.update(kwds)
         return obj
     return add
 
-#
-# Helper functions
-#
+
+
+
 
 def search(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.

@@ -303,11 +303,66 @@ class TestCatalog(ModuleTestCase):
             return math.sqrt(x ** 2 + y ** 2)
 
         catman = catalog.Manager()
-        rec = catman.get_record(norm_euclid)
-        self.assertEqual(rec.cid, 'norm')
+        rec = catman.get(norm_euclid)
+        self.assertEqual(rec.category, 'norm')
+        self.assertEqual(rec.name, norm_euclid.__name__)
+        self.assertEqual(rec.module, norm_euclid.__module__)
         self.assertEqual(rec.meta, {'name': 'euclid'})
         self.assertEqual(rec.reference, norm_euclid)
         self.assertEqual(rec.state, catalog.VERIFIED)
+
+    def test_Manager(self) -> None:
+        pass # Tested by methods
+
+    def test_Manager_search(self) -> None:
+
+        @catalog.category
+        class Const:
+            id: str = 'constant'
+            name: str
+        @catalog.category
+        class Func:
+            id: str = 'function'
+            name: str
+        @catalog.register('constant', name='1')
+        def a_1() -> int:
+            return 1
+        @catalog.register('constant', name='2')
+        def a_2() -> int:
+            return 2
+        @catalog.register('constant', name='3')
+        def b_1() -> int:
+            return 3
+        @catalog.register('function', name='4')
+        def b_2() -> int:
+            return 4
+
+        cman = catalog.Manager()
+
+        with self.subTest(path='*.a_*'):
+            search = cman.search(path='*.a_*')
+            names = sorted(cman.get(path).name for path in search)
+            self.assertEqual(names, ['a_1', 'a_2'])
+
+        with self.subTest(path='*.b_*'):
+            search = cman.search(path='*.b_*')
+            names = list(cman.get(path).name for path in search)
+            self.assertEqual(names, ['b_1', 'b_2'])
+
+        with self.subTest(category='constant'):
+            search = cman.search(category='constant')
+            names = sorted(cman.get(path).name for path in search)
+            self.assertEqual(names, ['a_1', 'a_2', 'b_1'])
+
+        with self.subTest(category='function'):
+            search = cman.search(category='function')
+            names = sorted(cman.get(path).name for path in search)
+            self.assertEqual(names, ['b_2'])
+
+        with self.subTest(name='1'):
+            search = cman.search(name='1')
+            names = sorted(cman.get(path).name for path in search)
+            self.assertEqual(names, ['a_1'])
 
     def test_Record(self) -> None:
         pass # Implicetly tested in test_Manager
