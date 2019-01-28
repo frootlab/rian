@@ -12,17 +12,23 @@ from nemoa.base import catalog, check, pkg
 from nemoa.math import vector
 from nemoa.types import Any, IntPair, NpArray, NpArrayLike, StrList
 
-_NORM_PREFIX = 'norm_'
-_DIST_PREFIX = 'dist_'
-
 #
-# Matrix Norms
+# Define Catalog Categories for global Registration of Algorithms
 #
 
 @catalog.category
 class Norm:
     id: str = 'matrix.norm'
     name: str
+
+@catalog.category
+class Distance:
+    id: str = 'matrix.distance'
+    name: str
+
+#
+# Matrix Norms
+#
 
 def norms() -> StrList:
     """Get sorted list of matrix norms.
@@ -157,11 +163,6 @@ def frob_norm(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
 #
 # Matrix Metrices
 #
-
-@catalog.category
-class Distance:
-    id: str = 'matrix.distance'
-    name: str
 
 def distances() -> StrList:
     """Get sorted list of matrix distances.

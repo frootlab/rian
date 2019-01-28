@@ -110,6 +110,12 @@ class TestCurve(MathTestCase, ModuleTestCase):
 class TestVector(MathTestCase, ModuleTestCase):
     module = vector
 
+    def test_Norm(self) -> None:
+        pass # Data Class
+
+    def test_Distance(self) -> None:
+        pass # Data Class
+
     def test_norms(self) -> None:
         norms = vector.norms()
         self.assertIsInstance(norms, list)

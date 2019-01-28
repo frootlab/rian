@@ -8,11 +8,22 @@ __docformat__ = 'google'
 
 import contextlib
 import numpy as np
-from nemoa.base import check, pkg
+from nemoa.base import catalog, check, pkg
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
-_NORM_PREFIX = 'norm_'
-_DIST_PREFIX = 'dist_'
+#
+# Define Catalog Categories for global Registration of Algorithms
+#
+
+@catalog.category
+class Norm:
+    id: str = 'vector.norm'
+    name: str
+
+@catalog.category
+class Distance:
+    id: str = 'vector.distance'
+    name: str
 
 #
 # Vector Norms
@@ -25,7 +36,9 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    return pkg.crop_functions(prefix=_NORM_PREFIX)
+    path = __name__ + '.*'
+    search = catalog.search(path, category='vector.norm')
+    return sorted(rec.meta['name'] for rec in search)
 
 def length(
         x: NpArrayLike, norm: str = 'euclid', axes: NpAxes = 0,
@@ -74,10 +87,16 @@ def length(
     check.has_type("'x'", x, np.ndarray)
     check.has_type("'axes'", axes, (int, tuple))
 
+    # Get function name
+    search = catalog.search(category='vector.norm', name=norm)
+    if len(search) != 1:
+        raise ValueError(f"vector norm '{norm}' is not unique")
+    fname = search[0].name
+
     # Evaluate function
-    fname = _NORM_PREFIX + norm.lower()
     return pkg.call_attr(fname, x, axes=axes, **kwds)
 
+@catalog.register('vector.norm', name='p')
 def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`p-Norm` of an array along given axes.
 
@@ -111,6 +130,7 @@ def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
 
     return np.power(np.sum(np.power(np.abs(x), p), axis=axes), 1. / p)
 
+@catalog.register('vector.norm', name='1-norm')
 def norm_1(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`1-Norm` of an array along given axes.
 
@@ -132,6 +152,7 @@ def norm_1(x: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return np.sum(np.abs(x), axis=axes)
 
+@catalog.register('vector.norm', name='euclid')
 def norm_euclid(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`Euclidean norm` of an array along given axes.
 
@@ -153,6 +174,7 @@ def norm_euclid(x: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return np.sqrt(np.sum(np.square(x), axis=axes))
 
+@catalog.register('vector.norm', name='maximum')
 def norm_max(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`Maximum norm` of an array along given axes.
 
@@ -174,6 +196,7 @@ def norm_max(x: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return np.amax(np.abs(x), axis=axes)
 
+@catalog.register('vector.norm', name='p-mean')
 def norm_pmean(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     r"""Calculate a :term:`Hölder mean` of an array along given axes.
 
@@ -204,6 +227,7 @@ def norm_pmean(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
         return norm_qmean(x, axes=axes) # faster then generic implementation
     return np.power(np.mean(np.power(np.abs(x), p), axis=axes), 1. / float(p))
 
+@catalog.register('vector.norm', name='abs-mean')
 def norm_amean(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate :term:`mean absolute` of an array along given axes.
 
@@ -225,6 +249,7 @@ def norm_amean(x: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return np.mean(np.abs(x), axis=axes)
 
+@catalog.register('vector.norm', name='quadratic-mean')
 def norm_qmean(x: NpArray, axes: NpAxes = 0) -> NpArray:
     r"""Calculate the :term:`quadratic mean` of an array along given axes.
 
@@ -258,7 +283,9 @@ def distances() -> StrList:
         distances, that are implemented within the module.
 
     """
-    return pkg.crop_functions(prefix=_DIST_PREFIX)
+    path = __name__ + '.*'
+    search = catalog.search(path, category='vector.distance')
+    return sorted(rec.meta['name'] for rec in search)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'euclid',
@@ -319,10 +346,16 @@ def distance(
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
+    # Get function name
+    search = catalog.search(category='vector.distance', name=name)
+    if len(search) != 1:
+        raise ValueError(f"vector distance '{name}' is not unique")
+    fname = search[0].name
+
     # Evaluate function
-    fname = _DIST_PREFIX + name.lower()
     return pkg.call_attr(fname, x, y, axes=axes, **kwds)
 
+@catalog.register('vector.distance', name='minkowski')
 def dist_minkowski(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Minkowski distance` along given axes.
@@ -349,6 +382,7 @@ def dist_minkowski(
     """
     return norm_p(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
+@catalog.register('vector.distance', name='manhattan')
 def dist_manhattan(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Manhattan distance` along given axes.
 
@@ -368,6 +402,7 @@ def dist_manhattan(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return norm_1(np.add(x, np.multiply(y, -1)), axes=axes)
 
+@catalog.register('vector.distance', name='euclid')
 def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Euclidean distance` along given axes for.
 
@@ -388,6 +423,7 @@ def dist_euclid(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return norm_euclid(np.add(x, np.multiply(y, -1)), axes=axes)
 
+@catalog.register('vector.distance', name='chebyshev')
 def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Chebyshev distance` along given axes.
 
@@ -408,6 +444,7 @@ def dist_chebyshev(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return norm_max(np.add(x, np.multiply(y, -1)), axes=axes)
 
+@catalog.register('vector.distance', name='p-mean')
 def dist_pmean(
         x: NpArray, y: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`power mean difference` along given axes.
@@ -435,6 +472,7 @@ def dist_pmean(
     """
     return norm_pmean(np.add(x, np.multiply(y, -1)), p=p, axes=axes)
 
+@catalog.register('vector.distance', name='abs-mean')
 def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`mean absolute difference` along given axes.
 
@@ -455,6 +493,7 @@ def dist_amean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return norm_amean(np.add(x, np.multiply(y, -1)), axes=axes)
 
+@catalog.register('vector.distance', name='quadratic-mean')
 def dist_qmean(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`quadratic mean difference` along given axes.
 
