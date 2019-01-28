@@ -13,8 +13,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import dataclasses
-from typing import Any, Callable, Dict, Hashable, List, Optional
-import weakref
+from typing import Any, Callable, Dict, Hashable, Optional, Union
 from nemoa.base import abc, pkg, stack
 from nemoa.types import Module, OptStr, OptStrList
 
@@ -24,12 +23,16 @@ OptModule = Optional[Module]
 # Catalog Records
 #
 
-@dataclasses.dataclass(frozen=True)
+REGISTERED = 0
+VERIFIED = 1
+
+@dataclasses.dataclass
 class Record:
     """Class for Catalog Records."""
-    catid: Hashable
+    cid: Optional[Hashable]
     meta: Dict[str, Any]
-    ref: weakref.ReferenceType
+    reference: object
+    state: int = REGISTERED
 
 #
 # Catalog Categories
@@ -50,7 +53,7 @@ def category(cls: type) -> Category:
 
     # Create category class as dataclass, using the base class Category
     space = dict(cls.__dict__)
-    catid = space['id']
+    cid = space['id']
     space.pop('id')
     space['__annotations__'].pop('id', None)
     cat = type(cls.__name__, (cls, Category), dict(cls.__dict__))
@@ -69,26 +72,60 @@ def category(cls: type) -> Category:
 
 class Manager(abc.Singleton):
     """Singleton Class for Catalog Manager."""
-    _recs: List[Record]
-    _cats: Dict[Hashable, Category]
+    _records: Dict[str, Record]
+    _categories: Dict[Optional[Hashable], Category]
 
     def __init__(self) -> None:
-        self._recs = []
-        self._cats = {}
+        self._records = {}
+        self._categories = {}
 
-    def add_category(self, catid: Hashable, cat: Category) -> None:
-        if catid in self._cats:
+    def add_category(self, cid: Optional[Hashable], cat: Category) -> None:
+        if cid in self._categories:
             raise ValueError() # TODO
-        self._cats[catid] = cat
+        self._categories[cid] = cat
 
-    def del_category(self, catid: Hashable) -> None:
-        self._cats.pop(catid, None)
+    def del_category(self, cid: Optional[Hashable]) -> None:
+        self._categories.pop(cid, None)
 
-    def get_category(self, catid: Hashable) -> Category:
-        return self._cats[catid]
+    def get_category(self, cid: Optional[Hashable]) -> Category:
+        return self._categories[cid]
 
-    def has_category(self, catid: Hashable) -> bool:
-        return catid in self._cats
+    def has_category(self, cid: Optional[Hashable]) -> bool:
+        return cid in self._categories
+
+    def add_record(
+            self, cid: Optional[Hashable], meta: dict, obj: type) -> None:
+        path = obj.__module__ + '.' + obj.__qualname__
+        rec = Record(cid, meta, obj)
+        if self.has_category(cid):
+            self.verify(rec)
+        self._records[path] = rec
+
+    def get_record(self, path: Union[str, Callable]) -> Record:
+        if callable(path):
+            path = path.__module__ + '.' + path.__qualname__
+        rec = self._records[path]
+        if rec.state != VERIFIED:
+            self.verify(rec)
+        return rec
+
+    def verify(self, rec: Record) -> None:
+        if rec.state == VERIFIED:
+            return
+
+        cat = self._categories[rec.cid]
+        meta = cat(**rec.meta) # type: ignore
+        rec.meta.update(dataclasses.asdict(meta))
+        rec.state = VERIFIED
+
+def register(cid: Optional[Hashable] = None, **kwds: Any) -> Callable:
+    """Decorator to register objects in the catalog."""
+    def add(obj: type): # type: ignore
+        Manager().add_record(cid, kwds, obj)
+        # TODO: DO NOT set attributes any more!
+        obj.__dict__.update(kwds)
+        return obj
+    return add
 
 #
 # Helper functions

@@ -8,6 +8,7 @@ __docformat__ = 'google'
 
 from collections import OrderedDict
 import datetime
+import math
 from unittest import mock
 from pathlib import Path
 from typing import Any, Callable, Union
@@ -290,6 +291,23 @@ class TestCatalog(ModuleTestCase):
         cat_meta = cat('a', tags=[]) # type: ignore
         self.assertEqual(cat_meta.name, 'a')
         self.assertEqual(cat_meta.tags, [])
+
+    def test_register(self) -> None:
+        @catalog.category
+        class Norm:
+            id: str = 'norm'
+            name: str
+
+        @catalog.register('norm', name='euclid')
+        def norm_euclid(x: float, y: float) -> float:
+            return math.sqrt(x ** 2 + y ** 2)
+
+        catman = catalog.Manager()
+        rec = catman.get_record(norm_euclid)
+        self.assertEqual(rec.cid, 'norm')
+        self.assertEqual(rec.meta, {'name': 'euclid'})
+        self.assertEqual(rec.reference, norm_euclid)
+        self.assertEqual(rec.state, catalog.VERIFIED)
 
     def test_Record(self) -> None:
         pass # Implicetly tested in test_Manager
