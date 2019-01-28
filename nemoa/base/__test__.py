@@ -281,30 +281,27 @@ class TestCatalog(ModuleTestCase):
     def test_category(self) -> None:
         @catalog.category
         class Test:
-            id: str = 'test'
             name: str
             tags: list
 
         cat_man = catalog.Manager()
-        self.assertTrue(cat_man.has_category('test'))
-        cat = cat_man.get_category('test')
-        cat_meta = cat('a', tags=[]) # type: ignore
+        self.assertTrue(cat_man.has_category(Test))
+        cat_meta = Test('a', tags=[]) # type: ignore
         self.assertEqual(cat_meta.name, 'a')
         self.assertEqual(cat_meta.tags, [])
 
     def test_register(self) -> None:
         @catalog.category
-        class Norm:
-            id: str = 'norm'
+        class Reg:
             name: str
 
-        @catalog.register('norm', name='euclid')
+        @catalog.register(Reg, name='euclid')
         def norm_euclid(x: float, y: float) -> float:
             return math.sqrt(x ** 2 + y ** 2)
 
         catman = catalog.Manager()
         rec = catman.get(norm_euclid)
-        self.assertEqual(rec.category, 'norm')
+        self.assertEqual(rec.category, Reg)
         self.assertEqual(rec.name, norm_euclid.__name__)
         self.assertEqual(rec.module, norm_euclid.__module__)
         self.assertEqual(rec.meta, {'name': 'euclid'})
@@ -315,22 +312,21 @@ class TestCatalog(ModuleTestCase):
 
         @catalog.category
         class Const:
-            id: str = 'constant'
             name: str
         @catalog.category
         class Func:
-            id: str = 'function'
             name: str
-        @catalog.register('constant', name='1')
+
+        @catalog.register(Const, name='1')
         def a_1() -> int:
             return 1
-        @catalog.register('constant', name='2')
+        @catalog.register(Const, name='2')
         def a_2() -> int:
             return 2
-        @catalog.register('constant', name='3')
+        @catalog.register(Const, name='3')
         def b_1() -> int:
             return 3
-        @catalog.register('function', name='4')
+        @catalog.register(Func, name='4')
         def b_2() -> int:
             return 4
 
@@ -344,13 +340,13 @@ class TestCatalog(ModuleTestCase):
             names = sorted(rec.meta['name'] for rec in search)
             self.assertEqual(names, ['3', '4'])
 
-        with self.subTest(category='constant'):
-            search = catalog.search(category='constant')
+        with self.subTest(category=Const):
+            search = catalog.search(category=Const)
             names = sorted(rec.meta['name'] for rec in search)
             self.assertEqual(names, ['1', '2', '3'])
 
-        with self.subTest(category='function'):
-            search = catalog.search(category='function')
+        with self.subTest(category=Func):
+            search = catalog.search(category=Func)
             names = sorted(rec.meta['name'] for rec in search)
             self.assertEqual(names, ['4'])
 
@@ -363,12 +359,11 @@ class TestCatalog(ModuleTestCase):
 
         @catalog.category
         class P1:
-            id: str = 'pc1'
             name: str
-        @catalog.register('pc1', name='p1')
+        @catalog.register(P1, name='p1')
         def p1() -> int:
             pass
-        @catalog.register('pc1', name='p2')
+        @catalog.register(P1, name='p2')
         def p2() -> int:
             return 2
 

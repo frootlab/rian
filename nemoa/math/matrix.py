@@ -18,12 +18,10 @@ from nemoa.types import Any, IntPair, NpArray, NpArrayLike, StrList
 
 @catalog.category
 class Norm:
-    id: str = 'matrix.norm'
     name: str
 
 @catalog.category
 class Distance:
-    id: str = 'matrix.distance'
     name: str
 
 #
@@ -38,7 +36,7 @@ def norms() -> StrList:
 
     """
     path = __name__ + '.*'
-    search = catalog.search(path, category='matrix.norm')
+    search = catalog.search(path, category=Norm)
     return sorted(rec.meta['name'] for rec in search)
 
 def norm(
@@ -89,12 +87,12 @@ def norm(
             "first and second axis have to be different")
 
     # Get function name
-    fname = catalog.pick(category='matrix.norm', name=name).name
+    fname = catalog.pick(category=Norm, name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, axes=axes, **kwds)
 
-@catalog.register('matrix.norm', name='pq')
+@catalog.register(Norm, name='pq')
 def pq_norm(x: NpArray,
         p: float = 2., q: float = 2., axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`pq-norm` of an array along given axes.
@@ -137,7 +135,7 @@ def pq_norm(x: NpArray,
 
     return np.power(qsum, 1. / q)
 
-@catalog.register('matrix.norm', name='frobenius')
+@catalog.register(Norm, name='frobenius')
 def frob_norm(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius norm` of an array along given axes.
 
@@ -170,7 +168,7 @@ def distances() -> StrList:
 
     """
     path = __name__ + '.*'
-    search = catalog.search(path, category='matrix.distance')
+    search = catalog.search(path, category=Distance)
     return sorted(rec.meta['name'] for rec in search)
 
 def distance(
@@ -229,12 +227,12 @@ def distance(
             "first and second axis have to be different")
 
     # Get function name
-    fname = catalog.pick(category='matrix.distance', name=name).name
+    fname = catalog.pick(category=Distance, name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
-@catalog.register('matrix.distance', name='frobenius')
+@catalog.register(Distance, name='frobenius')
 def frob_dist(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius distance` of two arrays along given axes.
 
@@ -256,7 +254,7 @@ def frob_dist(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """
     return frob_norm(np.add(x, np.multiply(y, -1)), axes=axes)
 
-@catalog.register('matrix.distance', name='pq')
+@catalog.register(Distance, name='pq')
 def pq_dist(
         x: NpArray, y: NpArray, p: float = 2., q: float = 2.,
         axes: IntPair = (0, 1)) -> NpArray:

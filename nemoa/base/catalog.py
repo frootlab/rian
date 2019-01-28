@@ -14,7 +14,7 @@ __docformat__ = 'google'
 
 import dataclasses
 import fnmatch
-from typing import Any, Callable, Dict, Hashable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 from nemoa.base import abc, pkg, stack
 from nemoa.types import Module, OptStr, OptStrList, OptKey
 
@@ -42,31 +42,21 @@ class Card:
 # Categories
 #
 
-class Category(abc.ABC):
-    """Abstract Base class for catalog categories."""
+class Category:
+    """Base class for catalog categories."""
 
 def category(cls: type) -> Category:
     """Decorate class as catalog Category."""
 
-    if not hasattr(cls, 'id'):
-        raise AttributeError(
-            f"{cls.__name__} is required to have an attribute 'id'")
-    if not isinstance(cls.id, Hashable): # type: ignore
-        raise TypeError(
-            f"{cls.__name__}.id is required to be hashable")
-
     # Create category class as dataclass, using the base class Category
-    space = dict(cls.__dict__)
-    cid = space['id']
-    space.pop('id')
-    space['__annotations__'].pop('id', None)
+    # cat = dataclasses.dataclass(frozen=True)(Category)
     cat = type(cls.__name__, (cls, Category), dict(cls.__dict__))
-    cat = dataclasses.dataclass(frozen=True)(cat)
+    cat = dataclasses.dataclass(frozen=True)(cls)
 
-    # Register the category if it is not yet registered in the Catalog
+    # Register the category, if it is not yet registered in the Catalog
     catalog = Manager()
-    if not catalog.has_category(cls.id): # type: ignore
-        catalog.add_category(cls.id, cat) # type: ignore
+    if not catalog.has_category(cat): # type: ignore
+        catalog.add_category(cat) # type: ignore
 
     return cat # type: ignore
 
@@ -77,25 +67,19 @@ def category(cls: type) -> Category:
 class Manager(abc.Singleton):
     """Singleton Class for Catalog Manager."""
     _records: Dict[str, Card]
-    _categories: Dict[OptKey, Category]
+    _categories: Set[Category]
 
     def __init__(self) -> None:
         self._records = {}
-        self._categories = {}
+        self._categories = set()
 
-    def add_category(self, cid: OptKey, cat: Category) -> None:
-        if cid in self._categories:
+    def add_category(self, cat: Category) -> None:
+        if cat in self._categories:
             raise ValueError() # TODO
-        self._categories[cid] = cat
+        self._categories.add(cat)
 
-    def del_category(self, cid: OptKey) -> None:
-        self._categories.pop(cid, None)
-
-    def get_category(self, cid: OptKey) -> Category:
-        return self._categories[cid]
-
-    def has_category(self, cid: OptKey) -> bool:
-        return cid in self._categories
+    def has_category(self, cat: Category) -> bool:
+        return cat in self._categories
 
     def add(
             self, cid: OptKey, kwds: dict, obj: Callable) -> None:
@@ -119,8 +103,7 @@ class Manager(abc.Singleton):
         if rec.state == VERIFIED:
             return
 
-        cat = self._categories[rec.category]
-        meta = cat(**rec.kwds) # type: ignore
+        meta = rec.category(**rec.kwds) # type: ignore
         rec.meta.update(dataclasses.asdict(meta))
         rec.state = VERIFIED
 

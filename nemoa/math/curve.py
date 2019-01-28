@@ -31,12 +31,10 @@ from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 @catalog.category
 class Sigmoid:
-    id: str = 'sigmoid.curve'
     name: str
 
 @catalog.category
 class Bell:
-    id: str = 'bell.curve'
     name: str
 
 #
@@ -52,7 +50,7 @@ def sigmoids() -> StrList:
 
     """
     path = __name__ + '.*'
-    search = catalog.search(path, category='sigmoid.curve')
+    search = catalog.search(path, category=Sigmoid)
     return sorted(rec.meta['name'] for rec in search)
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
@@ -77,12 +75,12 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get function name
-    fname = catalog.pick(category='sigmoid.curve', name=name).name
+    fname = catalog.pick(category=Sigmoid, name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, **kwds)
 
-@catalog.register('sigmoid.curve', name='logistic')
+@catalog.register(Sigmoid, name='logistic')
 def sigm_logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
 
@@ -98,7 +96,7 @@ def sigm_logistic(x: NpArrayLike) -> NpArray:
     """
     return 1. / (1. + np.exp(np.multiply(-1, x)))
 
-@catalog.register('sigmoid.curve', name='tanh')
+@catalog.register(Sigmoid, name='tanh')
 def sigm_tanh(x: NpArrayLike) -> NpArray:
     """Calculate hyperbolic tangent function.
 
@@ -114,7 +112,7 @@ def sigm_tanh(x: NpArrayLike) -> NpArray:
     """
     return np.tanh(x)
 
-@catalog.register('sigmoid.curve', name='lecun')
+@catalog.register(Sigmoid, name='lecun')
 def sigm_lecun(x: NpArrayLike) -> NpArray:
     """Calculate normalized hyperbolic tangent function.
 
@@ -137,7 +135,7 @@ def sigm_lecun(x: NpArrayLike) -> NpArray:
     """
     return 1.7159 * np.tanh(np.multiply(0.6666, x))
 
-@catalog.register('sigmoid.curve', name='elliot')
+@catalog.register(Sigmoid, name='elliot')
 def sigm_elliot(x: NpArrayLike) -> NpArray:
     """Calculate Elliot activation function.
 
@@ -157,7 +155,7 @@ def sigm_elliot(x: NpArrayLike) -> NpArray:
     """
     return x / (1. + np.abs(x))
 
-@catalog.register('sigmoid.curve', name='hill')
+@catalog.register(Sigmoid, name='hill')
 def sigm_hill(x: NpArrayLike, n: int = 2) -> NpArray:
     """Calculate Hill type activation function.
 
@@ -180,7 +178,7 @@ def sigm_hill(x: NpArrayLike, n: int = 2) -> NpArray:
             f"'n' is required to be an even number, not {n}")
     return x / np.power(1. + np.power(x, n), 1. / float(n))
 
-@catalog.register('sigmoid.curve', name='arctan')
+@catalog.register(Sigmoid, name='arctan')
 def sigm_arctan(x: NpArrayLike) -> NpArray:
     """Calculate inverse tangent function.
 
@@ -209,7 +207,7 @@ def bells() -> StrList:
 
     """
     path = __name__ + '.*'
-    search = catalog.search(path, category='bell.curve')
+    search = catalog.search(path, category=Bell)
     return sorted(rec.meta['name'] for rec in search)
 
 def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
@@ -234,12 +232,12 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get function name
-    fname = catalog.pick(category='bell.curve', name=name).name
+    fname = catalog.pick(category=Bell, name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, **kwds)
 
-@catalog.register('bell.curve', name='gauss')
+@catalog.register(Bell, name='gauss')
 def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.
 
@@ -266,7 +264,7 @@ def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     exp_term = np.power(np.e, -0.5 * np.square(np.add(x, -mu) / sigma))
     return pre_factor * exp_term
 
-@catalog.register('bell.curve', name='d_logistic')
+@catalog.register(Bell, name='d_logistic')
 def bell_d_logistic(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the standard logistic function.
 
@@ -283,7 +281,7 @@ def bell_d_logistic(x: NpArrayLike) -> NpArray:
     flog = sigm_logistic(x)
     return np.multiply(flog, -np.add(flog, -1.))
 
-@catalog.register('bell.curve', name='d_elliot')
+@catalog.register(Bell, name='d_elliot')
 def bell_d_elliot(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the Elliot sigmoid function.
 
@@ -303,7 +301,7 @@ def bell_d_elliot(x: NpArrayLike) -> NpArray:
     """
     return 1. / (1. + np.abs(x)) ** 2
 
-@catalog.register('bell.curve', name='d_hill')
+@catalog.register(Bell, name='d_hill')
 def bell_d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """Calculate derivative of Hill type activation function.
 
@@ -320,7 +318,7 @@ def bell_d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """
     return 1. / np.power(1. + np.power(x, n), (1. + n) / n)
 
-@catalog.register('bell.curve', name='d_lecun')
+@catalog.register(Bell, name='d_lecun')
 def bell_d_lecun(x: NpArrayLike) -> NpArray:
     """Calculate derivative of LeCun hyperbolic tangent.
 
@@ -343,7 +341,7 @@ def bell_d_lecun(x: NpArrayLike) -> NpArray:
     """
     return 1.14382 / np.cosh(np.multiply(0.6666, x)) ** 2
 
-@catalog.register('bell.curve', name='d_tanh')
+@catalog.register(Bell, name='d_tanh')
 def bell_d_tanh(x: NpArrayLike) -> NpArray:
     """Calculate derivative of hyperbolic tangent function.
 
@@ -359,7 +357,7 @@ def bell_d_tanh(x: NpArrayLike) -> NpArray:
     """
     return 1. - np.tanh(x) ** 2
 
-@catalog.register('bell.curve', name='d_arctan')
+@catalog.register(Bell, name='d_arctan')
 def bell_d_arctan(x: NpArrayLike) -> NpArray:
     """Calculate derivative of inverse tangent function.
 
