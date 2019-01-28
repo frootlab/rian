@@ -181,6 +181,12 @@ class TestVector(MathTestCase, ModuleTestCase):
 class TestMatrix(MathTestCase, ModuleTestCase):
     module = matrix
 
+    def test_Norm(self) -> None:
+        pass # Not required
+
+    def test_Distance(self) -> None:
+        pass # Not required
+
     def test_norms(self) -> None:
         norms = matrix.norms()
         self.assertIsInstance(norms, list)
@@ -191,14 +197,14 @@ class TestMatrix(MathTestCase, ModuleTestCase):
             with self.subTest(name=name):
                 self.assertIsMatrixNorm(matrix.norm, name=name)
 
-    def test_norm_frobenius(self) -> None:
-        self.assertIsMatrixNorm(matrix.norm_frobenius)
+    def test_frob_norm(self) -> None:
+        self.assertIsMatrixNorm(matrix.frob_norm)
 
-    def test_norm_pq(self) -> None:
+    def test_pq_norm(self) -> None:
         for p in range(1, 5):
             for q in range(1, 5):
                 with self.subTest(p=p, q=q):
-                    self.assertIsMatrixNorm(matrix.norm_pq, p=p, q=q)
+                    self.assertIsMatrixNorm(matrix.pq_norm, p=p, q=q)
 
     def test_distances(self) -> None:
         distances = matrix.distances()
@@ -210,14 +216,14 @@ class TestMatrix(MathTestCase, ModuleTestCase):
             with self.subTest(name=name):
                 self.assertIsMatrixDistance(matrix.distance, name=name)
 
-    def test_dist_frobenius(self) -> None:
-        self.assertIsMatrixDistance(matrix.dist_frobenius)
+    def test_frob_dist(self) -> None:
+        self.assertIsMatrixDistance(matrix.frob_dist)
 
-    def test_dist_pq(self) -> None:
+    def test_pq_dist(self) -> None:
         for p in range(1, 5):
             for q in range(1, 5):
                 with self.subTest(p=p, q=q):
-                    self.assertIsMatrixDistance(matrix.dist_pq, p=p, q=q)
+                    self.assertIsMatrixDistance(matrix.pq_dist, p=p, q=q)
 
 class TestOperator(ModuleTestCase):
     module = operator

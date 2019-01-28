@@ -8,4 +8,4 @@ from nemoa.base import catalog
 
 def algorithms(*args, **kwds):
     """Returns dictionary of algorithms, that pass given filters. """
-    return catalog.search(*args, **kwds)
+    return catalog.search_old(*args, **kwds)

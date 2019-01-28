@@ -311,10 +311,7 @@ class TestCatalog(ModuleTestCase):
         self.assertEqual(rec.reference, norm_euclid)
         self.assertEqual(rec.state, catalog.VERIFIED)
 
-    def test_Manager(self) -> None:
-        pass # Tested by methods
-
-    def test_Manager_search(self) -> None:
+    def test_search(self) -> None:
 
         @catalog.category
         class Const:
@@ -337,39 +334,43 @@ class TestCatalog(ModuleTestCase):
         def b_2() -> int:
             return 4
 
-        cman = catalog.Manager()
-
         with self.subTest(path='*.a_*'):
-            search = cman.search(path='*.a_*')
-            names = sorted(cman.get(path).name for path in search)
-            self.assertEqual(names, ['a_1', 'a_2'])
+            search = catalog.search(path='*.a_*')
+            names = sorted(rec.meta['name'] for rec in search)
+            self.assertEqual(names, ['1', '2'])
 
         with self.subTest(path='*.b_*'):
-            search = cman.search(path='*.b_*')
-            names = list(cman.get(path).name for path in search)
-            self.assertEqual(names, ['b_1', 'b_2'])
+            search = catalog.search(path='*.b_*')
+            names = sorted(rec.meta['name'] for rec in search)
+            self.assertEqual(names, ['3', '4'])
 
         with self.subTest(category='constant'):
-            search = cman.search(category='constant')
-            names = sorted(cman.get(path).name for path in search)
-            self.assertEqual(names, ['a_1', 'a_2', 'b_1'])
+            search = catalog.search(category='constant')
+            names = sorted(rec.meta['name'] for rec in search)
+            self.assertEqual(names, ['1', '2', '3'])
 
         with self.subTest(category='function'):
-            search = cman.search(category='function')
-            names = sorted(cman.get(path).name for path in search)
-            self.assertEqual(names, ['b_2'])
+            search = catalog.search(category='function')
+            names = sorted(rec.meta['name'] for rec in search)
+            self.assertEqual(names, ['4'])
 
         with self.subTest(name='1'):
-            search = cman.search(name='1')
-            names = sorted(cman.get(path).name for path in search)
-            self.assertEqual(names, ['a_1'])
+            search = catalog.search(name='1')
+            names = sorted(rec.meta['name'] for rec in search)
+            self.assertEqual(names, ['1'])
+
+    def test_Manager(self) -> None:
+        pass # Tested by methods
+
+    def test_Manager_search(self) -> None:
+        pass # Implicitely tested in test_search()
 
     def test_Record(self) -> None:
         pass # Implicetly tested in test_Manager
 
-    def test_search(self) -> None:
+    def test_search_old(self) -> None:
         self.assertEqual(
-            len(catalog.search(catalog, name='search')), 1)
+            len(catalog.search_old(catalog, name='search_old')), 1)
 
     def test_custom(self) -> None:
         @catalog.custom(category='custom')

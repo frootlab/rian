@@ -31,9 +31,10 @@ VERIFIED = 1
 class Record:
     """Class for Catalog Records."""
     category: Optional[Hashable]
-    name: Optional[str]
-    module: Optional[str]
+    name: str
+    module: str
     meta: Dict[str, Any]
+    kwds: Dict[str, Any]
     reference: object
     state: int = REGISTERED
 
@@ -96,11 +97,12 @@ class Manager(abc.Singleton):
     def has_category(self, cid: Optional[Hashable]) -> bool:
         return cid in self._categories
 
-    def add(self, cid: Optional[Hashable], meta: dict, obj: type) -> None:
+    def add(
+            self, cid: Optional[Hashable], kwds: dict, obj: Callable) -> None:
         path = obj.__module__ + '.' + obj.__qualname__
         rec = Record(
             category=cid, name=obj.__name__, module=obj.__module__,
-            meta=meta, reference=obj)
+            meta={}, kwds=kwds, reference=obj)
         if cid in self._categories:
             self.verify(rec)
         self._records[path] = rec
@@ -118,15 +120,15 @@ class Manager(abc.Singleton):
             return
 
         cat = self._categories[rec.category]
-        meta = cat(**rec.meta) # type: ignore
+        meta = cat(**rec.kwds) # type: ignore
         rec.meta.update(dataclasses.asdict(meta))
         rec.state = VERIFIED
 
     def search(
             self, path: Optional[str] = None,
             category: Optional[Hashable] = None, # pylint: disable=W0621
-            **kwds: Any) -> List[str]:
-        results: List[str] = []
+            **kwds: Any) -> List[Record]:
+        results: List[Record] = []
         for key, rec in self._records.items():
             if rec.state != VERIFIED:
                 self.verify(rec)
@@ -134,10 +136,9 @@ class Manager(abc.Singleton):
                 continue
             if category and rec.category != category:
                 continue
-            if kwds and rec.meta:
-                if not kwds.items() <= rec.meta.items():
-                    continue
-            results.append(key)
+            if kwds and not kwds.items() <= rec.meta.items():
+                continue
+            results.append(rec)
         return results
 
 #
@@ -146,18 +147,18 @@ class Manager(abc.Singleton):
 
 def register(cid: Optional[Hashable] = None, **kwds: Any) -> Callable:
     """Decorator to register classes and functions in the catalog."""
-    def add(obj: type): # type: ignore
-        Manager().add(cid, kwds, obj)
-        # TODO: DO NOT set attributes any more!
-        obj.__dict__.update(kwds)
+    def add(obj: Callable) -> Callable:
+        Manager().add(cid=cid, kwds=kwds, obj=obj)
         return obj
     return add
 
+def search(
+        path: Optional[str] = None,
+        category: Optional[Hashable] = None, # pylint: disable=W0621
+        **kwds: Any) -> List[Record]:
+    return Manager().search(path=path, category=category, **kwds)
 
-
-
-
-def search(module: OptModule = None, **kwds: Any) -> dict:
+def search_old(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
 
     Args:

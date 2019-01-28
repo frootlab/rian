@@ -8,10 +8,9 @@ __docformat__ = 'google'
 
 import contextlib
 import numpy as np
-from nemoa.base import check, pkg
+from nemoa.base import catalog, check, pkg
 from nemoa.math import vector
 from nemoa.types import Any, IntPair, NpArray, NpArrayLike, StrList
-from nemoa.types import StrPairDict, StrListPair, NaN, Number, OptNumber
 
 _NORM_PREFIX = 'norm_'
 _DIST_PREFIX = 'dist_'
@@ -20,6 +19,11 @@ _DIST_PREFIX = 'dist_'
 # Matrix Norms
 #
 
+@catalog.category
+class Norm:
+    id: str = 'matrix.norm'
+    name: str
+
 def norms() -> StrList:
     """Get sorted list of matrix norms.
 
@@ -27,7 +31,9 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    return pkg.crop_functions(prefix=_NORM_PREFIX)
+    path = __name__ + '.*'
+    search = catalog.search(path, category='matrix.norm')
+    return sorted(rec.meta['name'] for rec in search)
 
 def norm(
         x: NpArrayLike, name: str = 'frobenius', axes: IntPair = (0, 1),
@@ -76,11 +82,17 @@ def norm(
         raise np.AxisError(
             "first and second axis have to be different")
 
+    # Get function name
+    search = catalog.search(category='matrix.norm', name=name)
+    if len(search) != 1:
+        raise ValueError(f"matrix norm '{name}' is not unique")
+    fname = search[0].name
+
     # Evaluate function
-    fname = _NORM_PREFIX + name.lower()
     return pkg.call_attr(fname, x=x, axes=axes, **kwds)
 
-def norm_pq(x: NpArray,
+@catalog.register('matrix.norm', name='pq')
+def pq_norm(x: NpArray,
         p: float = 2., q: float = 2., axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`pq-norm` of an array along given axes.
 
@@ -106,7 +118,7 @@ def norm_pq(x: NpArray,
     """
     # For special cases prefer specific implementations for faster calculation
     if p == q == 2.: # Use the Frobenius norm
-        return norm_frobenius(x, axes=axes)
+        return frob_norm(x, axes=axes)
     if p == q: # Use an elementwise p-norm
         return vector.norm_p(x, p=p, axes=axes)
 
@@ -119,9 +131,11 @@ def norm_pq(x: NpArray,
 
     psum = np.sum(np.power(np.abs(x), p), axis=axisp)
     qsum = np.sum(np.power(psum, q / p), axis=axisq)
+
     return np.power(qsum, 1. / q)
 
-def norm_frobenius(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
+@catalog.register('matrix.norm', name='frobenius')
+def frob_norm(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius norm` of an array along given axes.
 
     Args:
@@ -144,6 +158,11 @@ def norm_frobenius(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
 # Matrix Metrices
 #
 
+@catalog.category
+class Distance:
+    id: str = 'matrix.distance'
+    name: str
+
 def distances() -> StrList:
     """Get sorted list of matrix distances.
 
@@ -152,7 +171,9 @@ def distances() -> StrList:
         module.
 
     """
-    return pkg.crop_functions(prefix=_DIST_PREFIX)
+    path = __name__ + '.*'
+    search = catalog.search(path, category='matrix.distance')
+    return sorted(rec.meta['name'] for rec in search)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
@@ -209,11 +230,17 @@ def distance(
         raise np.AxisError(
             "first and second axis have to be different")
 
+    # Get function name
+    search = catalog.search(category='matrix.distance', name=name)
+    if len(search) != 1:
+        raise ValueError(f"matrix metric '{name}' is not unique")
+    fname = search[0].name
+
     # Evaluate function
-    fname = _DIST_PREFIX + name.lower()
     return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
-def dist_frobenius(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
+@catalog.register('matrix.distance', name='frobenius')
+def frob_dist(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`Frobenius distance` of two arrays along given axes.
 
     Args:
@@ -232,9 +259,10 @@ def dist_frobenius(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
         :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
-    return norm_frobenius(np.add(x, np.multiply(y, -1)), axes=axes)
+    return frob_norm(np.add(x, np.multiply(y, -1)), axes=axes)
 
-def dist_pq(
+@catalog.register('matrix.distance', name='pq')
+def pq_dist(
         x: NpArray, y: NpArray, p: float = 2., q: float = 2.,
         axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`pq-distance` of two arrays along given axes.
@@ -261,4 +289,4 @@ def dist_pq(
         :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
-    return norm_pq(x - y, p=p, q=q, axes=axes)
+    return pq_norm(x - y, p=p, q=q, axes=axes)
