@@ -77,10 +77,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get function name
-    search = catalog.search(category='sigmoid.curve', name=name)
-    if len(search) != 1:
-        raise ValueError(f"sigmoid curve '{name}' is not unique")
-    fname = search[0].name
+    fname = catalog.pick(category='sigmoid.curve', name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, **kwds)
@@ -237,10 +234,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
             "First argument 'x' is required to be array-like") from err
 
     # Get function name
-    search = catalog.search(category='bell.curve', name=name)
-    if len(search) != 1:
-        raise ValueError(f"bell curve '{name}' is not unique")
-    fname = search[0].name
+    fname = catalog.pick(category='bell.curve', name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, **kwds)

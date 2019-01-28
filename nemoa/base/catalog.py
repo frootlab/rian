@@ -16,21 +16,21 @@ import dataclasses
 import fnmatch
 from typing import Any, Callable, Dict, Hashable, List, Optional, Union
 from nemoa.base import abc, pkg, stack
-from nemoa.types import Module, OptStr, OptStrList
+from nemoa.types import Module, OptStr, OptStrList, OptKey
 
 OptModule = Optional[Module]
 
 #
-# Catalog Records
+# Cards
 #
 
 REGISTERED = 0
 VERIFIED = 1
 
 @dataclasses.dataclass
-class Record:
-    """Class for Catalog Records."""
-    category: Optional[Hashable]
+class Card:
+    """Class for Catalog Cards."""
+    category: OptKey
     name: str
     module: str
     meta: Dict[str, Any]
@@ -39,7 +39,7 @@ class Record:
     state: int = REGISTERED
 
 #
-# Catalog Categories
+# Categories
 #
 
 class Category(abc.ABC):
@@ -76,38 +76,38 @@ def category(cls: type) -> Category:
 
 class Manager(abc.Singleton):
     """Singleton Class for Catalog Manager."""
-    _records: Dict[str, Record]
-    _categories: Dict[Optional[Hashable], Category]
+    _records: Dict[str, Card]
+    _categories: Dict[OptKey, Category]
 
     def __init__(self) -> None:
         self._records = {}
         self._categories = {}
 
-    def add_category(self, cid: Optional[Hashable], cat: Category) -> None:
+    def add_category(self, cid: OptKey, cat: Category) -> None:
         if cid in self._categories:
             raise ValueError() # TODO
         self._categories[cid] = cat
 
-    def del_category(self, cid: Optional[Hashable]) -> None:
+    def del_category(self, cid: OptKey) -> None:
         self._categories.pop(cid, None)
 
-    def get_category(self, cid: Optional[Hashable]) -> Category:
+    def get_category(self, cid: OptKey) -> Category:
         return self._categories[cid]
 
-    def has_category(self, cid: Optional[Hashable]) -> bool:
+    def has_category(self, cid: OptKey) -> bool:
         return cid in self._categories
 
     def add(
-            self, cid: Optional[Hashable], kwds: dict, obj: Callable) -> None:
+            self, cid: OptKey, kwds: dict, obj: Callable) -> None:
         path = obj.__module__ + '.' + obj.__qualname__
-        rec = Record(
+        rec = Card(
             category=cid, name=obj.__name__, module=obj.__module__,
             meta={}, kwds=kwds, reference=obj)
         if cid in self._categories:
             self.verify(rec)
         self._records[path] = rec
 
-    def get(self, path: Union[str, Callable]) -> Record:
+    def get(self, path: Union[str, Callable]) -> Card:
         if callable(path):
             path = path.__module__ + '.' + path.__qualname__
         rec = self._records[path]
@@ -115,7 +115,7 @@ class Manager(abc.Singleton):
             self.verify(rec)
         return rec
 
-    def verify(self, rec: Record) -> None:
+    def verify(self, rec: Card) -> None:
         if rec.state == VERIFIED:
             return
 
@@ -125,10 +125,10 @@ class Manager(abc.Singleton):
         rec.state = VERIFIED
 
     def search(
-            self, path: Optional[str] = None,
-            category: Optional[Hashable] = None, # pylint: disable=W0621
-            **kwds: Any) -> List[Record]:
-        results: List[Record] = []
+            self, path: OptStr = None,
+            category: OptKey = None, # pylint: disable=W0621
+            **kwds: Any) -> List[Card]:
+        results: List[Card] = []
         for key, rec in self._records.items():
             if rec.state != VERIFIED:
                 self.verify(rec)
@@ -145,7 +145,7 @@ class Manager(abc.Singleton):
 # Helper functions
 #
 
-def register(cid: Optional[Hashable] = None, **kwds: Any) -> Callable:
+def register(cid: OptKey = None, **kwds: Any) -> Callable:
     """Decorator to register classes and functions in the catalog."""
     def add(obj: Callable) -> Callable:
         Manager().add(cid=cid, kwds=kwds, obj=obj)
@@ -153,10 +153,19 @@ def register(cid: Optional[Hashable] = None, **kwds: Any) -> Callable:
     return add
 
 def search(
-        path: Optional[str] = None,
-        category: Optional[Hashable] = None, # pylint: disable=W0621
-        **kwds: Any) -> List[Record]:
+        path: OptStr = None, category: OptKey = None, # pylint: disable=W0621
+        **kwds: Any) -> List[Card]:
     return Manager().search(path=path, category=category, **kwds)
+
+def pick(
+        path: OptStr = None, category: OptKey = None, # pylint: disable=W0621
+        **kwds: Any) -> Card:
+    results = Manager().search(path=path, category=category, **kwds)
+    if not results:
+        raise ValueError(f"no entry has been found")
+    if len(results) > 1:
+        raise ValueError(f"the search query is not unique")
+    return results[0]
 
 def search_old(module: OptModule = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.

@@ -28,7 +28,7 @@ Nemoa is a Python package for `structured data-analysis`_ and based on
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.463'
+__version__ = '0.5.464'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'

@@ -89,10 +89,7 @@ def norm(
             "first and second axis have to be different")
 
     # Get function name
-    search = catalog.search(category='matrix.norm', name=name)
-    if len(search) != 1:
-        raise ValueError(f"matrix norm '{name}' is not unique")
-    fname = search[0].name
+    fname = catalog.pick(category='matrix.norm', name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, axes=axes, **kwds)
@@ -232,10 +229,7 @@ def distance(
             "first and second axis have to be different")
 
     # Get function name
-    search = catalog.search(category='matrix.distance', name=name)
-    if len(search) != 1:
-        raise ValueError(f"matrix metric '{name}' is not unique")
-    fname = search[0].name
+    fname = catalog.pick(category='matrix.distance', name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)

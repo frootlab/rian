@@ -359,13 +359,30 @@ class TestCatalog(ModuleTestCase):
             names = sorted(rec.meta['name'] for rec in search)
             self.assertEqual(names, ['1'])
 
+    def test_pick(self) -> None:
+
+        @catalog.category
+        class P1:
+            id: str = 'pc1'
+            name: str
+        @catalog.register('pc1', name='p1')
+        def p1() -> int:
+            pass
+        @catalog.register('pc1', name='p2')
+        def p2() -> int:
+            return 2
+
+        with self.subTest(path='*.p1'):
+            card = catalog.pick(path='*.p1')
+            self.assertEqual(card.name, 'p1')
+
     def test_Manager(self) -> None:
         pass # Tested by methods
 
     def test_Manager_search(self) -> None:
         pass # Implicitely tested in test_search()
 
-    def test_Record(self) -> None:
+    def test_Card(self) -> None:
         pass # Implicetly tested in test_Manager
 
     def test_search_old(self) -> None:

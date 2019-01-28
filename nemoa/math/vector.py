@@ -88,10 +88,7 @@ def length(
     check.has_type("'axes'", axes, (int, tuple))
 
     # Get function name
-    search = catalog.search(category='vector.norm', name=norm)
-    if len(search) != 1:
-        raise ValueError(f"vector norm '{norm}' is not unique")
-    fname = search[0].name
+    fname = catalog.pick(category='vector.norm', name=norm).name
 
     # Evaluate function
     return pkg.call_attr(fname, x, axes=axes, **kwds)
@@ -347,10 +344,7 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get function name
-    search = catalog.search(category='vector.distance', name=name)
-    if len(search) != 1:
-        raise ValueError(f"vector distance '{name}' is not unique")
-    fname = search[0].name
+    fname = catalog.pick(category='vector.distance', name=name).name
 
     # Evaluate function
     return pkg.call_attr(fname, x, y, axes=axes, **kwds)

@@ -69,9 +69,9 @@ class TestCurve(MathTestCase, ModuleTestCase):
         self.assertTrue(funcs)
 
     def test_bell(self) -> None:
-        for func in curve.bells():
-            with self.subTest(name=func):
-                self.assertIsBell(curve.bell, name=func)
+        for name in curve.bells():
+            with self.subTest(name=name):
+                self.assertIsBell(curve.bell, name=name)
 
     def test_bell_gauss(self) -> None:
         self.assertIsBell(curve.bell_gauss)
