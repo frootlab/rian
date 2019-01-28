@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any, Callable, Union
 import numpy as np
 from nemoa import errors
-from nemoa.base import abc, array, attrib, binary, call, check, env, literal
-from nemoa.base import mapping, otree, pkg, stack, stype
+from nemoa.base import abc, array, attrib, binary, call, catalog, check, env
+from nemoa.base import literal, mapping, otree, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
 from nemoa.types import Module, PathLikeList, StrList, NaN, Method, Function
@@ -270,6 +270,58 @@ class TestAttrib(ModuleTestCase):
         # Check Re-Creation and Instantiation of Subgroups
         g1.branch.data = 1 # type: ignore
         self.assertNotEqual(g2.branch.data, 1) # type: ignore
+
+class TestCatalog(ModuleTestCase):
+    module = catalog
+
+    def test_search(self) -> None:
+        self.assertEqual(
+            len(catalog.search(catalog, name='search')), 1)
+
+    def test_custom(self) -> None:
+        @catalog.custom(category='custom')
+        def test_custom() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_custom, 'name', None), 'test_custom')
+        self.assertEqual(
+            getattr(test_custom, 'category', None), 'custom')
+
+    def test_objective(self) -> None:
+        @catalog.objective()
+        def test_objective() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_objective, 'name', None), 'test_objective')
+        self.assertEqual(
+            getattr(test_objective, 'category', None), 'objective')
+
+    def test_sampler(self) -> None:
+        @catalog.sampler()
+        def test_sampler() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_sampler, 'name', None), 'test_sampler')
+        self.assertEqual(
+            getattr(test_sampler, 'category', None), 'sampler')
+
+    def test_statistic(self) -> None:
+        @catalog.statistic()
+        def test_statistic() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_statistic, 'name', None), 'test_statistic')
+        self.assertEqual(
+            getattr(test_statistic, 'category', None), 'statistic')
+
+    def test_association(self) -> None:
+        @catalog.association()
+        def test_association() -> None:
+            pass
+        self.assertEqual(
+            getattr(test_association, 'name', None), 'test_association')
+        self.assertEqual(
+            getattr(test_association, 'category', None), 'association')
 
 class TestStype(ModuleTestCase):
     module = stype

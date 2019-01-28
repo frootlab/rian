@@ -33,7 +33,7 @@ def search(module: OptModule = None, **kwds: Any) -> dict:
     # Set default value of 'module' to module of caller
     module = module or stack.get_caller_module()
 
-    # Create filter rules for algorithm attributes
+    # Create filter rules for attributes
     rules = {
         'tags': lambda a, b: set(a) <= set(b), # requires all
         'classes': lambda a, b: bool(set(a) & set(b))} # requires any

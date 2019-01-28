@@ -7,9 +7,8 @@ __license__ = 'GPLv3'
 from typing import Any, Dict, Optional
 import numpy as np
 import nemoa
-from nemoa.base import array, nbase, otree
+from nemoa.base import array, catalog, nbase, otree
 from nemoa.core import log, ui
-from nemoa.math import category
 
 class Dataset(nbase.ObjectIP):
     """Dataset base class.
@@ -229,8 +228,8 @@ class Dataset(nbase.ObjectIP):
                 # add column (use network label and layer)
                 # 2do: network.get('nodelabel', node = node)
                 node = network.get('nodes', layer = layer)[id]
-                label = network.get('node', node)['params']['label']
-                colid = layer + ':' + label
+                node_label = network.get('node', node)['params']['label']
+                colid = layer + ':' + node_label
                 columns.append(colid)
                 mapping[colid] = column
 
@@ -748,10 +747,10 @@ class Dataset(nbase.ObjectIP):
     def _get_colgroups(self):
         """Get grouped lists of columns."""
         groups = {}
-        for group, label in self._config['columns']:
+        for group, col_label in self._config['columns']:
             if not group: continue
             if group not in groups: groups[group] = []
-            groups[group].append(label)
+            groups[group].append(col_label)
         return groups
 
     def _get_colfilter(self, name):
@@ -1083,7 +1082,8 @@ class Dataset(nbase.ObjectIP):
         # get column names from column filter
         columns = self._get_columns(cols)
         colnames = self._get_colnames(columns)
-        if labels: colnames = ['label'] + colnames
+        if labels:
+            colnames = ['label'] + colnames
 
         # get row names from filter
         if isinstance(rows, str):
@@ -1106,8 +1106,10 @@ class Dataset(nbase.ObjectIP):
                 table_colsel = self._tables[table][colnames]
 
         else:
-            if labels: datacols = colnames[1:]
-            else: datacols = colnames
+            if labels:
+                datacols = colnames[1:]
+            else:
+                datacols = colnames
             redcols = sorted(set(datacols), key = datacols.index)
             redrec = self._tables[table][redcols]
             redfmt = [col[1] for col in redrec.dtype.descr]
@@ -1323,7 +1325,7 @@ class Dataset(nbase.ObjectIP):
 
         return algorithms[name](*args, **kwds)
 
-    @category.custom(
+    @catalog.custom(
         name     = 'sample',
         title    = 'Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1334,7 +1336,7 @@ class Dataset(nbase.ObjectIP):
 
         return self._get_data(*args, **kwds)
 
-    @category.custom(
+    @catalog.custom(
         name     = 'covariance',
         title    = 'Covariance',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1360,7 +1362,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @category.custom(
+    @catalog.custom(
         name     = 'correlation',
         title    = 'Pearson Correlation',
         category = ('dataset', 'columns', 'evaluation'),
@@ -1386,7 +1388,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @category.custom(
+    @catalog.custom(
         name     = 'pca-sample',
         title    = 'PCA Sample Values',
         category = ('dataset', 'evaluation'),
@@ -1415,7 +1417,7 @@ class Dataset(nbase.ObjectIP):
 
         return pca_data
 
-    @category.custom(
+    @catalog.custom(
         name      = 'k-covariance',
         title     = 'k-Covariance',
         title_tex = '$k$-Covariance',
@@ -1448,7 +1450,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @category.custom(
+    @catalog.custom(
         name      = 'k-correlation',
         title     = 'k-Correlation',
         title_tex = '$k$-Correlation',
@@ -1481,7 +1483,7 @@ class Dataset(nbase.ObjectIP):
 
         return C
 
-    @category.custom(
+    @catalog.custom(
         name     = 'test_binary',
         title    = None,
         category = ('dataset', 'evaluation'),
@@ -1508,7 +1510,7 @@ class Dataset(nbase.ObjectIP):
 
         return isbinary
 
-    @category.custom(
+    @catalog.custom(
         name     = 'test_gauss',
         title    = None,
         category = ('dataset', 'evaluation'),

@@ -6,10 +6,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
-import nemoa.model.morphisms.ann
-from nemoa.base import mapping
+from nemoa.base import catalog, mapping
 from nemoa.core import ui
-from nemoa.math import category
+import nemoa.model.morphisms.ann
 
 class RBM(nemoa.model.morphisms.ann.ANN):
     """Restricted Boltzmann Machine (RBM) Optimizer.
@@ -72,13 +71,12 @@ class RBM(nemoa.model.morphisms.ann.ANN):
         'tracker_eval_time_interval': 10.,
         'ignore_units': [] }
 
-    @category.custom(
+    @catalog.custom(
         name     = 'cd',
         longname = 'contrastive divergency',
         category = 'optimization',
         type     = 'algorithm',
         syscheck = None)
-
     def _cdiv(self):
         """Contrastive Divergency parameter optimization."""
 

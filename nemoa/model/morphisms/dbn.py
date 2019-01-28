@@ -10,9 +10,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-import nemoa.model.morphisms.ann
+from nemoa.base import catalog
 from nemoa.core import ui
-from nemoa.math import category
+import nemoa.model.morphisms.ann
 
 class DBN(nemoa.model.morphisms.ann.ANN):
     """Deep Belief Network (DBN) Optimizer."""
@@ -27,7 +27,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
         'schedule_rbm.rbm': 'default',
         'schedule_rbm.grbm': 'default' }
 
-    @category.custom(
+    @catalog.custom(
         name = 'dbn',
         longname = 'deep belief network optimization',
         category = 'optimization',
@@ -45,7 +45,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return retval
 
-    @category.custom(
+    @catalog.custom(
         name     = 'pretraining',
         longname = 'deep belief network pretraining',
         category = 'optimization',
@@ -214,7 +214,7 @@ class DBN(nemoa.model.morphisms.ann.ANN):
 
         return True
 
-    @category.custom(
+    @catalog.custom(
         name     = 'finetuning',
         longname = 'deep belief network finetuning',
         category = 'optimization',

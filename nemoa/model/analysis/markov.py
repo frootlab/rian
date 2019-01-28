@@ -29,13 +29,13 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from nemoa.math import category
+from nemoa.base import catalog
 
 #
 # (1) Sampler for Markov Random Fields
 #
 
-@category.objective(
+@catalog.objective(
     name     = 'error',
     title    = 'Average Reconstruction Error',
     category = 'model',
@@ -47,7 +47,7 @@ def modelerror(model, *args, **kwds):
     """Mean data reconstruction error of output units."""
     return numpy.mean(uniterror(model, *args, **kwds))
 
-@category.custom(
+@catalog.custom(
     name     = 'energy',
     category = 'model',
     args     = 'all',
@@ -73,7 +73,7 @@ def modelenergy(model, data, *args, **kwds):
     # calculate (pseudo) energy of system
     return numpy.log(1. + numpy.exp(-energy).sum())
 
-@category.custom(
+@catalog.custom(
     name     = 'energy',
     category = 'units',
     args     = 'input',
@@ -101,7 +101,7 @@ def unitenergy(model, data, mapping = None):
     data = unitexpect(model, data, mapping)
     return model.system._units[mapping[-1]].energy(data)
 
-@category.custom(
+@catalog.custom(
     name     = 'links_energy',
     category = ('system', 'links', 'evaluation'),
     args     = 'input',

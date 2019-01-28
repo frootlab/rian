@@ -11,61 +11,9 @@ import numpy as np
 from typing import Any
 from unittest import mock
 from nemoa import errors
-from nemoa.math import curve, category, graph, matrix, operator, regression
+from nemoa.math import curve, graph, matrix, operator, regression
 from nemoa.math import vector
 from nemoa.test import ModuleTestCase, MathTestCase
-
-class TestCategory(ModuleTestCase):
-    module = category
-
-    def test_search(self) -> None:
-        self.assertEqual(
-            len(category.search(category, name='search')), 1)
-
-    def test_custom(self) -> None:
-        @category.custom(category='custom')
-        def test_custom() -> None:
-            pass
-        self.assertEqual(
-            getattr(test_custom, 'name', None), 'test_custom')
-        self.assertEqual(
-            getattr(test_custom, 'category', None), 'custom')
-
-    def test_objective(self) -> None:
-        @category.objective()
-        def test_objective() -> None:
-            pass
-        self.assertEqual(
-            getattr(test_objective, 'name', None), 'test_objective')
-        self.assertEqual(
-            getattr(test_objective, 'category', None), 'objective')
-
-    def test_sampler(self) -> None:
-        @category.sampler()
-        def test_sampler() -> None:
-            pass
-        self.assertEqual(
-            getattr(test_sampler, 'name', None), 'test_sampler')
-        self.assertEqual(
-            getattr(test_sampler, 'category', None), 'sampler')
-
-    def test_statistic(self) -> None:
-        @category.statistic()
-        def test_statistic() -> None:
-            pass
-        self.assertEqual(
-            getattr(test_statistic, 'name', None), 'test_statistic')
-        self.assertEqual(
-            getattr(test_statistic, 'category', None), 'statistic')
-
-    def test_association(self) -> None:
-        @category.association()
-        def test_association() -> None:
-            pass
-        self.assertEqual(
-            getattr(test_association, 'name', None), 'test_association')
-        self.assertEqual(
-            getattr(test_association, 'category', None), 'association')
 
 class TestCurve(MathTestCase, ModuleTestCase):
     module = curve

@@ -6,8 +6,8 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from nemoa.base import otree, nbase
-from nemoa.math import category, curve
+from nemoa.base import catalog, otree, nbase
+from nemoa.math import curve
 from nemoa.types import Any, Dict
 
 class System(nbase.ObjectIP):
@@ -494,40 +494,37 @@ class System(nbase.ObjectIP):
         raise ValueError("""could not get parameters:
             unknown key '%s'.""" % key)
 
-    @category.objective(
+    @catalog.objective(
         name     = 'error',
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.3f' % (val),
-        optimum  = 'min'
-    )
+        optimum  = 'min')
     def _get_error(self, *args, **kwds):
         """Mean data reconstruction error of output units."""
         return numpy.mean(self._get_uniterror(*args, **kwds))
 
-    @category.custom(
+    @catalog.custom(
         name     = 'accuracy',
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
         optimum  = 'max' )
-
     def _get_accuracy(self, *args, **kwds):
         """Mean data reconstruction accuracy of output units."""
         return numpy.mean(self._get_unitaccuracy(*args, **kwds))
 
-    @category.custom(
+    @catalog.custom(
         name     = 'precision',
         category = ('system', 'evaluation'),
         args     = 'all',
         formater = lambda val: '%.1f%%' % (val * 100.),
         optimum  = 'max' )
-
     def _get_precision(self, *args, **kwds):
         """Mean data reconstruction precision of output units."""
         return numpy.mean(self._get_unitprecision(*args, **kwds))
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_mean',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -564,7 +561,7 @@ class System(nbase.ObjectIP):
 
         return model_out.mean(axis = 0)
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_variance',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -596,7 +593,7 @@ class System(nbase.ObjectIP):
 
         return model_out.var(axis = 0)
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_expect',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -637,7 +634,7 @@ class System(nbase.ObjectIP):
         return out_data
 
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_values',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -695,7 +692,7 @@ class System(nbase.ObjectIP):
                     self._units[mapping[id]].params))
             return data
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_samples',
         category = ('system', 'units', 'evaluation'),
         args     = 'input',
@@ -752,7 +749,7 @@ class System(nbase.ObjectIP):
                     data, self._units[mapping[id]].params)
             return data
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_residuals',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -795,7 +792,7 @@ class System(nbase.ObjectIP):
         # calculate residuals
         return d_tgt - m_out
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_error',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -833,7 +830,7 @@ class System(nbase.ObjectIP):
 
         return error
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_accuracy',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -871,7 +868,7 @@ class System(nbase.ObjectIP):
 
         return 1. - normres / normdat
 
-    @category.custom(
+    @catalog.custom(
         name     = 'units_precision',
         category = ('system', 'units', 'evaluation'),
         args     = 'all',
@@ -908,7 +905,7 @@ class System(nbase.ObjectIP):
 
         return 1. - devres / devdat
 
-    @category.custom(
+    @catalog.custom(
         name     = 'correlation',
         category = ('system', 'relation', 'evaluation'),
         directed = False,
@@ -956,7 +953,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @category.custom(
+    @catalog.custom(
         name     = 'weightsumproduct',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -996,7 +993,7 @@ class System(nbase.ObjectIP):
 
         return wsp.T
 
-    @category.custom(
+    @catalog.custom(
         name     = 'knockout',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1056,7 +1053,7 @@ class System(nbase.ObjectIP):
 
         return R
 
-    @category.custom(
+    @catalog.custom(
         name     = 'coinduction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
@@ -1127,7 +1124,7 @@ class System(nbase.ObjectIP):
 
         return coop
 
-    @category.custom(
+    @catalog.custom(
         name     = 'induction',
         category = ('system', 'relation', 'evaluation'),
         directed = True,
