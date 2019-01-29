@@ -82,7 +82,7 @@ def norm(
     # Evaluate function
     return call.safe_call(f, x=x, axes=axes, **kwds)
 
-@catalog.register(Norm, name='pq')
+@catalog.register(Norm, name='pq-norm')
 def pq_norm(x: NpArray,
         p: float = 2., q: float = 2., axes: IntPair = (0, 1)) -> NpArray:
     """Calculate :term:`pq-norm` of an array along given axes.

@@ -311,20 +311,25 @@ class TestCatalog(ModuleTestCase):
         def h() -> None:
             pass
 
-        results = catalog.search(C)
-        self.assertEqual(sorted(results.get('name')), ['f', 'g', 'h'])
+        names = sorted(catalog.search(C).get('name'))
+        self.assertEqual(names, ['f', 'g', 'h'])
 
     def test_category(self) -> None:
         @catalog.category
-        class Test:
+        class Parent:
             name: str
+
+        @catalog.category
+        class Child(Parent):
             tags: list
 
         man = catalog.Manager()
-        self.assertTrue(man.has_category(Test))
-        cat_meta = Test('a', tags=[]) # type: ignore
-        self.assertEqual(cat_meta.name, 'a')
-        self.assertEqual(cat_meta.tags, [])
+        self.assertTrue(man.has_category(Parent))
+        self.assertTrue(man.has_category(Child))
+
+        meta = Child('a', tags=[]) # type: ignore
+        self.assertEqual(meta.name, 'a')
+        self.assertEqual(meta.tags, [])
 
     def test_register(self) -> None:
         @catalog.category

@@ -14,7 +14,7 @@ import re
 from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable, Match
 import py_expression_eval
-from nemoa.base import check, abc, stype
+from nemoa.base import abc, catalog, check, stype
 from nemoa.errors import InvalidTypeError
 from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, SeqHom
 from nemoa.types import SeqOp, AnyOp, StrList, StrTuple
@@ -647,10 +647,6 @@ class Lambda(Operator):
 
         return new_expr
 
-# class Scalar(Operator):
-#     pass
-
-
 class Vector(collections.abc.Sequence, Operator):
     """Class for vectorial functions.
 
@@ -825,11 +821,6 @@ class Vector(collections.abc.Sequence, Operator):
 
         meth = staticmethod(func)
         setattr(type(self), '__call__', meth)
-
-#
-# Operator Inspection Functions
-#
-
 
 #
 # Operators that act on Operators
