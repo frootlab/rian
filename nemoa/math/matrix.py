@@ -29,14 +29,8 @@ class Distance:
 #
 
 def norms() -> StrList:
-    """Get sorted list of matrix norms.
-
-    Returns:
-        Sorted list of all matrix norms, that are implemented within the module.
-
-    """
-    cards = catalog.search(Norm)
-    return sorted(card.data['name'] for card in cards)
+    """Get sorted list of matrix norms."""
+    return sorted(catalog.search(Norm).get('name'))
 
 def norm(
         x: NpArrayLike, name: str = 'frobenius', axes: IntPair = (0, 1),
@@ -117,7 +111,7 @@ def pq_norm(x: NpArray,
     if p == q == 2.: # Use the Frobenius norm
         return frob_norm(x, axes=axes)
     if p == q: # Use an elementwise p-norm
-        return vector.norm_p(x, p=p, axes=axes)
+        return vector.p_norm(x, p=p, axes=axes)
 
     # If the first axis id is smaller then the second, the latter
     # has to be corrected by the collapsed dimension of the first sum
@@ -149,22 +143,15 @@ def frob_norm(x: NpArray, axes: IntPair = (0, 1)) -> NpArray:
         :class:`numpy.ndarray` of dimension dim(*x*) - 2.
 
     """
-    return vector.norm_euclid(x, axes=axes)
+    return vector.euclid_norm(x, axes=axes)
 
 #
 # Matrix Metrices
 #
 
 def distances() -> StrList:
-    """Get sorted list of matrix distances.
-
-    Returns:
-        Sorted list of all matrix distances, that are implemented within the
-        module.
-
-    """
-    cards = catalog.search(Distance)
-    return sorted(card.data['name'] for card in cards)
+    """Get sorted list of matrix distances."""
+    return sorted(catalog.search(Distance).get('name'))
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
@@ -244,7 +231,7 @@ def frob_dist(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:
     """
     return frob_norm(np.add(x, np.multiply(y, -1)), axes=axes)
 
-@catalog.register(Distance, name='pq')
+@catalog.register(Distance, name='pq-distance')
 def pq_dist(
         x: NpArray, y: NpArray, p: float = 2., q: float = 2.,
         axes: IntPair = (0, 1)) -> NpArray:

@@ -135,30 +135,30 @@ class TestVector(MathTestCase, ModuleTestCase):
             with self.subTest(norm=norm):
                 self.assertIsVectorNorm(vector.length, norm=norm)
 
-    def test_norm_p(self) -> None:
+    def test_p_norm(self) -> None:
         for p in range(1, 5):
             with self.subTest(p=p):
-                self.assertIsVectorNorm(vector.norm_p, p=p)
+                self.assertIsVectorNorm(vector.p_norm, p=p)
 
     def test_norm_1(self) -> None:
         self.assertIsVectorNorm(vector.norm_1)
 
-    def test_norm_euclid(self) -> None:
-        self.assertIsVectorNorm(vector.norm_euclid)
+    def test_euclid_norm(self) -> None:
+        self.assertIsVectorNorm(vector.euclid_norm)
 
-    def test_norm_max(self) -> None:
-        self.assertIsVectorNorm(vector.norm_max)
+    def test_max_norm(self) -> None:
+        self.assertIsVectorNorm(vector.max_norm)
 
-    def test_norm_pmean(self) -> None:
+    def test_pmean_norm(self) -> None:
         for p in range(1, 5):
             with self.subTest(p=p):
-                self.assertIsVectorNorm(vector.norm_pmean, p=p)
+                self.assertIsVectorNorm(vector.pmean_norm, p=p)
 
-    def test_norm_amean(self) -> None:
-        self.assertIsVectorNorm(vector.norm_amean)
+    def test_amean_norm(self) -> None:
+        self.assertIsVectorNorm(vector.amean_norm)
 
-    def test_norm_qmean(self) -> None:
-        self.assertIsVectorNorm(vector.norm_qmean)
+    def test_qmean_norm(self) -> None:
+        self.assertIsVectorNorm(vector.qmean_norm)
 
     def test_distances(self) -> None:
         distances = vector.distances()
@@ -170,28 +170,28 @@ class TestVector(MathTestCase, ModuleTestCase):
             with self.subTest(name=name):
                 self.assertIsVectorDistance(vector.distance, name=name)
 
-    def test_dist_chebyshev(self) -> None:
-        self.assertIsVectorDistance(vector.dist_chebyshev)
+    def test_chebyshev(self) -> None:
+        self.assertIsVectorDistance(vector.chebyshev)
 
-    def test_dist_manhattan(self) -> None:
-        self.assertIsVectorDistance(vector.dist_manhattan)
+    def test_manhattan(self) -> None:
+        self.assertIsVectorDistance(vector.manhattan)
 
-    def test_dist_minkowski(self) -> None:
-        self.assertIsVectorDistance(vector.dist_minkowski)
+    def test_minkowski(self) -> None:
+        self.assertIsVectorDistance(vector.minkowski)
 
-    def test_dist_amean(self) -> None:
-        self.assertIsVectorDistance(vector.dist_amean)
+    def test_amean_dist(self) -> None:
+        self.assertIsVectorDistance(vector.amean_dist)
 
-    def test_dist_qmean(self) -> None:
-        self.assertIsVectorDistance(vector.dist_qmean)
+    def test_qmean_dist(self) -> None:
+        self.assertIsVectorDistance(vector.qmean_dist)
 
-    def test_dist_pmean(self) -> None:
+    def test_pmean_dist(self) -> None:
         for p in range(1, 5):
             with self.subTest(p=p):
-                self.assertIsVectorDistance(vector.dist_pmean, p=p)
+                self.assertIsVectorDistance(vector.pmean_dist, p=p)
 
-    def test_dist_euclid(self) -> None:
-        self.assertIsVectorDistance(vector.dist_euclid)
+    def test_euclid_dist(self) -> None:
+        self.assertIsVectorDistance(vector.euclid_dist)
 
 class TestMatrix(MathTestCase, ModuleTestCase):
     module = matrix

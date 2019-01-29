@@ -53,8 +53,7 @@ def sigmoids() -> StrList:
         module.
 
     """
-    cards = catalog.search(Sigmoid)
-    return sorted(card.data['name'] for card in cards)
+    return sorted(catalog.search(Sigmoid).get('name'))
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
     """Evaluate sigmoidal shaped function.
@@ -204,8 +203,7 @@ def bells() -> StrList:
         the module.
 
     """
-    cards = catalog.search(Bell)
-    return sorted(card.data['name'] for card in cards)
+    return sorted(catalog.search(Bell).get('name'))
 
 def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
     """Evaluate bell shaped function.

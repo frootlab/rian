@@ -294,6 +294,26 @@ class TestCatalog(ModuleTestCase):
     def test_Category(self) -> None:
         pass # Implicitly tested in test_category
 
+    def test_Results(self) -> None:
+        @catalog.category
+        class C:
+            name: str
+
+        @catalog.register(C, name='f')
+        def f() -> None:
+            pass
+
+        @catalog.register(C, name='g')
+        def g() -> None:
+            pass
+
+        @catalog.register(C, name='h')
+        def h() -> None:
+            pass
+
+        results = catalog.search(C)
+        self.assertEqual(sorted(results.get('name')), ['f', 'g', 'h'])
+
     def test_category(self) -> None:
         @catalog.category
         class Test:
@@ -312,13 +332,13 @@ class TestCatalog(ModuleTestCase):
             name: str
 
         @catalog.register(Reg, name='euclid')
-        def norm_euclid(x: float, y: float) -> float:
+        def euclid_norm(x: float, y: float) -> float:
             return math.sqrt(x ** 2 + y ** 2)
 
         man = catalog.Manager()
-        card = man.get(norm_euclid)
+        card = man.get(euclid_norm)
         self.assertEqual(card.category, Reg)
-        self.assertEqual(card.reference, norm_euclid)
+        self.assertEqual(card.reference, euclid_norm)
         self.assertEqual(card.data, {'name': 'euclid'})
 
     def test_search(self) -> None:
@@ -348,28 +368,23 @@ class TestCatalog(ModuleTestCase):
             return 4
 
         with self.subTest(path='*.a_*'):
-            search = catalog.search(path='*.a_*')
-            names = sorted(rec.data['name'] for rec in search)
+            names = sorted(catalog.search(path='*.a_*').get('name'))
             self.assertEqual(names, ['1', '2'])
 
         with self.subTest(path='*.b_*'):
-            search = catalog.search(path='*.b_*')
-            names = sorted(rec.data['name'] for rec in search)
+            names = catalog.search(path='*.b_*').get('name')
             self.assertEqual(names, ['3', '4'])
 
         with self.subTest(cat=Const):
-            search = catalog.search(Const)
-            names = sorted(rec.data['name'] for rec in search)
+            names = sorted(catalog.search(Const).get('name'))
             self.assertEqual(names, ['1', '2', '3'])
 
         with self.subTest(cat=Func):
-            search = catalog.search(Func)
-            names = sorted(rec.data['name'] for rec in search)
+            names = sorted(catalog.search(Func).get('name'))
             self.assertEqual(names, ['1', '2', '3', '4'])
 
         with self.subTest(name='1'):
-            search = catalog.search(name='1')
-            names = sorted(rec.data['name'] for rec in search)
+            names = sorted(catalog.search(name='1').get('name'))
             self.assertEqual(names, ['1'])
 
     def test_pick(self) -> None:

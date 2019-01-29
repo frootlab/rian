@@ -33,8 +33,7 @@ class Error:
 
 def errors() -> StrList:
     """Get sorted list of implemented regression errors."""
-    cards = catalog.search(Error)
-    return sorted(card.data['name'] for card in cards)
+    return sorted(catalog.search(Error).get('name'))
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, axes: NpAxes = 0,
@@ -100,7 +99,7 @@ def sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
         :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    return vector.dist_manhattan(x, y, axes=axes)
+    return vector.manhattan(x, y, axes=axes)
 
 @catalog.register(Error, name='rss')
 def rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
@@ -163,7 +162,7 @@ def mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
         :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    return vector.dist_amean(x, y, axes=axes)
+    return vector.amean_dist(x, y, axes=axes)
 
 @catalog.register(Error, name='rmse')
 def rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
@@ -184,7 +183,7 @@ def rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
         :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    return vector.dist_qmean(x, y, axes=axes)
+    return vector.qmean_dist(x, y, axes=axes)
 
 # TODO (patrick.michl@gmail.com): Goodness of fit Measures
 # https://en.wikipedia.org/wiki/Goodness_of_fit

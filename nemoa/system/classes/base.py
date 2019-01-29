@@ -361,10 +361,10 @@ class System(nbase.ObjectIP):
         # calculate intensified weight of link (per link layer)
         if link_norm_weight == 0.0: link_intensity = 0.0
         else:
-            link_norm_max = numpy.amax(numpy.abs(layer_adjacency
+            link_max_norm = numpy.amax(numpy.abs(layer_adjacency
                 * layer_weights)) * adjacency_sum / weight_sum
             link_intensity = curve.dialogistic(link_norm_weight,
-                scale = 0.7 * link_norm_max, sigma = 10.)
+                scale = 0.7 * link_max_norm, sigma = 10.)
 
         link_params['layer'] = (src_layer, tgt_layer)
         link_params['layer_sub_id'] = (src_id, tgt_id)

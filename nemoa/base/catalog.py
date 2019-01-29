@@ -15,6 +15,7 @@ __docformat__ = 'google'
 import dataclasses
 import fnmatch
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
+from typing import Hashable
 from nemoa.base import abc, pkg, stack
 from nemoa.types import Module, OptStr, OptStrList, OptType
 
@@ -50,6 +51,15 @@ class Card:
     category: Type[Category]
     reference: Callable
     data: Dict[str, Any]
+
+#
+# Search Results
+#
+
+class Results(list):
+    """Class for search results."""
+    def get(self, key: Hashable) -> list:
+        return [card.data.get(key) for card in self]
 
 #
 # Catalog Manager
@@ -88,8 +98,8 @@ class Manager(abc.Singleton):
 
     def search(
             self, cat: OptType = None, path: OptStr = None,
-            **kwds: Any) -> List[Card]:
-        cards: List[Card] = []
+            **kwds: Any) -> Results:
+        cards = Results()
         for key, card in self._cards.items():
             if cat and not issubclass(card.category, cat):
                 continue
@@ -111,7 +121,7 @@ def register(cat: type, **kwds: Any) -> Callable:
         return obj
     return add
 
-def search(cat: OptType = None, path: OptStr = None, **kwds: Any) -> List[Card]:
+def search(cat: OptType = None, path: OptStr = None, **kwds: Any) -> Results:
     return Manager().search(cat=cat, path=path, **kwds)
 
 def pick(cat: OptType = None, path: OptStr = None, **kwds: Any) -> Callable:
