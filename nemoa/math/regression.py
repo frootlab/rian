@@ -33,9 +33,8 @@ class Error:
 
 def errors() -> StrList:
     """Get sorted list of implemented regression errors."""
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Error)
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Error)
+    return sorted(card.data['name'] for card in cards)
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, axes: NpAxes = 0,
@@ -79,7 +78,7 @@ def error(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Evaluate function
-    f = catalog.pick(category=Error, name=name).reference
+    f = catalog.pick(Error, name=name)
     return call.safe_call(f, x=x, y=y, axes=axes, **kwds)
 
 @catalog.register(Error, name='sad')

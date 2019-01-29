@@ -14,139 +14,113 @@ __docformat__ = 'google'
 
 import dataclasses
 import fnmatch
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 from nemoa.base import abc, pkg, stack
-from nemoa.types import Module, OptStr, OptStrList, OptKey
-
-#
-# Cards
-#
-
-REGISTERED = 0
-VERIFIED = 1
-
-@dataclasses.dataclass
-class Card:
-    """Class for Catalog Cards."""
-    category: OptKey
-    name: str
-    module: str
-    meta: Dict[str, Any]
-    kwds: Dict[str, Any]
-    reference: Callable
-    state: int = REGISTERED
+from nemoa.types import Module, OptStr, OptStrList, OptType
 
 #
 # Categories
 #
 
 class Category:
-    """Base class for catalog categories."""
+    """Base class for Catalog Categories."""
 
-def category(cls: type) -> Category:
-    """Decorate class as catalog Category."""
+def category(cls: type) -> Type[Category]:
+    """Decorate class as Catalog Category."""
 
     # Create category class as dataclass, using the base class Category
-    # cat = dataclasses.dataclass(frozen=True)(Category)
-    cat = type(cls.__name__, (cls, Category), dict(cls.__dict__))
+    if not issubclass(cls, Category):
+        cls = type(cls.__name__, (cls, Category), dict(cls.__dict__))
     cat = dataclasses.dataclass(frozen=True)(cls)
 
     # Register the category, if it is not yet registered in the Catalog
     catalog = Manager()
-    if not catalog.has_category(cat): # type: ignore
+    if not catalog.has_category(cat):
         catalog.add_category(cat) # type: ignore
 
     return cat # type: ignore
+
+#
+# Cards
+#
+
+@dataclasses.dataclass
+class Card:
+    """Base Class for Catalog Cards."""
+    category: Type[Category]
+    reference: Callable
+    data: Dict[str, Any]
 
 #
 # Catalog Manager
 #
 
 class Manager(abc.Singleton):
-    """Singleton Class for Catalog Manager."""
-    _records: Dict[str, Card]
-    _categories: Set[Category]
+    """Catalog Manager."""
+    _cards: Dict[str, Card]
+    _cats: Set[Type[Category]]
 
     def __init__(self) -> None:
-        self._records = {}
-        self._categories = set()
+        self._cards = {}
+        self._cats = set()
 
-    def add_category(self, cat: Category) -> None:
-        if cat in self._categories:
+    def add_category(self, cat: type) -> None:
+        if not issubclass(cat, Category):
+            raise TypeError('the given category is not valid')
+        if cat in self._cats:
             raise ValueError() # TODO
-        self._categories.add(cat)
+        self._cats.add(cat)
 
-    def has_category(self, cat: Category) -> bool:
-        return cat in self._categories
+    def has_category(self, cat: type) -> bool:
+        return cat in self._cats
 
-    def add(
-            self, cid: OptKey, kwds: dict, obj: Callable) -> None:
+    def add(self, cat: type, kwds: dict, obj: Callable) -> None:
+        if not issubclass(cat, Category):
+            raise TypeError('the given category is not valid')
         path = obj.__module__ + '.' + obj.__qualname__
-        rec = Card(
-            category=cid, name=obj.__name__, module=obj.__module__,
-            meta={}, kwds=kwds, reference=obj)
-        if cid in self._categories:
-            self.verify(rec)
-        self._records[path] = rec
+        data = dataclasses.asdict(cat(**kwds))
+        self._cards[path] = Card(category=cat, reference=obj, data=data)
 
     def get(self, path: Union[str, Callable]) -> Card:
         if callable(path):
             path = path.__module__ + '.' + path.__qualname__
-        rec = self._records[path]
-        if rec.state != VERIFIED:
-            self.verify(rec)
-        return rec
-
-    def verify(self, rec: Card) -> None:
-        if rec.state == VERIFIED:
-            return
-
-        meta = rec.category(**rec.kwds) # type: ignore
-        rec.meta.update(dataclasses.asdict(meta))
-        rec.state = VERIFIED
+        return self._cards[path]
 
     def search(
-            self, path: OptStr = None,
-            category: OptKey = None, # pylint: disable=W0621
+            self, cat: OptType = None, path: OptStr = None,
             **kwds: Any) -> List[Card]:
-        results: List[Card] = []
-        for key, rec in self._records.items():
-            if rec.state != VERIFIED:
-                self.verify(rec)
+        cards: List[Card] = []
+        for key, card in self._cards.items():
+            if cat and not issubclass(card.category, cat):
+                continue
             if path and not fnmatch.fnmatch(key, path):
                 continue
-            if category and rec.category != category:
+            if kwds and not kwds.items() <= card.data.items():
                 continue
-            if kwds and not kwds.items() <= rec.meta.items():
-                continue
-            results.append(rec)
-        return results
+            cards.append(card)
+        return cards
 
 #
 # Helper functions
 #
 
-def register(cid: OptKey = None, **kwds: Any) -> Callable:
+def register(cat: type, **kwds: Any) -> Callable:
     """Decorator to register classes and functions in the catalog."""
     def add(obj: Callable) -> Callable:
-        Manager().add(cid=cid, kwds=kwds, obj=obj)
+        Manager().add(cat=cat, kwds=kwds, obj=obj)
         return obj
     return add
 
-def search(
-        path: OptStr = None, category: OptKey = None, # pylint: disable=W0621
-        **kwds: Any) -> List[Card]:
-    return Manager().search(path=path, category=category, **kwds)
+def search(cat: OptType = None, path: OptStr = None, **kwds: Any) -> List[Card]:
+    return Manager().search(cat=cat, path=path, **kwds)
 
-def pick(
-        path: OptStr = None, category: OptKey = None, # pylint: disable=W0621
-        **kwds: Any) -> Card:
-    results = Manager().search(path=path, category=category, **kwds)
+def pick(cat: OptType = None, path: OptStr = None, **kwds: Any) -> Callable:
+    results = Manager().search(cat=cat, path=path, **kwds)
     if not results:
         raise ValueError(f"no entry has been found")
     if len(results) > 1:
         raise ValueError(f"the search query is not unique")
-    return results[0]
+    return results[0].reference
 
 def search_old(module: Optional[Module] = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.

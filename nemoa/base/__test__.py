@@ -300,8 +300,8 @@ class TestCatalog(ModuleTestCase):
             name: str
             tags: list
 
-        cat_man = catalog.Manager()
-        self.assertTrue(cat_man.has_category(Test))
+        man = catalog.Manager()
+        self.assertTrue(man.has_category(Test))
         cat_meta = Test('a', tags=[]) # type: ignore
         self.assertEqual(cat_meta.name, 'a')
         self.assertEqual(cat_meta.tags, [])
@@ -315,77 +315,84 @@ class TestCatalog(ModuleTestCase):
         def norm_euclid(x: float, y: float) -> float:
             return math.sqrt(x ** 2 + y ** 2)
 
-        catman = catalog.Manager()
-        rec = catman.get(norm_euclid)
-        self.assertEqual(rec.category, Reg)
-        self.assertEqual(rec.name, norm_euclid.__name__)
-        self.assertEqual(rec.module, norm_euclid.__module__)
-        self.assertEqual(rec.meta, {'name': 'euclid'})
-        self.assertEqual(rec.reference, norm_euclid)
-        self.assertEqual(rec.state, catalog.VERIFIED)
+        man = catalog.Manager()
+        card = man.get(norm_euclid)
+        self.assertEqual(card.category, Reg)
+        self.assertEqual(card.reference, norm_euclid)
+        self.assertEqual(card.data, {'name': 'euclid'})
 
     def test_search(self) -> None:
 
         @catalog.category
-        class Const:
-            name: str
-        @catalog.category
         class Func:
+            name: str
+
+        @catalog.category
+        class Const(Func):
             name: str
 
         @catalog.register(Const, name='1')
         def a_1() -> int:
             return 1
+
         @catalog.register(Const, name='2')
         def a_2() -> int:
             return 2
+
         @catalog.register(Const, name='3')
         def b_1() -> int:
             return 3
+
         @catalog.register(Func, name='4')
         def b_2() -> int:
             return 4
 
         with self.subTest(path='*.a_*'):
             search = catalog.search(path='*.a_*')
-            names = sorted(rec.meta['name'] for rec in search)
+            names = sorted(rec.data['name'] for rec in search)
             self.assertEqual(names, ['1', '2'])
 
         with self.subTest(path='*.b_*'):
             search = catalog.search(path='*.b_*')
-            names = sorted(rec.meta['name'] for rec in search)
+            names = sorted(rec.data['name'] for rec in search)
             self.assertEqual(names, ['3', '4'])
 
-        with self.subTest(category=Const):
-            search = catalog.search(category=Const)
-            names = sorted(rec.meta['name'] for rec in search)
+        with self.subTest(cat=Const):
+            search = catalog.search(Const)
+            names = sorted(rec.data['name'] for rec in search)
             self.assertEqual(names, ['1', '2', '3'])
 
-        with self.subTest(category=Func):
-            search = catalog.search(category=Func)
-            names = sorted(rec.meta['name'] for rec in search)
-            self.assertEqual(names, ['4'])
+        with self.subTest(cat=Func):
+            search = catalog.search(Func)
+            names = sorted(rec.data['name'] for rec in search)
+            self.assertEqual(names, ['1', '2', '3', '4'])
 
         with self.subTest(name='1'):
             search = catalog.search(name='1')
-            names = sorted(rec.meta['name'] for rec in search)
+            names = sorted(rec.data['name'] for rec in search)
             self.assertEqual(names, ['1'])
 
     def test_pick(self) -> None:
 
         @catalog.category
-        class P1:
+        class P:
             name: str
-        @catalog.register(P1, name='p1')
-        def p1() -> int:
-            pass
-        @catalog.register(P1, name='p2')
-        def p2() -> int:
-            return 2
 
-        with self.subTest(path='*.p1'):
-            card = catalog.pick(path='*.p1')
-            self.assertEqual(card.name, 'p1')
+        @catalog.register(P, name='p')
+        def p() -> int:
+            pass
+
+        @catalog.register(P, name='q')
+        def q() -> int:
+            pass
+
+        with self.subTest(path='*.p'):
+            card = catalog.pick(path='*.p')
+            self.assertEqual(card, p)
+
+        with self.subTest(cat=P, name='p'):
+            card = catalog.pick(P, name='p')
+            self.assertEqual(card, p)
 
     def test_Manager(self) -> None:
         pass # Tested by methods

@@ -53,10 +53,8 @@ def sigmoids() -> StrList:
         module.
 
     """
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Sigmoid)
-
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Sigmoid)
+    return sorted(card.data['name'] for card in cards)
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
     """Evaluate sigmoidal shaped function.
@@ -74,7 +72,7 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
     """
     # Try to cast 'x' as array and get function from catalog
     x = array.cast(x)
-    f = catalog.pick(category=Sigmoid, name=name).reference
+    f = catalog.pick(Sigmoid, name=name)
 
     # Evaluate function
     return call.safe_call(f, x=x, **kwds)
@@ -206,9 +204,8 @@ def bells() -> StrList:
         the module.
 
     """
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Bell)
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Bell)
+    return sorted(card.data['name'] for card in cards)
 
 def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
     """Evaluate bell shaped function.
@@ -226,7 +223,7 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
     """
     # Try to cast 'x' as array and get function from catalog
     x = array.cast(x)
-    f = catalog.pick(category=Bell, name=name).reference
+    f = catalog.pick(Bell, name=name)
 
     # Evaluate function
     return call.safe_call(f, x=x, **kwds)

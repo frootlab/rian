@@ -34,9 +34,8 @@ def norms() -> StrList:
         Sorted list of all vector norms, that are implemented within the module.
 
     """
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Norm)
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Norm)
+    return sorted(card.data['name'] for card in cards)
 
 def length(
         x: NpArrayLike, norm: str = 'euclid', axes: NpAxes = 0,
@@ -83,7 +82,7 @@ def length(
     check.has_type("'axes'", axes, (int, tuple))
 
     # Get function from catalog
-    f = catalog.pick(category=Norm, name=norm).reference
+    f = catalog.pick(Norm, name=norm)
 
     # Evaluate function
     return call.safe_call(f, x, axes=axes, **kwds)
@@ -275,9 +274,8 @@ def distances() -> StrList:
         distances, that are implemented within the module.
 
     """
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Distance)
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Distance)
+    return sorted(card.data['name'] for card in cards)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'euclid',
@@ -334,7 +332,7 @@ def distance(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Get function from catalog
-    f = catalog.pick(category=Distance, name=name).reference
+    f = catalog.pick(Distance, name=name)
 
     # Evaluate function
     return call.safe_call(f, x, y, axes=axes, **kwds)

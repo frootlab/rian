@@ -35,9 +35,8 @@ def norms() -> StrList:
         Sorted list of all matrix norms, that are implemented within the module.
 
     """
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Norm)
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Norm)
+    return sorted(card.data['name'] for card in cards)
 
 def norm(
         x: NpArrayLike, name: str = 'frobenius', axes: IntPair = (0, 1),
@@ -83,8 +82,8 @@ def norm(
         raise np.AxisError(
             "first and second axis have to be different")
 
-    # Get function name
-    f = catalog.pick(category=Norm, name=name).reference
+    # Get function from catalog
+    f = catalog.pick(Norm, name=name)
 
     # Evaluate function
     return call.safe_call(f, x=x, axes=axes, **kwds)
@@ -164,9 +163,8 @@ def distances() -> StrList:
         module.
 
     """
-    path = __name__ + '.*'
-    search = catalog.search(path, category=Distance)
-    return sorted(rec.meta['name'] for rec in search)
+    cards = catalog.search(Distance)
+    return sorted(card.data['name'] for card in cards)
 
 def distance(
         x: NpArrayLike, y: NpArrayLike, name: str = 'frobenius',
@@ -219,7 +217,7 @@ def distance(
             "first and second axis have to be different")
 
     # Get function from catalog
-    f = catalog.pick(category=Distance, name=name).reference
+    f = catalog.pick(Distance, name=name)
 
     # Evaluate function
     return call.safe_call(f, x=x, y=y, axes=axes, **kwds)
