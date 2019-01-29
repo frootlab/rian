@@ -28,7 +28,7 @@ Nemoa is a Python package for `probabilistic graphical modeling`_ and
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.473'
+__version__ = '0.5.474'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and structured Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'

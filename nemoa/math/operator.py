@@ -13,14 +13,13 @@ import operator
 import re
 from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable, Match
-import py_expression_eval
 from nemoa.base import abc, catalog, check, stype
 from nemoa.errors import InvalidTypeError
+from nemoa.math import parser
 from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, SeqHom
 from nemoa.types import SeqOp, AnyOp, StrList, StrTuple
 from nemoa.base.stype import FieldID, Frame
 
-Expr = Any # TODO: Use py_expression_eval.Expression when typeshed is ready
 Key = Optional[Union[FieldID, Frame]]
 Item = Tuple[FieldID, Any]
 VarLike = Union[
@@ -511,7 +510,7 @@ class Lambda(Operator):
 
     @classmethod
     def __subclasshook__(cls, other: type) -> bool:
-        # Pretend that the Getter class are subclasses
+        # Pretend that the Getter classes are subclasses
         if cls is Lambda and issubclass(other, Getter):
             return True
         return NotImplemented
@@ -543,13 +542,14 @@ class Lambda(Operator):
         # required to be valid variable names. In the first step a mapping from
         # field IDs to valid variable names is created.
         frame = self._domain.frame
-        varmap = self._get_var_mapping(self._expression, frame)
+        varmap = parser.get_var_mapping(self._expression, frame)
 
         # Substitute the expression using the variable mapping and parse it.
         # Therupon get the variables of the expression and the corresponding
         # original field IDs.
-        expr = self._get_expr(varmap)
-        variables = tuple(expr.variables())
+        expr = parser.substitute(self._expression, varmap)
+        pexpr = parser.parse(expr)
+        variables = tuple(pexpr.variables())
         self._variables = variables
         invert = dict((v, f) for f, v in varmap.items())
         fields = tuple(invert.get(v, v) for v in variables)
@@ -568,84 +568,16 @@ class Lambda(Operator):
         func: AnyOp
         if assemble:
             getter = Getter(*fields, domain=dom, target=(tuple, variables))
-            term = expr.toString().replace('^', '**')
+            term = pexpr.toString().replace('^', '**')
             term = f"lambda {','.join(variables)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
             func = compose(runner, getter)
         else:
             getter = Getter(*fields, domain=dom, target=(dict, variables))
-            func = compose(expr.evaluate, getter)
+            func = compose(pexpr.evaluate, getter)
 
         setattr(type(self), '__call__', staticmethod(func))
-
-    def _get_expr(self, vmap: dict) -> Expr:
-        # Therupon the mapping is used to replace all occurences of the field
-        # IDs by the respective variable names.
-        expr = self._replace_vars(self._expression, vmap)
-
-        # Create expression Parser instance and return expression object
-        parser = py_expression_eval.Parser()
-        return parser.parse(expr).simplify({})
-
-    def _get_var_mapping(self, expr: str, frame: Frame) -> dict:
-        if not frame:
-            return {}
-
-        # Create an operator that checks, if a given variable name <var> is
-        # already occupied by the expression. Thereby ignore appearances within
-        # quoted (single or double) terms.
-        expr = self._expression
-        quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
-        raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
-        fmt: AnyOp = lambda var: raw.format(var=re.escape(var))
-        matches: AnyOp = lambda var: re.finditer(fmt(var), expr)
-        hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
-        occupied: AnyOp = lambda var: any(map(hit, matches(var)))
-
-        # Use the operator to create a field mapping from the set of field IDs
-        # in the frame to valid variable names.
-        fields = set(frame)
-        mapping: Dict[FieldID, str] = {}
-        var_counter = itertools.count()
-        next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
-        for field in fields:
-            if isinstance(field, str) and field.isidentifier():
-                mapping[field] = field
-                continue
-            var_name = next_var()
-            while occupied(var_name):
-                var_name = next_var()
-            mapping[field] = var_name
-
-        # Create and return variable mapping
-        get_var: AnyOp = lambda field: mapping.get(field, '')
-        return dict(zip(frame, map(get_var, frame)))
-
-    def _replace_vars(self, expr: str, mapping: dict) -> str:
-        # Declare replacement function
-        def repl(mo: Match) -> str:
-            if mo.group('var'):
-                return mapping.get(mo.group('var'), mo.group('var'))
-            if mo.group('str2'):
-                return mo.group('str2')
-            return mo.group('str1')
-
-        # Build operator that creates an regex pattern for a given field ID
-        re_str1 = "(?P<str1>\"[^\"]+\")" # RegEx for double quoted terms
-        re_str2 = "(?P<str2>'[^']+')" # RegEx for single quoted terms
-        re_var = "(?P<var>{var})" # Unformated RegEx for variable
-        raw = '|'.join([re_str1, re_str2, re_var]) # Unformated RegEx
-        pattern: AnyOp = lambda var: raw.format(var=re.escape(var))
-
-        # Iterate all field ids and succesively replace invalid variable names
-        new_expr = expr
-        for field, var in mapping.items():
-            if field == var:
-                continue
-            new_expr = re.sub(pattern(field), repl, new_expr)
-
-        return new_expr
 
 class Vector(collections.abc.Sequence, Operator):
     """Class for vectorial functions.
