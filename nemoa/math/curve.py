@@ -26,7 +26,7 @@ from nemoa.base import catalog, pkg
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 #
-# Define Catalog Categories for global Registration of Algorithms
+# Define Catalog Categories
 #
 
 @catalog.category

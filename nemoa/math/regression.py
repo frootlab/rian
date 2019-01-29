@@ -6,37 +6,40 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-try:
-    import numpy as np
-except ImportError as err:
-    raise ImportError(
-        "requires package numpy: "
-        "https://pypi.org/project/numpy") from err
-
-from nemoa.base import pkg
+import numpy as np
+from nemoa.base import catalog, pkg
 from nemoa.math import vector
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
-_ERROR_PREFIX = 'error_'
+#
+# Define Catalog Categories
+#
+
+@catalog.category
+class Error:
+    """Catalog category for regression errors.
+
+    Regression errors are :term:`discrepancy functions<discrepancy measure>`,
+    that provide information about the deviation of a single model prediction
+    and given observed data.
+
+    """
+    name: str
 
 #
 # Error statistics for the evaluation of Regression Errors and Residuals
 #
 
 def errors() -> StrList:
-    """Get sorted list of :term:`discrepancy measures<discrepancy measure>`.
-
-    Returns:
-        Sorted list of all discrepancy functions, that are implemented within
-        the module.
-
-    """
-    return pkg.crop_functions(prefix=_ERROR_PREFIX)
+    """Get sorted list of implemented regression errors."""
+    path = __name__ + '.*'
+    search = catalog.search(path, category=Error)
+    return sorted(rec.meta['name'] for rec in search)
 
 def error(
         x: NpArrayLike, y: NpArrayLike, name: str, axes: NpAxes = 0,
         **kwds: Any) -> NpArray:
-    """Calculate :term:`discrepancy<discrepancy measure>` of a prediction.
+    """Calculate the regression error of a prediction.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -66,16 +69,18 @@ def error(
 
     """
     # Check arguments 'x' and 'y' to be array like
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "argument 'x' is required to be 'Array like'") from err
-    try:
-        y = np.array(y)
-    except TypeError as err:
-        raise TypeError(
-            "argument 'y' is required to be 'Array like'") from err
+    if not isinstance(x, np.ndarray):
+        try:
+            x = np.array(x)
+        except TypeError as err:
+            raise TypeError(
+                "argument 'x' is required to be 'Array like'") from err
+    if not isinstance(y, np.ndarray):
+        try:
+            y = np.array(y)
+        except TypeError as err:
+            raise TypeError(
+                "argument 'y' is required to be 'Array like'") from err
 
     # Check shapes and dtypes of 'x' and 'y'
     if x.shape != y.shape:
@@ -83,10 +88,11 @@ def error(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Evaluate function
-    fname = _ERROR_PREFIX + name.lower()
+    fname = catalog.pick(category=Error, name=name).name
     return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
 
-def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+@catalog.register(Error, name='sad')
+def sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Sum of Absolute Differences` along given axes.
 
     Args:
@@ -106,7 +112,8 @@ def error_sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return vector.dist_manhattan(x, y, axes=axes)
 
-def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+@catalog.register(Error, name='rss')
+def rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Calculate :term:`Residual Sum of Squares` along given axes.
 
     Args:
@@ -126,7 +133,8 @@ def error_rss(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return np.sum(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
 
-def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+@catalog.register(Error, name='mse')
+def mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Estimate :term:`Mean Squared Error` along given axes.
 
     Args:
@@ -146,7 +154,8 @@ def error_mse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return np.mean(np.square(np.add(x, np.multiply(y, -1))), axis=axes)
 
-def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+@catalog.register(Error, name='mae')
+def mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Estimate :term:`Mean Absolute Error` along given axes.
 
     Args:
@@ -166,7 +175,8 @@ def error_mae(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return vector.dist_amean(x, y, axes=axes)
 
-def error_rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
+@catalog.register(Error, name='rmse')
+def rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """Estimate :term:`Root-Mean-Square Error` along given axes.
 
     Args:

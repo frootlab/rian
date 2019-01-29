@@ -13,7 +13,7 @@ from nemoa.math import vector
 from nemoa.types import Any, IntPair, NpArray, NpArrayLike, StrList
 
 #
-# Define Catalog Categories for global Registration of Algorithms
+# Define Catalog Categories
 #
 
 @catalog.category

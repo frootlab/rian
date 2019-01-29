@@ -708,6 +708,9 @@ class TestOperator(ModuleTestCase):
 class TestRegr(MathTestCase, ModuleTestCase):
     module = regression
 
+    def test_Error(self) -> None:
+        pass # Not required to test
+
     def test_errors(self) -> None:
         errors = regression.errors()
         self.assertIsInstance(errors, list)
@@ -718,20 +721,20 @@ class TestRegr(MathTestCase, ModuleTestCase):
             with self.subTest(name=name):
                 self.assertIsSemiMetric(regression.error, name=name)
 
-    def test_error_sad(self) -> None:
-        self.assertIsSemiMetric(regression.error_sad)
+    def test_sad(self) -> None:
+        self.assertIsSemiMetric(regression.sad)
 
-    def test_error_rss(self) -> None:
-        self.assertIsSemiMetric(regression.error_rss)
+    def test_rss(self) -> None:
+        self.assertIsSemiMetric(regression.rss)
 
-    def test_error_mae(self) -> None:
-        self.assertIsSemiMetric(regression.error_mae)
+    def test_mae(self) -> None:
+        self.assertIsSemiMetric(regression.mae)
 
-    def test_error_mse(self) -> None:
-        self.assertIsSemiMetric(regression.error_mse)
+    def test_mse(self) -> None:
+        self.assertIsSemiMetric(regression.mse)
 
-    def test_error_rmse(self) -> None:
-        self.assertIsSemiMetric(regression.error_rmse)
+    def test_rmse(self) -> None:
+        self.assertIsSemiMetric(regression.rmse)
 
 class TestGraph(ModuleTestCase):
     """Testsuite for modules within the package 'nemoa.math.graph'."""

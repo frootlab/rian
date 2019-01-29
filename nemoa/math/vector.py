@@ -12,7 +12,7 @@ from nemoa.base import catalog, check, pkg
 from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
 
 #
-# Define Catalog Categories for global Registration of Algorithms
+# Define Catalog Categories
 #
 
 @catalog.category
