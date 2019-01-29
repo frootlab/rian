@@ -6,7 +6,7 @@ learning and statistics. These comprise::
 
     * Sigmoidal shaped curves
     * Bell shaped curves (e.g. derivatives of sigmoidal shaped functions)
-    * Multiple Step Functions
+    * Further SoftStep Functions
 
 .. References:
 .. _Gaussian functions:
@@ -22,12 +22,16 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import numpy as np
-from nemoa.base import array, catalog, pkg
+from nemoa.base import array, call, catalog
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 #
 # Define Catalog Categories
 #
+
+@catalog.category
+class SoftStep:
+    name: str
 
 @catalog.category
 class Sigmoid:
@@ -51,6 +55,7 @@ def sigmoids() -> StrList:
     """
     path = __name__ + '.*'
     search = catalog.search(path, category=Sigmoid)
+
     return sorted(rec.meta['name'] for rec in search)
 
 def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
@@ -67,15 +72,15 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
         function to the given data.
 
     """
-    # Try to cast 'x' as array
+    # Try to cast 'x' as array and get function from catalog
     x = array.cast(x)
+    f = catalog.pick(category=Sigmoid, name=name).reference
 
-    # Get and evaluate function
-    fname = catalog.pick(category=Sigmoid, name=name).name
-    return pkg.call_attr(fname, x=x, **kwds)
+    # Evaluate function
+    return call.safe_call(f, x=x, **kwds)
 
 @catalog.register(Sigmoid, name='logistic')
-def sigm_logistic(x: NpArrayLike) -> NpArray:
+def logistic(x: NpArrayLike) -> NpArray:
     """Calculate standard logistic function.
 
     Args:
@@ -91,7 +96,7 @@ def sigm_logistic(x: NpArrayLike) -> NpArray:
     return 1. / (1. + np.exp(np.multiply(-1, x)))
 
 @catalog.register(Sigmoid, name='tanh')
-def sigm_tanh(x: NpArrayLike) -> NpArray:
+def tanh(x: NpArrayLike) -> NpArray:
     """Calculate hyperbolic tangent function.
 
     Args:
@@ -107,7 +112,7 @@ def sigm_tanh(x: NpArrayLike) -> NpArray:
     return np.tanh(x)
 
 @catalog.register(Sigmoid, name='lecun')
-def sigm_lecun(x: NpArrayLike) -> NpArray:
+def tanh_lecun(x: NpArrayLike) -> NpArray:
     """Calculate normalized hyperbolic tangent function.
 
     Hyperbolic tangent function, which has been proposed to be more efficient
@@ -130,7 +135,7 @@ def sigm_lecun(x: NpArrayLike) -> NpArray:
     return 1.7159 * np.tanh(np.multiply(0.6666, x))
 
 @catalog.register(Sigmoid, name='elliot')
-def sigm_elliot(x: NpArrayLike) -> NpArray:
+def elliot(x: NpArrayLike) -> NpArray:
     """Calculate Elliot activation function.
 
     Args:
@@ -150,7 +155,7 @@ def sigm_elliot(x: NpArrayLike) -> NpArray:
     return x / (1. + np.abs(x))
 
 @catalog.register(Sigmoid, name='hill')
-def sigm_hill(x: NpArrayLike, n: int = 2) -> NpArray:
+def hill(x: NpArrayLike, n: int = 2) -> NpArray:
     """Calculate Hill type activation function.
 
     Args:
@@ -166,6 +171,7 @@ def sigm_hill(x: NpArrayLike, n: int = 2) -> NpArray:
     """
     if n == 2:
         return x / np.sqrt(1. + np.square(x))
+
     # Check if Hill coefficient is odd numbered
     if n & 0x1:
         raise ValueError(
@@ -173,7 +179,7 @@ def sigm_hill(x: NpArrayLike, n: int = 2) -> NpArray:
     return x / np.power(1. + np.power(x, n), 1. / float(n))
 
 @catalog.register(Sigmoid, name='arctan')
-def sigm_arctan(x: NpArrayLike) -> NpArray:
+def arctan(x: NpArrayLike) -> NpArray:
     """Calculate inverse tangent function.
 
     Args:
@@ -218,15 +224,15 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
         Evaluation of the bell shaped function at given data.
 
     """
-    # Try to cast 'x' as array
+    # Try to cast 'x' as array and get function from catalog
     x = array.cast(x)
+    f = catalog.pick(category=Bell, name=name).reference
 
-    # Get function name
-    fname = catalog.pick(category=Bell, name=name).name
-    return pkg.call_attr(fname, x=x, **kwds)
+    # Evaluate function
+    return call.safe_call(f, x=x, **kwds)
 
 @catalog.register(Bell, name='gauss')
-def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
+def gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.
 
     ``Gaussian functions``_ are used in statisttics to describe the probability
@@ -248,12 +254,13 @@ def bell_gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
         given data.
 
     """
-    pre_factor = 1. / (sigma * (np.sqrt(2 * np.pi)))
-    exp_term = np.power(np.e, -0.5 * np.square(np.add(x, -mu) / sigma))
-    return pre_factor * exp_term
+    factor = 1. / (sigma * (np.sqrt(2 * np.pi)))
+    exp = np.power(np.e, -0.5 * np.square(np.add(x, -mu) / sigma))
+
+    return factor * exp
 
 @catalog.register(Bell, name='d_logistic')
-def bell_d_logistic(x: NpArrayLike) -> NpArray:
+def dlogistic(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the standard logistic function.
 
     Args:
@@ -266,11 +273,11 @@ def bell_d_logistic(x: NpArrayLike) -> NpArray:
         the standard logistic function to the given data.
 
     """
-    flog = sigm_logistic(x)
+    flog = logistic(x)
     return np.multiply(flog, -np.add(flog, -1.))
 
 @catalog.register(Bell, name='d_elliot')
-def bell_d_elliot(x: NpArrayLike) -> NpArray:
+def delliot(x: NpArrayLike) -> NpArray:
     """Calculate derivative of the Elliot sigmoid function.
 
     Args:
@@ -290,7 +297,7 @@ def bell_d_elliot(x: NpArrayLike) -> NpArray:
     return 1. / (1. + np.abs(x)) ** 2
 
 @catalog.register(Bell, name='d_hill')
-def bell_d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
+def dhill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """Calculate derivative of Hill type activation function.
 
     Args:
@@ -306,8 +313,8 @@ def bell_d_hill(x: NpArrayLike, n: float = 2.) -> NpArray:
     """
     return 1. / np.power(1. + np.power(x, n), (1. + n) / n)
 
-@catalog.register(Bell, name='d_lecun')
-def bell_d_lecun(x: NpArrayLike) -> NpArray:
+@catalog.register(Bell, name='d_tanh_lecun')
+def dtanh_lecun(x: NpArrayLike) -> NpArray:
     """Calculate derivative of LeCun hyperbolic tangent.
 
     Hyperbolic tangent function, which has been proposed to be more efficient
@@ -330,7 +337,7 @@ def bell_d_lecun(x: NpArrayLike) -> NpArray:
     return 1.14382 / np.cosh(np.multiply(0.6666, x)) ** 2
 
 @catalog.register(Bell, name='d_tanh')
-def bell_d_tanh(x: NpArrayLike) -> NpArray:
+def dtanh(x: NpArrayLike) -> NpArray:
     """Calculate derivative of hyperbolic tangent function.
 
     Args:
@@ -346,7 +353,7 @@ def bell_d_tanh(x: NpArrayLike) -> NpArray:
     return 1. - np.tanh(x) ** 2
 
 @catalog.register(Bell, name='d_arctan')
-def bell_d_arctan(x: NpArrayLike) -> NpArray:
+def darctan(x: NpArrayLike) -> NpArray:
     """Calculate derivative of inverse tangent function.
 
     Args:
@@ -362,9 +369,10 @@ def bell_d_arctan(x: NpArrayLike) -> NpArray:
     return 1. / (1. + np.square(x))
 
 #
-# Multiple Sigmoidal Functions
+# Further SoftStep functions, that are not Sigmoidal shaped
 #
 
+@catalog.register(SoftStep, name='dialogistic')
 def dialogistic(
         x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
     """Calulate dialogistic function.
@@ -383,16 +391,17 @@ def dialogistic(
     """
     sigma = max(sigma, .000001)
 
-    ma = sigm_logistic(sigma * np.add(x, -0.5 * scale))
-    mb = sigm_logistic(sigma * np.add(x, +0.5 * scale))
-    m = np.abs(x) * (np.add(ma, mb) - 1.)
+    a = logistic(sigma * np.add(x, -0.5 * scale))
+    b = logistic(sigma * np.add(x, +0.5 * scale))
+    m = np.abs(x) * (np.add(a, b) - 1.)
 
-    na = sigm_logistic(sigma * 0.5 * scale)
-    nb = sigm_logistic(sigma * 1.5 * scale)
-    n = np.abs(np.add(na, nb) - 1.)
+    c = logistic(sigma * 0.5 * scale)
+    d = logistic(sigma * 1.5 * scale)
+    n = np.abs(np.add(c, d) - 1.)
 
     return m / n
 
+@catalog.register(SoftStep, name='softstep')
 def softstep(x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
     """Calulate softstep function.
 
@@ -413,6 +422,7 @@ def softstep(x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
 
     return step / norm
 
+@catalog.register(SoftStep, name='multi_logistic')
 def multilogistic(
         x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
     """Calculate muliple logistic function.
@@ -432,14 +442,14 @@ def multilogistic(
         [1] https://math.stackexchange.com/questions/2529531/
 
     """
-    # the multilogistic function approximates the identity function
-    # iff the scaling or the sharpness parameter goes to zero
+    # The multi logistic function approximates the identity function
+    # if the scaling or the sharpness parameter goes to zero
     if scale == 0. or sigma == 0.:
         return x
 
     y = np.multiply(x, 1 / scale)
     l = np.floor(y)
     r = 2. * (y - l) - 1.
-    m = np.divide(2., sigm_logistic(sigma)) - 1.
+    m = np.divide(2., logistic(sigma)) - 1.
 
-    return scale * (l + (sigm_logistic(sigma * r) / m - .5) + .5)
+    return scale * (l + (logistic(sigma * r) / m - .5) + .5)

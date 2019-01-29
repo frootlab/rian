@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from typing import Any
 import numpy as np
-from nemoa.base import array, catalog, check, pkg
+from nemoa.base import array, call, catalog, check
 from nemoa.types import NpAxes, NpArray, NpArrayLike, StrList
 
 #
@@ -82,11 +82,11 @@ def length(
     # Check type of 'axes'
     check.has_type("'axes'", axes, (int, tuple))
 
-    # Get function name
-    fname = catalog.pick(category=Norm, name=norm).name
+    # Get function from catalog
+    f = catalog.pick(category=Norm, name=norm).reference
 
     # Evaluate function
-    return pkg.call_attr(fname, x, axes=axes, **kwds)
+    return call.safe_call(f, x, axes=axes, **kwds)
 
 @catalog.register(Norm, name='p')
 def norm_p(x: NpArray, p: float = 2., axes: NpAxes = 0) -> NpArray:
@@ -333,11 +333,11 @@ def distance(
         raise ValueError(
             "arrays 'x' and 'y' can not be broadcasted together")
 
-    # Get function name
-    fname = catalog.pick(category=Distance, name=name).name
+    # Get function from catalog
+    f = catalog.pick(category=Distance, name=name).reference
 
     # Evaluate function
-    return pkg.call_attr(fname, x, y, axes=axes, **kwds)
+    return call.safe_call(f, x, y, axes=axes, **kwds)
 
 @catalog.register(Distance, name='minkowski')
 def dist_minkowski(

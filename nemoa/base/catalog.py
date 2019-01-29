@@ -35,7 +35,7 @@ class Card:
     module: str
     meta: Dict[str, Any]
     kwds: Dict[str, Any]
-    reference: object
+    reference: Callable
     state: int = REGISTERED
 
 #

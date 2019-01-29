@@ -25,9 +25,7 @@ def safe_call(f: Callable, *args: Any, **kwds: Any) -> Any:
     Returns:
 
     """
-    kwds = parameters(f, *args, **kwds)
-    
-    return f(**kwds)
+    return f(**parameters(f, *args, **kwds))
 
 def parse(text: str) -> Tuple[str, tuple, dict]:
     """Split a function call in the function name, it's arguments and keywords.

@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from typing import Any
 import numpy as np
-from nemoa.base import array, catalog, check, pkg
+from nemoa.base import array, call, catalog, check
 from nemoa.math import vector
 from nemoa.types import IntPair, NpArray, NpArrayLike, StrList
 
@@ -84,10 +84,10 @@ def norm(
             "first and second axis have to be different")
 
     # Get function name
-    fname = catalog.pick(category=Norm, name=name).name
+    f = catalog.pick(category=Norm, name=name).reference
 
     # Evaluate function
-    return pkg.call_attr(fname, x=x, axes=axes, **kwds)
+    return call.safe_call(f, x=x, axes=axes, **kwds)
 
 @catalog.register(Norm, name='pq')
 def pq_norm(x: NpArray,
@@ -218,11 +218,11 @@ def distance(
         raise np.AxisError(
             "first and second axis have to be different")
 
-    # Get function name
-    fname = catalog.pick(category=Distance, name=name).name
+    # Get function from catalog
+    f = catalog.pick(category=Distance, name=name).reference
 
     # Evaluate function
-    return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
+    return call.safe_call(f, x=x, y=y, axes=axes, **kwds)
 
 @catalog.register(Distance, name='frobenius')
 def frob_dist(x: NpArray, y: NpArray, axes: IntPair = (0, 1)) -> NpArray:

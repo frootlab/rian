@@ -22,10 +22,13 @@ class TestCurve(MathTestCase, ModuleTestCase):
         self.x = np.array([[0.0, 0.5], [1.0, -1.0]])
 
     def test_Bell(self) -> None:
-        pass # Data Class
+        pass # Not needed for Data Class
+
+    def test_SoftStep(self) -> None:
+        pass # Not needed for Data Class
 
     def test_Sigmoid(self) -> None:
-        pass # Data Class
+        pass # Not needed for Data Class
 
     def test_sigmoids(self) -> None:
         funcs = curve.sigmoids()
@@ -37,31 +40,31 @@ class TestCurve(MathTestCase, ModuleTestCase):
             with self.subTest(name=func):
                 self.assertIsSigmoid(curve.sigmoid, name=func)
 
-    def test_sigm_logistic(self) -> None:
-        self.assertIsSigmoid(curve.sigm_logistic)
-        self.assertCheckSum(curve.sigm_logistic, self.x, 2.122459)
+    def test_logistic(self) -> None:
+        self.assertIsSigmoid(curve.logistic)
+        self.assertCheckSum(curve.logistic, self.x, 2.122459)
 
-    def test_sigm_tanh(self) -> None:
-        self.assertIsSigmoid(curve.sigm_tanh)
-        self.assertCheckSum(curve.sigm_tanh, self.x, 0.462117)
+    def test_tanh(self) -> None:
+        self.assertIsSigmoid(curve.tanh)
+        self.assertCheckSum(curve.tanh, self.x, 0.462117)
 
-    def test_sigm_lecun(self) -> None:
-        self.assertIsSigmoid(curve.sigm_lecun)
-        self.assertCheckSum(curve.sigm_lecun, self.x, 0.551632)
+    def test_tanh_lecun(self) -> None:
+        self.assertIsSigmoid(curve.tanh_lecun)
+        self.assertCheckSum(curve.tanh_lecun, self.x, 0.551632)
 
-    def test_sigm_elliot(self) -> None:
-        self.assertIsSigmoid(curve.sigm_elliot)
-        self.assertCheckSum(curve.sigm_elliot, self.x, 0.333333)
+    def test_elliot(self) -> None:
+        self.assertIsSigmoid(curve.elliot)
+        self.assertCheckSum(curve.elliot, self.x, 0.333333)
 
-    def test_sigm_hill(self) -> None:
-        self.assertCheckSum(curve.sigm_hill, self.x, 0.447213)
+    def test_hill(self) -> None:
+        self.assertCheckSum(curve.hill, self.x, 0.447213)
         for n in range(2, 10, 2):
             with self.subTest(n=n):
-                self.assertIsSigmoid(curve.sigm_hill, n=n)
+                self.assertIsSigmoid(curve.hill, n=n)
 
-    def test_sigm_arctan(self) -> None:
-        self.assertIsSigmoid(curve.sigm_arctan)
-        self.assertCheckSum(curve.sigm_arctan, self.x, 0.463647)
+    def test_arctan(self) -> None:
+        self.assertIsSigmoid(curve.arctan)
+        self.assertCheckSum(curve.arctan, self.x, 0.463647)
 
     def test_bells(self) -> None:
         funcs = curve.bells()
@@ -73,33 +76,33 @@ class TestCurve(MathTestCase, ModuleTestCase):
             with self.subTest(name=name):
                 self.assertIsBell(curve.bell, name=name)
 
-    def test_bell_gauss(self) -> None:
-        self.assertIsBell(curve.bell_gauss)
-        self.assertCheckSum(curve.bell_gauss, self.x, 1.234949)
+    def test_gauss(self) -> None:
+        self.assertIsBell(curve.gauss)
+        self.assertCheckSum(curve.gauss, self.x, 1.234949)
 
-    def test_bell_d_logistic(self) -> None:
-        self.assertIsBell(curve.bell_d_logistic)
-        self.assertCheckSum(curve.bell_d_logistic, self.x, 0.878227)
+    def test_dlogistic(self) -> None:
+        self.assertIsBell(curve.dlogistic)
+        self.assertCheckSum(curve.dlogistic, self.x, 0.878227)
 
-    def test_bell_d_elliot(self) -> None:
-        self.assertIsBell(curve.bell_d_elliot)
-        self.assertCheckSum(curve.bell_d_elliot, self.x, 1.944444)
+    def test_delliot(self) -> None:
+        self.assertIsBell(curve.delliot)
+        self.assertCheckSum(curve.delliot, self.x, 1.944444)
 
-    def test_bell_d_hill(self) -> None:
-        self.assertIsBell(curve.bell_d_hill)
-        self.assertCheckSum(curve.bell_d_hill, self.x, 2.422648)
+    def test_dhill(self) -> None:
+        self.assertIsBell(curve.dhill)
+        self.assertCheckSum(curve.dhill, self.x, 2.422648)
 
-    def test_bell_d_lecun(self) -> None:
-        self.assertIsBell(curve.bell_d_lecun)
-        self.assertCheckSum(curve.bell_d_lecun, self.x, 3.680217)
+    def test_dtanh_lecun(self) -> None:
+        self.assertIsBell(curve.dtanh_lecun)
+        self.assertCheckSum(curve.dtanh_lecun, self.x, 3.680217)
 
-    def test_bell_d_tanh(self) -> None:
-        self.assertIsBell(curve.bell_d_tanh)
-        self.assertCheckSum(curve.bell_d_tanh, self.x, 2.626396)
+    def test_dtanh(self) -> None:
+        self.assertIsBell(curve.dtanh)
+        self.assertCheckSum(curve.dtanh, self.x, 2.626396)
 
-    def test_bell_d_arctan(self) -> None:
-        self.assertIsBell(curve.bell_d_arctan)
-        self.assertCheckSum(curve.bell_d_arctan, self.x, 2.800000)
+    def test_darctan(self) -> None:
+        self.assertIsBell(curve.darctan)
+        self.assertCheckSum(curve.darctan, self.x, 2.800000)
 
     def test_dialogistic(self) -> None:
         self.assertIncreasing(curve.dialogistic)

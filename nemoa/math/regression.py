@@ -8,7 +8,7 @@ __docformat__ = 'google'
 
 from typing import Any
 import numpy as np
-from nemoa.base import array, catalog, pkg
+from nemoa.base import array, call, catalog
 from nemoa.math import vector
 from nemoa.types import NpAxes, NpArray, NpArrayLike, StrList
 
@@ -79,8 +79,8 @@ def error(
             "arrays 'x' and 'y' can not be broadcasted together")
 
     # Evaluate function
-    fname = catalog.pick(category=Error, name=name).name
-    return pkg.call_attr(fname, x=x, y=y, axes=axes, **kwds)
+    f = catalog.pick(category=Error, name=name).reference
+    return call.safe_call(f, x=x, y=y, axes=axes, **kwds)
 
 @catalog.register(Error, name='sad')
 def sad(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
