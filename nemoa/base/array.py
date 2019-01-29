@@ -18,7 +18,7 @@ from nemoa.types import Number, OptNumber, OptStrList
 # Array transformations
 #
 
-def cast(x: NpArrayLike, empty: bool = False) -> NpArray:
+def cast(x: NpArrayLike, otype: bool = False) -> NpArray:
     """Cast array like object as numpy array."""
     if isinstance(x, np.ndarray):
         return x
@@ -29,9 +29,9 @@ def cast(x: NpArrayLike, empty: bool = False) -> NpArray:
     except TypeError as err:
         raise TypeError("'x' is required to be array-like") from err
 
-    # Check if casted numpy array is empty
-    if not empty and not x.shape:
-        raise TypeError("'x' can not be casted as non-empty array")
+    # Check if casted numpy array has dtype object
+    if not otype and x.dtype == np.object:
+        raise TypeError("'x' can not be casted as a non-object array")
 
     return x
 

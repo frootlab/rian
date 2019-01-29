@@ -90,7 +90,7 @@ class TestArray(ModuleTestCase):
         x = set()
         with self.subTest(x=x):
             self.assertRaises(TypeError, array.cast, x)
-            self.assertNotRaises(TypeError, array.cast, x, empty=True)
+            self.assertNotRaises(TypeError, array.cast, x, otype=True)
 
     def test_from_dict(self) -> None:
         x = array.from_dict(self.d, labels=self.labels)
