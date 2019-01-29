@@ -22,7 +22,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import numpy as np
-from nemoa.base import catalog, pkg
+from nemoa.base import array, catalog, pkg
 from nemoa.types import Any, NpArray, NpArrayLike, StrList
 
 #
@@ -67,17 +67,11 @@ def sigmoid(x: NpArrayLike, name: str = 'logistic', **kwds: Any) -> NpArray:
         function to the given data.
 
     """
-    # Check type of 'x'
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "First argument 'x' is required to be array-like") from err
+    # Try to cast 'x' as array
+    x = array.cast(x)
 
-    # Get function name
+    # Get and evaluate function
     fname = catalog.pick(category=Sigmoid, name=name).name
-
-    # Evaluate function
     return pkg.call_attr(fname, x=x, **kwds)
 
 @catalog.register(Sigmoid, name='logistic')
@@ -224,17 +218,11 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
         Evaluation of the bell shaped function at given data.
 
     """
-    # Check type of 'x'
-    try:
-        x = np.array(x)
-    except TypeError as err:
-        raise TypeError(
-            "First argument 'x' is required to be array-like") from err
+    # Try to cast 'x' as array
+    x = array.cast(x)
 
     # Get function name
     fname = catalog.pick(category=Bell, name=name).name
-
-    # Evaluate function
     return pkg.call_attr(fname, x=x, **kwds)
 
 @catalog.register(Bell, name='gauss')

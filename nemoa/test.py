@@ -11,13 +11,12 @@ import functools
 import inspect
 import io
 import types
-import typing
+from typing import Any, NamedTuple, Tuple, Dict, List, Callable
 import unittest
 import numpy as np
 from nemoa.base import pkg, otree
-from nemoa.types import Any, AnyOp, ClassInfo, Method, ErrMeta, Module, Function
-from nemoa.types import TextFileLike, Tuple, Dict, List, Callable, NpArray
-from nemoa.types import OptStr
+from nemoa.types import AnyOp, ClassInfo, Method, ErrMeta, Module, Function
+from nemoa.types import TextFileLike, NpArray, OptStr
 
 #
 # Structural Types
@@ -35,7 +34,7 @@ skip_completeness_test: bool = False
 # Parameter Classes
 ################################################################################
 
-class Case(typing.NamedTuple):
+class Case(NamedTuple):
     """Class for the storage of Case parameters."""
 
     args: Tuple[Any, ...] = tuple()

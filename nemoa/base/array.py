@@ -6,16 +6,34 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from typing import List
 import numpy as np
 from numpy.lib import recfunctions as nprec
 from nemoa.base import check
-from nemoa.types import NpArray, NpRecArray, NpFields
+from nemoa.types import NpArray, NpArrayLike, NpRecArray, NpFields
 from nemoa.types import StrPairDict, StrListPair, NaN, OptList
-from nemoa.types import Number, OptNumber, List, OptStrList
+from nemoa.types import Number, OptNumber, OptStrList
 
 #
 # Array transformations
 #
+
+def cast(x: NpArrayLike, empty: bool = False) -> NpArray:
+    """Cast array like object as numpy array."""
+    if isinstance(x, np.ndarray):
+        return x
+
+    # Try to cast 'x' as numpy array
+    try:
+        x = np.array(x)
+    except TypeError as err:
+        raise TypeError("'x' is required to be array-like") from err
+
+    # Check if casted numpy array is empty
+    if not empty and not x.shape:
+        raise TypeError("'x' can not be casted as non-empty array")
+
+    return x
 
 def from_dict(
         d: StrPairDict, labels: StrListPair, nan: Number = NaN) -> NpArray:

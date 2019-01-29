@@ -6,10 +6,11 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from typing import Any
 import numpy as np
-from nemoa.base import catalog, pkg
+from nemoa.base import array, catalog, pkg
 from nemoa.math import vector
-from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
+from nemoa.types import NpAxes, NpArray, NpArrayLike, StrList
 
 #
 # Define Catalog Categories
@@ -68,19 +69,9 @@ def error(
         :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    # Check arguments 'x' and 'y' to be array like
-    if not isinstance(x, np.ndarray):
-        try:
-            x = np.array(x)
-        except TypeError as err:
-            raise TypeError(
-                "argument 'x' is required to be 'Array like'") from err
-    if not isinstance(y, np.ndarray):
-        try:
-            y = np.array(y)
-        except TypeError as err:
-            raise TypeError(
-                "argument 'y' is required to be 'Array like'") from err
+    # Try to cast 'x' and 'y' as arrays
+    x = array.cast(x)
+    y = array.cast(y)
 
     # Check shapes and dtypes of 'x' and 'y'
     if x.shape != y.shape:

@@ -6,10 +6,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import contextlib
+from typing import Any
 import numpy as np
-from nemoa.base import catalog, check, pkg
-from nemoa.types import Any, NpAxes, NpArray, NpArrayLike, StrList
+from nemoa.base import array, catalog, check, pkg
+from nemoa.types import NpAxes, NpArray, NpArrayLike, StrList
 
 #
 # Define Catalog Categories
@@ -76,13 +76,10 @@ def length(
         :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    # Try to create numpy array from argument 'x'
-    with contextlib.suppress(TypeError):
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
+    # Try to cast 'x' as array
+    x = array.cast(x)
 
-    # Check types of 'x' and 'axes'
-    check.has_type("'x'", x, np.ndarray)
+    # Check type of 'axes'
     check.has_type("'axes'", axes, (int, tuple))
 
     # Get function name
@@ -324,16 +321,11 @@ def distance(
         :class:`numpy.ndarray` of dimension dim(*x*) - len(*axes*).
 
     """
-    # Try to create numpy arrays from 'x' and 'y'
-    with contextlib.suppress(TypeError):
-        if not isinstance(x, np.ndarray):
-            x = np.array(x)
-        if not isinstance(y, np.ndarray):
-            y = np.array(y)
+    # Try to cast 'x' and 'y' as arrays
+    x = array.cast(x)
+    y = array.cast(y)
 
-    # Check types of 'x', 'y' and 'axes'
-    check.has_type("'x'", x, np.ndarray)
-    check.has_type("'y'", y, np.ndarray)
+    # Check type of 'axes'
     check.has_type("'axes'", axes, (int, tuple))
 
     # Check dimensions of 'x' and 'y'

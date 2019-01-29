@@ -76,6 +76,22 @@ class TestArray(ModuleTestCase):
             ('awesome', 3, 3., 3j)]
         self.labels = (['a', 'b'], ['a', 'b'])
 
+    def test_cast(self) -> None:
+        x = np.array([[NaN, 1.], [NaN, NaN]])
+        with self.subTest(x=x):
+            self.assertNotRaises(TypeError, array.cast, x)
+            self.assertIsInstance(array.cast(x), np.ndarray)
+
+        x = list(range(1000))
+        with self.subTest(x=x):
+            self.assertNotRaises(TypeError, array.cast, x)
+            self.assertIsInstance(array.cast(x), np.ndarray)
+
+        x = set()
+        with self.subTest(x=x):
+            self.assertRaises(TypeError, array.cast, x)
+            self.assertNotRaises(TypeError, array.cast, x, empty=True)
+
     def test_from_dict(self) -> None:
         x = array.from_dict(self.d, labels=self.labels)
         self.assertTrue(np.allclose(x, self.x, equal_nan=True))
