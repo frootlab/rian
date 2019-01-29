@@ -18,8 +18,6 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union
 from nemoa.base import abc, pkg, stack
 from nemoa.types import Module, OptStr, OptStrList, OptKey
 
-OptModule = Optional[Module]
-
 #
 # Cards
 #
@@ -150,7 +148,7 @@ def pick(
         raise ValueError(f"the search query is not unique")
     return results[0]
 
-def search_old(module: OptModule = None, **kwds: Any) -> dict:
+def search_old(module: Optional[Module] = None, **kwds: Any) -> dict:
     """Search for algorithms, that pass given filters.
 
     Args:
