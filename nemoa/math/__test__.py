@@ -25,21 +25,19 @@ class TestParser(ModuleTestCase):
     def test_Parser(self) -> None:
         pass # Exlicitly tested by functions
 
-    def test_Parser_evaluate(self) -> None:
+    def test_Parser_eval(self) -> None:
         p = parser.Parser()
 
         self.assertExactEqual(
-            p.evaluate("Engage1", variables={"Engage1": 2}), 2)
+            p.eval("Engage1", variables={"Engage1": 2}), 2)
         self.assertExactEqual(
-            p.evaluate("Engage1 + 1", variables={"Engage1": 1}), 2)
+            p.eval("Engage1 + 1", variables={"Engage1": 1}), 2)
 
-        f: AnyOp = lambda expr, val: p.parse(expr).evaluate(val)
+        f: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         self.assertExactEqual(f('1', {}), 1)
         self.assertExactEqual(f('a', {'a': 2}), 2)
         self.assertExactEqual(f('2 * 3', {}), 6)
-        self.assertExactEqual(f(u'2 \u2219 3', {}), 6)
-        self.assertExactEqual(f(u'2 \u2022 3', {}), 6)
         self.assertExactEqual(f('2 ^ x', {'x': 3}), 8.0)
         self.assertEqual(f('x < 3', {'x': 3}), False)
         self.assertEqual(f('x < 3', {'x': 2}), True)
@@ -82,23 +80,23 @@ class TestParser(ModuleTestCase):
         self.assertExactEqual(f("8300*.8", {}), 6640.0)
         self.assertRaises(ValueError, f, "..5", {})
 
-    def test_Parser_substitute(self) -> None:
+    def test_Parser_subst(self) -> None:
         p = parser.Parser()
 
-        expr = p.parse('2 * x + 1').substitute('x', '4 * x')
-        self.assertExactEqual(expr.evaluate({'x': 3}), 25)
+        expr = p.parse('2 * x + 1').subst('x', '4 * x')
+        self.assertExactEqual(expr.eval({'x': 3}), 25)
 
     def test_Parser_simplify(self) -> None:
         p = parser.Parser()
 
         expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
         self.assertIn('x*3.141592', expr.to_string())
-        self.assertExactEqual(expr.evaluate({'x': 2}), 6.283185307179586)
+        self.assertExactEqual(expr.eval({'x': 2}), 6.283185307179586)
         self.assertEqual(
             p.parse('x * (y * atan(1))').simplify({'y': 4}).variables, ['x'])
 
         self.assertExactEqual(
-            p.parse("x/((x+y))").simplify({}).evaluate({'x': 1, 'y': 1}), 0.5)
+            p.parse("x/((x+y))").simplify({}).eval({'x': 1, 'y': 1}), 0.5)
 
     def test_Parser_to_string(self) -> None:
         p = parser.Parser()
@@ -108,15 +106,13 @@ class TestParser(ModuleTestCase):
         self.assertEqual("'a'=='b'", str(expr))
 
         expr = p.parse("concat('a\n','\n','\rb')=='a\n\n\rb'")
-        self.assertEqual(expr.evaluate({}), True)
+        self.assertEqual(expr.eval({}), True)
 
         expr = p.parse("a==''")
-        self.assertEqual(expr.evaluate({'a':''}), True)
+        self.assertEqual(expr.eval({'a':''}), True)
 
         expr = p.parse("func(a,1.51,'ok')")
-        self.assertEqual(
-            expr.substitute('a', 'b').to_string(),
-            "func(b, 1.51, 'ok')")
+        self.assertEqual(str(expr.subst('a', 'b')), "func(b, 1.51, 'ok')")
 
     def test_Parser_variables(self) -> None:
         p = parser.Parser()
@@ -179,17 +175,12 @@ class TestParser(ModuleTestCase):
                 return nonlocals.x
             return count
 
-        # zero argument functions don't currently work
-        # self.assertEqual(parser
-        #     .parse('testFunction()')
-        #     .evaluate({"testFunction":testFunction0}),13)
-
         self.assertExactEqual(
-            p.parse('testFunction(x)').evaluate(
+            p.parse('testFunction(x)').eval(
                 {"x":2,"testFunction": testFunction1}), 13)
 
         self.assertExactEqual(
-            p.parse('testFunction(x , y)').evaluate(
+            p.parse('testFunction(x , y)').eval(
                 {"x":2,"y":3,"testFunction": testFunction2}), 13)
 
         p.functions['mean'] = mean
@@ -200,11 +191,11 @@ class TestParser(ModuleTestCase):
         self.assertEqual(
             p.parse("mean(xs)").symbols, ["mean", "xs"])
         self.assertEqual(
-            p.evaluate("mean(xs)", variables={"xs": [1, 2, 3]}), 2)
+            p.eval("mean(xs)", variables={"xs": [1, 2, 3]}), 2)
         self.assertExactEqual(
-            p.evaluate("count(inc)", variables={"inc": 5}), 5)
+            p.eval("count(inc)", variables={"inc": 5}), 5)
         self.assertExactEqual(
-            p.evaluate("count(inc)", variables={"inc": 5}), 10)
+            p.eval("count(inc)", variables={"inc": 5}), 10)
 
     def test_Token(self) -> None:
         pass # Implicitely tested by test_Parser

@@ -10,10 +10,9 @@ import collections
 import functools
 import itertools
 import operator
-import re
-from typing import NamedTuple, Dict, List, Optional, Tuple, Sequence, Union
-from typing import Any, Hashable, Match
-from nemoa.base import abc, catalog, check, stype
+from typing import NamedTuple, List, Optional, Tuple, Sequence, Union
+from typing import Any, Hashable
+from nemoa.base import abc, check, stype
 from nemoa.errors import InvalidTypeError
 from nemoa.math import parser
 from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, SeqHom
@@ -549,7 +548,7 @@ class Lambda(Operator):
         # Substitute the expression using the variable mapping and parse it.
         # Therupon get the variables of the expression and the corresponding
         # original field IDs.
-        expr = parser.substitute(self._expression, varmap)
+        expr = parser.subst(self._expression, varmap)
         pexpr = parser.parse(expr)
         variables = tuple(pexpr.variables)
         self._variables = variables
@@ -577,7 +576,7 @@ class Lambda(Operator):
             func = compose(runner, getter)
         else:
             getter = Getter(*fields, domain=dom, target=(dict, variables))
-            func = compose(pexpr.evaluate, getter)
+            func = compose(pexpr.eval, getter)
 
         setattr(type(self), '__call__', staticmethod(func))
 

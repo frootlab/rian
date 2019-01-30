@@ -57,6 +57,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import dataclasses
 import itertools
 import math
 import operator
@@ -69,39 +70,36 @@ from nemoa.types import AnyOp
 OptVars = Optional[stype.Frame]
 
 #
-# py-expression-eval
+# Tokens
 #
 
+NUMBER_TYPE = 0
+UNARY_TYPE = 1
+BINARY_TYPE = 2
+VARIABLE_TYPE = 3
+FUNCTION_TYPE = 4
+
+@dataclasses.dataclass(frozen=True)
 class Token:
-    NUMBER = 0
-    UNARY = 1
-    BINARY = 2
-    VARIABLE = 3
-    FUNCTION = 4
-
-    tid: int
-    index: Union[str, int]
-    prio: int
-    value: Any
-
-    def __init__(
-            self, tid: int, ind: Union[str, int], prio: int,
-            value: Any) -> None:
-        self.tid = tid
-        self.index = ind or 0
-        self.prio = prio or 0
-        self.value = value if value is not None else 0
+    type: int
+    name: Union[str, int] = 0
+    priority: int = 0
+    value: Any = 0
 
     def __str__(self) -> str:
-        if self.tid == self.NUMBER:
+        if self.type == NUMBER_TYPE:
             return self.value
-        if self.tid in [self.UNARY, self.BINARY, self.VARIABLE]:
-            if isinstance(self.index, str):
-                return self.index
-            raise ValueError() # TODO
-        if self.tid == self.FUNCTION:
+        if self.type in [UNARY_TYPE, BINARY_TYPE, VARIABLE_TYPE]:
+            if not isinstance(self.name, str):
+                raise ValueError() # TODO
+            return self.name
+        if self.type == FUNCTION_TYPE:
             return 'CALL'
         return 'Invalid Token'
+
+#
+# Expressions
+#
 
 class Expression:
 
@@ -115,154 +113,150 @@ class Expression:
         self.binary = binary
         self.functions = functions
 
+    def __str__(self) -> str:
+        return self.to_string()
+
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
-        nstack = []
+        stack = []
         newexpr = []
-        f: AnyOp
-        for i, item in enumerate(self.tokens):
-            if item.tid == Token.NUMBER:
-                nstack.append(item)
-            elif item.tid == Token.VARIABLE and item.index in values:
-                tnum = values[item.index]
-                nstack.append(Token(Token.NUMBER, 0, 0, tnum))
-            elif item.tid == Token.BINARY and len(nstack) > 1:
-                if not isinstance(item.index, str):
+        for token in self.tokens:
+            if token.type == NUMBER_TYPE:
+                stack.append(token)
+            elif token.type == VARIABLE_TYPE and token.name in values:
+                value = values[token.name]
+                stack.append(Token(NUMBER_TYPE, 0, 0, value))
+            elif token.type == BINARY_TYPE and len(stack) > 1:
+                if not isinstance(token.name, str):
                     raise ValueError() #TODO
-                n2 = nstack.pop()
-                n1 = nstack.pop()
-                tnum = self.binary[item.index](n1.value, n2.value)
-                nstack.append(Token(Token.NUMBER, 0, 0, tnum))
-            elif item.tid == Token.UNARY and nstack:
-                if not isinstance(item.index, str):
+                b, a = stack.pop(), stack.pop()
+                value = self.binary[token.name](a.value, b.value)
+                stack.append(Token(NUMBER_TYPE, 0, 0, value))
+            elif token.type == UNARY_TYPE and stack:
+                if not isinstance(token.name, str):
                     raise ValueError() # TODO
-                n1 = nstack.pop()
-                tnum = self.unary[item.index](n1.value)
-                nstack.append(Token(Token.NUMBER, 0, 0, tnum))
+                a = stack.pop()
+                value = self.unary[token.name](a.value)
+                stack.append(Token(NUMBER_TYPE, 0, 0, value))
             else:
-                while nstack:
-                    newexpr.append(nstack.pop(0))
-                newexpr.append(item)
-        while nstack:
-            newexpr.append(nstack.pop(0))
+                while stack:
+                    newexpr.append(stack.pop(0))
+                newexpr.append(token)
+        while stack:
+            newexpr.append(stack.pop(0))
 
         return Expression(newexpr, self.unary, self.binary, self.functions)
 
-    def substitute(
+    def subst(
             self, variable: str,
             expr: Union['Expression', str]) -> 'Expression':
+        """Substitute variable in expression."""
         if not isinstance(expr, Expression):
             expr = Parser().parse(str(expr))
         newexpr = []
-        for i, item in enumerate(self.tokens):
-            if item.tid == Token.VARIABLE and item.index == variable:
-                for j, expritem in enumerate(expr.tokens):
-                    replitem = Token(
-                        expritem.tid,
-                        expritem.index,
-                        expritem.prio,
-                        expritem.value)
-                    newexpr.append(replitem)
-            else:
-                newexpr.append(item)
-
+        for token in self.tokens:
+            if token.type != VARIABLE_TYPE:
+                newexpr.append(token)
+                continue
+            if token.name != variable:
+                newexpr.append(token)
+                continue
+            for etok in expr.tokens:
+                repl = Token(etok.type, etok.name, etok.priority, etok.value)
+                newexpr.append(repl)
         return Expression(newexpr, self.unary, self.binary, self.functions)
 
-    def evaluate(self, values: Optional[dict] = None) -> Any:
+    def eval(self, values: Optional[dict] = None) -> Any:
         values = values or {}
-        nstack = []
+        stack = []
         for token in self.tokens:
-            if token.tid == Token.NUMBER:
-                nstack.append(token.value)
-            elif token.tid == Token.BINARY and isinstance(token.index, str):
-                n2 = nstack.pop()
-                n1 = nstack.pop()
-                nstack.append(self.binary[token.index](n1, n2))
-            elif token.tid == Token.VARIABLE and isinstance(token.index, str):
-                if token.index in values:
-                    nstack.append(values[token.index])
-                elif token.index in self.functions:
-                    nstack.append(self.functions[token.index])
+            if token.type == NUMBER_TYPE:
+                stack.append(token.value)
+            elif token.type == BINARY_TYPE and isinstance(token.name, str):
+                b, a = stack.pop(), stack.pop()
+                stack.append(self.binary[token.name](a, b))
+            elif token.type == VARIABLE_TYPE and isinstance(token.name, str):
+                if token.name in values:
+                    stack.append(values[token.name])
+                elif token.name in self.functions:
+                    stack.append(self.functions[token.name])
                 else:
-                    raise Exception(f"undefined variable '{token.index}'")
-            elif token.tid == Token.UNARY and isinstance(token.index, str):
-                n1 = nstack.pop()
-                nstack.append(self.unary[token.index](n1))
-            elif token.tid == Token.FUNCTION:
-                args = nstack.pop()
-                func = nstack.pop()
+                    raise Exception(f"undefined variable '{token.name}'")
+            elif token.type == UNARY_TYPE and isinstance(token.name, str):
+                a = stack.pop()
+                stack.append(self.unary[token.name](a))
+            elif token.type == FUNCTION_TYPE:
+                a = stack.pop()
+                func = stack.pop()
                 if not callable(func):
                     raise Exception(f'{func} is not callable')
-                if isinstance(args, list):
-                    nstack.append(func(*args))
+                if isinstance(a, list):
+                    stack.append(func(*a))
                 else:
-                    nstack.append(func(args))
+                    stack.append(func(a))
             else:
                 raise Exception('invalid expression')
-        if len(nstack) > 1:
+
+        if len(stack) > 1:
             raise Exception('invalid expression (parity)')
 
-        return nstack[0]
+        return stack[0]
 
-    def to_string(self, topy: bool = False) -> str:
-        nstack = []
-        for i, item in enumerate(self.tokens):
-            if item.tid == Token.NUMBER:
-                if isinstance(item.value, str):
-                    nstack.append(repr(item.value))
+    def to_string(self, python: bool = False) -> str:
+        stack = []
+        for token in self.tokens:
+            if token.type == NUMBER_TYPE:
+                if isinstance(token.value, str):
+                    stack.append(repr(token.value))
                 else:
-                    nstack.append(item.value)
-            elif item.tid == Token.BINARY:
-                n2 = nstack.pop()
-                n1 = nstack.pop()
-                f = item.index
-                if f == '^' and topy:
-                    nstack.append(f'{n1}**{n2}')
+                    stack.append(token.value)
+            elif token.type == BINARY_TYPE:
+                b = stack.pop()
+                a = stack.pop()
+                f = token.name
+                if f == '^' and python:
+                    stack.append(f'{a}**{b}')
                 elif f == ',':
-                    nstack.append(f'{n1}, {n2}')
+                    stack.append(f'{a}, {b}')
                 else:
-                    nstack.append(f'({n1}{f}{n2})')
-            elif item.tid == Token.VARIABLE:
-                var = item.index
-                if isinstance(var, str):
-                    nstack.append(var)
-                else:
-                    raise ValueError() # TODO
-            elif item.tid == Token.UNARY:
-                n1 = nstack.pop()
-                f = item.index
+                    stack.append(f'({a}{f}{b})')
+            elif token.type == VARIABLE_TYPE and isinstance(token.name, str):
+                stack.append(token.name)
+            elif token.type == UNARY_TYPE:
+                a = stack.pop()
+                f = token.name
                 if f == '-':
-                    nstack.append(f'({f}{n1})')
+                    stack.append(f'(-{a})')
                 else:
-                    nstack.append(f'{f}({n1})')
-            elif item.tid == Token.FUNCTION:
-                n1 = nstack.pop()
-                f = nstack.pop()
-                nstack.append(f + '(' + n1 + ')')
+                    stack.append(f'{f}({a})')
+            elif token.type == FUNCTION_TYPE:
+                a = stack.pop()
+                f = stack.pop()
+                stack.append(f'{f}({a})')
             else:
                 raise Exception('invalid expression')
-        if len(nstack) > 1:
+
+        if len(stack) > 1:
             raise Exception('invalid expression (parity)')
 
         # Remove unnecessary parantheses
-        rexpr = nstack[0]
+        rexpr = stack[0]
         if rexpr.startswith('(') and rexpr.endswith(')'):
             return rexpr[1:-1]
 
         return rexpr
 
-    def __str__(self) -> str:
-        return self.to_string()
-
     @property
     def symbols(self) -> List[str]:
         symlist: List[str] = []
-        for item in self.tokens:
-            if item.tid == Token.VARIABLE and not item.index in symlist:
-                if isinstance(item.index, str):
-                    symlist.append(item.index)
-                else:
-                    raise ValueError() # TODO
+        for token in self.tokens:
+            if token.type != VARIABLE_TYPE:
+                continue
+            if token.name in symlist:
+                continue
+            if not isinstance(token.name, str):
+                raise ValueError() # TODO
+            symlist.append(token.name)
         return symlist
 
     @property
@@ -278,37 +272,37 @@ class Parser:
     COMMA = 32
     SIGN = 64
     CALL = 128
-    NULLARY_CALL = 256
+    NULLARY = 256
 
-    success: bool
-    errormsg: str
-    expression: str
-    pos: int
-    tokennumber: Union[str, float, int]
-    tokenprio: int
-    tokenindex: Union[str, int]
-    tmpprio: int
     unary: Dict[str, Callable[[Any], Any]]
     binary: Dict[str, Callable[[Any, Any], Any]]
     functions: Dict[str, Callable[..., Any]]
 
+    _expression: str
+    _success: bool
+    _errormsg: str
+    _pos: int
+    _cur_value: Union[str, float, int]
+    _cur_priority: int
+    _cur_name: Union[str, int]
+    _tmp_priority: int
+
     def __init__(self) -> None:
-        self.success = False
-        self.errormsg = ''
-        self.expression = ''
-        self.pos = 0
-        self.tokennumber = 0
-        self.tokenprio = 0
-        self.tokenindex = 0
-        self.tmpprio = 0
+        self._expression = ''
+        self._success = False
+        self._error = ''
+        self._pos = 0
+        self._cur_name = 0
+        self._cur_value = 0
+        self._cur_priority = 0
+        self._tmp_priority = 0
 
         rnd: AnyOp = lambda x: random.uniform(0., x)
         iif: AnyOp = lambda a, b, c: b if a else c
         iand: AnyOp = lambda a, b: a and b
         ior: AnyOp = lambda a, b: a or b
         concat: AnyOp = lambda *args: ''.join(map(str, args))
-        append: AnyOp = \
-            lambda a, b: a + [b] if isinstance(a, list) else [a, b]
+        append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.unary = {
             'sin': math.sin,
@@ -354,102 +348,110 @@ class Parser:
             'concat': concat,
             'if': iif}
 
-        self.consts = {
+        self.constants = {
             'E': math.e,
             'PI': math.pi}
 
-    def parse(self, expr: str) -> Expression:
-        self.errormsg = ''
-        self.success = True
-        self.tmpprio = 0
-        self.expression = expr
-        self.pos = 0
+    @property
+    def success(self) -> bool:
+        return self._success
 
-        operstack: List[Token] = []
+    @property
+    def expression(self) -> str:
+        return self._expression
+
+    def parse(self, expression: str) -> Expression:
+        self._expression = expression
+        self._error = ''
+        self._success = True
+        self._tmp_priority = 0
+        self._pos = 0
+
+        operators: List[Token] = []
         tokens: List[Token] = []
         expected = self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
         noperators = 0
 
-        while self.pos < len(self.expression):
+        while self._pos < len(self._expression):
             if self._is_operator():
                 if self._is_sign() and expected & self.SIGN:
                     if self._is_minus():
-                        self.tokenprio = 5
-                        self.tokenindex = '-'
+                        self._cur_priority = 5
+                        self._cur_name = '-'
                         noperators += 1
-                        self.addfunc(tokens, operstack, Token.UNARY)
+                        self._add_operator(tokens, operators, UNARY_TYPE)
                     expected = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
                 elif self._is_comment():
                     pass
                 else:
                     if expected and self.OPERATOR == 0:
-                        self.error_parsing(self.pos, 'unexpected operator')
+                        self._raise_error(self._pos, 'unexpected operator')
                     noperators += 2
-                    self.addfunc(tokens, operstack, Token.BINARY)
+                    self._add_operator(tokens, operators, BINARY_TYPE)
                     expected = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_number():
                 if expected and self.PRIMARY == 0:
-                    self.error_parsing(self.pos, 'unexpected number')
-                token = Token(Token.NUMBER, 0, 0, self.tokennumber)
+                    self._raise_error(self._pos, 'unexpected number')
+                token = Token(NUMBER_TYPE, 0, 0, self._cur_value)
                 tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_string():
                 if (expected & self.PRIMARY) == 0:
-                    self.error_parsing(self.pos, 'unexpected string')
-                token = Token(Token.NUMBER, 0, 0, self.tokennumber)
+                    self._raise_error(self._pos, 'unexpected string')
+                token = Token(NUMBER_TYPE, 0, 0, self._cur_value)
                 tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_left_parenth():
                 if (expected & self.LPAREN) == 0:
-                    self.error_parsing(self.pos, 'unexpected \"(\"')
+                    self._raise_error(self._pos, 'unexpected \"(\"')
                 if expected & self.CALL:
                     noperators += 2
-                    self.tokenprio = -2
-                    self.tokenindex = -1
-                    self.addfunc(tokens, operstack, Token.FUNCTION)
+                    self._cur_priority = -2
+                    self._cur_name = -1
+                    self._add_operator(tokens, operators, FUNCTION_TYPE)
                 expected = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | \
-                    self.SIGN | self.NULLARY_CALL
+                    self.SIGN | self.NULLARY
             elif self._is_right_parenth():
-                if expected & self.NULLARY_CALL:
-                    token = Token(Token.NUMBER, 0, 0, [])
+                if expected & self.NULLARY:
+                    token = Token(NUMBER_TYPE, 0, 0, [])
                     tokens.append(token)
                 elif (expected & self.RPAREN) == 0:
-                    self.error_parsing(self.pos, 'unexpected \")\"')
+                    self._raise_error(self._pos, 'unexpected \")\"')
                 expected = \
                     self.OPERATOR | self.RPAREN | self.COMMA | \
                     self.LPAREN | self.CALL
             elif self._is_comma():
                 if (expected & self.COMMA) == 0:
-                    self.error_parsing(self.pos, 'unexpected \",\"')
-                self.addfunc(tokens, operstack, Token.BINARY)
+                    self._raise_error(self._pos, 'unexpected \",\"')
+                self._add_operator(tokens, operators, BINARY_TYPE)
                 noperators += 2
                 expected = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_constant():
                 if (expected & self.PRIMARY) == 0:
-                    self.error_parsing(self.pos, 'unexpected constant')
-                consttoken = Token(Token.NUMBER, 0, 0, self.tokennumber)
+                    self._raise_error(self._pos, 'unexpected constant')
+                consttoken = Token(NUMBER_TYPE, 0, 0, self._cur_value)
                 tokens.append(consttoken)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_binary_operator():
                 if (expected & self.FUNCTION) == 0:
-                    self.error_parsing(self.pos, 'unexpected function')
-                self.addfunc(tokens, operstack, Token.BINARY)
+                    self._raise_error(self._pos, 'unexpected function')
+                self._add_operator(tokens, operators, BINARY_TYPE)
                 noperators += 2
                 expected = self.LPAREN
             elif self._is_unary_operator():
                 if (expected & self.FUNCTION) == 0:
-                    self.error_parsing(self.pos, 'unexpected function')
-                self.addfunc(tokens, operstack, Token.UNARY)
+                    self._raise_error(self._pos, 'unexpected function')
+                self._add_operator(tokens, operators, UNARY_TYPE)
                 noperators += 1
                 expected = self.LPAREN
             elif self._is_variable():
                 if (expected & self.PRIMARY) == 0:
-                    self.error_parsing(self.pos, 'unexpected variable')
-                vartoken = Token(Token.VARIABLE, self.tokenindex, 0, 0)
+                    self._raise_error(self._pos, 'unexpected variable')
+                vartoken = Token(VARIABLE_TYPE, self._cur_name, 0, 0)
                 tokens.append(vartoken)
                 expected = \
                     self.OPERATOR | self.RPAREN | \
@@ -457,65 +459,58 @@ class Parser:
             elif self._is_space():
                 pass
             else:
-                if self.errormsg == '':
-                    self.error_parsing(self.pos, 'unknown character')
+                if self._error == '':
+                    self._raise_error(self._pos, 'unknown character')
                 else:
-                    self.error_parsing(self.pos, self.errormsg)
-        if self.tmpprio < 0 or self.tmpprio >= 10:
-            self.error_parsing(self.pos, 'unmatched \"()\"')
-        while operstack:
-            tokens.append(operstack.pop())
+                    self._raise_error(self._pos, self._error)
+        if self._tmp_priority < 0 or self._tmp_priority >= 10:
+            self._raise_error(self._pos, 'unmatched \"()\"')
+        while operators:
+            tokens.append(operators.pop())
         if noperators + 1 != len(tokens):
-            self.error_parsing(self.pos, 'parity')
+            self._raise_error(self._pos, 'parity')
 
         return Expression(tokens, self.unary, self.binary, self.functions)
 
-    def evaluate(self, expr: str, variables: Optional[dict] = None) -> Any:
-        return self.parse(expr).evaluate(variables)
+    def eval(self, expression: str, variables: Optional[dict] = None) -> Any:
+        return self.parse(expression).eval(variables)
 
-    def error_parsing(self, column: int, msg: str) -> None:
-        self.success = False
-        self.errormsg = 'parse error [column ' + str(column) + ']: ' + msg
-
-        raise Exception(self.errormsg)
-
-    def addfunc(
-            self, tokens: List[Token], operstack: List[Token],
-            tid: int) -> None:
-        tok = Token(tid, self.tokenindex, self.tokenprio + self.tmpprio, 0)
-
-        while operstack:
-            if tok.prio <= operstack[len(operstack) - 1].prio:
-                tokens.append(operstack.pop())
-            else:
+    def _add_operator(
+            self, tokens: List[Token], operators: List[Token],
+            typeid: int) -> None:
+        name = self._cur_name
+        priority = self._cur_priority + self._tmp_priority
+        token = Token(typeid, name, priority, 0)
+        while operators:
+            if token.priority > operators[-1].priority:
                 break
-
-        operstack.append(tok)
+            tokens.append(operators.pop())
+        operators.append(token)
 
     @property
     def _cur(self) -> str:
-        return self.expression[self.pos]
+        return self._expression[self._pos]
 
     @property
     def _prev(self) -> str:
-        return self.expression[self.pos - 1]
+        return self._expression[self._pos - 1]
 
     def _is_number(self) -> bool:
         r = False
         string = ''
-        while self.pos < len(self.expression):
+        while self._pos < len(self._expression):
             code = self._cur
             if code.isdecimal() or code == '.':
                 if not string and code == '.':
                     string = '0'
 
                 string += code
-                self.pos += 1
+                self._pos += 1
 
                 try:
-                    self.tokennumber = int(string)
+                    self._cur_value = int(string)
                 except ValueError:
-                    self.tokennumber = float(string)
+                    self._cur_value = float(string)
                 r = True
             else:
                 break
@@ -524,34 +519,34 @@ class Parser:
     def _is_string(self) -> bool:
         r = False
         string = ''
-        startpos = self.pos
-        if self.pos < len(self.expression) and self._cur == "'":
-            self.pos += 1
-            while self.pos < len(self.expression):
+        startpos = self._pos
+        if self._pos < len(self._expression) and self._cur == "'":
+            self._pos += 1
+            while self._pos < len(self._expression):
                 code = self._cur
                 if code != '\'' or (string != '' and string[-1] == '\\'):
                     string += self._cur
-                    self.pos += 1
+                    self._pos += 1
                 else:
-                    self.pos += 1
-                    self.tokennumber = self._unescape(string, startpos)
+                    self._pos += 1
+                    self._cur_value = self._unescape(string, startpos)
                     r = True
                     break
         return r
 
     def _is_constant(self) -> bool:
-        for i in self.consts:
+        for i in self.constants:
             L = len(i)
-            string = self.expression[self.pos:self.pos + L]
+            string = self._expression[self._pos:self._pos + L]
             if i == string:
-                if len(self.expression) <= self.pos + L:
-                    self.tokennumber = self.consts[i]
-                    self.pos += L
+                if len(self._expression) <= self._pos + L:
+                    self._cur_value = self.constants[i]
+                    self._pos += L
                     return True
-                if not self.expression[self.pos + L].isalnum() \
-                    and self.expression[self.pos + L] != "_":
-                    self.tokennumber = self.consts[i]
-                    self.pos += L
+                if not self._expression[self._pos + L].isalnum() \
+                    and self._expression[self._pos + L] != "_":
+                    self._cur_value = self.constants[i]
+                    self._pos += L
                     return True
         return False
 
@@ -560,8 +555,6 @@ class Parser:
             ('+', 2, '+'),
             ('-', 2, '-'),
             ('*', 3, '*'),
-            (u'\u2219', 3, '*'), # bullet operator
-            (u'\u2022', 3, '*'), # black small circle
             ('/', 4, '/'),
             ('%', 4, '%'),
             ('^', 6, '^'),
@@ -575,11 +568,11 @@ class Parser:
             ('and', 0, 'and'),
             ('or', 0, 'or')]
 
-        for token, priority, index in ops:
-            if self.expression.startswith(token, self.pos):
-                self.tokenprio = priority
-                self.tokenindex = index
-                self.pos += len(token)
+        for token, priorityrity, index in ops:
+            if self._expression.startswith(token, self._pos):
+                self._cur_priority = priorityrity
+                self._cur_name = index
+                self._pos += len(token)
                 return True
 
         return False
@@ -596,90 +589,95 @@ class Parser:
     def _is_left_parenth(self) -> bool:
         if self._cur != '(':
             return False
-        self.pos += 1
-        self.tmpprio += 10
+        self._pos += 1
+        self._tmp_priority += 10
         return True
 
     def _is_right_parenth(self) -> bool:
         if self._cur != ')':
             return False
-        self.pos += 1
-        self.tmpprio -= 10
+        self._pos += 1
+        self._tmp_priority -= 10
         return True
 
     def _is_comma(self) -> bool:
         if self._cur != ',':
             return False
-        self.pos += 1
-        self.tokenprio = -1
-        self.tokenindex = ','
+        self._pos += 1
+        self._cur_priority = -1
+        self._cur_name = ','
         return True
 
     def _is_space(self) -> bool:
         if not self._cur.isspace():
             return False
-        self.pos += 1
+        self._pos += 1
         return True
 
     def _is_unary_operator(self) -> bool:
         string = ''
-        for i in range(self.pos, len(self.expression)):
-            c = self.expression[i]
+        for i in range(self._pos, len(self._expression)):
+            c = self._expression[i]
             if c.upper() == c.lower():
-                if i == self.pos or (c != '_' and (c < '0' or c > '9')):
+                if i == self._pos or (c != '_' and (c < '0' or c > '9')):
                     break
             string += c
         if string and string in self.unary:
-            self.tokenindex = string
-            self.tokenprio = 7
-            self.pos += len(string)
+            self._cur_name = string
+            self._cur_priority = 7
+            self._pos += len(string)
 
             return True
         return False
 
     def _is_binary_operator(self) -> bool:
         string = ''
-        for i in range(self.pos, len(self.expression)):
-            c = self.expression[i]
+        for i in range(self._pos, len(self._expression)):
+            c = self._expression[i]
             if c.upper() == c.lower():
-                if i == self.pos or (c != '_' and (c < '0' or c > '9')):
+                if i == self._pos or (c != '_' and (c < '0' or c > '9')):
                     break
             string += c
         if string and string in self.binary:
-            self.tokenindex = string
-            self.tokenprio = 7
-            self.pos += len(string)
+            self._cur_name = string
+            self._cur_priority = 7
+            self._pos += len(string)
             return True
         return False
 
     def _is_variable(self) -> bool:
         string = ''
-        inQuotes = False
-        for i in range(self.pos, len(self.expression)):
-            c = self.expression[i]
-            if not inQuotes and (c.lower() == c.upper()):
+        quoted = False
+        for i in range(self._pos, len(self._expression)):
+            c = self._expression[i]
+            if not quoted and (c.lower() == c.upper()):
                 if not (c in '_."') and (c < '0' or c > '9'):
                     break
-                if i == self.pos and c != '"':
+                if i == self._pos and c != '"':
                     break
             if c == '"':
-                inQuotes = not inQuotes
+                quoted = not quoted
             string += c
         if string:
-            self.tokenindex = string
-            self.tokenprio = 4
-            self.pos += len(string)
+            self._cur_name = string
+            self._cur_priority = 4
+            self._pos += len(string)
             return True
         return False
 
     def _is_comment(self) -> bool:
         code = self._prev
         if code == '/' and self._cur == '*':
-            self.pos = self.expression.index('*/', self.pos) + 2
-            if self.pos == 1:
-                self.pos = len(self.expression)
+            self._pos = self._expression.index('*/', self._pos) + 2
+            if self._pos == 1:
+                self._pos = len(self._expression)
             return True
         return False
+
+    def _raise_error(self, column: int, msg: str) -> None:
+        self._success = False
+        self._error = 'parse error [column ' + str(column) + ']: ' + msg
+        raise Exception(self._error)
 
     def _unescape(self, string: str, pos: int) -> str:
         buffer = []
@@ -699,7 +697,7 @@ class Parser:
                     buffer.append(chr(int(string[i + 1: i + 5], 16)))
                     i += 4
                     break
-                self.error_parsing(
+                self._raise_error(
                         pos + i, 'illegal escape sequence: \'\\' + c + '\'')
                 escaping = False
             elif c == '\\':
@@ -716,7 +714,7 @@ class Parser:
 def parse(expr: str, variables: OptVars = None) -> Expression:
     if variables:
         vmap = get_var_mapping(expr, variables)
-        expr = substitute(expr, vmap)
+        expr = subst(expr, vmap)
 
     return Parser().parse(expr).simplify({})
 
@@ -753,7 +751,7 @@ def get_var_mapping(expr: str, variables: OptVars = None) -> dict:
     get_var: AnyOp = lambda field: mapping.get(field, '')
     return dict(zip(variables, map(get_var, variables)))
 
-def substitute(expr: str, mapping: dict) -> str:
+def subst(expr: str, mapping: dict) -> str:
     # Declare replacement function
     def repl(mo: Match) -> str:
         if mo.group('var'):
