@@ -21,14 +21,17 @@ class TestCurve(MathTestCase, ModuleTestCase):
     def setUp(self) -> None:
         self.x = np.array([[0.0, 0.5], [1.0, -1.0]])
 
+    def test_Curve(self) -> None:
+        pass # Testing is not required for Catalog Categories
+
     def test_Bell(self) -> None:
-        pass # Not needed for Data Class
+        pass # Testing is not required for Catalog Categories
 
     def test_SoftStep(self) -> None:
-        pass # Not needed for Data Class
+        pass # Testing is not required for Catalog Categories
 
     def test_Sigmoid(self) -> None:
-        pass # Not needed for Data Class
+        pass # Testing is not required for Catalog Categories
 
     def test_sigmoids(self) -> None:
         funcs = curve.sigmoids()
@@ -112,9 +115,9 @@ class TestCurve(MathTestCase, ModuleTestCase):
         self.assertIncreasing(curve.softstep)
         self.assertCheckSum(curve.softstep, self.x, 0.323637)
 
-    def test_multilogistic(self) -> None:
-        self.assertIncreasing(curve.multilogistic)
-        self.assertCheckSum(curve.multilogistic, self.x, 0.500091)
+    def test_multi_logistic(self) -> None:
+        self.assertIncreasing(curve.multi_logistic)
+        self.assertCheckSum(curve.multi_logistic, self.x, 0.500091)
 
 class TestVector(MathTestCase, ModuleTestCase):
     module = vector

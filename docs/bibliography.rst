@@ -4,8 +4,11 @@ Bibliography
 Publications
 ------------
 
-.. [HINTON1986]
-    "Learning representations by back-propagating errors",
+.. [ELLIOT1993] "A better Activation Function for Artificial Neural Networks",
+    David L. Elliott (1993)
+.. [LECUN1998] "Efficient BackProp", Y. LeCun, L. Bottou, G. B. Orr, K. Müller
+    (1998)
+.. [HINTON1986] "Learning representations by back-propagating errors",
     Rumelhart, D. E., Hinton, G. E., Williams, R. J. (1986)
 
 Links

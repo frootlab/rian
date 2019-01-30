@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 """Curves.
 
-This module provides implementation of various curves, that appear in machine
-learning and statistics. These comprise::
+This module provides implementations of different curves. These comprise::
 
     * Sigmoidal shaped curves
     * Bell shaped curves (e.g. derivatives of sigmoidal shaped functions)
-    * Further SoftStep Functions
-
-.. References:
-.. _Gaussian functions:
-    https://en.wikipedia.org/wiki/Gaussian_function
-.. _normally distributed:
-    https://en.wikipedia.org/wiki/Normal_distribution
+    * Further "SoftStep" based curves
 
 """
 
@@ -30,16 +23,20 @@ from nemoa.types import Any, NpArray, NpArrayLike, StrList
 #
 
 @catalog.category
-class SoftStep:
+class Curve:
     name: str
 
 @catalog.category
-class Sigmoid:
-    name: str
+class Bell(Curve):
+    pass
 
 @catalog.category
-class Bell:
-    name: str
+class SoftStep(Curve):
+    pass
+
+@catalog.category
+class Sigmoid(SoftStep):
+    pass
 
 #
 # Sigmoidal shaped curves
@@ -112,8 +109,9 @@ def tanh(x: NpArrayLike) -> NpArray:
 def tanh_lecun(x: NpArrayLike) -> NpArray:
     """Calculate normalized hyperbolic tangent function.
 
-    Hyperbolic tangent function, which has been proposed to be more efficient
-    in learning Artificial Neural Networks [1].
+    The LeCun hyperbolic tangent [LECUN1998]_ is a reparametrized hyperbolic
+    tangent function, which is used as an activation function for learning
+    Artificial Neural Networks.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -124,16 +122,15 @@ def tanh_lecun(x: NpArrayLike) -> NpArray:
         Numpy ndarray which contains the evaluation of the LeCun
         hyperbolic tangent function to the given data.
 
-    References:
-        [1] Y. LeCun, L. Bottou, G. B. Orr, K. Müller,
-            "Efficient BackProp" (1998)
-
     """
     return 1.7159 * np.tanh(np.multiply(0.6666, x))
 
 @catalog.register(Sigmoid, name='elliot')
 def elliot(x: NpArrayLike) -> NpArray:
     """Calculate Elliot activation function.
+
+    Thi Elliot activation function [ELLIOT1993] is used as an activation
+    function for learning Artificial Neural Networks.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -143,10 +140,6 @@ def elliot(x: NpArrayLike) -> NpArray:
     Returns:
         Numpy ndarray which contains the evaluation of the Elliot
         activation function to the given data.
-
-    References:
-        [1] D.L. Elliott, David L. Elliott, "A better Activation Function for
-            Artificial Neural Networks" (1993)
 
     """
     return x / (1. + np.abs(x))
@@ -230,8 +223,8 @@ def bell(x: NpArrayLike, name: str = 'gauss', **kwds: Any) -> NpArray:
 def gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
     """Calculate Gauss function.
 
-    ``Gaussian functions``_ are used in statisttics to describe the probability
-    density of ``normally distributed``_ random variables  and therfore allow to
+    Gaussian functions are used in statistics to describe the probability
+    density of normally distributed random variables and therfore allow to
     model the error of quantities, that are expected to be the sum of many
     independent processes.
 
@@ -256,7 +249,7 @@ def gauss(x: NpArrayLike, mu: float = 0., sigma: float = 1.) -> NpArray:
 
 @catalog.register(Bell, name='d_logistic')
 def dlogistic(x: NpArrayLike) -> NpArray:
-    """Calculate derivative of the standard logistic function.
+    """Calculate total derivative of the standard logistic function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -273,7 +266,10 @@ def dlogistic(x: NpArrayLike) -> NpArray:
 
 @catalog.register(Bell, name='d_elliot')
 def delliot(x: NpArrayLike) -> NpArray:
-    """Calculate derivative of the Elliot sigmoid function.
+    """Calculate total derivative of the Elliot activation function.
+
+    Thi Elliot activation function [ELLIOT1993] is used as an activation
+    function for learning Artificial Neural Networks.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -284,16 +280,12 @@ def delliot(x: NpArrayLike) -> NpArray:
         Numpy ndarray which contains the evaluation of the derivative of
         the Elliot sigmoid function to the given data.
 
-    References:
-        [1] D.L. Elliott, David L. Elliott, "A better Activation Function for
-            Artificial Neural Networks", (1993)
-
     """
-    return 1. / (1. + np.abs(x)) ** 2
+    return 1. / (np.abs(x) + 1.) ** 2
 
 @catalog.register(Bell, name='d_hill')
 def dhill(x: NpArrayLike, n: float = 2.) -> NpArray:
-    """Calculate derivative of Hill type activation function.
+    """Calculate total derivative of a Hill function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -306,14 +298,15 @@ def dhill(x: NpArrayLike, n: float = 2.) -> NpArray:
         the Hill type activation function to the given data.
 
     """
-    return 1. / np.power(1. + np.power(x, n), (1. + n) / n)
+    return 1. / np.power(np.power(x, n) + 1., (n + 1.) / n)
 
 @catalog.register(Bell, name='d_tanh_lecun')
 def dtanh_lecun(x: NpArrayLike) -> NpArray:
-    """Calculate derivative of LeCun hyperbolic tangent.
+    """Calculate total derivative of the LeCun hyperbolic tangent.
 
-    Hyperbolic tangent function, which has been proposed to be more efficient
-    in learning Artificial Neural Networks [1].
+    The LeCun hyperbolic tangent [LECUN1998]_ is a reparametrized hyperbolic
+    tangent function, which is used as an activation function for learning
+    Artificial Neural Networks.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -324,16 +317,12 @@ def dtanh_lecun(x: NpArrayLike) -> NpArray:
         Numpy ndarray which contains the evaluation of the derivative of
         the LeCun hyperbolic tangent to the given data.
 
-    References:
-        [1] Y. LeCun, L. Bottou, G. B. Orr, K. Müller,
-            "Efficient BackProp" (1998)
-
     """
     return 1.14382 / np.cosh(np.multiply(0.6666, x)) ** 2
 
 @catalog.register(Bell, name='d_tanh')
 def dtanh(x: NpArrayLike) -> NpArray:
-    """Calculate derivative of hyperbolic tangent function.
+    """Calculate total derivative of the hyperbolic tangent function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -349,7 +338,7 @@ def dtanh(x: NpArrayLike) -> NpArray:
 
 @catalog.register(Bell, name='d_arctan')
 def darctan(x: NpArrayLike) -> NpArray:
-    """Calculate derivative of inverse tangent function.
+    """Calculate total derivative of the inverse tangent function.
 
     Args:
         x: Any sequence that can be interpreted as a numpy ndarray of arbitrary
@@ -418,7 +407,7 @@ def softstep(x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
     return step / norm
 
 @catalog.register(SoftStep, name='multi_logistic')
-def multilogistic(
+def multi_logistic(
         x: NpArrayLike, scale: float = 1., sigma: float = 10.) -> NpArray:
     """Calculate muliple logistic function.
 
@@ -437,7 +426,7 @@ def multilogistic(
         [1] https://math.stackexchange.com/questions/2529531/
 
     """
-    # The multi logistic function approximates the identity function
+    # The multiple logistic function approximates the identity function
     # if the scaling or the sharpness parameter goes to zero
     if scale == 0. or sigma == 0.:
         return x
