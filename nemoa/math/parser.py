@@ -72,65 +72,73 @@ OptVars = Optional[stype.Frame]
 # py-expression-eval
 #
 
-TNUMBER = 0
-TUNOP = 1
-TBINOP = 2
-TVAR = 3
-TFUNCALL = 4
-
 class Token:
+    NUMBER = 0
+    UNARY = 1
+    BINARY = 2
+    VARIABLE = 3
+    FUNCTION = 4
 
-    type: int
+    tid: int
     index: Union[str, int]
-    #prio:
-    #number:
+    prio: int
+    value: Any
 
-    def __init__(self, typ: int, ind: Union[str, int], prio, num) -> None:
-        self.type = typ
+    def __init__(
+            self, tid: int, ind: Union[str, int], prio: int,
+            value: Any) -> None:
+        self.tid = tid
         self.index = ind or 0
         self.prio = prio or 0
-        self.number = num if num is not None else 0
+        self.value = value if value is not None else 0
 
     def __str__(self) -> str:
-        if self.type == TNUMBER:
-            return self.number
-        if self.type in [TUNOP, TBINOP, TVAR]:
+        if self.tid == self.NUMBER:
+            return self.value
+        if self.tid in [self.UNARY, self.BINARY, self.VARIABLE]:
             if isinstance(self.index, str):
                 return self.index
             raise ValueError() # TODO
-        if self.type == TFUNCALL:
+        if self.tid == self.FUNCTION:
             return 'CALL'
         return 'Invalid Token'
 
 class Expression:
 
-    def __init__(self, tokens: List[Token], ops1, ops2, functions) -> None:
+    def __init__(
+            self, tokens: List[Token],
+            unary: Dict[str, Callable[[Any], Any]],
+            binary: Dict[str, Callable[[Any, Any], Any]],
+            functions: Dict[str, Callable[..., Any]]) -> None:
         self.tokens = tokens
-        self.ops1 = ops1
-        self.ops2 = ops2
+        self.unary = unary
+        self.binary = binary
         self.functions = functions
 
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
         nstack = []
         newexpr = []
+        f: AnyOp
         for i, item in enumerate(self.tokens):
-            if item.type == TNUMBER:
+            if item.tid == Token.NUMBER:
                 nstack.append(item)
-            elif item.type == TVAR and item.index in values:
-                item = Token(TNUMBER, 0, 0, values[item.index])
-                nstack.append(item)
-            elif item.type == TBINOP and len(nstack) > 1:
+            elif item.tid == Token.VARIABLE and item.index in values:
+                tnum = values[item.index]
+                nstack.append(Token(Token.NUMBER, 0, 0, tnum))
+            elif item.tid == Token.BINARY and len(nstack) > 1:
+                if not isinstance(item.index, str):
+                    raise ValueError() #TODO
                 n2 = nstack.pop()
                 n1 = nstack.pop()
-                f = self.ops2[item.index]
-                item = Token(TNUMBER, 0, 0, f(n1.number, n2.number))
-                nstack.append(item)
-            elif item.type == TUNOP and nstack:
+                tnum = self.binary[item.index](n1.value, n2.value)
+                nstack.append(Token(Token.NUMBER, 0, 0, tnum))
+            elif item.tid == Token.UNARY and nstack:
+                if not isinstance(item.index, str):
+                    raise ValueError() # TODO
                 n1 = nstack.pop()
-                f = self.ops1[item.index]
-                item = Token(TNUMBER, 0, 0, f(n1.number))
-                nstack.append(item)
+                tnum = self.unary[item.index](n1.value)
+                nstack.append(Token(Token.NUMBER, 0, 0, tnum))
             else:
                 while nstack:
                     newexpr.append(nstack.pop(0))
@@ -138,7 +146,7 @@ class Expression:
         while nstack:
             newexpr.append(nstack.pop(0))
 
-        return Expression(newexpr, self.ops1, self.ops2, self.functions)
+        return Expression(newexpr, self.unary, self.binary, self.functions)
 
     def substitute(
             self, variable: str,
@@ -147,53 +155,48 @@ class Expression:
             expr = Parser().parse(str(expr))
         newexpr = []
         for i, item in enumerate(self.tokens):
-            if item.type == TVAR and item.index == variable:
+            if item.tid == Token.VARIABLE and item.index == variable:
                 for j, expritem in enumerate(expr.tokens):
                     replitem = Token(
-                        expritem.type,
+                        expritem.tid,
                         expritem.index,
                         expritem.prio,
-                        expritem.number)
+                        expritem.value)
                     newexpr.append(replitem)
             else:
                 newexpr.append(item)
 
-        return Expression(newexpr, self.ops1, self.ops2, self.functions)
+        return Expression(newexpr, self.unary, self.binary, self.functions)
 
     def evaluate(self, values: Optional[dict] = None) -> Any:
         values = values or {}
         nstack = []
-        L = len(self.tokens)
-        for item in self.tokens:
-            type_ = item.type
-            if type_ == TNUMBER:
-                nstack.append(item.number)
-            elif type_ == TBINOP:
+        for token in self.tokens:
+            if token.tid == Token.NUMBER:
+                nstack.append(token.value)
+            elif token.tid == Token.BINARY and isinstance(token.index, str):
                 n2 = nstack.pop()
                 n1 = nstack.pop()
-                f = self.ops2[item.index]
-                nstack.append(f(n1, n2))
-            elif type_ == TVAR:
-                if item.index in values:
-                    nstack.append(values[item.index])
-                elif item.index in self.functions:
-                    nstack.append(self.functions[item.index])
+                nstack.append(self.binary[token.index](n1, n2))
+            elif token.tid == Token.VARIABLE and isinstance(token.index, str):
+                if token.index in values:
+                    nstack.append(values[token.index])
+                elif token.index in self.functions:
+                    nstack.append(self.functions[token.index])
                 else:
-                    raise Exception(f"undefined variable '{item.index}'")
-            elif type_ == TUNOP:
+                    raise Exception(f"undefined variable '{token.index}'")
+            elif token.tid == Token.UNARY and isinstance(token.index, str):
                 n1 = nstack.pop()
-                f = self.ops1[item.index]
-                nstack.append(f(n1))
-            elif type_ == TFUNCALL:
-                n1 = nstack.pop()
-                f = nstack.pop()
-                if callable(f):
-                    if isinstance(n1, list):
-                        nstack.append(f(*n1))
-                    else:
-                        nstack.append(f(n1))
+                nstack.append(self.unary[token.index](n1))
+            elif token.tid == Token.FUNCTION:
+                args = nstack.pop()
+                func = nstack.pop()
+                if not callable(func):
+                    raise Exception(f'{func} is not callable')
+                if isinstance(args, list):
+                    nstack.append(func(*args))
                 else:
-                    raise Exception(f'{f} is not a function')
+                    nstack.append(func(args))
             else:
                 raise Exception('invalid expression')
         if len(nstack) > 1:
@@ -204,12 +207,12 @@ class Expression:
     def to_string(self, topy: bool = False) -> str:
         nstack = []
         for i, item in enumerate(self.tokens):
-            if item.type == TNUMBER:
-                if isinstance(item.number, str):
-                    nstack.append(repr(item.number))
+            if item.tid == Token.NUMBER:
+                if isinstance(item.value, str):
+                    nstack.append(repr(item.value))
                 else:
-                    nstack.append(item.number)
-            elif item.type == TBINOP:
+                    nstack.append(item.value)
+            elif item.tid == Token.BINARY:
                 n2 = nstack.pop()
                 n1 = nstack.pop()
                 f = item.index
@@ -219,20 +222,20 @@ class Expression:
                     nstack.append(f'{n1}, {n2}')
                 else:
                     nstack.append(f'({n1}{f}{n2})')
-            elif item.type == TVAR:
+            elif item.tid == Token.VARIABLE:
                 var = item.index
                 if isinstance(var, str):
                     nstack.append(var)
                 else:
                     raise ValueError() # TODO
-            elif item.type == TUNOP:
+            elif item.tid == Token.UNARY:
                 n1 = nstack.pop()
                 f = item.index
                 if f == '-':
                     nstack.append(f'({f}{n1})')
                 else:
                     nstack.append(f'{f}({n1})')
-            elif item.type == TFUNCALL:
+            elif item.tid == Token.FUNCTION:
                 n1 = nstack.pop()
                 f = nstack.pop()
                 nstack.append(f + '(' + n1 + ')')
@@ -255,7 +258,7 @@ class Expression:
     def symbols(self) -> List[str]:
         symlist: List[str] = []
         for item in self.tokens:
-            if item.type == TVAR and not item.index in symlist:
+            if item.tid == Token.VARIABLE and not item.index in symlist:
                 if isinstance(item.index, str):
                     symlist.append(item.index)
                 else:
@@ -282,12 +285,12 @@ class Parser:
     expression: str
     pos: int
     tokennumber: Union[str, float, int]
-    #tokenprio:
+    tokenprio: int
     tokenindex: Union[str, int]
-    #tmpprio:
-    ops1: Dict[str, Callable[[Any], Any]]
-    ops2: Dict[str, Callable[[Any, Any], Any]]
-    functions: Dict[str, AnyOp]
+    tmpprio: int
+    unary: Dict[str, Callable[[Any], Any]]
+    binary: Dict[str, Callable[[Any, Any], Any]]
+    functions: Dict[str, Callable[..., Any]]
 
     def __init__(self) -> None:
         self.success = False
@@ -307,7 +310,7 @@ class Parser:
         append: AnyOp = \
             lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
-        self.ops1 = {
+        self.unary = {
             'sin': math.sin,
             'cos': math.cos,
             'tan': math.tan,
@@ -323,7 +326,7 @@ class Parser:
             '-': operator.neg,
             'exp': math.exp}
 
-        self.ops2 = {
+        self.binary = {
             '+': operator.add,
             '-': operator.sub,
             '*': operator.mul,
@@ -355,39 +358,17 @@ class Parser:
             'E': math.e,
             'PI': math.pi}
 
-        # self.values = {
-        #     'sin': math.sin,
-        #     'cos': math.cos,
-        #     'tan': math.tan,
-        #     'asin': math.asin,
-        #     'acos': math.acos,
-        #     'atan': math.atan,
-        #     'sqrt': math.sqrt,
-        #     'log': math.log,
-        #     'abs': abs,
-        #     'ceil': math.ceil,
-        #     'floor': math.floor,
-        #     'round': round,
-        #     'random': rnd,
-        #     'fac': math.factorial,
-        #     'exp': math.exp,
-        #     'min': min,
-        #     'max': max,
-        #     'pow': math.pow,
-        #     'atan2': math.atan2,
-        #     'E': math.e,
-        #     'PI': math.pi}
-
-    def parse(self, expr) -> Expression:
+    def parse(self, expr: str) -> Expression:
         self.errormsg = ''
         self.success = True
-        operstack = []
-        tokenstack = []
         self.tmpprio = 0
-        expected = self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
-        noperators = 0
         self.expression = expr
         self.pos = 0
+
+        operstack: List[Token] = []
+        tokens: List[Token] = []
+        expected = self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
+        noperators = 0
 
         while self.pos < len(self.expression):
             if self._is_operator():
@@ -396,7 +377,7 @@ class Parser:
                         self.tokenprio = 5
                         self.tokenindex = '-'
                         noperators += 1
-                        self.addfunc(tokenstack, operstack, TUNOP)
+                        self.addfunc(tokens, operstack, Token.UNARY)
                     expected = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
                 elif self._is_comment():
@@ -405,20 +386,20 @@ class Parser:
                     if expected and self.OPERATOR == 0:
                         self.error_parsing(self.pos, 'unexpected operator')
                     noperators += 2
-                    self.addfunc(tokenstack, operstack, TBINOP)
+                    self.addfunc(tokens, operstack, Token.BINARY)
                     expected = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_number():
                 if expected and self.PRIMARY == 0:
                     self.error_parsing(self.pos, 'unexpected number')
-                token = Token(TNUMBER, 0, 0, self.tokennumber)
-                tokenstack.append(token)
+                token = Token(Token.NUMBER, 0, 0, self.tokennumber)
+                tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_string():
                 if (expected & self.PRIMARY) == 0:
                     self.error_parsing(self.pos, 'unexpected string')
-                token = Token(TNUMBER, 0, 0, self.tokennumber)
-                tokenstack.append(token)
+                token = Token(Token.NUMBER, 0, 0, self.tokennumber)
+                tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_left_parenth():
                 if (expected & self.LPAREN) == 0:
@@ -427,14 +408,14 @@ class Parser:
                     noperators += 2
                     self.tokenprio = -2
                     self.tokenindex = -1
-                    self.addfunc(tokenstack, operstack, TFUNCALL)
+                    self.addfunc(tokens, operstack, Token.FUNCTION)
                 expected = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | \
                     self.SIGN | self.NULLARY_CALL
             elif self._is_right_parenth():
                 if expected & self.NULLARY_CALL:
-                    token = Token(TNUMBER, 0, 0, [])
-                    tokenstack.append(token)
+                    token = Token(Token.NUMBER, 0, 0, [])
+                    tokens.append(token)
                 elif (expected & self.RPAREN) == 0:
                     self.error_parsing(self.pos, 'unexpected \")\"')
                 expected = \
@@ -443,33 +424,33 @@ class Parser:
             elif self._is_comma():
                 if (expected & self.COMMA) == 0:
                     self.error_parsing(self.pos, 'unexpected \",\"')
-                self.addfunc(tokenstack, operstack, TBINOP)
+                self.addfunc(tokens, operstack, Token.BINARY)
                 noperators += 2
                 expected = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_constant():
                 if (expected & self.PRIMARY) == 0:
                     self.error_parsing(self.pos, 'unexpected constant')
-                consttoken = Token(TNUMBER, 0, 0, self.tokennumber)
-                tokenstack.append(consttoken)
+                consttoken = Token(Token.NUMBER, 0, 0, self.tokennumber)
+                tokens.append(consttoken)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_binary_operator():
                 if (expected & self.FUNCTION) == 0:
                     self.error_parsing(self.pos, 'unexpected function')
-                self.addfunc(tokenstack, operstack, TBINOP)
+                self.addfunc(tokens, operstack, Token.BINARY)
                 noperators += 2
                 expected = self.LPAREN
             elif self._is_unary_operator():
                 if (expected & self.FUNCTION) == 0:
                     self.error_parsing(self.pos, 'unexpected function')
-                self.addfunc(tokenstack, operstack, TUNOP)
+                self.addfunc(tokens, operstack, Token.UNARY)
                 noperators += 1
                 expected = self.LPAREN
             elif self._is_variable():
                 if (expected & self.PRIMARY) == 0:
                     self.error_parsing(self.pos, 'unexpected variable')
-                vartoken = Token(TVAR, self.tokenindex, 0, 0)
-                tokenstack.append(vartoken)
+                vartoken = Token(Token.VARIABLE, self.tokenindex, 0, 0)
+                tokens.append(vartoken)
                 expected = \
                     self.OPERATOR | self.RPAREN | \
                     self.COMMA | self.LPAREN | self.CALL
@@ -483,12 +464,11 @@ class Parser:
         if self.tmpprio < 0 or self.tmpprio >= 10:
             self.error_parsing(self.pos, 'unmatched \"()\"')
         while operstack:
-            tmp = operstack.pop()
-            tokenstack.append(tmp)
-        if noperators + 1 != len(tokenstack):
+            tokens.append(operstack.pop())
+        if noperators + 1 != len(tokens):
             self.error_parsing(self.pos, 'parity')
 
-        return Expression(tokenstack, self.ops1, self.ops2, self.functions)
+        return Expression(tokens, self.unary, self.binary, self.functions)
 
     def evaluate(self, expr: str, variables: Optional[dict] = None) -> Any:
         return self.parse(expr).evaluate(variables)
@@ -499,30 +479,32 @@ class Parser:
 
         raise Exception(self.errormsg)
 
-    def addfunc(self, tokenstack, operstack, type_):
-        tok = Token(type_, self.tokenindex, self.tokenprio + self.tmpprio, 0)
+    def addfunc(
+            self, tokens: List[Token], operstack: List[Token],
+            tid: int) -> None:
+        tok = Token(tid, self.tokenindex, self.tokenprio + self.tmpprio, 0)
 
         while operstack:
             if tok.prio <= operstack[len(operstack) - 1].prio:
-                tokenstack.append(operstack.pop())
+                tokens.append(operstack.pop())
             else:
                 break
 
         operstack.append(tok)
 
     @property
-    def cur(self) -> str:
+    def _cur(self) -> str:
         return self.expression[self.pos]
 
     @property
-    def prev(self) -> str:
+    def _prev(self) -> str:
         return self.expression[self.pos - 1]
 
     def _is_number(self) -> bool:
         r = False
         string = ''
         while self.pos < len(self.expression):
-            code = self.cur
+            code = self._cur
             if code.isdecimal() or code == '.':
                 if not string and code == '.':
                     string = '0'
@@ -543,12 +525,12 @@ class Parser:
         r = False
         string = ''
         startpos = self.pos
-        if self.pos < len(self.expression) and self.cur == "'":
+        if self.pos < len(self.expression) and self._cur == "'":
             self.pos += 1
             while self.pos < len(self.expression):
-                code = self.cur
+                code = self._cur
                 if code != '\'' or (string != '' and string[-1] == '\\'):
-                    string += self.cur
+                    string += self._cur
                     self.pos += 1
                 else:
                     self.pos += 1
@@ -603,30 +585,30 @@ class Parser:
         return False
 
     def _is_sign(self) -> bool:
-        return self.prev in ['+', '-']
+        return self._prev in ['+', '-']
 
     def _is_plus(self) -> bool:
-        return self.prev == '+'
+        return self._prev == '+'
 
     def _is_minus(self) -> bool:
-        return self.prev == '-'
+        return self._prev == '-'
 
     def _is_left_parenth(self) -> bool:
-        if self.cur != '(':
+        if self._cur != '(':
             return False
         self.pos += 1
         self.tmpprio += 10
         return True
 
     def _is_right_parenth(self) -> bool:
-        if self.cur != ')':
+        if self._cur != ')':
             return False
         self.pos += 1
         self.tmpprio -= 10
         return True
 
     def _is_comma(self) -> bool:
-        if self.cur != ',':
+        if self._cur != ',':
             return False
         self.pos += 1
         self.tokenprio = -1
@@ -634,7 +616,7 @@ class Parser:
         return True
 
     def _is_space(self) -> bool:
-        if not self.cur.isspace():
+        if not self._cur.isspace():
             return False
         self.pos += 1
         return True
@@ -647,7 +629,7 @@ class Parser:
                 if i == self.pos or (c != '_' and (c < '0' or c > '9')):
                     break
             string += c
-        if string and string in self.ops1:
+        if string and string in self.unary:
             self.tokenindex = string
             self.tokenprio = 7
             self.pos += len(string)
@@ -663,7 +645,7 @@ class Parser:
                 if i == self.pos or (c != '_' and (c < '0' or c > '9')):
                     break
             string += c
-        if string and string in self.ops2:
+        if string and string in self.binary:
             self.tokenindex = string
             self.tokenprio = 7
             self.pos += len(string)
@@ -691,8 +673,8 @@ class Parser:
         return False
 
     def _is_comment(self) -> bool:
-        code = self.prev
-        if code == '/' and self.cur == '*':
+        code = self._prev
+        if code == '/' and self._cur == '*':
             self.pos = self.expression.index('*/', self.pos) + 2
             if self.pos == 1:
                 self.pos = len(self.expression)
