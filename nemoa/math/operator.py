@@ -484,7 +484,8 @@ class Lambda(Operator):
         # domain frame, the Lambda operator is a Getter operator
         domain = stype.create_domain(domain, defaults={'fields': variables})
         if expression.isidentifier() or expression in domain.frame:
-            return Getter(expression, domain=domain, target=(None, expression))
+            target = (None, (expression, ))
+            return Getter(expression, domain=domain, target=target)
 
         return super().__new__(cls)
 
@@ -493,7 +494,8 @@ class Lambda(Operator):
             variables: StrTuple = tuple(), default: OptOp = None,
             assemble: bool = True) -> None:
         # Initialize Base Class
-        super().__init__(*variables, domain=domain, target=(None, expression))
+        super().__init__(
+            *variables, domain=domain, target=(None, (expression, )))
 
         # Bind Attributes
         self._expression = expression
@@ -549,7 +551,7 @@ class Lambda(Operator):
         # original field IDs.
         expr = parser.substitute(self._expression, varmap)
         pexpr = parser.parse(expr)
-        variables = tuple(pexpr.variables())
+        variables = tuple(pexpr.variables)
         self._variables = variables
         invert = dict((v, f) for f, v in varmap.items())
         fields = tuple(invert.get(v, v) for v in variables)
@@ -568,7 +570,7 @@ class Lambda(Operator):
         func: AnyOp
         if assemble:
             getter = Getter(*fields, domain=dom, target=(tuple, variables))
-            term = pexpr.toString().replace('^', '**')
+            term = pexpr.to_string().replace('^', '**')
             term = f"lambda {','.join(variables)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
             runner: AnyOp = lambda x: compiled(*x)
@@ -786,7 +788,7 @@ def compose(*args: OptOp, unpack: bool = False) -> AnyOp:
         circ = lambda f, g: lambda *p: f(*g(*p))
     else:
         circ = lambda f, g: lambda *p: f(g(*p))
-    return functools.reduce(circ, ops)
+    return functools.reduce(circ, ops) or Identity()
 
 #
 # Builders for elementary operators

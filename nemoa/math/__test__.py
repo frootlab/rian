@@ -64,7 +64,6 @@ class TestParser(ModuleTestCase):
             f("(a^2-b^2)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), True)
         self.assertEqual(
             f("(a^2-b^2+1)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), False)
-        self.assertExactEqual(f('pyt(2 , 0)', {}), 2.0)
         self.assertEqual(f("concat('hi',' ','u')", {}), 'hi u')
         self.assertExactEqual(f('if(a>b,5,6)', {'a':8,'b':3}),5)
         self.assertExactEqual(f('if(a,b,c)', {'a':None,'b':1,'c':3}),3)
@@ -93,20 +92,20 @@ class TestParser(ModuleTestCase):
         p = parser.Parser()
 
         expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
-        self.assertIn('x*3.141592', expr.toString())
+        self.assertIn('x*3.141592', expr.to_string())
         self.assertExactEqual(expr.evaluate({'x': 2}), 6.283185307179586)
         self.assertEqual(
-            p.parse('x * (y * atan(1))').simplify({'y': 4}).variables(), ['x'])
+            p.parse('x * (y * atan(1))').simplify({'y': 4}).variables, ['x'])
 
         self.assertExactEqual(
             p.parse("x/((x+y))").simplify({}).evaluate({'x': 1, 'y': 1}), 0.5)
 
-    def test_Parser_toString(self) -> None:
+    def test_Parser_to_string(self) -> None:
         p = parser.Parser()
 
         expr = p.parse("'a'=='b'")
-        self.assertIn("'a'=='b'",expr.toString())
-        self.assertIn("'a'=='b'", "%s" % expr)
+        self.assertEqual("'a'=='b'", str(expr))
+        self.assertEqual("'a'=='b'", str(expr))
 
         expr = p.parse("concat('a\n','\n','\rb')=='a\n\n\rb'")
         self.assertEqual(expr.evaluate({}), True)
@@ -114,14 +113,14 @@ class TestParser(ModuleTestCase):
         expr = p.parse("a==''")
         self.assertEqual(expr.evaluate({'a':''}), True)
 
-        expr = p.parse("myExtFn(a,b,c,1.51,'ok')")
+        expr = p.parse("func(a,1.51,'ok')")
         self.assertEqual(
-            expr.substitute("a", 'first').toString(),
-            "myExtFn(first,b,c,1.51,'ok')")
+            expr.substitute('a', 'b').to_string(),
+            "func(b, 1.51, 'ok')")
 
     def test_Parser_variables(self) -> None:
         p = parser.Parser()
-        f: AnyOp = lambda expr: p.parse(expr).variables()
+        f: AnyOp = lambda expr: p.parse(expr).variables
         # TODO: use assertAllEqual
 
         self.assertEqual(f('x * (y * atan(1))'), ['x', 'y'])
@@ -155,7 +154,7 @@ class TestParser(ModuleTestCase):
     def test_Parser_symbols(self) -> None:
         p = parser.Parser()
 
-        self.assertEqual(p.parse('pow(x,y)').symbols(), ['pow','x','y'])
+        self.assertEqual(p.parse('pow(x,y)').symbols, ['pow','x','y'])
 
     def test_Parser_functions(self) -> None:
         p = parser.Parser()
@@ -197,9 +196,9 @@ class TestParser(ModuleTestCase):
         p.functions['count'] = counter(0)
 
         self.assertEqual(
-            p.parse("mean(xs)").variables(), ["xs"])
+            p.parse("mean(xs)").variables, ["xs"])
         self.assertEqual(
-            p.parse("mean(xs)").symbols(), ["mean", "xs"])
+            p.parse("mean(xs)").symbols, ["mean", "xs"])
         self.assertEqual(
             p.evaluate("mean(xs)", variables={"xs": [1, 2, 3]}), 2)
         self.assertExactEqual(
