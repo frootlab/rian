@@ -13,9 +13,8 @@
 #  nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with nemoa. If not, see <http://www.gnu.org/licenses/>.
+#  You should have received a copy of the GNU General Public License along with
+#  nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
 """Nemoa deep data-analysis and visualization.
 
@@ -28,7 +27,7 @@ Nemoa is a Python package for `probabilistic graphical modeling`_ and
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 
 """
-__version__ = '0.5.474'
+__version__ = '0.5.475'
 __status__ = 'Development'
 __description__ = 'Network-based Modeling and structured Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
