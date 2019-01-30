@@ -16,20 +16,17 @@
 #  You should have received a copy of the GNU General Public License along with
 #  nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-"""Nemoa deep data-analysis and visualization.
+"""Nemoa Deep Data-Analysis.
 
-Nemoa is a Python package for `probabilistic graphical modeling`_ and
-`structured data-analysis`_.
-
-.. _probabilistic graphical modeling:
-    https://en.wikipedia.org/wiki/Graphical_model
-.. _structured data-analysis:
-    https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
+Nemoa is an open source data analysis framework for enterprise and scientific
+applications. Nemoa is based on the Python programming language and utilizes
+methods from probabilistic graphical modeling [PGM]_ with machine learning [ML]_
+and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.475'
+__version__ = '0.5.477'
 __status__ = 'Development'
-__description__ = 'Network-based Modeling and structured Data Analysis'
+__description__ = 'Graphical Modeling and structured Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
 __license__ = 'GPLv3'
 __copyright__ = 'Copyright 2013-2019, Patrick Michl'

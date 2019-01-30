@@ -260,10 +260,6 @@ class Expression():
 
 
 class Parser:
-
-    class Expression(Expression):
-        pass
-
     PRIMARY = 1
     OPERATOR = 2
     FUNCTION = 4
@@ -568,7 +564,7 @@ class Parser:
         string = ''
         while self.pos < len(self.expression):
             code = self.expression[self.pos]
-            if (code >= '0' and code <= '9') or code == '.':
+            if code.isdecimal() or code == '.':
                 if string and code == '.':
                     string = '0'
                 string += code
@@ -586,9 +582,7 @@ class Parser:
         buffer = []
         escaping = False
 
-        for i in range(0, len(v)):
-            c = v[i]
-
+        for i, c in enumerate(v):
             if escaping:
                 if c == "'":
                     buffer.append("'")
@@ -778,9 +772,10 @@ class Parser:
         inQuotes = False
         for i in range(self.pos, len(self.expression)):
             c = self.expression[i]
-            if c.lower() == c.upper():
-                if ((i == self.pos and c != '"') or (not (c in '_."')
-                    and (c < '0' or c > '9'))) and not inQuotes:
+            if not inQuotes and (c.lower() == c.upper()):
+                if not (c in '_."') and (c < '0' or c > '9'):
+                    break
+                if i == self.pos and c != '"':
                     break
             if c == '"':
                 inQuotes = not inQuotes
