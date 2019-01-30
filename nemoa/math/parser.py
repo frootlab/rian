@@ -101,17 +101,37 @@ class Token:
 # Expressions
 #
 
+Unary = Dict[str, Callable[[Any], Any]]
+Binary = Dict[str, Callable[[Any, Any], Any]]
+Functions = Dict[str, Callable[..., Any]]
+
 class Expression:
+    tokens: List[Token]
+    unary: Unary
+    binary: Binary
+    functions: Functions
 
     def __init__(
-            self, tokens: List[Token],
-            unary: Dict[str, Callable[[Any], Any]],
-            binary: Dict[str, Callable[[Any, Any], Any]],
-            functions: Dict[str, Callable[..., Any]]) -> None:
-        self.tokens = tokens
-        self.unary = unary
-        self.binary = binary
-        self.functions = functions
+            self, expression: Optional[str] = None,
+            tokens: Optional[List[Token]] = None,
+            operators: Optional[object] = None) -> None:
+        if expression:
+            expr = Parser().parse(expression)
+            self.tokens = expr.tokens
+            self.unary = expr.unary
+            self.binary = expr.binary
+            self.functions = expr.functions
+        elif tokens and operators:
+            self.tokens = tokens
+            self.unary = getattr(operators, 'unary', {})
+            self.binary = getattr(operators, 'binary', {})
+            self.functions = getattr(operators, 'functions', {})
+
+    def __call__(self, *args: Any) -> Any:
+        return self.eval(*args)
+
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}({repr(self.to_string())})'
 
     def __str__(self) -> str:
         return self.to_string()
@@ -119,7 +139,7 @@ class Expression:
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
         stack = []
-        newexpr = []
+        tokens = []
         for token in self.tokens:
             if token.type == NUMBER_TYPE:
                 stack.append(token)
@@ -140,12 +160,11 @@ class Expression:
                 stack.append(Token(NUMBER_TYPE, 0, 0, value))
             else:
                 while stack:
-                    newexpr.append(stack.pop(0))
-                newexpr.append(token)
+                    tokens.append(stack.pop(0))
+                tokens.append(token)
         while stack:
-            newexpr.append(stack.pop(0))
-
-        return Expression(newexpr, self.unary, self.binary, self.functions)
+            tokens.append(stack.pop(0))
+        return Expression(tokens=tokens, operators=self)
 
     def subst(
             self, variable: str,
@@ -153,18 +172,18 @@ class Expression:
         """Substitute variable in expression."""
         if not isinstance(expr, Expression):
             expr = Parser().parse(str(expr))
-        newexpr = []
+        tokens = []
         for token in self.tokens:
             if token.type != VARIABLE_TYPE:
-                newexpr.append(token)
+                tokens.append(token)
                 continue
             if token.name != variable:
-                newexpr.append(token)
+                tokens.append(token)
                 continue
             for etok in expr.tokens:
                 repl = Token(etok.type, etok.name, etok.priority, etok.value)
-                newexpr.append(repl)
-        return Expression(newexpr, self.unary, self.binary, self.functions)
+                tokens.append(repl)
+        return Expression(tokens=tokens, operators=self)
 
     def eval(self, values: Optional[dict] = None) -> Any:
         values = values or {}
@@ -274,9 +293,9 @@ class Parser:
     CALL = 128
     NULLARY = 256
 
-    unary: Dict[str, Callable[[Any], Any]]
-    binary: Dict[str, Callable[[Any, Any], Any]]
-    functions: Dict[str, Callable[..., Any]]
+    unary: Unary
+    binary: Binary
+    functions: Functions
 
     _expression: str
     _success: bool
@@ -305,6 +324,9 @@ class Parser:
         append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.unary = {
+            '-': operator.neg,
+            'abs': abs,
+            'round': round,
             'sin': math.sin,
             'cos': math.cos,
             'tan': math.tan,
@@ -313,11 +335,8 @@ class Parser:
             'atan': math.atan,
             'sqrt': math.sqrt,
             'log': math.log,
-            'abs': abs,
             'ceil': math.ceil,
             'floor': math.floor,
-            'round': round,
-            '-': operator.neg,
             'exp': math.exp}
 
         self.binary = {
@@ -326,9 +345,9 @@ class Parser:
             '*': operator.mul,
             '/': operator.truediv,
             '%': operator.mod,
-            '^': math.pow,
+            '^': math.pow, # nope
             ',': append,
-            '||': concat,
+            '||': concat, # nope
             '==': operator.eq,
             '!=': operator.ne,
             '>': operator.gt,
@@ -344,13 +363,16 @@ class Parser:
             'min': min,
             'max': max,
             'pow': math.pow,
-            'atan2': math.atan2,
-            'concat': concat,
-            'if': iif}
+            'atan2': math.atan2, # nope
+            'concat': concat, # nope
+            'if': iif} # nope
 
         self.constants = {
             'E': math.e,
             'PI': math.pi}
+
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}()'
 
     @property
     def success(self) -> bool:
@@ -470,7 +492,7 @@ class Parser:
         if noperators + 1 != len(tokens):
             self._raise_error(self._pos, 'parity')
 
-        return Expression(tokens, self.unary, self.binary, self.functions)
+        return Expression(tokens=tokens, operators=self)
 
     def eval(self, expression: str, variables: Optional[dict] = None) -> Any:
         return self.parse(expression).eval(variables)
@@ -503,10 +525,8 @@ class Parser:
             if code.isdecimal() or code == '.':
                 if not string and code == '.':
                     string = '0'
-
                 string += code
                 self._pos += 1
-
                 try:
                     self._cur_value = int(string)
                 except ValueError:
@@ -535,19 +555,20 @@ class Parser:
         return r
 
     def _is_constant(self) -> bool:
-        for i in self.constants:
-            L = len(i)
-            string = self._expression[self._pos:self._pos + L]
-            if i == string:
-                if len(self._expression) <= self._pos + L:
-                    self._cur_value = self.constants[i]
-                    self._pos += L
-                    return True
-                if not self._expression[self._pos + L].isalnum() \
-                    and self._expression[self._pos + L] != "_":
-                    self._cur_value = self.constants[i]
-                    self._pos += L
-                    return True
+        expr = self._expression
+        for name, value in self.constants.items():
+            start = self._pos
+            end = start + len(name)
+            if name != expr[start:end]:
+                continue
+            if len(expr) <= end:
+                self._cur_value = value
+                self._pos = end
+                return True
+            if not expr[end].isalnum() and expr[end] != "_":
+                self._cur_value = value
+                self._pos = end
+                return True
         return False
 
     def _is_operator(self) -> bool:
@@ -558,7 +579,7 @@ class Parser:
             ('/', 4, '/'),
             ('%', 4, '%'),
             ('^', 6, '^'),
-            ('||', 1, '||'),
+            ('||', 1, '||'), # nope
             ('==', 1, '=='),
             ('!=', 1, '!='),
             ('<=', 1, '<='),
@@ -568,11 +589,11 @@ class Parser:
             ('and', 0, 'and'),
             ('or', 0, 'or')]
 
-        for token, priorityrity, index in ops:
-            if self._expression.startswith(token, self._pos):
-                self._cur_priority = priorityrity
+        for name, priority, index in ops:
+            if self._expression.startswith(name, self._pos):
+                self._cur_priority = priority
                 self._cur_name = index
-                self._pos += len(token)
+                self._pos += len(name)
                 return True
 
         return False
@@ -626,7 +647,6 @@ class Parser:
             self._cur_name = string
             self._cur_priority = 7
             self._pos += len(string)
-
             return True
         return False
 
@@ -665,9 +685,8 @@ class Parser:
             return True
         return False
 
-    def _is_comment(self) -> bool:
-        code = self._prev
-        if code == '/' and self._cur == '*':
+    def _is_comment(self) -> bool: # TODO: DO NOT USE COMMENTS
+        if self._prev == '/' and self._cur == '*':
             self._pos = self._expression.index('*/', self._pos) + 2
             if self._pos == 1:
                 self._pos = len(self._expression)
@@ -698,7 +717,7 @@ class Parser:
                     i += 4
                     break
                 self._raise_error(
-                        pos + i, 'illegal escape sequence: \'\\' + c + '\'')
+                    pos + i, 'illegal escape sequence: \'\\' + c + '\'')
                 escaping = False
             elif c == '\\':
                 escaping = True
