@@ -11,9 +11,204 @@ import numpy as np
 from typing import Any
 from unittest import mock
 from nemoa import errors
-from nemoa.math import curve, graph, matrix, operator, regression
+from nemoa.math import curve, graph, matrix, operator, parser, regression
 from nemoa.math import vector
+from nemoa.types import AnyOp
 from nemoa.test import ModuleTestCase, MathTestCase
+
+class TestParser(ModuleTestCase):
+    module = parser
+
+    def test_Expression(self) -> None:
+        pass # Implicitely tested by test_Parser
+
+    def test_Parser(self) -> None:
+        pass # Exlicitly tested by functions
+
+    def test_Parser_evaluate(self) -> None:
+        p = parser.Parser()
+
+        self.assertExactEqual(
+            p.evaluate("Engage1", variables={"Engage1": 2}), 2)
+        self.assertExactEqual(
+            p.evaluate("Engage1 + 1", variables={"Engage1": 1}), 2)
+
+        f: AnyOp = lambda expr, val: p.parse(expr).evaluate(val)
+
+        self.assertExactEqual(f('1', {}), 1)
+        self.assertExactEqual(f('a', {'a': 2}), 2)
+        self.assertExactEqual(f('2 * 3', {}), 6)
+        self.assertExactEqual(f(u'2 \u2219 3', {}), 6)
+        self.assertExactEqual(f(u'2 \u2022 3', {}), 6)
+        self.assertExactEqual(f('2 ^ x', {'x': 3}), 8.0)
+        self.assertEqual(f('x < 3', {'x': 3}), False)
+        self.assertEqual(f('x < 3', {'x': 2}), True)
+        self.assertEqual(f('x <= 3', {'x': 3}), True)
+        self.assertEqual(f('x <= 3', {'x': 4}), False)
+        self.assertEqual(f('x > 3', {'x': 4}), True)
+        self.assertEqual(f('x >= 3', {'x': 3}), True)
+        self.assertExactEqual(f('2 * x + 1', {'x': 3}), 7)
+        self.assertExactEqual(f('2 + 3 * x', {'x': 4}), 14)
+        self.assertExactEqual(f('(2 + 3) * x', {'x': 4}), 20)
+        self.assertExactEqual(f('2-3^x', {'x': 4}), -79.0)
+        self.assertExactEqual(f('-2-3^x', {'x': 4}), -83.0)
+        self.assertExactEqual(f('-3^x', {'x': 4}), -81.0)
+        self.assertExactEqual(f('(-3)^x', {'x': 4}), 81.0)
+        self.assertExactEqual(f('2*x + y', {'x': 4, 'y': 1}), 9)
+        self.assertEqual(f("x||y", {'x': 'hi ', 'y': 'u'}), 'hi u')
+        self.assertEqual(f("'x'||'y'", {}), 'xy')
+        self.assertEqual(f("'x'=='x'", {}), True)
+        self.assertEqual(f("(a+b)==c", {'a': 1, 'b': 2, 'c': 3}), True)
+        self.assertEqual(f("(a+b)!=c", {'a': 1, 'b': 2, 'c': 3}), False)
+        self.assertEqual(
+            f("(a^2-b^2)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), True)
+        self.assertEqual(
+            f("(a^2-b^2+1)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), False)
+        self.assertExactEqual(f('pyt(2 , 0)', {}), 2.0)
+        self.assertEqual(f("concat('hi',' ','u')", {}), 'hi u')
+        self.assertExactEqual(f('if(a>b,5,6)', {'a':8,'b':3}),5)
+        self.assertExactEqual(f('if(a,b,c)', {'a':None,'b':1,'c':3}),3)
+
+        # List operations
+        self.assertEqual(f('a, 3', {'a': [1, 2]}), [1, 2, 3])
+
+        # Checking if '"a b"' could be a variable (using it in sql)
+        self.assertEqual(f('"a b"*2', {'"a b"': 2}), 4)
+
+        # Decimals
+        self.assertExactEqual(f(".1", {}), f("0.1", {}))
+        self.assertExactEqual(f(".1*.2", {}), f("0.1*0.2", {}))
+        self.assertExactEqual(f(".5^3", {}), float(0.125))
+        self.assertExactEqual(f("16^.5", {}), 4.0)
+        self.assertExactEqual(f("8300*.8", {}), 6640.0)
+        self.assertRaises(ValueError, f, "..5", {})
+
+    def test_Parser_substitute(self) -> None:
+        p = parser.Parser()
+
+        expr = p.parse('2 * x + 1').substitute('x', '4 * x')
+        self.assertExactEqual(expr.evaluate({'x': 3}), 25)
+
+    def test_Parser_simplify(self) -> None:
+        p = parser.Parser()
+
+        expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
+        self.assertIn('x*3.141592', expr.toString())
+        self.assertExactEqual(expr.evaluate({'x': 2}), 6.283185307179586)
+        self.assertEqual(
+            p.parse('x * (y * atan(1))').simplify({'y': 4}).variables(), ['x'])
+
+        self.assertExactEqual(
+            p.parse("x/((x+y))").simplify({}).evaluate({'x': 1, 'y': 1}), 0.5)
+
+    def test_Parser_toString(self) -> None:
+        p = parser.Parser()
+
+        expr = p.parse("'a'=='b'")
+        self.assertIn("'a'=='b'",expr.toString())
+        self.assertIn("'a'=='b'", "%s" % expr)
+
+        expr = p.parse("concat('a\n','\n','\rb')=='a\n\n\rb'")
+        self.assertEqual(expr.evaluate({}), True)
+
+        expr = p.parse("a==''")
+        self.assertEqual(expr.evaluate({'a':''}), True)
+
+        expr = p.parse("myExtFn(a,b,c,1.51,'ok')")
+        self.assertEqual(
+            expr.substitute("a", 'first').toString(),
+            "myExtFn(first,b,c,1.51,'ok')")
+
+    def test_Parser_variables(self) -> None:
+        p = parser.Parser()
+        f: AnyOp = lambda expr: p.parse(expr).variables()
+        # TODO: use assertAllEqual
+
+        self.assertEqual(f('x * (y * atan(1))'), ['x', 'y'])
+        self.assertEqual(f('pow(x,y)'), ['x','y'])
+
+        # constants: E and PI
+        self.assertEqual(f("PI"), [])
+        self.assertEqual(f("PI "), [])
+        self.assertEqual(f("E "), [])
+        self.assertEqual(f(" E"), [])
+        self.assertEqual(f("E"), [])
+        self.assertEqual(f("E+1"), [])
+        self.assertEqual(f("E / 1"), [])
+        self.assertEqual(f("sin(PI)+E"), [])
+        self.assertEqual(f('Pie'), ["Pie"])
+        self.assertEqual(f('PIe'), ["PIe"])
+        self.assertEqual(f('Eval'), ["Eval"])
+        self.assertEqual(f('Eval1'), ["Eval1"])
+        self.assertEqual(f('EPI'), ["EPI"])
+        self.assertEqual(f('PIE'), ["PIE"])
+        self.assertEqual(f('Engage'), ["Engage"])
+        self.assertEqual(f('Engage * PIE'), ["Engage", "PIE"])
+        self.assertEqual(f('Engage_'), ["Engage_"])
+        self.assertEqual(f('Engage1'), ["Engage1"])
+        self.assertEqual(f('E1'), ["E1"])
+        self.assertEqual(f('PI2'), ["PI2"])
+        self.assertEqual(f('(E1 + PI)'), ["E1"])
+        self.assertEqual(f('E1_'), ["E1_"])
+        self.assertEqual(f('E_'), ["E_"])
+
+    def test_Parser_symbols(self) -> None:
+        p = parser.Parser()
+
+        self.assertEqual(p.parse('pow(x,y)').symbols(), ['pow','x','y'])
+
+    def test_Parser_functions(self) -> None:
+        p = parser.Parser()
+
+        def testFunction0() -> Any:
+            return 13
+
+        def testFunction1(a: Any) -> Any:
+            return 2 * a + 9
+
+        def testFunction2(a: Any, b: Any) -> Any:
+            return 2 * a + 3 * b
+
+        def mean(*xs: Any) -> Any:
+            return sum(xs) / len(xs)
+
+        def counter(initial: Any) -> Any:
+            class nonlocals:
+                x: Any = initial
+            def count(increment: Any) -> Any:
+                nonlocals.x += increment
+                return nonlocals.x
+            return count
+
+        # zero argument functions don't currently work
+        # self.assertEqual(parser
+        #     .parse('testFunction()')
+        #     .evaluate({"testFunction":testFunction0}),13)
+
+        self.assertExactEqual(
+            p.parse('testFunction(x)').evaluate(
+                {"x":2,"testFunction": testFunction1}), 13)
+
+        self.assertExactEqual(
+            p.parse('testFunction(x , y)').evaluate(
+                {"x":2,"y":3,"testFunction": testFunction2}), 13)
+
+        p.functions['mean'] = mean
+        p.functions['count'] = counter(0)
+
+        self.assertEqual(
+            p.parse("mean(xs)").variables(), ["xs"])
+        self.assertEqual(
+            p.parse("mean(xs)").symbols(), ["mean", "xs"])
+        self.assertEqual(
+            p.evaluate("mean(xs)", variables={"xs": [1, 2, 3]}), 2)
+        self.assertExactEqual(
+            p.evaluate("count(inc)", variables={"inc": 5}), 5)
+        self.assertExactEqual(
+            p.evaluate("count(inc)", variables={"inc": 5}), 10)
+
+    def test_Token(self) -> None:
+        pass # Implicitely tested by test_Parser
 
 class TestCurve(MathTestCase, ModuleTestCase):
     module = curve

@@ -48,6 +48,11 @@ class Case(NamedTuple):
 class BaseTestCase(unittest.TestCase):
     """Custom testcase."""
 
+    def assertExactEqual(self, a: object, b: object) -> None:
+        """Assert that two objects are equal in type and value."""
+        self.assertEqual(type(a), type(b))
+        self.assertEqual(a, b)
+
     def assertIsSubclass(self, cls: type, supercls: type) -> None:
         """Assert that a class is a subclass of another."""
         self.assertTrue(issubclass(cls, supercls))

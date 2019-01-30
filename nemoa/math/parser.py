@@ -565,10 +565,12 @@ class Parser:
         while self.pos < len(self.expression):
             code = self.expression[self.pos]
             if code.isdecimal() or code == '.':
-                if string and code == '.':
+                if not string and code == '.':
                     string = '0'
+
                 string += code
                 self.pos += 1
+
                 try:
                     self.tokennumber = int(string)
                 except ValueError:
