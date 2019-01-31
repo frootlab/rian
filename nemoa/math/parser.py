@@ -58,7 +58,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import builtins
-#import collections
+import collections
 import dataclasses
 import itertools
 import math
@@ -92,20 +92,31 @@ class Grammar(set):
     """Base Container Class for Production Rules."""
 
     def get(self, tid: int) -> Dict[str, Rule]:
-        return {rule.name: rule for rule in self if rule.type == tid}
+        """Get production rules of given type.
+
+        Args:
+            tid: Integer parameter representing the type of the production
+                rules. Meaningfull types are given by module contants.
+
+        Returns:
+            OrderedDict containing Rules in reverse lexical order.
+
+        """
+        rules = iter((rule.name, rule) for rule in self if rule.type == tid)
+        return collections.OrderedDict(sorted(rules, reverse=True))
 
 class Python(Grammar):
-    """Python operators."""
+    """Python unary and binary operators."""
 
     def __init__(self) -> None:
         super().__init__()
 
         bool_and: AnyOp = lambda a, b: a and b
         bool_or: AnyOp = lambda a, b: a or b
-        pack: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
+        bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
-            Rule(BINARY_TYPE, ',', pack, 12), # Tuple packing
+            Rule(BINARY_TYPE, ',', bind, 12), # Tuple binding
             Rule(UNARY_TYPE, '+', operator.pos, 10), # Positive (Arithmetic)
             Rule(UNARY_TYPE, '-', operator.neg, 10), # Negation (Arithmetic)
             Rule(UNARY_TYPE, '~', operator.invert, 10), # Bitwise Inversion
@@ -133,7 +144,7 @@ class Python(Grammar):
             Rule(BINARY_TYPE, 'or', bool_or, 0)]) # Boolean OR
 
 class Builtin(Python):
-    """Python3 operators and builtin functions."""
+    """Python3 operators, builtin functions and builtin constants."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -556,7 +567,6 @@ class Parser:
                 pass
             else:
                 if self._error == '':
-                    print(f'{self._expression}')
                     self._raise_error(
                         self._pos, f"unknown character '{self._cur}'")
                 else:
@@ -649,15 +659,10 @@ class Parser:
         return False
 
     def _is_operator(self) -> bool:
-        binary = self.grammar.get(BINARY_TYPE)
-
-        # Get operator names in reverse sort order to give priority to longer
-        # matches, e.g. priorize matching of '>=' over '>'
-        names = sorted(binary, reverse=True)
-        for name in names:
+        for name, op in self.grammar.get(BINARY_TYPE).items():
             if not self._expression.startswith(name, self._pos):
                 continue
-            self._cur_priority = binary[name].priority
+            self._cur_priority = op.priority
             self._cur_name = name
             self._pos += len(name)
             return True
