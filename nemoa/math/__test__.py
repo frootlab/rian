@@ -28,31 +28,29 @@ class TestParser(ModuleTestCase):
     def test_Parser_eval(self) -> None:
         p = parser.Parser()
 
-        self.assertExactEqual(
-            p.eval("Engage1", variables={"Engage1": 2}), 2)
-        self.assertExactEqual(
-            p.eval("Engage1 + 1", variables={"Engage1": 1}), 2)
+        self.assertExactEqual(p.eval("Ee1", variables={"Ee1": 2}), 2)
+        self.assertExactEqual(p.eval("Ee1+1", variables={"Ee1": 1}), 2)
 
         f: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         self.assertExactEqual(f('1', {}), 1)
         self.assertExactEqual(f('a', {'a': 2}), 2)
-        self.assertExactEqual(f('2 * 3', {}), 6)
-        self.assertExactEqual(f('2 ^ x', {'x': 3}), 8.0)
-        self.assertEqual(f('x < 3', {'x': 3}), False)
-        self.assertEqual(f('x < 3', {'x': 2}), True)
-        self.assertEqual(f('x <= 3', {'x': 3}), True)
-        self.assertEqual(f('x <= 3', {'x': 4}), False)
-        self.assertEqual(f('x > 3', {'x': 4}), True)
-        self.assertEqual(f('x >= 3', {'x': 3}), True)
-        self.assertExactEqual(f('2 * x + 1', {'x': 3}), 7)
-        self.assertExactEqual(f('2 + 3 * x', {'x': 4}), 14)
-        self.assertExactEqual(f('(2 + 3) * x', {'x': 4}), 20)
+        self.assertExactEqual(f('2*3', {}), 6)
+        self.assertExactEqual(f('2^x', {'x': 3}), 8.0)
+        self.assertEqual(f('x<3', {'x': 3}), False)
+        self.assertEqual(f('x<3', {'x': 2}), True)
+        self.assertEqual(f('x<=3', {'x': 3}), True)
+        self.assertEqual(f('x<=3', {'x': 4}), False)
+        self.assertEqual(f('x>3', {'x': 4}), True)
+        self.assertEqual(f('x>=3', {'x': 3}), True)
+        self.assertExactEqual(f('2*x+1', {'x': 3}), 7)
+        self.assertExactEqual(f('2+3*x', {'x': 4}), 14)
+        self.assertExactEqual(f('(2+3)*x', {'x': 4}), 20)
         self.assertExactEqual(f('2-3^x', {'x': 4}), -79.0)
         self.assertExactEqual(f('-2-3^x', {'x': 4}), -83.0)
         self.assertExactEqual(f('-3^x', {'x': 4}), -81.0)
         self.assertExactEqual(f('(-3)^x', {'x': 4}), 81.0)
-        self.assertExactEqual(f('2*x + y', {'x': 4, 'y': 1}), 9)
+        self.assertExactEqual(f('2*x+y', {'x': 4, 'y': 1}), 9)
         self.assertEqual(f("x||y", {'x': 'hi ', 'y': 'u'}), 'hi u')
         self.assertEqual(f("'x'||'y'", {}), 'xy')
         self.assertEqual(f("'x'=='x'", {}), True)
@@ -63,11 +61,9 @@ class TestParser(ModuleTestCase):
         self.assertEqual(
             f("(a^2-b^2+1)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), False)
         self.assertEqual(f("concat('hi',' ','u')", {}), 'hi u')
-        self.assertExactEqual(f('if(a>b,5,6)', {'a':8,'b':3}),5)
-        self.assertExactEqual(f('if(a,b,c)', {'a':None,'b':1,'c':3}),3)
-
-        # List operations
-        self.assertEqual(f('a, 3', {'a': [1, 2]}), [1, 2, 3])
+        self.assertExactEqual(f('iif(a>b,5,6)', {'a':8,'b':3}),5)
+        self.assertExactEqual(f('iif(a,b,c)', {'a':None,'b':1,'c':3}),3)
+        self.assertEqual(f('a,3', {'a': [1, 2]}), [1, 2, 3])
 
         # Checking if '"a b"' could be a variable (using it in sql)
         self.assertEqual(f('"a b"*2', {'"a b"': 2}), 4)
@@ -83,20 +79,19 @@ class TestParser(ModuleTestCase):
     def test_Parser_subst(self) -> None:
         p = parser.Parser()
 
-        expr = p.parse('2 * x + 1').subst('x', '4 * x')
-        self.assertExactEqual(expr.eval({'x': 3}), 25)
+        expr = p.parse('2*x+1').subst('x', '4*x')
+        self.assertExactEqual(expr({'x': 3}), 25)
 
     def test_Parser_simplify(self) -> None:
         p = parser.Parser()
+        f: AnyOp = lambda expr, d: p.parse(expr).simplify(d)
 
-        expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
-        self.assertIn('x*3.141592', expr.to_string())
-        self.assertExactEqual(expr.eval({'x': 2}), 6.283185307179586)
-        self.assertEqual(
-            p.parse('x * (y * atan(1))').simplify({'y': 4}).variables, ['x'])
-
+        # expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
+        # self.assertIn('x*3.141592', expr.to_string())
+        self.assertExactEqual(f("x/((x+y))", {})({'x': 1, 'y': 1}), 0.5)
         self.assertExactEqual(
-            p.parse("x/((x+y))").simplify({}).eval({'x': 1, 'y': 1}), 0.5)
+            f('x*(y*atan(1))', {'y': 4})({'x': 2}), 6.283185307179586)
+        self.assertEqual(f('x*(y*atan(1))', {'y': 4}).variables, ['x'])
 
     def test_Parser_to_string(self) -> None:
         p = parser.Parser()

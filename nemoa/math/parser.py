@@ -50,7 +50,7 @@
 #  py-expression-eval is ported to Python and modified by: Vera Mazhuga
 #  <ctrl-alt-delete@live.com>, http://vero4ka.info/
 #
-"""Arithmetic Expression Parser."""
+"""Expression Parser."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -67,15 +67,90 @@ from typing import Any, Callable, Dict, List, Match, Optional, Union
 from nemoa.base import env, stype
 from nemoa.types import AnyOp
 
+UNARY_TYPE = 0
+BINARY_TYPE = 1
+FUNCTION_TYPE = 2
+CONSTANT_TYPE = 3
+VARIABLE_TYPE = 4
+
+#
+# Rules and Grammars
+#
+
+@dataclasses.dataclass(frozen=True)
+class Rule:
+    """Data Class for Production Rules."""
+
+    type: int
+    name: str
+    value: Any
+    priority: int = 0
+    builtin: bool = False
+
+class Grammar(set):
+    """Container Class for Production Rules."""
+
+    def list(self, tid: int) -> List[str]:
+        return [rule.name for rule in self if rule.type == tid]
+
+class Standard(Grammar):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        rnd: AnyOp = lambda x: random.uniform(0., x)
+        iif: AnyOp = lambda a, b, c: b if a else c
+        iand: AnyOp = lambda a, b: a and b
+        ior: AnyOp = lambda a, b: a or b
+        concat: AnyOp = lambda *args: ''.join(map(str, args))
+        append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
+
+        self.update([
+            Rule(UNARY_TYPE, '-', operator.neg, 0, True),
+            Rule(BINARY_TYPE, '+', operator.add, 2, True),
+            Rule(BINARY_TYPE, '-', operator.sub, 2, True),
+            Rule(BINARY_TYPE, '*', operator.mul, 3, True),
+            Rule(BINARY_TYPE, '/', operator.truediv, 4, True),
+            Rule(BINARY_TYPE, '%', operator.mod, 4, True),
+            Rule(BINARY_TYPE, '^', math.pow, 6, False), # nope
+            Rule(BINARY_TYPE, '||', concat, 1, False), # nope
+            Rule(BINARY_TYPE, '==', operator.eq, 1, True),
+            Rule(BINARY_TYPE, '!=', operator.ne, 1, True),
+            Rule(BINARY_TYPE, '>', operator.gt, 1, True),
+            Rule(BINARY_TYPE, '<', operator.lt, 1, True),
+            Rule(BINARY_TYPE, '>=', operator.ge, 1, True),
+            Rule(BINARY_TYPE, '<=', operator.le, 1, True),
+            Rule(BINARY_TYPE, ',', append, 0, True),
+            Rule(BINARY_TYPE, 'and', iand, 0, True),
+            Rule(BINARY_TYPE, 'or', ior, 0, True),
+            Rule(FUNCTION_TYPE, 'abs', abs, 0, True),
+            Rule(FUNCTION_TYPE, 'round', round, 0, True),
+            Rule(FUNCTION_TYPE, 'min', min, 0, True),
+            Rule(FUNCTION_TYPE, 'max', max, 0, True),
+            Rule(FUNCTION_TYPE, 'sin', math.sin, 0, False),
+            Rule(FUNCTION_TYPE, 'cos', math.cos, 0, False),
+            Rule(FUNCTION_TYPE, 'tan', math.tan, 0, False),
+            Rule(FUNCTION_TYPE, 'asin', math.asin, 0, False),
+            Rule(FUNCTION_TYPE, 'acos', math.acos, 0, False),
+            Rule(FUNCTION_TYPE, 'atan', math.atan, 0, False),
+            Rule(FUNCTION_TYPE, 'sqrt', math.sqrt, 0, False),
+            Rule(FUNCTION_TYPE, 'log', math.log, 0, False),
+            Rule(FUNCTION_TYPE, 'ceil', math.ceil, 0, False),
+            Rule(FUNCTION_TYPE, 'floor', math.floor, 0, False),
+            Rule(FUNCTION_TYPE, 'exp', math.exp, 0, False),
+            Rule(FUNCTION_TYPE, 'random', rnd, 0, False),
+            Rule(FUNCTION_TYPE, 'fac', math.factorial, 0, False),
+            Rule(FUNCTION_TYPE, 'pow', math.pow, 0, False),
+            Rule(FUNCTION_TYPE, 'atan2', math.atan2, 0, False), # nope
+            Rule(FUNCTION_TYPE, 'concat', concat, 0, False), # nope
+            Rule(FUNCTION_TYPE, 'iif', iif, 0, False), # nope
+            Rule(CONSTANT_TYPE, 'E', math.e, 0, False), # nope
+            Rule(CONSTANT_TYPE, 'PI', math.pi, 0, False), # nope
+        ])
+
 #
 # Tokens
 #
-
-NUMBER_TYPE = 0
-UNARY_TYPE = 1
-BINARY_TYPE = 2
-VARIABLE_TYPE = 3
-FUNCTION_TYPE = 4
 
 @dataclasses.dataclass(frozen=True)
 class Token:
@@ -85,14 +160,12 @@ class Token:
     value: Any = 0
 
     def __str__(self) -> str:
-        if self.type == NUMBER_TYPE:
-            return self.value
         if self.type in [UNARY_TYPE, BINARY_TYPE, VARIABLE_TYPE]:
-            if not isinstance(self.name, str):
-                raise ValueError() # TODO
-            return self.name
+            return str(self.name)
+        if self.type == CONSTANT_TYPE:
+            return self.value
         if self.type == FUNCTION_TYPE:
-            return 'CALL'
+            return getattr(self.name, '__name__', 'CALL')
         return 'Invalid Token'
 
 #
@@ -139,23 +212,23 @@ class Expression:
         stack = []
         tokens = []
         for token in self.tokens:
-            if token.type == NUMBER_TYPE:
+            if token.type == CONSTANT_TYPE:
                 stack.append(token)
             elif token.type == VARIABLE_TYPE and token.name in values:
                 value = values[token.name]
-                stack.append(Token(NUMBER_TYPE, 0, 0, value))
+                stack.append(Token(CONSTANT_TYPE, 0, 0, value))
             elif token.type == BINARY_TYPE and len(stack) > 1:
                 if not isinstance(token.name, str):
                     raise ValueError() #TODO
                 b, a = stack.pop(), stack.pop()
                 value = self.binary[token.name](a.value, b.value)
-                stack.append(Token(NUMBER_TYPE, 0, 0, value))
+                stack.append(Token(CONSTANT_TYPE, 0, 0, value))
             elif token.type == UNARY_TYPE and stack:
                 if not isinstance(token.name, str):
                     raise ValueError() # TODO
                 a = stack.pop()
                 value = self.unary[token.name](a.value)
-                stack.append(Token(NUMBER_TYPE, 0, 0, value))
+                stack.append(Token(CONSTANT_TYPE, 0, 0, value))
             else:
                 while stack:
                     tokens.append(stack.pop(0))
@@ -187,7 +260,7 @@ class Expression:
         values = values or {}
         stack = []
         for token in self.tokens:
-            if token.type == NUMBER_TYPE:
+            if token.type == CONSTANT_TYPE:
                 stack.append(token.value)
             elif token.type == BINARY_TYPE and isinstance(token.name, str):
                 b, a = stack.pop(), stack.pop()
@@ -222,7 +295,7 @@ class Expression:
     def to_string(self, python: bool = False) -> str:
         stack = []
         for token in self.tokens:
-            if token.type == NUMBER_TYPE:
+            if token.type == CONSTANT_TYPE:
                 if isinstance(token.value, str):
                     stack.append(repr(token.value))
                 else:
@@ -322,20 +395,7 @@ class Parser:
         append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.unary = {
-            '-': operator.neg,
-            'abs': abs,
-            'round': round,
-            'sin': math.sin,
-            'cos': math.cos,
-            'tan': math.tan,
-            'asin': math.asin,
-            'acos': math.acos,
-            'atan': math.atan,
-            'sqrt': math.sqrt,
-            'log': math.log,
-            'ceil': math.ceil,
-            'floor': math.floor,
-            'exp': math.exp}
+            '-': operator.neg}
 
         self.binary = {
             '+': operator.add,
@@ -356,6 +416,19 @@ class Parser:
             'or': ior}
 
         self.functions = {
+            'abs': abs,
+            'round': round,
+            'sin': math.sin,
+            'cos': math.cos,
+            'tan': math.tan,
+            'asin': math.asin,
+            'acos': math.acos,
+            'atan': math.atan,
+            'sqrt': math.sqrt,
+            'log': math.log,
+            'ceil': math.ceil,
+            'floor': math.floor,
+            'exp': math.exp,
             'random': rnd,
             'fac': math.factorial,
             'min': min,
@@ -363,7 +436,7 @@ class Parser:
             'pow': math.pow,
             'atan2': math.atan2, # nope
             'concat': concat, # nope
-            'if': iif} # nope
+            'iif': iif} # nope
 
         self.constants = {
             'E': math.e,
@@ -414,13 +487,13 @@ class Parser:
             elif self._is_number():
                 if expected and self.PRIMARY == 0:
                     self._raise_error(self._pos, 'unexpected number')
-                token = Token(NUMBER_TYPE, 0, 0, self._cur_value)
+                token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
                 tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_string():
                 if (expected & self.PRIMARY) == 0:
                     self._raise_error(self._pos, 'unexpected string')
-                token = Token(NUMBER_TYPE, 0, 0, self._cur_value)
+                token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
                 tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_left_parenth():
@@ -436,7 +509,7 @@ class Parser:
                     self.SIGN | self.NULLARY
             elif self._is_right_parenth():
                 if expected & self.NULLARY:
-                    token = Token(NUMBER_TYPE, 0, 0, [])
+                    token = Token(CONSTANT_TYPE, 0, 0, [])
                     tokens.append(token)
                 elif (expected & self.RPAREN) == 0:
                     self._raise_error(self._pos, 'unexpected \")\"')
@@ -453,7 +526,7 @@ class Parser:
             elif self._is_constant():
                 if (expected & self.PRIMARY) == 0:
                     self._raise_error(self._pos, 'unexpected constant')
-                consttoken = Token(NUMBER_TYPE, 0, 0, self._cur_value)
+                consttoken = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
                 tokens.append(consttoken)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_binary_operator():
