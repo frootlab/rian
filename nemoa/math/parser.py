@@ -89,7 +89,7 @@ class Rule:
     builtin: bool = False
 
 class Grammar(set):
-    """Base Container Class for Production Rules."""
+    """Base Class for Parser Grammars."""
 
     def get(self, tid: int) -> Dict[str, Rule]:
         """Get production rules of given type.
@@ -106,7 +106,7 @@ class Grammar(set):
         return collections.OrderedDict(sorted(rules, reverse=True))
 
 class Python(Grammar):
-    """Python unary and binary operators."""
+    """Grammar with Python standard operators."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -116,30 +116,44 @@ class Python(Grammar):
         bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
-            Rule(BINARY_TYPE, ',', bind, 12), # Tuple binding
-            Rule(UNARY_TYPE, '+', operator.pos, 10), # Positive (Arithmetic)
-            Rule(UNARY_TYPE, '-', operator.neg, 10), # Negation (Arithmetic)
-            Rule(UNARY_TYPE, '~', operator.invert, 10), # Bitwise Inversion
-            Rule(BINARY_TYPE, '**', operator.pow, 9), # Exponentiation
-            Rule(BINARY_TYPE, '@', operator.matmul, 8), # Matrix Multiplication
-            Rule(BINARY_TYPE, '/', operator.truediv, 8), # Division
-            Rule(BINARY_TYPE, '//', operator.floordiv, 8), # Floor Division
-            Rule(BINARY_TYPE, '%', operator.mod, 8), # Remainder
-            Rule(BINARY_TYPE, '*', operator.mul, 8), # Multiplication
-            Rule(BINARY_TYPE, '+', operator.add, 7), # Addition
-            Rule(BINARY_TYPE, '-', operator.sub, 7), # Subtraction
-            Rule(BINARY_TYPE, '>>', operator.rshift, 6), # Bitwise Right Shift
-            Rule(BINARY_TYPE, '<<', operator.lshift, 6), # Bitwise Left Shift
-            Rule(BINARY_TYPE, '&', operator.and_, 5), # Bitwise AND
-            Rule(BINARY_TYPE, '^', operator.xor, 4), # Bitwise XOR
-            Rule(BINARY_TYPE, '|', operator.or_, 3), # Bitwise OR
-            Rule(BINARY_TYPE, '==', operator.eq, 2), # Equality
-            Rule(BINARY_TYPE, '!=', operator.ne, 2), # Inequality
-            Rule(BINARY_TYPE, '>', operator.gt, 2), # Ordering
-            Rule(BINARY_TYPE, '<', operator.lt, 2), # Ordering
-            Rule(BINARY_TYPE, '>=', operator.ge, 2), # Ordering
-            Rule(BINARY_TYPE, '<=', operator.le, 2), # Ordering
-            Rule(BINARY_TYPE, 'in', operator.contains, 2), # Containment Test
+            Rule(BINARY_TYPE, ',', bind, 13), # Sequence binding
+
+            # Unary Operators
+            Rule(UNARY_TYPE, '+', operator.pos, 11), # Positive (Arithmetic)
+            Rule(UNARY_TYPE, '-', operator.neg, 11), # Negation (Arithmetic)
+            Rule(UNARY_TYPE, '~', operator.invert, 11), # Bitwise Inversion
+
+            # Binary Arithmetic Operators
+            Rule(BINARY_TYPE, '**', operator.pow, 10), # Exponentiation
+            Rule(BINARY_TYPE, '@', operator.matmul, 9), # Matrix Multiplication
+            Rule(BINARY_TYPE, '/', operator.truediv, 9), # Division
+            Rule(BINARY_TYPE, '//', operator.floordiv, 9), # Floor Division
+            Rule(BINARY_TYPE, '%', operator.mod, 9), # Remainder
+            Rule(BINARY_TYPE, '*', operator.mul, 9), # Multiplication
+            Rule(BINARY_TYPE, '+', operator.add, 8), # Addition
+            Rule(BINARY_TYPE, '-', operator.sub, 8), # Subtraction
+
+            # Binary Bitwise Operators
+            Rule(BINARY_TYPE, '>>', operator.rshift, 7), # Bitwise Right Shift
+            Rule(BINARY_TYPE, '<<', operator.lshift, 7), # Bitwise Left Shift
+            Rule(BINARY_TYPE, '&', operator.and_, 6), # Bitwise AND
+            Rule(BINARY_TYPE, '^', operator.xor, 5), # Bitwise XOR
+            Rule(BINARY_TYPE, '|', operator.or_, 4), # Bitwise OR
+            Rule(BINARY_TYPE, '==', operator.eq, 3), # Equality
+            Rule(BINARY_TYPE, '!=', operator.ne, 3), # Inequality
+
+            # Binary Ordering Operators
+            Rule(BINARY_TYPE, '>', operator.gt, 3), # Greater
+            Rule(BINARY_TYPE, '<', operator.lt, 3), # Lower
+            Rule(BINARY_TYPE, '>=', operator.ge, 3), # Greater or Equal
+            Rule(BINARY_TYPE, '<=', operator.le, 3), # Lower or Equal
+
+            # Containment Operators
+            Rule(BINARY_TYPE, 'is', operator.is_, 3), # Identity test
+            Rule(BINARY_TYPE, 'in', operator.contains, 3), # Containment Test
+
+            # Boolean Operators
+            Rule(UNARY_TYPE, 'not', operator.not_, 2), # Boolean NOT
             Rule(BINARY_TYPE, 'and', bool_and, 1), # Boolean AND
             Rule(BINARY_TYPE, 'or', bool_or, 0)]) # Boolean OR
 
@@ -151,16 +165,26 @@ class Builtin(Python):
 
         builtin = []
         for name in dir(builtins):
+            # Filter protected Attributes
             if name.startswith('_'):
                 continue
+
+            # If the Attribute is callable, defined within builtins and not an
+            # expteption append it as function to the grammar.
             obj = getattr(builtins, name)
-            if isinstance(obj, type) and issubclass(obj, BaseException):
+            if callable(obj):
+                if not hasattr(obj, '__module__'):
+                    continue
+                if not obj.__module__ == builtins.__name__:
+                    continue
+                if isinstance(obj, type) and issubclass(obj, BaseException):
+                    continue
+                builtin.append(Rule(FUNCTION_TYPE, name, obj, 12))
                 continue
-            if not callable(obj):
-                continue
-            if not obj.__module__ == builtins.__name__:
-                continue
-            builtin.append(Rule(FUNCTION_TYPE, name, obj, 11))
+
+            # Append non-callables Attributes as constants to the grammar.
+            builtin.append(Rule(CONSTANT_TYPE, name, obj))
+
         self.update(builtin)
 
 class Standard(Grammar):
@@ -477,92 +501,90 @@ class Parser:
 
         operators: List[Token] = []
         tokens: List[Token] = []
-        expected = self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
+        expect = self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
         noperators = 0
 
         while self._pos < len(self._expression):
             if self._is_operator():
-                if self._is_sign() and expected & self.SIGN:
+                if self._is_sign() and expect & self.SIGN:
                     if self._is_minus():
                         self._cur_priority = 5
                         self._cur_name = '-'
                         noperators += 1
                         self._add_operator(tokens, operators, UNARY_TYPE)
-                    expected = \
+                    expect = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
                 elif self._is_comment():
                     pass
                 else:
-                    if expected and self.OPERATOR == 0:
-                        self._raise_error(self._pos, 'unexpected operator')
+                    if expect and self.OPERATOR == 0:
+                        self._raise_error(self._pos, 'unexpect operator')
                     noperators += 2
                     self._add_operator(tokens, operators, BINARY_TYPE)
-                    expected = \
+                    expect = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_number():
-                if expected and self.PRIMARY == 0:
-                    self._raise_error(self._pos, 'unexpected number')
-                token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
-                tokens.append(token)
-                expected = self.OPERATOR | self.RPAREN | self.COMMA
+                if expect and self.PRIMARY == 0:
+                    self._raise_error(self._pos, 'unexpect number')
+                tokens.append(Token(CONSTANT_TYPE, 0, 0, self._cur_value))
+                expect = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_string():
-                if (expected & self.PRIMARY) == 0:
-                    self._raise_error(self._pos, 'unexpected string')
-                token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
-                tokens.append(token)
-                expected = self.OPERATOR | self.RPAREN | self.COMMA
+                if (expect & self.PRIMARY) == 0:
+                    self._raise_error(self._pos, 'unexpect string')
+                tokens.append(Token(CONSTANT_TYPE, 0, 0, self._cur_value))
+                expect = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_left_parenth():
-                if (expected & self.LPAREN) == 0:
-                    self._raise_error(self._pos, 'unexpected \"(\"')
-                if expected & self.CALL:
+                if (expect & self.LPAREN) == 0:
+                    self._raise_error(self._pos, 'unexpect \"(\"')
+                if expect & self.CALL:
                     noperators += 2
                     self._cur_priority = -2
                     self._cur_name = -1
                     self._add_operator(tokens, operators, FUNCTION_TYPE)
-                expected = \
+                expect = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | \
                     self.SIGN | self.NULLARY
             elif self._is_right_parenth():
-                if expected & self.NULLARY:
+                if expect & self.NULLARY:
                     token = Token(CONSTANT_TYPE, 0, 0, [])
                     tokens.append(token)
-                elif (expected & self.RPAREN) == 0:
-                    self._raise_error(self._pos, 'unexpected \")\"')
-                expected = \
+                elif (expect & self.RPAREN) == 0:
+                    self._raise_error(self._pos, 'unexpect \")\"')
+                expect = \
                     self.OPERATOR | self.RPAREN | self.COMMA | \
                     self.LPAREN | self.CALL
             elif self._is_comma():
-                if (expected & self.COMMA) == 0:
-                    self._raise_error(self._pos, 'unexpected \",\"')
+                if (expect & self.COMMA) == 0:
+                    self._raise_error(self._pos, 'unexpect \",\"')
                 self._add_operator(tokens, operators, BINARY_TYPE)
                 noperators += 2
-                expected = \
+                expect = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_constant():
-                if (expected & self.PRIMARY) == 0:
-                    self._raise_error(self._pos, 'unexpected constant')
+                if (expect & self.PRIMARY) == 0:
+                    self._raise_error(self._pos, 'unexpect constant')
                 token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
                 tokens.append(token)
-                expected = self.OPERATOR | self.RPAREN | self.COMMA
+                expect = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_binary_operator():
-                if (expected & self.FUNCTION) == 0:
-                    self._raise_error(self._pos, 'unexpected function')
+                if (expect & self.FUNCTION) == 0:
+                    self._raise_error(self._pos, 'unexpect function')
                 self._add_operator(tokens, operators, BINARY_TYPE)
                 noperators += 2
-                expected = self.LPAREN
+                expect = self.LPAREN
             elif self._is_unary_operator():
-                if (expected & self.FUNCTION) == 0:
-                    self._raise_error(self._pos, 'unexpected function')
+                if (expect & self.FUNCTION) == 0:
+                    self._raise_error(self._pos, 'unexpect function')
                 self._add_operator(tokens, operators, UNARY_TYPE)
                 noperators += 1
-                expected = self.LPAREN
+                expect = self.LPAREN
             elif self._is_variable():
-                if (expected & self.PRIMARY) == 0:
-                    self._raise_error(self._pos, 'unexpected variable')
-                token = Token(VARIABLE_TYPE, self._cur_name, 0, 0)
-                tokens.append(token)
-                expected = self.OPERATOR | self.RPAREN | \
-                    self.COMMA | self.LPAREN | self.CALL
+                if (expect & self.PRIMARY) == 0:
+                    self._raise_error(
+                        self._pos, f"unexpect variable '{self._cur_name}'")
+                tokens.append(Token(VARIABLE_TYPE, self._cur_name, 0, 0))
+                expect = self.OPERATOR | self.RPAREN | self.COMMA \
+                    | self.LPAREN | self.CALL
             elif self._is_space():
                 pass
             else:
