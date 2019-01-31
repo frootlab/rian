@@ -20,25 +20,19 @@ import fnmatch
 import getpass
 import locale
 import os
-from pathlib import Path, PurePath
+import pathlib
 import platform
 import re
 import shutil
 import string
 import sys
 import tempfile
-
-try:
-    import appdirs
-except ImportError as err:
-    raise ImportError(
-        "requires package appdirs: "
-        "https://pypi.org/project/appdirs/") from err
-
+from typing import Any, Iterable, Sequence, Union
+import appdirs
 from nemoa.base import check, pkg
-from nemoa.types import Any, Iterable, IterAny, OptStrDict
+from nemoa.types import  IterAny, OptStrDict
 from nemoa.types import PathLikeList, OptStr, OptStrOrBool, OptPathLike
-from nemoa.types import PathLike, StrDict, Sequence, StrDictOfPaths, Union
+from nemoa.types import PathLike, StrDict, StrDictOfPaths
 
 #
 # Structural Types
@@ -166,7 +160,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     # is taken. If name is not given, then use the name of the current top level
     # module.
     filepath = filepath or pkg.get_root().__file__
-    text = Path(filepath).read_text()
+    text = pathlib.Path(filepath).read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
     pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
@@ -184,7 +178,7 @@ def update_vars(filepath: OptPathLike = None) -> None:
     # Update globals
     globals()['_vars'] = info
 
-def get_dir(dirname: str, *args: Any, **kwds: Any) -> Path:
+def get_dir(dirname: str, *args: Any, **kwds: Any) -> pathlib.Path:
     """Get application specific environmental directory by name.
 
     This function returns application specific system directories by platform
@@ -290,18 +284,18 @@ def update_dirs(
         'user_cache_dir', 'user_config_dir', 'user_data_dir',
         'user_log_dir', 'site_config_dir', 'site_data_dir']
     for dirname in dirnames:
-        dirs[dirname] = Path(getattr(app_dirs, dirname))
+        dirs[dirname] = pathlib.Path(getattr(app_dirs, dirname))
 
     # Get distribution directories from distutils
-    path = Path(sysconfig.get_python_lib(), appname)
+    path = pathlib.Path(sysconfig.get_python_lib(), appname)
     dirs['site_package_dir'] = path
 
     # Tempdir from module tempfile
-    tempdir = Path(tempfile.gettempdir())
+    tempdir = pathlib.Path(tempfile.gettempdir())
     dirs['site_temp_dir'] = tempdir
 
     # Get current package directories from top level module
-    path = Path(pkg.get_root().__file__).parent
+    path = pathlib.Path(pkg.get_root().__file__).parent
     dirs['package_dir'] = path
     dirs['package_data_dir'] = path / 'data'
     dirs['package_temp_dir'] = tempdir / appname
@@ -311,20 +305,20 @@ def update_dirs(
 
     globals()['_dirs'] = dirs
 
-def get_temp_file(suffix: OptStr = None) -> Path:
+def get_temp_file(suffix: OptStr = None) -> pathlib.Path:
     """Get path to temporary file within the package temp directory."""
     apptemp = get_dir('package_temp_dir')
     pathname = tempfile.NamedTemporaryFile(dir=apptemp).name # type: ignore
-    filepath = Path(pathname)
+    filepath = pathlib.Path(pathname)
     if suffix:
         return filepath.with_suffix(suffix)
     return filepath
 
-def get_temp_dir() -> Path:
+def get_temp_dir() -> pathlib.Path:
     """Get path to temporary file within the package temp directory."""
     apptemp = get_dir('package_temp_dir')
     pathname = tempfile.TemporaryDirectory(dir=apptemp).name # type: ignore
-    dirpath = Path(pathname)
+    dirpath = pathlib.Path(pathname)
     return dirpath
 
 def get_encoding() -> str:
@@ -385,23 +379,23 @@ def get_username() -> str:
     """
     return getpass.getuser()
 
-def get_cwd() -> Path:
+def get_cwd() -> pathlib.Path:
     """Get path of current working directory.
 
     Returns:
         Path of current working directory.
 
     """
-    return Path.cwd()
+    return pathlib.Path.cwd()
 
-def get_home() -> Path:
+def get_home() -> pathlib.Path:
     """Get path of current users home directory.
 
     Returns:
         Path of current users home directory.
 
     """
-    return Path.home()
+    return pathlib.Path.home()
 
 def clear_filename(fname: str) -> str:
     r"""Clear filename from invalid characters.
@@ -442,8 +436,8 @@ def match_paths(paths: PathLikeList, pattern: str) -> PathLikeList:
 
     """
     # Normalize path and pattern representation using POSIX standard
-    mapping = {PurePath(path).as_posix(): path for path in paths}
-    pattern = PurePath(pattern).as_posix()
+    mapping = {pathlib.PurePath(path).as_posix(): path for path in paths}
+    pattern = pathlib.PurePath(pattern).as_posix()
 
     # Match normalized paths with normalized pattern
     names = list(mapping.keys())
@@ -452,7 +446,7 @@ def match_paths(paths: PathLikeList, pattern: str) -> PathLikeList:
     # Return original paths
     return [mapping[name] for name in matches]
 
-def join_path(*args: NestPath) -> Path:
+def join_path(*args: NestPath) -> pathlib.Path:
     r"""Join nested iterable path-like structure to single path object.
 
     Args:
@@ -480,7 +474,7 @@ def join_path(*args: NestPath) -> Path:
 
     # Create path from flat structure
     try:
-        path = Path(*flat)
+        path = pathlib.Path(*flat)
     except TypeError as err:
         raise TypeError(
             "the tokens of nested paths require to be of types "
@@ -490,7 +484,7 @@ def join_path(*args: NestPath) -> Path:
 
 def expand(
         *args: NestPath, udict: OptStrDict = None,
-        envdirs: bool = True) -> Path:
+        envdirs: bool = True) -> pathlib.Path:
     r"""Expand path variables.
 
     Args:
@@ -532,14 +526,14 @@ def expand(
             if '%' + key + '%' not in str(path):
                 continue
             try:
-                path = Path(str(path).replace('%' + key + '%', val))
+                path = pathlib.Path(str(path).replace('%' + key + '%', val))
             except TypeError:
                 del pvars[key]
             update = True
         i += 1
         if i > _recursion_limit:
             raise RecursionError('cyclic dependency in variables detected')
-        path = Path(path)
+        path = pathlib.Path(path)
 
     # Expand unix style home path '~'
     if envdirs:
@@ -672,7 +666,7 @@ def copytree(source: NestPath, target: NestPath) -> None:
 
     """
     # Recursive copy function, that allows existing files
-    def copy(source: Path, target: Path) -> None:
+    def copy(source: pathlib.Path, target: pathlib.Path) -> None:
         if source.is_dir():
             if not target.is_dir():
                 target.mkdir()
@@ -743,7 +737,7 @@ def touch(
     filepath = expand(path)
 
     # Check type of 'filepath'
-    if not isinstance(filepath, Path):
+    if not isinstance(filepath, pathlib.Path):
         return False
 
     # Check if directory exists and optionally create it

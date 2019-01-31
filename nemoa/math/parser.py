@@ -64,10 +64,8 @@ import operator
 import random
 import re
 from typing import Any, Callable, Dict, List, Match, Optional, Union
-from nemoa.base import stype
+from nemoa.base import env, stype
 from nemoa.types import AnyOp
-
-OptVars = Optional[stype.Frame]
 
 #
 # Tokens
@@ -637,10 +635,11 @@ class Parser:
 
     def _is_unary_operator(self) -> bool:
         string = ''
-        for i in range(self._pos, len(self._expression)):
-            c = self._expression[i]
+        for i, c in enumerate(self._expression[self._pos:]):
             if c.upper() == c.lower():
-                if i == self._pos or (c != '_' and (c < '0' or c > '9')):
+                if i == self._pos:
+                    break
+                if c != '_' and (c < '0' or c > '9'):
                     break
             string += c
         if string and string in self.unary:
@@ -652,10 +651,11 @@ class Parser:
 
     def _is_binary_operator(self) -> bool:
         string = ''
-        for i in range(self._pos, len(self._expression)):
-            c = self._expression[i]
+        for i, c in enumerate(self._expression[self._pos:]):
             if c.upper() == c.lower():
-                if i == self._pos or (c != '_' and (c < '0' or c > '9')):
+                if i == self._pos:
+                    break
+                if c != '_' and (c < '0' or c > '9'):
                     break
             string += c
         if string and string in self.binary:
@@ -671,7 +671,7 @@ class Parser:
         for i in range(self._pos, len(self._expression)):
             c = self._expression[i]
             if not quoted and (c.lower() == c.upper()):
-                if not (c in '_."') and (c < '0' or c > '9'):
+                if (c not in '_."') and (c < '0' or c > '9'):
                     break
                 if i == self._pos and c != '"':
                     break
@@ -695,40 +695,18 @@ class Parser:
 
     def _raise_error(self, column: int, msg: str) -> None:
         self._success = False
-        self._error = 'parse error [column ' + str(column) + ']: ' + msg
-        raise Exception(self._error)
+        self._error = f'parse error [column {column}]: {msg}'
+        raise ValueError(self._error)
 
     def _unescape(self, string: str, pos: int) -> str:
-        buffer = []
-        escaping = False
-        transform = {
-            "'": "'", '\\': '\\', '/': '/',
-            'b': '\b', 'f': '\f', 'n': '\n', 'r': '\r', 't': '\t'}
-
-        for i, c in enumerate(string):
-            if escaping:
-                if c in transform:
-                    buffer.append(transform[c])
-                    break
-                if c == 'u':
-                    # interpret the following 4 characters
-                    # as the hex of the unicode code point
-                    buffer.append(chr(int(string[i + 1: i + 5], 16)))
-                    i += 4
-                    break
-                self._raise_error(
-                    pos + i, 'illegal escape sequence: \'\\' + c + '\'')
-                escaping = False
-            elif c == '\\':
-                escaping = True
-            else:
-                buffer.append(c)
-
-        return ''.join(buffer)
+        encoding = env.get_var('encoding') or 'UTF-8'
+        return string.encode(encoding).decode('unicode_escape')
 
 #
 # Workarounds
 #
+
+OptVars = Optional[stype.Frame]
 
 def parse(expr: str, variables: OptVars = None) -> Expression:
     if variables:
