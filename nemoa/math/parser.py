@@ -90,8 +90,8 @@ class Rule:
 class Grammar(set):
     """Container Class for Production Rules."""
 
-    def list(self, tid: int) -> List[str]:
-        return [rule.name for rule in self if rule.type == tid]
+    def get(self, tid: int) -> Dict[str, Rule]:
+        return {rule.name: rule for rule in self if rule.type == tid}
 
 class Standard(Grammar):
 
@@ -178,25 +178,19 @@ Functions = Dict[str, Callable[..., Any]]
 
 class Expression:
     tokens: List[Token]
-    unary: Unary
-    binary: Binary
-    functions: Functions
+    grammar: Grammar
 
     def __init__(
             self, expression: Optional[str] = None,
             tokens: Optional[List[Token]] = None,
-            operators: Optional[object] = None) -> None:
+            grammar: Optional[Grammar] = None) -> None:
         if expression:
             expr = Parser().parse(expression)
             self.tokens = expr.tokens
-            self.unary = expr.unary
-            self.binary = expr.binary
-            self.functions = expr.functions
-        elif tokens and operators:
+            self.grammar = expr.grammar
+        elif tokens and grammar:
             self.tokens = tokens
-            self.unary = getattr(operators, 'unary', {})
-            self.binary = getattr(operators, 'binary', {})
-            self.functions = getattr(operators, 'functions', {})
+            self.grammar = grammar
 
     def __call__(self, *args: Any) -> Any:
         return self.eval(*args)
@@ -211,6 +205,8 @@ class Expression:
         values = values or {}
         stack = []
         tokens = []
+        unary = self.grammar.get(UNARY_TYPE)
+        binary = self.grammar.get(BINARY_TYPE)
         for token in self.tokens:
             if token.type == CONSTANT_TYPE:
                 stack.append(token)
@@ -221,13 +217,13 @@ class Expression:
                 if not isinstance(token.name, str):
                     raise ValueError() #TODO
                 b, a = stack.pop(), stack.pop()
-                value = self.binary[token.name](a.value, b.value)
+                value = binary[token.name].value(a.value, b.value)
                 stack.append(Token(CONSTANT_TYPE, 0, 0, value))
             elif token.type == UNARY_TYPE and stack:
                 if not isinstance(token.name, str):
                     raise ValueError() # TODO
                 a = stack.pop()
-                value = self.unary[token.name](a.value)
+                value = unary[token.name].value(a.value)
                 stack.append(Token(CONSTANT_TYPE, 0, 0, value))
             else:
                 while stack:
@@ -235,7 +231,7 @@ class Expression:
                 tokens.append(token)
         while stack:
             tokens.append(stack.pop(0))
-        return Expression(tokens=tokens, operators=self)
+        return Expression(tokens=tokens, grammar=self.grammar)
 
     def subst(
             self, variable: str,
@@ -254,27 +250,30 @@ class Expression:
             for etok in expr.tokens:
                 repl = Token(etok.type, etok.name, etok.priority, etok.value)
                 tokens.append(repl)
-        return Expression(tokens=tokens, operators=self)
+        return Expression(tokens=tokens, grammar=self.grammar)
 
     def eval(self, values: Optional[dict] = None) -> Any:
         values = values or {}
         stack = []
+        unary = self.grammar.get(UNARY_TYPE)
+        binary = self.grammar.get(BINARY_TYPE)
+        functions = self.grammar.get(FUNCTION_TYPE)
         for token in self.tokens:
             if token.type == CONSTANT_TYPE:
                 stack.append(token.value)
             elif token.type == BINARY_TYPE and isinstance(token.name, str):
                 b, a = stack.pop(), stack.pop()
-                stack.append(self.binary[token.name](a, b))
+                stack.append(binary[token.name].value(a, b))
             elif token.type == VARIABLE_TYPE and isinstance(token.name, str):
                 if token.name in values:
                     stack.append(values[token.name])
-                elif token.name in self.functions:
-                    stack.append(self.functions[token.name])
+                elif token.name in functions:
+                    stack.append(functions[token.name].value)
                 else:
                     raise Exception(f"undefined variable '{token.name}'")
             elif token.type == UNARY_TYPE and isinstance(token.name, str):
                 a = stack.pop()
-                stack.append(self.unary[token.name](a))
+                stack.append(unary[token.name].value(a))
             elif token.type == FUNCTION_TYPE:
                 a = stack.pop()
                 func = stack.pop()
@@ -351,7 +350,8 @@ class Expression:
 
     @property
     def variables(self) -> List[str]:
-        return [sym for sym in self.symbols if sym not in self.functions]
+        functions = self.grammar.get(FUNCTION_TYPE)
+        return [sym for sym in self.symbols if sym not in functions]
 
 class Parser:
     PRIMARY = 1
@@ -364,9 +364,7 @@ class Parser:
     CALL = 128
     NULLARY = 256
 
-    unary: Unary
-    binary: Binary
-    functions: Functions
+    grammar: Grammar
 
     _expression: str
     _success: bool
@@ -377,7 +375,9 @@ class Parser:
     _cur_name: Union[str, int]
     _tmp_priority: int
 
-    def __init__(self) -> None:
+    def __init__(self, grammar: Optional[Grammar] = None) -> None:
+        self.grammar = grammar or Standard()
+
         self._expression = ''
         self._success = False
         self._error = ''
@@ -386,61 +386,6 @@ class Parser:
         self._cur_value = 0
         self._cur_priority = 0
         self._tmp_priority = 0
-
-        rnd: AnyOp = lambda x: random.uniform(0., x)
-        iif: AnyOp = lambda a, b, c: b if a else c
-        iand: AnyOp = lambda a, b: a and b
-        ior: AnyOp = lambda a, b: a or b
-        concat: AnyOp = lambda *args: ''.join(map(str, args))
-        append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
-
-        self.unary = {
-            '-': operator.neg}
-
-        self.binary = {
-            '+': operator.add,
-            '-': operator.sub,
-            '*': operator.mul,
-            '/': operator.truediv,
-            '%': operator.mod,
-            '^': math.pow, # nope
-            ',': append,
-            '||': concat, # nope
-            '==': operator.eq,
-            '!=': operator.ne,
-            '>': operator.gt,
-            '<': operator.lt,
-            '>=': operator.ge,
-            '<=': operator.le,
-            'and': iand,
-            'or': ior}
-
-        self.functions = {
-            'abs': abs,
-            'round': round,
-            'sin': math.sin,
-            'cos': math.cos,
-            'tan': math.tan,
-            'asin': math.asin,
-            'acos': math.acos,
-            'atan': math.atan,
-            'sqrt': math.sqrt,
-            'log': math.log,
-            'ceil': math.ceil,
-            'floor': math.floor,
-            'exp': math.exp,
-            'random': rnd,
-            'fac': math.factorial,
-            'min': min,
-            'max': max,
-            'pow': math.pow,
-            'atan2': math.atan2, # nope
-            'concat': concat, # nope
-            'iif': iif} # nope
-
-        self.constants = {
-            'E': math.e,
-            'PI': math.pi}
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}()'
@@ -526,8 +471,8 @@ class Parser:
             elif self._is_constant():
                 if (expected & self.PRIMARY) == 0:
                     self._raise_error(self._pos, 'unexpected constant')
-                consttoken = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
-                tokens.append(consttoken)
+                token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
+                tokens.append(token)
                 expected = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_binary_operator():
                 if (expected & self.FUNCTION) == 0:
@@ -544,16 +489,17 @@ class Parser:
             elif self._is_variable():
                 if (expected & self.PRIMARY) == 0:
                     self._raise_error(self._pos, 'unexpected variable')
-                vartoken = Token(VARIABLE_TYPE, self._cur_name, 0, 0)
-                tokens.append(vartoken)
-                expected = \
-                    self.OPERATOR | self.RPAREN | \
+                token = Token(VARIABLE_TYPE, self._cur_name, 0, 0)
+                tokens.append(token)
+                expected = self.OPERATOR | self.RPAREN | \
                     self.COMMA | self.LPAREN | self.CALL
             elif self._is_space():
                 pass
             else:
                 if self._error == '':
-                    self._raise_error(self._pos, 'unknown character')
+                    print(f'{self._expression}')
+                    self._raise_error(
+                        self._pos, f"unknown character '{self._cur}'")
                 else:
                     self._raise_error(self._pos, self._error)
         if self._tmp_priority < 0 or self._tmp_priority >= 10:
@@ -563,7 +509,7 @@ class Parser:
         if noperators + 1 != len(tokens):
             self._raise_error(self._pos, 'parity')
 
-        return Expression(tokens=tokens, operators=self)
+        return Expression(tokens=tokens, grammar=self.grammar)
 
     def eval(self, expression: str, variables: Optional[dict] = None) -> Any:
         return self.parse(expression).eval(variables)
@@ -627,46 +573,35 @@ class Parser:
 
     def _is_constant(self) -> bool:
         expr = self._expression
-        for name, value in self.constants.items():
+        constants = self.grammar.get(CONSTANT_TYPE)
+        for name, const in constants.items():
             start = self._pos
             end = start + len(name)
             if name != expr[start:end]:
                 continue
             if len(expr) <= end:
-                self._cur_value = value
+                self._cur_value = const.value
                 self._pos = end
                 return True
             if not expr[end].isalnum() and expr[end] != "_":
-                self._cur_value = value
+                self._cur_value = const.value
                 self._pos = end
                 return True
         return False
 
     def _is_operator(self) -> bool:
-        ops = [
-            ('+', 2, '+'),
-            ('-', 2, '-'),
-            ('*', 3, '*'),
-            ('/', 4, '/'),
-            ('%', 4, '%'),
-            ('^', 6, '^'),
-            ('||', 1, '||'), # nope
-            ('==', 1, '=='),
-            ('!=', 1, '!='),
-            ('<=', 1, '<='),
-            ('>=', 1, '>='),
-            ('<', 1, '<'),
-            ('>', 1, '>'),
-            ('and', 0, 'and'),
-            ('or', 0, 'or')]
+        binary = self.grammar.get(BINARY_TYPE)
 
-        for name, priority, index in ops:
-            if self._expression.startswith(name, self._pos):
-                self._cur_priority = priority
-                self._cur_name = index
-                self._pos += len(name)
-                return True
-
+        # Get operator names in reverse sort order to give priority to longer
+        # matches, e.g. priorize matching of '>=' over '>'
+        names = sorted(binary, reverse = True)
+        for name in names:
+            if not self._expression.startswith(name, self._pos):
+                continue
+            self._cur_priority = binary[name].priority
+            self._cur_name = name
+            self._pos += len(name)
+            return True
         return False
 
     def _is_sign(self) -> bool:
@@ -715,7 +650,7 @@ class Parser:
                 if c != '_' and (c < '0' or c > '9'):
                     break
             string += c
-        if string and string in self.unary:
+        if string and string in self.grammar.get(UNARY_TYPE):
             self._cur_name = string
             self._cur_priority = 7
             self._pos += len(string)
@@ -731,7 +666,7 @@ class Parser:
                 if c != '_' and (c < '0' or c > '9'):
                     break
             string += c
-        if string and string in self.binary:
+        if string and string in self.grammar.get(BINARY_TYPE):
             self._cur_name = string
             self._cur_priority = 7
             self._pos += len(string)
