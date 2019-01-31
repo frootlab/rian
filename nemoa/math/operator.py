@@ -12,9 +12,8 @@ import itertools
 import operator
 from typing import NamedTuple, List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable
-from nemoa.base import abc, check, stype
+from nemoa.base import abc, check, parser, stype
 from nemoa.errors import InvalidTypeError
-from nemoa.math import parser
 from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, SeqHom
 from nemoa.types import SeqOp, AnyOp, StrList, StrTuple
 from nemoa.base.stype import FieldID, Frame
