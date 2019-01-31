@@ -69,21 +69,21 @@ from typing import Any, Callable, Dict, List, Match, Optional, Union
 from nemoa.base import env, stype
 from nemoa.types import AnyOp
 
-UNARY_TYPE = 0
-BINARY_TYPE = 1
-FUNCTION_TYPE = 2
-CONSTANT_TYPE = 3
-VARIABLE_TYPE = 4
+UNARY = 0
+BINARY = 1
+FUNCTION = 2
+CONSTANT = 3
+VARIABLE = 4
 
 #
-# Rules and Grammars
+# Symbols and Grammars
 #
 
 @dataclasses.dataclass(frozen=True)
-class Rule:
-    """Data Class for Production Rules."""
+class Symbol:
+    """Data Class for Symbols."""
     type: int
-    name: str
+    key: str
     value: Any
     priority: int = 0
     builtin: bool = False
@@ -91,22 +91,27 @@ class Rule:
 class Grammar(set):
     """Base Class for Parser Grammars."""
 
-    def get(self, tid: int) -> Dict[str, Rule]:
-        """Get production rules of given type.
+    def get(self, tid: int) -> Dict[str, Symbol]:
+        """Get symbols of given type.
 
         Args:
-            tid: Integer parameter representing the type of the production
-                rules. Meaningfull types are given by module contants.
+            tid: Integer parameter representing the type of symbols. Meaningfull
+                types are given by module contants.
 
         Returns:
-            OrderedDict containing Rules in reverse lexical order.
+            OrderedDict containing Symbols in reverse lexical order to
+            prioritize symbols with greater lenght.
 
         """
-        rules = iter((rule.name, rule) for rule in self if rule.type == tid)
-        return collections.OrderedDict(sorted(rules, reverse=True))
+        symbols = iter((sym.key, sym) for sym in self if sym.type == tid)
+        return collections.OrderedDict(sorted(symbols, reverse=True))
 
-class Python(Grammar):
-    """Grammar with Python standard operators."""
+class PyCore(Grammar):
+    """Python Expression Symbols.
+
+    https://docs.python.org/3/reference/expressions.html
+
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -116,49 +121,47 @@ class Python(Grammar):
         bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
-            Rule(BINARY_TYPE, ',', bind, 13), # Sequence binding
+            Symbol(BINARY, ',', bind, 13), # Sequence binding
 
             # Unary Operators
-            Rule(UNARY_TYPE, '+', operator.pos, 11), # Positive (Arithmetic)
-            Rule(UNARY_TYPE, '-', operator.neg, 11), # Negation (Arithmetic)
-            Rule(UNARY_TYPE, '~', operator.invert, 11), # Bitwise Inversion
+            Symbol(UNARY, '+', operator.pos, 11), # Positive (Arithmetic)
+            Symbol(UNARY, '-', operator.neg, 11), # Negation (Arithmetic)
+            Symbol(UNARY, '~', operator.invert, 11), # Bitwise Inversion
 
             # Binary Arithmetic Operators
-            Rule(BINARY_TYPE, '**', operator.pow, 10), # Exponentiation
-            Rule(BINARY_TYPE, '@', operator.matmul, 9), # Matrix Multiplication
-            Rule(BINARY_TYPE, '/', operator.truediv, 9), # Division
-            Rule(BINARY_TYPE, '//', operator.floordiv, 9), # Floor Division
-            Rule(BINARY_TYPE, '%', operator.mod, 9), # Remainder
-            Rule(BINARY_TYPE, '*', operator.mul, 9), # Multiplication
-            Rule(BINARY_TYPE, '+', operator.add, 8), # Addition
-            Rule(BINARY_TYPE, '-', operator.sub, 8), # Subtraction
+            Symbol(BINARY, '**', operator.pow, 10), # Exponentiation
+            Symbol(BINARY, '@', operator.matmul, 9), # Matrix Product
+            Symbol(BINARY, '/', operator.truediv, 9), # Division
+            Symbol(BINARY, '//', operator.floordiv, 9), # Floor Division
+            Symbol(BINARY, '%', operator.mod, 9), # Remainder
+            Symbol(BINARY, '*', operator.mul, 9), # Multiplication
+            Symbol(BINARY, '+', operator.add, 8), # Addition
+            Symbol(BINARY, '-', operator.sub, 8), # Subtraction
 
             # Binary Bitwise Operators
-            Rule(BINARY_TYPE, '>>', operator.rshift, 7), # Bitwise Right Shift
-            Rule(BINARY_TYPE, '<<', operator.lshift, 7), # Bitwise Left Shift
-            Rule(BINARY_TYPE, '&', operator.and_, 6), # Bitwise AND
-            Rule(BINARY_TYPE, '^', operator.xor, 5), # Bitwise XOR
-            Rule(BINARY_TYPE, '|', operator.or_, 4), # Bitwise OR
-            Rule(BINARY_TYPE, '==', operator.eq, 3), # Equality
-            Rule(BINARY_TYPE, '!=', operator.ne, 3), # Inequality
+            Symbol(BINARY, '>>', operator.rshift, 7), # Bitwise Right Shift
+            Symbol(BINARY, '<<', operator.lshift, 7), # Bitwise Left Shift
+            Symbol(BINARY, '&', operator.and_, 6), # Bitwise AND
+            Symbol(BINARY, '^', operator.xor, 5), # Bitwise XOR
+            Symbol(BINARY, '|', operator.or_, 4), # Bitwise OR
 
             # Binary Ordering Operators
-            Rule(BINARY_TYPE, '>', operator.gt, 3), # Greater
-            Rule(BINARY_TYPE, '<', operator.lt, 3), # Lower
-            Rule(BINARY_TYPE, '>=', operator.ge, 3), # Greater or Equal
-            Rule(BINARY_TYPE, '<=', operator.le, 3), # Lower or Equal
-
-            # Containment Operators
-            Rule(BINARY_TYPE, 'is', operator.is_, 3), # Identity test
-            Rule(BINARY_TYPE, 'in', operator.contains, 3), # Containment Test
+            Symbol(BINARY, '==', operator.eq, 3), # Equality
+            Symbol(BINARY, '!=', operator.ne, 3), # Inequality
+            Symbol(BINARY, '>', operator.gt, 3), # Greater
+            Symbol(BINARY, '<', operator.lt, 3), # Lower
+            Symbol(BINARY, '>=', operator.ge, 3), # Greater or Equal
+            Symbol(BINARY, '<=', operator.le, 3), # Lower or Equal
+            Symbol(BINARY, 'is', operator.is_, 3), # Identity
+            Symbol(BINARY, 'in', operator.contains, 3), # Containment Test
 
             # Boolean Operators
-            Rule(UNARY_TYPE, 'not', operator.not_, 2), # Boolean NOT
-            Rule(BINARY_TYPE, 'and', bool_and, 1), # Boolean AND
-            Rule(BINARY_TYPE, 'or', bool_or, 0)]) # Boolean OR
+            Symbol(UNARY, 'not', operator.not_, 2), # Boolean NOT
+            Symbol(BINARY, 'and', bool_and, 1), # Boolean AND
+            Symbol(BINARY, 'or', bool_or, 0)]) # Boolean OR
 
-class Builtin(Python):
-    """Python3 operators, builtin functions and builtin constants."""
+class PyBuiltins(PyCore):
+    """Python Expression and Builtin Symbols."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -170,7 +173,7 @@ class Builtin(Python):
                 continue
 
             # If the Attribute is callable, defined within builtins and not an
-            # expteption append it as function to the grammar.
+            # exception, append it as a function symbol to the grammar.
             obj = getattr(builtins, name)
             if callable(obj):
                 if not hasattr(obj, '__module__'):
@@ -179,11 +182,11 @@ class Builtin(Python):
                     continue
                 if isinstance(obj, type) and issubclass(obj, BaseException):
                     continue
-                builtin.append(Rule(FUNCTION_TYPE, name, obj, 12))
+                builtin.append(Symbol(FUNCTION, name, obj, 12))
                 continue
 
-            # Append non-callables Attributes as constants to the grammar.
-            builtin.append(Rule(CONSTANT_TYPE, name, obj))
+            # Append non-callable Attributes as constant symbols to the grammar.
+            builtin.append(Symbol(CONSTANT, name, obj))
 
         self.update(builtin)
 
@@ -200,47 +203,46 @@ class Standard(Grammar):
         append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
-            Rule(UNARY_TYPE, '-', operator.neg, 0, True),
-            Rule(BINARY_TYPE, '+', operator.add, 2, True),
-            Rule(BINARY_TYPE, '-', operator.sub, 2, True),
-            Rule(BINARY_TYPE, '*', operator.mul, 3, True),
-            Rule(BINARY_TYPE, '/', operator.truediv, 4, True),
-            Rule(BINARY_TYPE, '%', operator.mod, 4, True),
-            Rule(BINARY_TYPE, '^', math.pow, 6, False), # nope
-            Rule(BINARY_TYPE, '||', concat, 1, False), # nope
-            Rule(BINARY_TYPE, '==', operator.eq, 1, True),
-            Rule(BINARY_TYPE, '!=', operator.ne, 1, True),
-            Rule(BINARY_TYPE, '>', operator.gt, 1, True),
-            Rule(BINARY_TYPE, '<', operator.lt, 1, True),
-            Rule(BINARY_TYPE, '>=', operator.ge, 1, True),
-            Rule(BINARY_TYPE, '<=', operator.le, 1, True),
-            Rule(BINARY_TYPE, ',', append, 0, True),
-            Rule(BINARY_TYPE, 'and', iand, 0, True),
-            Rule(BINARY_TYPE, 'or', ior, 0, True),
-            Rule(FUNCTION_TYPE, 'abs', abs, 0, True),
-            Rule(FUNCTION_TYPE, 'round', round, 0, True),
-            Rule(FUNCTION_TYPE, 'min', min, 0, True),
-            Rule(FUNCTION_TYPE, 'max', max, 0, True),
-            Rule(FUNCTION_TYPE, 'sin', math.sin, 0, False),
-            Rule(FUNCTION_TYPE, 'cos', math.cos, 0, False),
-            Rule(FUNCTION_TYPE, 'tan', math.tan, 0, False),
-            Rule(FUNCTION_TYPE, 'asin', math.asin, 0, False),
-            Rule(FUNCTION_TYPE, 'acos', math.acos, 0, False),
-            Rule(FUNCTION_TYPE, 'atan', math.atan, 0, False),
-            Rule(FUNCTION_TYPE, 'sqrt', math.sqrt, 0, False),
-            Rule(FUNCTION_TYPE, 'log', math.log, 0, False),
-            Rule(FUNCTION_TYPE, 'ceil', math.ceil, 0, False),
-            Rule(FUNCTION_TYPE, 'floor', math.floor, 0, False),
-            Rule(FUNCTION_TYPE, 'exp', math.exp, 0, False),
-            Rule(FUNCTION_TYPE, 'random', rnd, 0, False),
-            Rule(FUNCTION_TYPE, 'fac', math.factorial, 0, False),
-            Rule(FUNCTION_TYPE, 'pow', math.pow, 0, False),
-            Rule(FUNCTION_TYPE, 'atan2', math.atan2, 0, False), # nope
-            Rule(FUNCTION_TYPE, 'concat', concat, 0, False), # nope
-            Rule(FUNCTION_TYPE, 'iif', iif, 0, False), # nope
-            Rule(CONSTANT_TYPE, 'E', math.e, 0, False), # nope
-            Rule(CONSTANT_TYPE, 'PI', math.pi, 0, False), # nope
-        ])
+            Symbol(UNARY, '-', operator.neg, 0, True),
+            Symbol(BINARY, '+', operator.add, 2, True),
+            Symbol(BINARY, '-', operator.sub, 2, True),
+            Symbol(BINARY, '*', operator.mul, 3, True),
+            Symbol(BINARY, '/', operator.truediv, 4, True),
+            Symbol(BINARY, '%', operator.mod, 4, True),
+            Symbol(BINARY, '^', math.pow, 6, False), # nope
+            Symbol(BINARY, '||', concat, 1, False), # nope
+            Symbol(BINARY, '==', operator.eq, 1, True),
+            Symbol(BINARY, '!=', operator.ne, 1, True),
+            Symbol(BINARY, '>', operator.gt, 1, True),
+            Symbol(BINARY, '<', operator.lt, 1, True),
+            Symbol(BINARY, '>=', operator.ge, 1, True),
+            Symbol(BINARY, '<=', operator.le, 1, True),
+            Symbol(BINARY, ',', append, 0, True),
+            Symbol(BINARY, 'and', iand, 0, True),
+            Symbol(BINARY, 'or', ior, 0, True),
+            Symbol(FUNCTION, 'abs', abs, 0, True),
+            Symbol(FUNCTION, 'round', round, 0, True),
+            Symbol(FUNCTION, 'min', min, 0, True),
+            Symbol(FUNCTION, 'max', max, 0, True),
+            Symbol(FUNCTION, 'sin', math.sin, 0, False),
+            Symbol(FUNCTION, 'cos', math.cos, 0, False),
+            Symbol(FUNCTION, 'tan', math.tan, 0, False),
+            Symbol(FUNCTION, 'asin', math.asin, 0, False),
+            Symbol(FUNCTION, 'acos', math.acos, 0, False),
+            Symbol(FUNCTION, 'atan', math.atan, 0, False),
+            Symbol(FUNCTION, 'sqrt', math.sqrt, 0, False),
+            Symbol(FUNCTION, 'log', math.log, 0, False),
+            Symbol(FUNCTION, 'ceil', math.ceil, 0, False),
+            Symbol(FUNCTION, 'floor', math.floor, 0, False),
+            Symbol(FUNCTION, 'exp', math.exp, 0, False),
+            Symbol(FUNCTION, 'random', rnd, 0, False),
+            Symbol(FUNCTION, 'fac', math.factorial, 0, False),
+            Symbol(FUNCTION, 'pow', math.pow, 0, False),
+            Symbol(FUNCTION, 'atan2', math.atan2, 0, False), # nope
+            Symbol(FUNCTION, 'concat', concat, 0, False), # nope
+            Symbol(FUNCTION, 'iif', iif, 0, False), # nope
+            Symbol(CONSTANT, 'E', math.e, 0, False), # nope
+            Symbol(CONSTANT, 'PI', math.pi, 0, False)]) # nope
 
 #
 # Tokens
@@ -249,17 +251,17 @@ class Standard(Grammar):
 @dataclasses.dataclass(frozen=True)
 class Token:
     type: int
-    name: Union[str, int] = 0
+    key: Union[str, int] = 0
     priority: int = 0
     value: Any = 0
 
     def __str__(self) -> str:
-        if self.type in [UNARY_TYPE, BINARY_TYPE, VARIABLE_TYPE]:
-            return str(self.name)
-        if self.type == CONSTANT_TYPE:
+        if self.type in [UNARY, BINARY, VARIABLE]:
+            return str(self.key)
+        if self.type == CONSTANT:
             return self.value
-        if self.type == FUNCTION_TYPE:
-            return getattr(self.name, '__name__', 'CALL')
+        if self.type == FUNCTION:
+            return getattr(self.key, '__name__', 'CALL')
         return 'Invalid Token'
 
 #
@@ -299,30 +301,30 @@ class Expression:
         values = values or {}
         stack = []
         tokens = []
-        unary = self.grammar.get(UNARY_TYPE)
-        binary = self.grammar.get(BINARY_TYPE)
-        for token in self.tokens:
-            if token.type == CONSTANT_TYPE:
-                stack.append(token)
-            elif token.type == VARIABLE_TYPE and token.name in values:
-                value = values[token.name]
-                stack.append(Token(CONSTANT_TYPE, 0, 0, value))
-            elif token.type == BINARY_TYPE and len(stack) > 1:
-                if not isinstance(token.name, str):
+        unary = self.grammar.get(UNARY)
+        binary = self.grammar.get(BINARY)
+        for tok in self.tokens:
+            if tok.type == CONSTANT:
+                stack.append(tok)
+            elif tok.type == VARIABLE and tok.key in values:
+                value = values[tok.key]
+                stack.append(Token(CONSTANT, 0, 0, value))
+            elif tok.type == BINARY and len(stack) > 1:
+                if not isinstance(tok.key, str):
                     raise ValueError() #TODO
                 b, a = stack.pop(), stack.pop()
-                value = binary[token.name].value(a.value, b.value)
-                stack.append(Token(CONSTANT_TYPE, 0, 0, value))
-            elif token.type == UNARY_TYPE and stack:
-                if not isinstance(token.name, str):
+                value = binary[tok.key].value(a.value, b.value)
+                stack.append(Token(CONSTANT, 0, 0, value))
+            elif tok.type == UNARY and stack:
+                if not isinstance(tok.key, str):
                     raise ValueError() # TODO
                 a = stack.pop()
-                value = unary[token.name].value(a.value)
-                stack.append(Token(CONSTANT_TYPE, 0, 0, value))
+                value = unary[tok.key].value(a.value)
+                stack.append(Token(CONSTANT, 0, 0, value))
             else:
                 while stack:
                     tokens.append(stack.pop(0))
-                tokens.append(token)
+                tokens.append(tok)
         while stack:
             tokens.append(stack.pop(0))
         return Expression(tokens=tokens, grammar=self.grammar)
@@ -334,41 +336,41 @@ class Expression:
         if not isinstance(expr, Expression):
             expr = Parser().parse(str(expr))
         tokens = []
-        for token in self.tokens:
-            if token.type != VARIABLE_TYPE:
-                tokens.append(token)
+        for tok in self.tokens:
+            if tok.type != VARIABLE:
+                tokens.append(tok)
                 continue
-            if token.name != variable:
-                tokens.append(token)
+            if tok.key != variable:
+                tokens.append(tok)
                 continue
             for etok in expr.tokens:
-                repl = Token(etok.type, etok.name, etok.priority, etok.value)
+                repl = Token(etok.type, etok.key, etok.priority, etok.value)
                 tokens.append(repl)
         return Expression(tokens=tokens, grammar=self.grammar)
 
     def eval(self, values: Optional[dict] = None) -> Any:
         values = values or {}
         stack = []
-        unary = self.grammar.get(UNARY_TYPE)
-        binary = self.grammar.get(BINARY_TYPE)
-        functions = self.grammar.get(FUNCTION_TYPE)
-        for token in self.tokens:
-            if token.type == CONSTANT_TYPE:
-                stack.append(token.value)
-            elif token.type == BINARY_TYPE and isinstance(token.name, str):
+        unary = self.grammar.get(UNARY)
+        binary = self.grammar.get(BINARY)
+        functions = self.grammar.get(FUNCTION)
+        for tok in self.tokens:
+            if tok.type == CONSTANT:
+                stack.append(tok.value)
+            elif tok.type == BINARY and isinstance(tok.key, str):
                 b, a = stack.pop(), stack.pop()
-                stack.append(binary[token.name].value(a, b))
-            elif token.type == VARIABLE_TYPE and isinstance(token.name, str):
-                if token.name in values:
-                    stack.append(values[token.name])
-                elif token.name in functions:
-                    stack.append(functions[token.name].value)
+                stack.append(binary[tok.key].value(a, b))
+            elif tok.type == VARIABLE and isinstance(tok.key, str):
+                if tok.key in values:
+                    stack.append(values[tok.key])
+                elif tok.key in functions:
+                    stack.append(functions[tok.key].value)
                 else:
-                    raise Exception(f"undefined variable '{token.name}'")
-            elif token.type == UNARY_TYPE and isinstance(token.name, str):
+                    raise Exception(f"undefined variable '{tok.key}'")
+            elif tok.type == UNARY and isinstance(tok.key, str):
                 a = stack.pop()
-                stack.append(unary[token.name].value(a))
-            elif token.type == FUNCTION_TYPE:
+                stack.append(unary[tok.key].value(a))
+            elif tok.type == FUNCTION:
                 a = stack.pop()
                 func = stack.pop()
                 if not callable(func):
@@ -387,32 +389,32 @@ class Expression:
 
     def to_string(self, python: bool = False) -> str:
         stack = []
-        for token in self.tokens:
-            if token.type == CONSTANT_TYPE:
-                if isinstance(token.value, str):
-                    stack.append(repr(token.value))
+        for tok in self.tokens:
+            if tok.type == CONSTANT:
+                if isinstance(tok.value, str):
+                    stack.append(repr(tok.value))
                 else:
-                    stack.append(token.value)
-            elif token.type == BINARY_TYPE:
+                    stack.append(tok.value)
+            elif tok.type == BINARY:
                 b = stack.pop()
                 a = stack.pop()
-                f = token.name
+                f = tok.key
                 if f == '^' and python:
                     stack.append(f'{a}**{b}')
                 elif f == ',':
                     stack.append(f'{a}, {b}')
                 else:
                     stack.append(f'({a}{f}{b})')
-            elif token.type == VARIABLE_TYPE and isinstance(token.name, str):
-                stack.append(token.name)
-            elif token.type == UNARY_TYPE:
+            elif tok.type == VARIABLE and isinstance(tok.key, str):
+                stack.append(tok.key)
+            elif tok.type == UNARY:
                 a = stack.pop()
-                f = token.name
+                f = tok.key
                 if f == '-':
                     stack.append(f'(-{a})')
                 else:
                     stack.append(f'{f}({a})')
-            elif token.type == FUNCTION_TYPE:
+            elif tok.type == FUNCTION:
                 a = stack.pop()
                 f = stack.pop()
                 stack.append(f'{f}({a})')
@@ -432,19 +434,19 @@ class Expression:
     @property
     def symbols(self) -> List[str]:
         symlist: List[str] = []
-        for token in self.tokens:
-            if token.type != VARIABLE_TYPE:
+        for tok in self.tokens:
+            if tok.type != VARIABLE:
                 continue
-            if token.name in symlist:
+            if tok.key in symlist:
                 continue
-            if not isinstance(token.name, str):
+            if not isinstance(tok.key, str):
                 raise ValueError() # TODO
-            symlist.append(token.name)
+            symlist.append(tok.key)
         return symlist
 
     @property
     def variables(self) -> List[str]:
-        functions = self.grammar.get(FUNCTION_TYPE)
+        functions = self.grammar.get(FUNCTION)
         return [sym for sym in self.symbols if sym not in functions]
 
 class Parser:
@@ -511,7 +513,7 @@ class Parser:
                         self._cur_priority = 5
                         self._cur_name = '-'
                         noperators += 1
-                        self._add_operator(tokens, operators, UNARY_TYPE)
+                        self._add_operator(tokens, operators, UNARY)
                     expect = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
                 elif self._is_comment():
@@ -520,18 +522,18 @@ class Parser:
                     if expect and self.OPERATOR == 0:
                         self._raise_error(self._pos, 'unexpect operator')
                     noperators += 2
-                    self._add_operator(tokens, operators, BINARY_TYPE)
+                    self._add_operator(tokens, operators, BINARY)
                     expect = \
                         self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_number():
                 if expect and self.PRIMARY == 0:
                     self._raise_error(self._pos, 'unexpect number')
-                tokens.append(Token(CONSTANT_TYPE, 0, 0, self._cur_value))
+                tokens.append(Token(CONSTANT, 0, 0, self._cur_value))
                 expect = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_string():
                 if (expect & self.PRIMARY) == 0:
                     self._raise_error(self._pos, 'unexpect string')
-                tokens.append(Token(CONSTANT_TYPE, 0, 0, self._cur_value))
+                tokens.append(Token(CONSTANT, 0, 0, self._cur_value))
                 expect = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_left_parenth():
                 if (expect & self.LPAREN) == 0:
@@ -540,14 +542,14 @@ class Parser:
                     noperators += 2
                     self._cur_priority = -2
                     self._cur_name = -1
-                    self._add_operator(tokens, operators, FUNCTION_TYPE)
+                    self._add_operator(tokens, operators, FUNCTION)
                 expect = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | \
                     self.SIGN | self.NULLARY
             elif self._is_right_parenth():
                 if expect & self.NULLARY:
-                    token = Token(CONSTANT_TYPE, 0, 0, [])
-                    tokens.append(token)
+                    tok = Token(CONSTANT, 0, 0, [])
+                    tokens.append(tok)
                 elif (expect & self.RPAREN) == 0:
                     self._raise_error(self._pos, 'unexpect \")\"')
                 expect = \
@@ -556,33 +558,33 @@ class Parser:
             elif self._is_comma():
                 if (expect & self.COMMA) == 0:
                     self._raise_error(self._pos, 'unexpect \",\"')
-                self._add_operator(tokens, operators, BINARY_TYPE)
+                self._add_operator(tokens, operators, BINARY)
                 noperators += 2
                 expect = \
                     self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
             elif self._is_constant():
                 if (expect & self.PRIMARY) == 0:
                     self._raise_error(self._pos, 'unexpect constant')
-                token = Token(CONSTANT_TYPE, 0, 0, self._cur_value)
-                tokens.append(token)
+                tok = Token(CONSTANT, 0, 0, self._cur_value)
+                tokens.append(tok)
                 expect = self.OPERATOR | self.RPAREN | self.COMMA
             elif self._is_binary_operator():
                 if (expect & self.FUNCTION) == 0:
                     self._raise_error(self._pos, 'unexpect function')
-                self._add_operator(tokens, operators, BINARY_TYPE)
+                self._add_operator(tokens, operators, BINARY)
                 noperators += 2
                 expect = self.LPAREN
             elif self._is_unary_operator():
                 if (expect & self.FUNCTION) == 0:
                     self._raise_error(self._pos, 'unexpect function')
-                self._add_operator(tokens, operators, UNARY_TYPE)
+                self._add_operator(tokens, operators, UNARY)
                 noperators += 1
                 expect = self.LPAREN
             elif self._is_variable():
                 if (expect & self.PRIMARY) == 0:
                     self._raise_error(
                         self._pos, f"unexpect variable '{self._cur_name}'")
-                tokens.append(Token(VARIABLE_TYPE, self._cur_name, 0, 0))
+                tokens.append(Token(VARIABLE, self._cur_name, 0, 0))
                 expect = self.OPERATOR | self.RPAREN | self.COMMA \
                     | self.LPAREN | self.CALL
             elif self._is_space():
@@ -610,12 +612,12 @@ class Parser:
             typeid: int) -> None:
         name = self._cur_name
         priority = self._cur_priority + self._tmp_priority
-        token = Token(typeid, name, priority, 0)
+        tok = Token(typeid, name, priority, 0)
         while operators:
-            if token.priority > operators[-1].priority:
+            if tok.priority > operators[-1].priority:
                 break
             tokens.append(operators.pop())
-        operators.append(token)
+        operators.append(tok)
 
     @property
     def _cur(self) -> str:
@@ -664,11 +666,11 @@ class Parser:
 
     def _is_constant(self) -> bool:
         expr = self._expression
-        constants = self.grammar.get(CONSTANT_TYPE)
-        for name, const in constants.items():
+        constants = self.grammar.get(CONSTANT)
+        for sym, const in constants.items():
             start = self._pos
-            end = start + len(name)
-            if name != expr[start:end]:
+            end = start + len(sym)
+            if sym != expr[start:end]:
                 continue
             if len(expr) <= end:
                 self._cur_value = const.value
@@ -681,7 +683,7 @@ class Parser:
         return False
 
     def _is_operator(self) -> bool:
-        for name, op in self.grammar.get(BINARY_TYPE).items():
+        for name, op in self.grammar.get(BINARY).items():
             if not self._expression.startswith(name, self._pos):
                 continue
             self._cur_priority = op.priority
@@ -736,7 +738,7 @@ class Parser:
                 if c != '_' and (c < '0' or c > '9'):
                     break
             string += c
-        if string and string in self.grammar.get(UNARY_TYPE):
+        if string and string in self.grammar.get(UNARY):
             self._cur_name = string
             self._cur_priority = 7
             self._pos += len(string)
@@ -752,7 +754,7 @@ class Parser:
                 if c != '_' and (c < '0' or c > '9'):
                     break
             string += c
-        if string and string in self.grammar.get(BINARY_TYPE):
+        if string and string in self.grammar.get(BINARY):
             self._cur_name = string
             self._cur_priority = 7
             self._pos += len(string)

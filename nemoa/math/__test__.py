@@ -178,8 +178,8 @@ class TestParser(ModuleTestCase):
             p.parse('testFunction(x , y)').eval(
                 {"x":2,"y":3,"testFunction": testFunction2}), 13)
 
-        p.grammar.add(parser.Rule(parser.FUNCTION_TYPE, 'mean', mean))
-        p.grammar.add(parser.Rule(parser.FUNCTION_TYPE, 'count', counter(0)))
+        p.grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
+        p.grammar.add(parser.Symbol(parser.FUNCTION, 'count', counter(0)))
 
         self.assertEqual(p.parse("mean(xs)").variables, ["xs"])
         self.assertEqual(p.parse("mean(xs)").symbols, ["mean", "xs"])
