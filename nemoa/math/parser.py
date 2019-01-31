@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019, Patrick Michl
-# Copyright (C) 2014-2019, AxiaCore S.A.S.
+# Copyright (c) 2019 Patrick Michl <patrick.michl@gmail.com>
+# Copyright (c) 2014-2019 AxiaCore S.A.S.
 #
 # §1 This file is part of nemoa
 #
@@ -57,6 +57,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import builtins
+#import collections
 import dataclasses
 import itertools
 import math
@@ -80,7 +82,6 @@ VARIABLE_TYPE = 4
 @dataclasses.dataclass(frozen=True)
 class Rule:
     """Data Class for Production Rules."""
-
     type: int
     name: str
     value: Any
@@ -88,10 +89,68 @@ class Rule:
     builtin: bool = False
 
 class Grammar(set):
-    """Container Class for Production Rules."""
+    """Base Container Class for Production Rules."""
 
     def get(self, tid: int) -> Dict[str, Rule]:
         return {rule.name: rule for rule in self if rule.type == tid}
+
+class Python(Grammar):
+    """Python operators."""
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        bool_and: AnyOp = lambda a, b: a and b
+        bool_or: AnyOp = lambda a, b: a or b
+        pack: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
+
+        self.update([
+            Rule(BINARY_TYPE, ',', pack, 12), # Tuple packing
+            Rule(UNARY_TYPE, '+', operator.pos, 10), # Positive (Arithmetic)
+            Rule(UNARY_TYPE, '-', operator.neg, 10), # Negation (Arithmetic)
+            Rule(UNARY_TYPE, '~', operator.invert, 10), # Bitwise Inversion
+            Rule(BINARY_TYPE, '**', operator.pow, 9), # Exponentiation
+            Rule(BINARY_TYPE, '@', operator.matmul, 8), # Matrix Multiplication
+            Rule(BINARY_TYPE, '/', operator.truediv, 8), # Division
+            Rule(BINARY_TYPE, '//', operator.floordiv, 8), # Floor Division
+            Rule(BINARY_TYPE, '%', operator.mod, 8), # Remainder
+            Rule(BINARY_TYPE, '*', operator.mul, 8), # Multiplication
+            Rule(BINARY_TYPE, '+', operator.add, 7), # Addition
+            Rule(BINARY_TYPE, '-', operator.sub, 7), # Subtraction
+            Rule(BINARY_TYPE, '>>', operator.rshift, 6), # Bitwise Right Shift
+            Rule(BINARY_TYPE, '<<', operator.lshift, 6), # Bitwise Left Shift
+            Rule(BINARY_TYPE, '&', operator.and_, 5), # Bitwise AND
+            Rule(BINARY_TYPE, '^', operator.xor, 4), # Bitwise XOR
+            Rule(BINARY_TYPE, '|', operator.or_, 3), # Bitwise OR
+            Rule(BINARY_TYPE, '==', operator.eq, 2), # Equality
+            Rule(BINARY_TYPE, '!=', operator.ne, 2), # Inequality
+            Rule(BINARY_TYPE, '>', operator.gt, 2), # Ordering
+            Rule(BINARY_TYPE, '<', operator.lt, 2), # Ordering
+            Rule(BINARY_TYPE, '>=', operator.ge, 2), # Ordering
+            Rule(BINARY_TYPE, '<=', operator.le, 2), # Ordering
+            Rule(BINARY_TYPE, 'in', operator.contains, 2), # Containment Test
+            Rule(BINARY_TYPE, 'and', bool_and, 1), # Boolean AND
+            Rule(BINARY_TYPE, 'or', bool_or, 0)]) # Boolean OR
+
+class Builtin(Python):
+    """Python3 operators and builtin functions."""
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        builtin = []
+        for name in dir(builtins):
+            if name.startswith('_'):
+                continue
+            obj = getattr(builtins, name)
+            if isinstance(obj, type) and issubclass(obj, BaseException):
+                continue
+            if not callable(obj):
+                continue
+            if not obj.__module__ == builtins.__name__:
+                continue
+            builtin.append(Rule(FUNCTION_TYPE, name, obj, 11))
+        self.update(builtin)
 
 class Standard(Grammar):
 
@@ -100,9 +159,9 @@ class Standard(Grammar):
 
         rnd: AnyOp = lambda x: random.uniform(0., x)
         iif: AnyOp = lambda a, b, c: b if a else c
+        concat: AnyOp = lambda *args: ''.join(map(str, args))
         iand: AnyOp = lambda a, b: a and b
         ior: AnyOp = lambda a, b: a or b
-        concat: AnyOp = lambda *args: ''.join(map(str, args))
         append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
@@ -594,7 +653,7 @@ class Parser:
 
         # Get operator names in reverse sort order to give priority to longer
         # matches, e.g. priorize matching of '>=' over '>'
-        names = sorted(binary, reverse = True)
+        names = sorted(binary, reverse=True)
         for name in names:
             if not self._expression.startswith(name, self._pos):
                 continue

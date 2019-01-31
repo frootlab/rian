@@ -181,16 +181,11 @@ class TestParser(ModuleTestCase):
         p.grammar.add(parser.Rule(parser.FUNCTION_TYPE, 'mean', mean))
         p.grammar.add(parser.Rule(parser.FUNCTION_TYPE, 'count', counter(0)))
 
-        self.assertEqual(
-            p.parse("mean(xs)").variables, ["xs"])
-        self.assertEqual(
-            p.parse("mean(xs)").symbols, ["mean", "xs"])
-        self.assertEqual(
-            p.eval("mean(xs)", variables={"xs": [1, 2, 3]}), 2)
-        self.assertExactEqual(
-            p.eval("count(inc)", variables={"inc": 5}), 5)
-        self.assertExactEqual(
-            p.eval("count(inc)", variables={"inc": 5}), 10)
+        self.assertEqual(p.parse("mean(xs)").variables, ["xs"])
+        self.assertEqual(p.parse("mean(xs)").symbols, ["mean", "xs"])
+        self.assertEqual(p.eval("mean(xs)", variables={"xs": [1, 2, 3]}), 2)
+        self.assertExactEqual(p.eval("count(inc)", variables={"inc": 5}), 5)
+        self.assertExactEqual(p.eval("count(inc)", variables={"inc": 5}), 10)
 
     def test_Token(self) -> None:
         pass # Implicitely tested by test_Parser
