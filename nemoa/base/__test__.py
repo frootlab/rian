@@ -123,19 +123,22 @@ class TestAttrib(ModuleTestCase):
         Group = type('Group', (attrib.Group, ), {'data': attrib.Content()})
         group = Group()
         group.data = 'test'
-        self.assertEqual(group._attr_group_data['data'], 'test')
+        self.assertEqual(
+            group._attr_group_data['data'], 'test') # pylint: disable=W0112
 
     def test_MetaData(self) -> None:
         Group = type('Group', (attrib.Group, ), {'meta': attrib.MetaData()})
         group = Group()
         group.meta = 'test'
-        self.assertEqual(group._attr_group_meta['meta'], 'test')
+        self.assertEqual(
+            group._attr_group_meta['meta'], 'test') # pylint: disable=W0112
 
     def test_Temporary(self) -> None:
         Group = type('Group', (attrib.Group, ), {'temp': attrib.Temporary()})
         group = Group()
         group.temp = 'test'
-        self.assertEqual(group._attr_group_temp['temp'], 'test')
+        self.assertEqual(
+            group._attr_group_temp['temp'], 'test') # pylint: disable=W0112
 
     def test_Virtual(self) -> None:
         val: Any
@@ -214,7 +217,7 @@ class TestAttrib(ModuleTestCase):
             self.assertEqual(group.a1, 'ok')
             self.assertEqual(group.__dict__['a1'], None)
 
-        with self.subTest(default= 'ok'):
+        with self.subTest(default='ok'):
             self.assertEqual(group.a2, 'ok')
             group.a2 = None
             self.assertEqual(group.a2, None)
@@ -798,6 +801,7 @@ class TestParser(ModuleTestCase):
             Case(('ascii(x)', {'x': 1}), {}, '1'),
             Case(('bin(x)', {'x': 1}), {}, '0b1'),
             Case(('bool(x)', {'x': 1}), {}, True),
+            # Cannot test breakpoint() -> maybe remove it from PyBuiltins
             Case(('bytearray(x)', {'x': 1}), {}, bytearray(b'\x00')),
             Case(('bytearray(x, e)',
                 {'x': 'x', 'e': 'utf8'}), {}, bytearray(b'x')),
@@ -824,6 +828,20 @@ class TestParser(ModuleTestCase):
             Case(('getattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, 1.),
             Case(('bool(globals())', {}), {}, True),
             Case(('hasattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, True),
+            Case(('hash(x)', {'x': 1}), {}, 1),
+            # Cannot test help() -> maybe remove it from PyBuiltins
+            Case(('hex(x)', {'x': 1}), {}, '0x1'),
+            Case(('id(x)', {'x': None}), {}, id(None)),
+            # Cannot test input() -> maybe remove it from PyBuiltins
+            Case(('int(x)', {'x': 1.}), {}, 1.),
+            # isinstance()
+            # issublclass()
+            # iter()
+            # len()
+            # list()
+            # locals()
+            # map()
+            # max()
         ])
 
     def test_Parser(self) -> None:

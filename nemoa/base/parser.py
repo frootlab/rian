@@ -557,8 +557,8 @@ class Parser:
                         nops += 1
                         self._add_operator(tokens, operators, UNARY)
                     expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
-                elif self._is_comment():
-                    pass
+                # elif self._is_comment():
+                #     pass
                 else:
                     if expect and self.OPER == 0:
                         self._raise_error('unexpect operator')
@@ -574,17 +574,17 @@ class Parser:
                 expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_number():
                 if not expect & self.PRIM:
-                    self._raise_error('unexpect number')
+                    self._raise_error('unexpected number')
                 tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_string():
                 if not expect & self.PRIM:
-                    self._raise_error('unexpect string')
+                    self._raise_error('unexpected string')
                 tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_left():
                 if not expect & self.LEFT:
-                    self._raise_error('unexpect \"(\"')
+                    self._raise_error('unexpected \"(\"')
                 if expect & self.CALL:
                     nops += 2
                     self._cur_priority = -2
@@ -597,26 +597,26 @@ class Parser:
                 if expect & self.NULL:
                     tokens.append(Token(CONSTANT, 0, 0, _Null()))
                 elif not expect & self.RIGHT:
-                    self._raise_error('unexpect \")\"')
+                    self._raise_error('unexpected \")\"')
                 expect = \
                     self.OPER | self.RIGHT | self.COMMA | \
                     self.LEFT | self.CALL
             elif self._is_comma():
                 if not expect & self.COMMA:
-                    self._raise_error('unexpect \",\"')
+                    self._raise_error('unexpected \",\"')
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
                 expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_constant():
                 if not expect & self.PRIM:
-                    self._raise_error('unexpect constant')
+                    self._raise_error('unexpected constant')
                 tok = Token(CONSTANT, 0, 0, self._cur_val)
                 tokens.append(tok)
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_binary_operator():
                 if not expect & self.FUNCTION:
                     key = self._cur_key
-                    self._raise_error(f"unexpect function '{key}'")
+                    self._raise_error(f"unexpected function '{key}'")
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
                 expect = self.LEFT
@@ -748,6 +748,14 @@ class Parser:
             if not self._expression.startswith(key, self._cur_pos):
                 continue
 
+            # If the last letter of the binary operator is alphanumerical or
+            # contains alphanumerical letters, then the following character is
+            # not allowed to be alphanumerical
+            if key[-1].isalnum() or key[-1] in '_"':
+                next_char = self._expression[self._cur_pos + len(key)]
+                if next_char.isalnum() or next_char in '_"':
+                    continue
+
             self._cur_priority = symbol.priority
             self._cur_key = key
             self._cur_pos += len(key)
@@ -758,9 +766,6 @@ class Parser:
 
     def _is_sign(self) -> bool:
         return self._prev in ['+', '-']
-
-    def _is_plus(self) -> bool:
-        return self._prev == '+'
 
     def _is_minus(self) -> bool:
         return self._prev == '-'
@@ -794,29 +799,31 @@ class Parser:
         return True
 
     def _is_unary_operator(self) -> bool:
-        key = ''
-        for c in self._expression[self._cur_pos:]:
-            if c != '_' and not c.isalnum():
-                break
-            key += c
-        if not key or not key in self._unary:
+        key = self._cur_char
+        if not key.isalpha():
+            return False
+        for c in self._expression[self._cur_pos + 1:]:
+            if c.isalnum() or c == '_':
+                key += c
+                continue
+            break
+        if not key in self._unary:
             return False
         self._cur_key = key
         self._cur_priority = self._unary[key].priority
         self._cur_pos += len(key)
+
         return True
 
     def _is_binary_operator(self) -> bool:
-        key = ''
-        for i, c in enumerate(self._expression[self._cur_pos:]):
-            if c.upper() == c.lower():
-                if i == self._cur_pos:
-                    break
-                if c != '_' and (c < '0' or c > '9'):
-                    break
-            key += c
-        if not key:
+        key = self._cur_char
+        if not key.isalpha():
             return False
+        for c in self._expression[self._cur_pos + 1:]:
+            if c.isalnum() or c == '_':
+                key += c
+                continue
+            break
         binary = self._binary
         if not key in binary:
             return False
@@ -830,12 +837,12 @@ class Parser:
     def _is_variable(self) -> bool:
         key = ''
         quoted = False
-        for i in range(self._cur_pos, len(self._expression)):
-            c = self._expression[i]
-            if not quoted and (c.lower() == c.upper()):
-                if (c not in '_."') and (c < '0' or c > '9'):
+        pos = self._cur_pos
+        for i, c in enumerate(self._expression[self._cur_pos:]):
+            if not quoted and not c.isalpha():
+                if c not in '_."' and not c.isdecimal():
                     break
-                if i == self._cur_pos and c != '"':
+                if not i and c != '"':
                     break
             if c == '"':
                 quoted = not quoted
@@ -844,17 +851,9 @@ class Parser:
             return False
 
         self._cur_key = key
-        self._cur_priority = 4
+        self._cur_priority = 0 # 4 / WHY
         self._cur_pos += len(key)
         return True
-
-    def _is_comment(self) -> bool: # TODO: DO NOT USE COMMENTS
-        if self._prev == '/' and self._cur_char == '*':
-            self._cur_pos = self._expression.index('*/', self._cur_pos) + 2
-            if self._cur_pos == 1:
-                self._cur_pos = len(self._expression)
-            return True
-        return False
 
     def _raise_error(self, msg: str) -> None:
         self._success = False
