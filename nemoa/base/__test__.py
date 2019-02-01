@@ -8,6 +8,7 @@ __docformat__ = 'google'
 
 from collections import OrderedDict
 import datetime
+import dataclasses
 import math
 from unittest import mock
 from pathlib import Path
@@ -475,19 +476,33 @@ class TestCatalog(ModuleTestCase):
 class TestParser(ModuleTestCase):
     module = parser
 
+    def test_Symbol(self) -> None:
+        conj: AnyOp = lambda z: complex(z).real - complex(z).imag * 1j
+        self.assertCaseRaises(TypeError, parser.Symbol, [
+            Case(tuple()), # Too few args
+            Case((None, )), # Too few args
+            Case((None, None)), # Too few args
+            Case((None, None, None)), # Wrong type for 'type'
+            Case((parser.UNARY, None, None)), # Wrong type for 'key'
+            Case((parser.UNARY, '*', None)), # Unary must be callable
+            Case((parser.UNARY, '*', conj, None))]) # Wrong type for 'priority'
+
+        sym = parser.Symbol(parser.UNARY, '*', conj)
+        self.assertEqual(
+            dataclasses.astuple(sym), (parser.UNARY, '*', conj, 0, False))
+
     def test_Grammar(self) -> None:
-        p = parser.Parser(grammar=parser.PyCore())
+        grammar = parser.PyCore()
+        self.assertEqual(grammar.get(parser.FUNCTION), {})
 
-        func: AnyOp = lambda x: 2 * x + 9
         mean: AnyOp = lambda *s: sum(s) / len(s)
+        grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
+        self.assertIn('mean', grammar.get(parser.FUNCTION))
 
-        p.grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
-        p.grammar.add(parser.Symbol(parser.FUNCTION, 'func', func))
-
+        p = parser.Parser(grammar=grammar)
         self.assertEqual(p.parse('mean(s)').variables, ['s'])
         self.assertEqual(p.parse('mean(s)').symbols, ['mean', 's'])
         self.assertEqual(p.parse('mean(s)').eval({'s': [1, 2, 3]}), 2)
-        self.assertEqual(p.parse('func(x)').eval({'x': 2}), 13)
 
     def test_PyCore(self) -> None:
         # The individual operators are tested within seperate tests. Here the

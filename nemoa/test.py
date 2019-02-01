@@ -10,8 +10,7 @@ import fnmatch
 import functools
 import inspect
 import io
-import types
-from typing import Any, NamedTuple, Tuple, Dict, Iterable, List, Callable
+from typing import Any, NamedTuple, Tuple, Dict, List, Callable
 import unittest
 import numpy as np
 from nemoa.base import pkg, otree
@@ -134,7 +133,8 @@ class BaseTestCase(unittest.TestCase):
             with self.subTest(case):
                 self.assertRaises(cls, func, *case.args, **case.kwds)
 
-    def assertCaseNotRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
+    def assertCaseNotRaises(
+            self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
         """Assert that no function parameter raises an exception."""
         for case in cases:
             with self.subTest(case):

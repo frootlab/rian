@@ -65,8 +65,8 @@ import math
 import operator
 import random
 import re
-from typing import Any, Callable, Dict, List, Match, Optional, Union
-from nemoa.base import env, stype
+from typing import Any, Dict, List, Match, Optional, Union
+from nemoa.base import check, env, stype
 from nemoa.types import AnyOp
 
 UNARY = 0
@@ -87,6 +87,14 @@ class Symbol:
     value: Any
     priority: int = 0
     builtin: bool = False
+
+    def __post_init__(self) -> None:
+        check.has_type('type', self.type, int)
+        check.has_type('key', self.key, str)
+        if not self.type in [CONSTANT, VARIABLE]:
+            check.is_callable('value', self.value)
+        check.has_type('priority', self.priority, int)
+        check.has_type('builtin', self.builtin, bool)
 
 class Grammar(set):
     """Base Class for Parser Grammars."""
