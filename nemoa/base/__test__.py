@@ -809,6 +809,21 @@ class TestParser(ModuleTestCase):
             Case(('bool(compile(a, b, c))',
                 {'a': '1', 'b': '1', 'c': 'eval'}), {}, True),
             Case(('complex(x)', {'x': 1}), {}, 1+0j),
+            Case(('delattr(o, a)', {'o': mock.Mock(), 'a': 'a'}), {}, None),
+            Case(('dict(s)', {'s': [(1, 1)]}), {}, {1: 1}),
+            Case(('dir(o)', {'o': object}), {}, dir(object)),
+            Case(('divmod(a, b)', {'a': 2, 'b': 1}), {}, (2, 0)),
+            Case(('list(enumerate(l))',
+                {'l': [1, 2, 3]}), {}, [(0, 1), (1, 2), (2, 3)]),
+            Case(('eval(e)', {'e': 'True'}), {}, True),
+            Case(('exec(e)', {'e': 'True'}), {}, None),
+            Case(('list(filter(None, s))', {'s': []}), {}, []),
+            Case(('float(x)', {'x': 1}), {}, 1.),
+            Case(('format(t)', {'t': 'text'}), {}, 'text'),
+            Case(('frozenset(l)', {'l': [1, 2]}), {}, frozenset([1, 2])),
+            Case(('getattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, 1.),
+            Case(('bool(globals())', {}), {}, True),
+            Case(('hasattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, True),
         ])
 
     def test_Parser(self) -> None:

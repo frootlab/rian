@@ -75,18 +75,16 @@ FUNCTION = 2
 CONSTANT = 3
 VARIABLE = 4
 
-#
-# Helper function for sequence binding
-#
-
 class _Pack(list):
-    pass
+    """Class for packed arguments."""
+
+class _Null:
+    """Sentinel Class for no arguments."""
 
 def _pack(a: Any, b: Any) -> _Pack:
     if isinstance(a, list):
         return _Pack(a + [b])
     return _Pack([a, b])
-
 
 #
 # Symbols and Grammars
@@ -411,6 +409,8 @@ class Expression:
                     raise Exception(f'{func} is not callable')
                 if isinstance(a, _Pack):
                     stack.append(func(*a))
+                elif isinstance(a, _Null):
+                    stack.append(func())
                 else:
                     stack.append(func(a))
             else:
@@ -595,7 +595,7 @@ class Parser:
                     self.SIGN | self.NULL
             elif self._is_right():
                 if expect & self.NULL:
-                    tokens.append(Token(CONSTANT, 0, 0, []))
+                    tokens.append(Token(CONSTANT, 0, 0, _Null()))
                 elif not expect & self.RIGHT:
                     self._raise_error('unexpect \")\"')
                 expect = \
