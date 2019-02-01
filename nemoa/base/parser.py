@@ -489,10 +489,6 @@ class Parser:
     def __init__(self, grammar: Optional[Grammar] = None) -> None:
         self.grammar = grammar or PyCore()
 
-        # Update dictionaries with unary and binary operators
-        self._unary = self.grammar.get(UNARY)
-        self._binary = self.grammar.get(BINARY)
-
         self._expression = ''
         self._success = False
         self._error = ''
@@ -521,6 +517,10 @@ class Parser:
         self._cur_val = 0
         self._cur_priority = 0
         self._tmp_priority = 0
+
+        # Update dictionaries with unary and binary operators
+        self._unary = self.grammar.get(UNARY)
+        self._binary = self.grammar.get(BINARY)
 
         operators: List[Token] = []
         tokens: List[Token] = []
