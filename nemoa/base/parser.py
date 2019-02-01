@@ -109,7 +109,13 @@ class Grammar(set):
 class PyCore(Grammar):
     """Python Expression Symbols.
 
+    This grammar is based on
     https://docs.python.org/3/reference/expressions.html
+
+    In difference to standard Python grammar, however, some expressions are not
+    valid:
+        Invalid: x + -y
+        Valid: x + (-y)
 
     """
 
@@ -266,10 +272,6 @@ class Token:
 #
 # Expressions
 #
-
-Unary = Dict[str, Callable[[Any], Any]]
-Binary = Dict[str, Callable[[Any, Any], Any]]
-Functions = Dict[str, Callable[..., Any]]
 
 class Expression:
     tokens: List[Token]
@@ -511,7 +513,7 @@ class Parser:
         operators: List[Token] = []
         tokens: List[Token] = []
         expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
-        noperators = 0
+        nops = 0
 
         while self._cur_pos < len(self._expression):
             if self._is_operator():
@@ -519,7 +521,7 @@ class Parser:
                     if self._is_minus():
                         self._cur_priority = 5
                         self._cur_key = '-'
-                        noperators += 1
+                        nops += 1
                         self._add_operator(tokens, operators, UNARY)
                     expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
                 elif self._is_comment():
@@ -527,15 +529,18 @@ class Parser:
                 else:
                     if expect and self.OPER == 0:
                         self._raise_error('unexpect operator')
-                    noperators += 2
+                    nops += 2
                     self._add_operator(tokens, operators, BINARY)
                     expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
-            elif expect & self.SIGN and self._is_unary_sign():
-                noperators += 1
+            elif self._is_unary_sign():
+                if not expect & self.SIGN:
+                    key = self._cur_key
+                    self._raise_error(f"unexpected unary operator '{key}'")
+                nops += 1
                 self._add_operator(tokens, operators, UNARY)
                 expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_number():
-                if expect and self.PRIM == 0:
+                if not expect & self.PRIM:
                     self._raise_error('unexpect number')
                 tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
                 expect = self.OPER | self.RIGHT | self.COMMA
@@ -548,7 +553,7 @@ class Parser:
                 if not expect & self.LEFT:
                     self._raise_error('unexpect \"(\"')
                 if expect & self.CALL:
-                    noperators += 2
+                    nops += 2
                     self._cur_priority = -2
                     self._cur_key = -1
                     self._add_operator(tokens, operators, FUNCTION)
@@ -567,7 +572,7 @@ class Parser:
                 if not expect & self.COMMA:
                     self._raise_error('unexpect \",\"')
                 self._add_operator(tokens, operators, BINARY)
-                noperators += 2
+                nops += 2
                 expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_constant():
                 if not expect & self.PRIM:
@@ -577,19 +582,22 @@ class Parser:
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_binary_operator():
                 if not expect & self.FUNCTION:
-                    self._raise_error('unexpect function')
+                    key = self._cur_key
+                    self._raise_error(f"unexpect function '{key}'")
                 self._add_operator(tokens, operators, BINARY)
-                noperators += 2
+                nops += 2
                 expect = self.LEFT
             elif self._is_unary_operator():
                 if not expect & self.FUNCTION:
-                    self._raise_error('unexpect function')
+                    key = self._cur_key
+                    self._raise_error(f"unexpected unary operator '{key}'")
                 self._add_operator(tokens, operators, UNARY)
-                noperators += 1
+                nops += 1
                 expect = self.LEFT
             elif self._is_variable():
                 if not expect & self.PRIM:
-                    self._raise_error(f"unexpect variable '{self._cur_key}'")
+                    key = self._cur_key
+                    self._raise_error(f"unexpect variable '{key}'")
                 tokens.append(Token(VARIABLE, self._cur_key, 0, 0))
                 expect = self.OPER | self.RIGHT | self.COMMA \
                     | self.LEFT | self.CALL
@@ -603,7 +611,7 @@ class Parser:
             self._raise_error('unmatched \"()\"')
         while operators:
             tokens.append(operators.pop())
-        if noperators + 1 != len(tokens):
+        if nops + 1 != len(tokens):
             self._raise_error('parity')
 
         return Expression(tokens=tokens, grammar=self.grammar)
@@ -633,18 +641,18 @@ class Parser:
 
     def _is_number(self) -> bool:
         r = False
-        string = ''
+        key = ''
         while self._cur_pos < len(self._expression):
-            code = self._cur_char
-            if code.isdecimal() or code == '.':
-                if not string and code == '.':
-                    string = '0'
-                string += code
+            c = self._cur_char
+            if c.isdecimal() or c == '.':
+                if not key and c == '.':
+                    key = '0'
+                key += c
                 self._cur_pos += 1
                 try:
-                    self._cur_val = int(string)
+                    self._cur_val = int(key)
                 except ValueError:
-                    self._cur_val = float(string)
+                    self._cur_val = float(key)
                 r = True
             else:
                 break
@@ -652,17 +660,17 @@ class Parser:
 
     def _is_string(self) -> bool:
         r = False
-        string = ''
+        key = ''
         startpos = self._cur_pos
         if self._cur_pos < len(self._expression) and self._cur_char == "'":
             self._cur_pos += 1
             while self._cur_pos < len(self._expression):
-                if self._cur_char != '\'' or (string and string[-1] == '\\'):
-                    string += self._cur_char
+                if self._cur_char != '\'' or (key and key[-1] == '\\'):
+                    key += self._cur_char
                     self._cur_pos += 1
                 else:
                     self._cur_pos += 1
-                    self._cur_val = self._unescape(string, startpos)
+                    self._cur_val = self._unescape(key, startpos)
                     r = True
                     break
         return r
@@ -787,7 +795,7 @@ class Parser:
         return True
 
     def _is_variable(self) -> bool:
-        string = ''
+        key = ''
         quoted = False
         for i in range(self._cur_pos, len(self._expression)):
             c = self._expression[i]
@@ -798,13 +806,14 @@ class Parser:
                     break
             if c == '"':
                 quoted = not quoted
-            string += c
-        if string:
-            self._cur_key = string
-            self._cur_priority = 4
-            self._cur_pos += len(string)
-            return True
-        return False
+            key += c
+        if not key:
+            return False
+
+        self._cur_key = key
+        self._cur_priority = 4
+        self._cur_pos += len(key)
+        return True
 
     def _is_comment(self) -> bool: # TODO: DO NOT USE COMMENTS
         if self._prev == '/' and self._cur_char == '*':
@@ -819,9 +828,9 @@ class Parser:
         self._error = f'parse error [column {self._cur_pos}]: {msg}'
         raise ValueError(self._error)
 
-    def _unescape(self, string: str, pos: int) -> str:
+    def _unescape(self, key: str, pos: int) -> str:
         encoding = env.get_var('encoding') or 'UTF-8'
-        return string.encode(encoding).decode('unicode_escape')
+        return key.encode(encoding).decode('unicode_escape')
 
 #
 # Workarounds

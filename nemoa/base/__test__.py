@@ -477,10 +477,47 @@ class TestParser(ModuleTestCase):
 
     def test_PyCore(self) -> None:
         # The individual operators are tested within seperate tests. Here the
-        # associativity and precedence is tested
+        # operator associativity and precedence is tested
+        p = parser.Parser(grammar=parser.PyCore())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
+        # Boolean Operators
+        with self.subTest():
+            self.assertCaseEqual(peval, [
+                Case(('x and not(y)', {'x': 1, 'y': 0}), {}, True),
+                Case(('not(x and y)', {'x': 1, 'y': 0}), {}, True),
+                Case(('x or y and z', {'x': 1, 'y': 0, 'z': 0}), {}, True),
+                Case(('(x or y) and z', {'x': 1, 'y': 0, 'z': 0}), {}, False)])
+
+        # Bitwise Operators
+        with self.subTest():
+            self.assertCaseEqual(peval, [
+                Case(('x | (~y)', {'x': 1, 'y': 0}), {}, -1),
+                Case(('~(x | y)', {'x': 1, 'y': 0}), {}, -2),
+                Case(('x | y ^ z', {'x': 1, 'y': 0, 'z': 3}), {}, 3),
+                Case(('(x | y) ^ z', {'x': 1, 'y': 0, 'z': 3}), {}, 2),
+                Case(('x ^ y ^ z', {'x': 1, 'y': 0, 'z': 3}), {}, 2),
+                Case(('x ^ y & z', {'x': 3, 'y': 1, 'z': 0}), {}, 3),
+                Case(('(x ^ y) & z', {'x': 3, 'y': 1, 'z': 0}), {}, 0),
+                Case(('x & y >> z', {'x': 2, 'y': 4, 'z': 1}), {}, 2),
+                Case(('(x & y) >> z', {'x': 2, 'y': 4, 'z': 1}), {}, 0)])
+
+        # Arithmetic Operators
+        with self.subTest():
+            self.assertCaseEqual(peval, [
+                Case(('x + (-y)', {'x': 1, 'y': 1}), {}, 0),
+                Case(('-(x + y)', {'x': 1, 'y': 1}), {}, -2),
+                Case(('x + y * z', {'x': 1, 'y': 0, 'z': 0}), {}, 1),
+                Case(('(x + y) * z', {'x': 1, 'y': 0, 'z': 0}), {}, 0),
+                Case(('x * y ** z', {'x': 2, 'y': 2, 'z': 2}), {}, 8),
+                Case(('(x * y) ** z', {'x': 2, 'y': 2, 'z': 2}), {}, 16)])
+
+        # Boolean and Bitwise Operators
         # TODO
-        pass
+
+        # Bitwise and Arithmetic Operators
+        # TODO
+
 
     def test_PyCore_boolean(self) -> None:
         p = parser.Parser(grammar=parser.PyCore())
