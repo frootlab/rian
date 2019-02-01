@@ -128,6 +128,7 @@ class PyCore(Grammar):
         bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
+            # Sequence Operators
             Symbol(BINARY, ',', bind, 13), # Sequence binding
 
             # Arithmetic Operators
@@ -205,9 +206,14 @@ class PyExprEval(Grammar):
         concat: AnyOp = lambda *args: ''.join(map(str, args))
         iand: AnyOp = lambda a, b: a and b
         ior: AnyOp = lambda a, b: a or b
-        append: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
+        bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
+            # Sequence Operators
+            Symbol(BINARY, ',', bind, 0, True),
+            Symbol(BINARY, '||', concat, 1, False),
+
+            # Arithmetic Operators
             Symbol(UNARY, '-', operator.neg, 0, True),
             Symbol(BINARY, '+', operator.add, 2, True),
             Symbol(BINARY, '-', operator.sub, 2, True),
@@ -215,16 +221,20 @@ class PyExprEval(Grammar):
             Symbol(BINARY, '/', operator.truediv, 4, True),
             Symbol(BINARY, '%', operator.mod, 4, True),
             Symbol(BINARY, '^', math.pow, 6, False),
-            Symbol(BINARY, '||', concat, 1, False),
+
+            # Ordering Operators
             Symbol(BINARY, '==', operator.eq, 1, True),
             Symbol(BINARY, '!=', operator.ne, 1, True),
             Symbol(BINARY, '>', operator.gt, 1, True),
             Symbol(BINARY, '<', operator.lt, 1, True),
             Symbol(BINARY, '>=', operator.ge, 1, True),
             Symbol(BINARY, '<=', operator.le, 1, True),
-            Symbol(BINARY, ',', append, 0, True),
+
+            # Boolean Operators
             Symbol(BINARY, 'and', iand, 0, True),
             Symbol(BINARY, 'or', ior, 0, True),
+
+            # Functions
             Symbol(FUNCTION, 'abs', abs, 0, True),
             Symbol(FUNCTION, 'round', round, 0, True),
             Symbol(FUNCTION, 'min', min, 0, True),
@@ -244,8 +254,10 @@ class PyExprEval(Grammar):
             Symbol(FUNCTION, 'fac', math.factorial, 0, False),
             Symbol(FUNCTION, 'pow', math.pow, 0, False),
             Symbol(FUNCTION, 'atan2', math.atan2, 0, False),
-            Symbol(FUNCTION, 'concat', concat, 0, False),
             Symbol(FUNCTION, 'if', iif, 0, False),
+            Symbol(FUNCTION, 'concat', concat, 0, False),
+
+            # Constants
             Symbol(CONSTANT, 'E', math.e, 0, False),
             Symbol(CONSTANT, 'PI', math.pi, 0, False)])
 
@@ -475,7 +487,7 @@ class Parser:
     _tmp_priority: int
 
     def __init__(self, grammar: Optional[Grammar] = None) -> None:
-        self.grammar = grammar or PyExprEval() # TODO: change to PyCore()
+        self.grammar = grammar or PyCore()
 
         # Update dictionaries with unary and binary operators
         self._unary = self.grammar.get(UNARY)

@@ -520,10 +520,6 @@ class TestParser(ModuleTestCase):
                 Case(('x << y + z', {'x': 1, 'y': 2, 'z': 3}), {}, 32),
                 Case(('(x << y) + z', {'x': 1, 'y': 2, 'z': 3}), {}, 7)])
 
-        # Bitwise and Arithmetic Operators
-        # TODO
-
-
     def test_PyCore_boolean(self) -> None:
         p = parser.Parser(grammar=parser.PyCore())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
@@ -682,7 +678,6 @@ class TestParser(ModuleTestCase):
                 Case(('+(+x)', {'x': -1}), {}, -1)])
 
         # Negation
-        # TODO: '--x' currently raises an Error
         with self.subTest(symbol='-'):
             self.assertCaseEqual(peval, [
                 Case(('-x', {'x': 1}), {}, -1),
@@ -767,58 +762,51 @@ class TestParser(ModuleTestCase):
         pass # Implicitely tested by test_Parser
 
     def test_Parser(self) -> None:
-        pass # Exlicitly tested by functions
+        pass # Implicitely tested within grammars PyCore and PyExprEval
 
-    def test_PyExpressionEval(self) -> None:
-        pass
+    def test_PyExprEval(self) -> None:
+        p = parser.Parser(grammar=parser.PyExprEval())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
-    def test_Parser_eval(self) -> None:
-        p = parser.Parser()
+        self.assertEqual(peval("Ee1", {"Ee1": 2}), 2)
+        self.assertEqual(peval("Ee1+1", {"Ee1": 1}), 2)
+        self.assertEqual(peval('2^x', {'x': 3}), 8.0)
+        self.assertEqual(peval('2-3^x', {'x': 4}), -79.0)
+        self.assertEqual(peval('-2-3^x', {'x': 4}), -83.0)
+        self.assertEqual(peval('-3^x', {'x': 4}), -81.0)
+        self.assertEqual(peval('(-3)^x', {'x': 4}), 81.0)
+        self.assertEqual(peval('2*x+y', {'x': 4, 'y': 1}), 9)
+        self.assertEqual(peval("'x'=='x'", {}), True)
+        self.assertEqual(peval("(a+b)==c", {'a': 1, 'b': 2, 'c': 3}), True)
+        self.assertEqual(peval("(a+b)!=c", {'a': 1, 'b': 2, 'c': 3}), False)
+        self.assertEqual(peval("x||y", {'x': 'hi ', 'y': 'u'}), 'hi u')
+        self.assertEqual(peval("'x'||'y'", {}), 'xy')
+        self.assertEqual(peval("concat('hi',' ','u')", {}), 'hi u')
+        self.assertEqual(peval('if(a>b,5,6)', {'a':8, 'b':3}), 5)
+        self.assertEqual(peval('if(a,b,c)', {'a':None, 'b':1, 'c':3}), 3)
+        self.assertEqual(peval('a,3', {'a': [1, 2]}), [1, 2, 3])
+        self.assertEqual(peval(".1", {}), peval("0.1", {}))
+        self.assertEqual(peval(".1*.2", {}), peval("0.1*0.2", {}))
+        self.assertEqual(peval(".5^3", {}), .125)
+        self.assertEqual(peval("16^.5", {}), 4.)
+        self.assertEqual(peval("8300*.8", {}), 6640.)
+        self.assertEqual(peval('"a b"*2', {'"a b"': 2}), 4)
 
-        self.assertExactEqual(p.eval("Ee1", variables={"Ee1": 2}), 2)
-        self.assertExactEqual(p.eval("Ee1+1", variables={"Ee1": 1}), 2)
-
-        f: AnyOp = lambda expr, val: p.parse(expr).eval(val)
-
-        self.assertExactEqual(f('2^x', {'x': 3}), 8.0)
-        self.assertExactEqual(f('2-3^x', {'x': 4}), -79.0)
-        self.assertExactEqual(f('-2-3^x', {'x': 4}), -83.0)
-        self.assertExactEqual(f('-3^x', {'x': 4}), -81.0)
-        self.assertExactEqual(f('(-3)^x', {'x': 4}), 81.0)
-        self.assertExactEqual(f('2*x+y', {'x': 4, 'y': 1}), 9)
-        self.assertEqual(f("'x'=='x'", {}), True)
-        self.assertEqual(f("(a+b)==c", {'a': 1, 'b': 2, 'c': 3}), True)
-        self.assertEqual(f("(a+b)!=c", {'a': 1, 'b': 2, 'c': 3}), False)
         self.assertEqual(
-            f("(a^2-b^2)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), True)
+            peval("(a^2-b^2)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), True)
         self.assertEqual(
-            f("(a^2-b^2+1)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), False)
-        self.assertEqual(f("x||y", {'x': 'hi ', 'y': 'u'}), 'hi u')
-        self.assertEqual(f("'x'||'y'", {}), 'xy')
-        self.assertEqual(f("concat('hi',' ','u')", {}), 'hi u')
-        self.assertExactEqual(f('if(a>b,5,6)', {'a':8, 'b':3}), 5)
-        self.assertExactEqual(f('if(a,b,c)', {'a':None, 'b':1, 'c':3}), 3)
-        self.assertEqual(f('a,3', {'a': [1, 2]}), [1, 2, 3])
+            peval("(a^2-b^2+1)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), False)
 
-        # Checking if '"a b"' could be a variable (using it in sql)
-        self.assertEqual(f('"a b"*2', {'"a b"': 2}), 4)
-
-        # Decimals
-        self.assertExactEqual(f(".1", {}), f("0.1", {}))
-        self.assertExactEqual(f(".1*.2", {}), f("0.1*0.2", {}))
-        self.assertExactEqual(f(".5^3", {}), float(0.125))
-        self.assertExactEqual(f("16^.5", {}), 4.0)
-        self.assertExactEqual(f("8300*.8", {}), 6640.0)
-        self.assertRaises(ValueError, f, "..5", {})
+        self.assertRaises(ValueError, peval, "..5", {})
 
     def test_Parser_subst(self) -> None:
-        p = parser.Parser()
+        p = parser.Parser(grammar=parser.PyExprEval())
 
         expr = p.parse('2*x+1').subst('x', '4*x')
         self.assertExactEqual(expr({'x': 3}), 25)
 
     def test_Parser_simplify(self) -> None:
-        p = parser.Parser()
+        p = parser.Parser(grammar=parser.PyExprEval())
         f: AnyOp = lambda expr, d: p.parse(expr).simplify(d)
 
         # expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
@@ -829,7 +817,7 @@ class TestParser(ModuleTestCase):
         self.assertEqual(f('x*(y*atan(1))', {'y': 4}).variables, ['x'])
 
     def test_Parser_to_string(self) -> None:
-        p = parser.Parser()
+        p = parser.Parser(grammar=parser.PyExprEval())
 
         expr = p.parse("'a'=='b'")
         self.assertEqual("'a'=='b'", str(expr))
@@ -845,45 +833,45 @@ class TestParser(ModuleTestCase):
         self.assertEqual(str(expr.subst('a', 'b')), "func(b, 1.51, 'ok')")
 
     def test_Parser_variables(self) -> None:
-        p = parser.Parser()
-        f: AnyOp = lambda expr: p.parse(expr).variables
+        p = parser.Parser(grammar=parser.PyExprEval())
+        getvars: AnyOp = lambda expr: p.parse(expr).variables
         # TODO: use assertCaseEqual
 
-        self.assertEqual(f('x * (y * atan(1))'), ['x', 'y'])
-        self.assertEqual(f('pow(x,y)'), ['x', 'y'])
+        self.assertEqual(getvars('x * (y * atan(1))'), ['x', 'y'])
+        self.assertEqual(getvars('pow(x,y)'), ['x', 'y'])
 
         # constants: E and PI
-        self.assertEqual(f("PI"), [])
-        self.assertEqual(f("PI "), [])
-        self.assertEqual(f("E "), [])
-        self.assertEqual(f(" E"), [])
-        self.assertEqual(f("E"), [])
-        self.assertEqual(f("E+1"), [])
-        self.assertEqual(f("E / 1"), [])
-        self.assertEqual(f("sin(PI)+E"), [])
-        self.assertEqual(f('Pie'), ["Pie"])
-        self.assertEqual(f('PIe'), ["PIe"])
-        self.assertEqual(f('Eval'), ["Eval"])
-        self.assertEqual(f('Eval1'), ["Eval1"])
-        self.assertEqual(f('EPI'), ["EPI"])
-        self.assertEqual(f('PIE'), ["PIE"])
-        self.assertEqual(f('Engage'), ["Engage"])
-        self.assertEqual(f('Engage * PIE'), ["Engage", "PIE"])
-        self.assertEqual(f('Engage_'), ["Engage_"])
-        self.assertEqual(f('Engage1'), ["Engage1"])
-        self.assertEqual(f('E1'), ["E1"])
-        self.assertEqual(f('PI2'), ["PI2"])
-        self.assertEqual(f('(E1 + PI)'), ["E1"])
-        self.assertEqual(f('E1_'), ["E1_"])
-        self.assertEqual(f('E_'), ["E_"])
+        self.assertEqual(getvars("PI"), [])
+        self.assertEqual(getvars("PI "), [])
+        self.assertEqual(getvars("E "), [])
+        self.assertEqual(getvars(" E"), [])
+        self.assertEqual(getvars("E"), [])
+        self.assertEqual(getvars("E+1"), [])
+        self.assertEqual(getvars("E / 1"), [])
+        self.assertEqual(getvars("sin(PI)+E"), [])
+        self.assertEqual(getvars('Pie'), ["Pie"])
+        self.assertEqual(getvars('PIe'), ["PIe"])
+        self.assertEqual(getvars('Eval'), ["Eval"])
+        self.assertEqual(getvars('Eval1'), ["Eval1"])
+        self.assertEqual(getvars('EPI'), ["EPI"])
+        self.assertEqual(getvars('PIE'), ["PIE"])
+        self.assertEqual(getvars('Engage'), ["Engage"])
+        self.assertEqual(getvars('Engage * PIE'), ["Engage", "PIE"])
+        self.assertEqual(getvars('Engage_'), ["Engage_"])
+        self.assertEqual(getvars('Engage1'), ["Engage1"])
+        self.assertEqual(getvars('E1'), ["E1"])
+        self.assertEqual(getvars('PI2'), ["PI2"])
+        self.assertEqual(getvars('(E1 + PI)'), ["E1"])
+        self.assertEqual(getvars('E1_'), ["E1_"])
+        self.assertEqual(getvars('E_'), ["E_"])
 
     def test_Parser_symbols(self) -> None:
-        p = parser.Parser()
+        p = parser.Parser(grammar=parser.PyExprEval())
 
         self.assertEqual(p.parse('pow(x,y)').symbols, ['pow', 'x', 'y'])
 
     def test_Parser_functions(self) -> None:
-        p = parser.Parser()
+        p = parser.Parser(grammar=parser.PyExprEval())
 
         def testFunction0() -> Any:
             return 13
