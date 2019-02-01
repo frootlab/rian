@@ -76,6 +76,19 @@ CONSTANT = 3
 VARIABLE = 4
 
 #
+# Helper function for sequence binding
+#
+
+class _Pack(list):
+    pass
+
+def _pack(a: Any, b: Any) -> _Pack:
+    if isinstance(a, list):
+        return _Pack(a + [b])
+    return _Pack([a, b])
+
+
+#
 # Symbols and Grammars
 #
 
@@ -133,11 +146,10 @@ class PyCore(Grammar):
         bool_and: AnyOp = lambda a, b: a and b
         bool_or: AnyOp = lambda a, b: a or b
         is_in: AnyOp = lambda a, b: operator.contains(b, a)
-        bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
             # Sequence Operators
-            Symbol(BINARY, ',', bind, 13), # Sequence binding
+            Symbol(BINARY, ',', _pack, 13), # Sequence packing
 
             # Arithmetic Operators
             Symbol(UNARY, '+', operator.pos, 11), # Unary Plus
@@ -214,11 +226,10 @@ class PyExprEval(Grammar):
         concat: AnyOp = lambda *args: ''.join(map(str, args))
         iand: AnyOp = lambda a, b: a and b
         ior: AnyOp = lambda a, b: a or b
-        bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
             # Sequence Operators
-            Symbol(BINARY, ',', bind, 0, True),
+            Symbol(BINARY, ',', _pack, 0, True),
             Symbol(BINARY, '||', concat, 1, False),
 
             # Arithmetic Operators
@@ -322,8 +333,10 @@ class Expression:
         values = values or {}
         stack = []
         tokens = []
+
         unary = self.grammar.get(UNARY)
         binary = self.grammar.get(BINARY)
+
         for tok in self.tokens:
             if tok.type == CONSTANT:
                 stack.append(tok)
@@ -396,7 +409,7 @@ class Expression:
                 func = stack.pop()
                 if not callable(func):
                     raise Exception(f'{func} is not callable')
-                if isinstance(a, list):
+                if isinstance(a, _Pack):
                     stack.append(func(*a))
                 else:
                     stack.append(func(a))
@@ -627,7 +640,7 @@ class Parser:
                 if self._error:
                     self._raise_error(self._error)
                 self._raise_error(f"unknown character '{self._cur_char}'")
-        if self._tmp_priority < 0 or self._tmp_priority >= 10:
+        if self._tmp_priority < 0 or self._tmp_priority >= 100:
             self._raise_error('unmatched \"()\"')
         while operators:
             tokens.append(operators.pop())
@@ -756,14 +769,14 @@ class Parser:
         if self._cur_char != '(':
             return False
         self._cur_pos += 1
-        self._tmp_priority += 10
+        self._tmp_priority += 100
         return True
 
     def _is_right(self) -> bool:
         if self._cur_char != ')':
             return False
         self._cur_pos += 1
-        self._tmp_priority -= 10
+        self._tmp_priority -= 100
         return True
 
     def _is_comma(self) -> bool:

@@ -495,7 +495,7 @@ class TestParser(ModuleTestCase):
         grammar = parser.PyCore()
         self.assertEqual(grammar.get(parser.FUNCTION), {})
 
-        mean: AnyOp = lambda *s: sum(s) / len(s)
+        mean: AnyOp = lambda s: sum(s) / len(s)
         grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
         self.assertIn('mean', grammar.get(parser.FUNCTION))
 
@@ -786,6 +786,30 @@ class TestParser(ModuleTestCase):
                 Case(('x @ y', {'x': prj1, 'y': zero}), {}, zero),
                 Case(('x @ y', {'x': exch, 'y': exch}), {}, idem),
                 Case(('x @ y', {'x': prj1, 'y': prj2}), {}, zero)])
+
+    def test_PyBuiltins(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltins())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        self.assertCaseEqual(peval, [
+            Case(('abs(x)', {'x': -1}), {}, 1),
+            Case(('all(seq)', {'seq': [1, 1, 0]}), {}, False),
+            Case(('any(seq)', {'seq': [1, 1, 0]}), {}, True),
+            Case(('ascii(x)', {'x': 1}), {}, '1'),
+            Case(('bin(x)', {'x': 1}), {}, '0b1'),
+            Case(('bool(x)', {'x': 1}), {}, True),
+            Case(('bytearray(x)', {'x': 1}), {}, bytearray(b'\x00')),
+            Case(('bytearray(x, e)',
+                {'x': 'x', 'e': 'utf8'}), {}, bytearray(b'x')),
+            Case(('bytes(x)', {'x': 1}), {}, b'\x00'),
+            Case(('bytes(x, e)', {'x': 'x', 'e': 'utf8'}), {}, b'x'),
+            Case(('callable(f)', {'f': object}), {}, True),
+            Case(('chr(x)', {'x': 65}), {}, 'A'),
+            Case(('bool(classmethod(f))', {'f': object}), {}, True),
+            Case(('bool(compile(a, b, c))',
+                {'a': '1', 'b': '1', 'c': 'eval'}), {}, True),
+            Case(('complex(x)', {'x': 1}), {}, 1+0j),
+        ])
 
     def test_Parser(self) -> None:
         pass # Implicitely tested within grammars PyCore and PyExprEval
