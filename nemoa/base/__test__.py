@@ -13,12 +13,12 @@ from unittest import mock
 from pathlib import Path
 from typing import Any, Callable, Union
 import numpy as np
-from nemoa import errors
 from nemoa.base import abc, array, attrib, binary, call, catalog, check, env
 from nemoa.base import literal, mapping, otree, parser, pkg, stack, stype
 from nemoa.base import nbase
 from nemoa.test import ModuleTestCase, Case
-from nemoa.types import Module, PathLikeList, StrList, NaN, Method, Function
+from nemoa.types import AnyOp, Module, PathLikeList, StrList, NaN, Method
+from nemoa.types import Function
 
 #
 # Test Cases
@@ -475,11 +475,260 @@ class TestCatalog(ModuleTestCase):
 class TestParser(ModuleTestCase):
     module = parser
 
+    def test_PyCore(self) -> None:
+        # The individual operators are tested within seperate tests. Here the
+        # associativity and precedence is tested
+
+        # TODO
+        pass
+
+    def test_PyCore_boolean(self) -> None:
+        p = parser.Parser(grammar=parser.PyCore())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Boolean OR
+        with self.subTest(symbol='or'):
+            self.assertCaseEqual(peval, [
+                Case(('x or y', {'x': True, 'y': False}), {}, True),
+                Case(('x or y', {'x': False, 'y': True}), {}, True),
+                Case(('x or y', {'x': False, 'y': False}), {}, False),
+                Case(('x or y', {'x': True, 'y': True}), {}, True)])
+
+        # Boolean AND
+        with self.subTest(symbol='and'):
+            self.assertCaseEqual(peval, [
+                Case(('x and y', {'x': True, 'y': False}), {}, False),
+                Case(('x and y', {'x': False, 'y': True}), {}, False),
+                Case(('x and y', {'x': False, 'y': False}), {}, False),
+                Case(('x and y', {'x': True, 'y': True}), {}, True)])
+
+        # Boolean NOT
+        with self.subTest(symbol='not'):
+            self.assertCaseEqual(peval, [
+                Case(('not(x)', {'x': True}), {}, False),
+                Case(('not(x)', {'x': False}), {}, True)])
+
+    def test_PyCore_ordering(self) -> None:
+        p = parser.Parser(grammar=parser.PyCore())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Equality
+        with self.subTest(symbol='=='):
+            self.assertCaseEqual(peval, [
+                Case(('x == y', {'x': 1, 'y': 1}), {}, True),
+                Case(('x == y', {'x': 1, 'y': 2}), {}, False),
+                Case(('x == y', {'x': 'a', 'y': 'a'}), {}, True),
+                Case(('x == y', {'x': 'a', 'y': 'b'}), {}, False)])
+
+        # Inequality
+        with self.subTest(symbol='!='):
+            self.assertCaseEqual(peval, [
+                Case(('x != y', {'x': 1, 'y': 1}), {}, False),
+                Case(('x != y', {'x': 1, 'y': 2}), {}, True),
+                Case(('x != y', {'x': 'a', 'y': 'a'}), {}, False),
+                Case(('x != y', {'x': 'a', 'y': 'b'}), {}, True)])
+
+        # Greater
+        with self.subTest(symbol='>'):
+            self.assertCaseEqual(peval, [
+                Case(('x > y', {'x': 1, 'y': 1}), {}, False),
+                Case(('x > y', {'x': 2, 'y': 1}), {}, True),
+                Case(('x > y', {'x': 'a', 'y': 'a'}), {}, False),
+                Case(('x > y', {'x': 'b', 'y': 'a'}), {}, True)])
+
+        # Greater or Equal
+        with self.subTest(symbol='>='):
+            self.assertCaseEqual(peval, [
+                Case(('x >= y', {'x': 1, 'y': 2}), {}, False),
+                Case(('x >= y', {'x': 1, 'y': 1}), {}, True),
+                Case(('x >= y', {'x': 'a', 'y': 'b'}), {}, False),
+                Case(('x >= y', {'x': 'a', 'y': 'a'}), {}, True)])
+
+        # Lower
+        with self.subTest(symbol='<'):
+            self.assertCaseEqual(peval, [
+                Case(('x < y', {'x': 1, 'y': 1}), {}, False),
+                Case(('x < y', {'x': 1, 'y': 2}), {}, True),
+                Case(('x < y', {'x': 'a', 'y': 'a'}), {}, False),
+                Case(('x < y', {'x': 'a', 'y': 'b'}), {}, True)])
+
+        # Lower or Equal
+        with self.subTest(symbol='<='):
+            self.assertCaseEqual(peval, [
+                Case(('x <= y', {'x': 2, 'y': 1}), {}, False),
+                Case(('x <= y', {'x': 1, 'y': 1}), {}, True),
+                Case(('x <= y', {'x': 'b', 'y': 'a'}), {}, False),
+                Case(('x <= y', {'x': 'a', 'y': 'a'}), {}, True)])
+
+        # Identity
+        with self.subTest(symbol='is'):
+            self.assertCaseEqual(peval, [
+                Case(('x is y', {'x': True, 'y': True}), {}, True),
+                Case(('x is y', {'x': True, 'y': False}), {}, False)])
+
+        # Containment
+        with self.subTest(symbol='in'):
+            self.assertCaseEqual(peval, [
+                Case(('x in y', {'x': 'a', 'y': 'a'}), {}, True),
+                Case(('x in y', {'x': 'a', 'y': 'b'}), {}, False),
+                Case(('x in y', {'x': 'a', 'y': 'ba'}), {}, True),
+                Case(('x in y', {'x': 'ab', 'y': 'ba'}), {}, False)])
+
+    def test_PyCore_bitwise(self) -> None:
+        p = parser.Parser(grammar=parser.PyCore())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Bitwise Inversion
+        with self.subTest(symbol='~'):
+            self.assertCaseEqual(peval, [
+                Case(('~x', {'x': 0}), {}, -1),
+                Case(('~x', {'x': -1}), {}, 0),
+                Case(('~x', {'x': 1}), {}, -2),
+                Case(('~x', {'x': -2}), {}, 1),
+                Case(('~(~x)', {'x': 3}), {}, 3)])
+
+        # Bitwise Right Shift
+        with self.subTest(symbol='>>'):
+            self.assertCaseEqual(peval, [
+                Case(('x >> y', {'x': 1, 'y': 1}), {}, 0),
+                Case(('x >> y', {'x': 2, 'y': 2}), {}, 0),
+                Case(('x >> y', {'x': 1, 'y': 2}), {}, 0),
+                Case(('x >> y', {'x': 2, 'y': 1}), {}, 1)])
+
+        # Bitwise Left Shift
+        with self.subTest(symbol='>>'):
+            self.assertCaseEqual(peval, [
+                Case(('x << y', {'x': 1, 'y': 1}), {}, 2),
+                Case(('x << y', {'x': 2, 'y': 2}), {}, 8),
+                Case(('x << y', {'x': 1, 'y': 2}), {}, 4),
+                Case(('x << y', {'x': 2, 'y': 1}), {}, 4)])
+
+        # Bitwise AND
+        with self.subTest(symbol='&'):
+            self.assertCaseEqual(peval, [
+                Case(('x & y', {'x': 2, 'y': 2}), {}, 2),
+                Case(('x & y', {'x': 2, 'y': 3}), {}, 2),
+                Case(('x & y', {'x': 1, 'y': 3}), {}, 1),
+                Case(('x & y', {'x': 1, 'y': 2}), {}, 0)])
+
+        # Bitwise XOR
+        with self.subTest(symbol='^'):
+            self.assertCaseEqual(peval, [
+                Case(('x ^ y', {'x': 2, 'y': 2}), {}, 0),
+                Case(('x ^ y', {'x': 2, 'y': 3}), {}, 1),
+                Case(('x ^ y', {'x': 1, 'y': 3}), {}, 2),
+                Case(('x ^ y', {'x': 1, 'y': 2}), {}, 3)])
+
+        # Bitwise OR
+        with self.subTest(symbol='|'):
+            self.assertCaseEqual(peval, [
+                Case(('x | y', {'x': 2, 'y': 2}), {}, 2),
+                Case(('x | y', {'x': 2, 'y': 3}), {}, 3),
+                Case(('x | y', {'x': 1, 'y': 3}), {}, 3),
+                Case(('x | y', {'x': 1, 'y': 2}), {}, 3)])
+
+    def test_PyCore_arithmetic(self) -> None:
+        p = parser.Parser(grammar=parser.PyCore())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Unary Plus
+        with self.subTest(symbol='+'):
+            self.assertCaseEqual(peval, [
+                Case(('+x', {'x': 1}), {}, 1),
+                Case(('+x', {'x': -1}), {}, -1),
+                Case(('+(+x)', {'x': 1}), {}, 1),
+                Case(('+(+x)', {'x': -1}), {}, -1)])
+
+        # Negation
+        # TODO: '--x' currently raises an Error
+        with self.subTest(symbol='-'):
+            self.assertCaseEqual(peval, [
+                Case(('-x', {'x': 1}), {}, -1),
+                Case(('-x', {'x': -1}), {}, 1),
+                Case(('-(-x)', {'x': 1}), {}, 1),
+                Case(('-(-x)', {'x': -1}), {}, -1)])
+
+        # Exponentiation
+        with self.subTest(symbol='**'):
+            self.assertCaseEqual(peval, [
+                Case(('x ** y', {'x': 1, 'y': 1}), {}, 1),
+                Case(('x ** y', {'x': 1., 'y': 1}), {}, 1.),
+                Case(('x ** y', {'x': 4, 'y': .5}), {}, 2.),
+                Case(('x ** y', {'x': 2, 'y': 2.}), {}, 4.)])
+
+        # Division
+        with self.subTest(symbol='/'):
+            self.assertCaseEqual(peval, [
+                Case(('x / y', {'x': 1, 'y': 1}), {}, 1.),
+                Case(('x / y', {'x': 2, 'y': 1}), {}, 2.),
+                Case(('x / y', {'x': 1, 'y': .2}), {}, 5.),
+                Case(('x / y', {'x': 1, 'y': 2}), {}, .5)])
+
+        # Floor Division
+        with self.subTest(symbol='//'):
+            self.assertCaseEqual(peval, [
+                Case(('x // y', {'x': 1, 'y': 1}), {}, 1),
+                Case(('x // y', {'x': 2, 'y': 1}), {}, 2),
+                Case(('x // y', {'x': 1, 'y': .2}), {}, 4),
+                Case(('x // y', {'x': 1, 'y': 2}), {}, 0)])
+
+        # Remainder
+        with self.subTest(symbol='%'):
+            self.assertCaseEqual(peval, [
+                Case(('x % y', {'x': 2, 'y': 3}), {}, 2),
+                Case(('x % y', {'x': 3, 'y': 2}), {}, 1),
+                Case(('x % y', {'x': 2, 'y': 1}), {}, 0),
+                Case(('x % y', {'x': .1, 'y': .5}), {}, .1)])
+
+        # Multiplication
+        with self.subTest(symbol='*'):
+            self.assertCaseEqual(peval, [
+                Case(('x * y', {'x': -1, 'y': -1}), {}, 1),
+                Case(('x * y', {'x': 2, 'y': .5}), {}, 1),
+                Case(('x * y', {'x': 2, 'y': 2}), {}, 4),
+                Case(('x * y', {'x': -.5, 'y': .5}), {}, -.25)])
+
+        # Addition
+        with self.subTest(symbol='+'):
+            self.assertCaseEqual(peval, [
+                Case(('x + y', {'x': 0, 'y': 1}), {}, 1),
+                Case(('x + y', {'x': -1, 'y': 1}), {}, 0),
+                Case(('x + y', {'x': 2, 'y': 2}), {}, 4),
+                Case(('x + y', {'x': .5, 'y': .5}), {}, 1)])
+
+        # Subtraction
+        with self.subTest(symbol='-'):
+            self.assertCaseEqual(peval, [
+                Case(('x - y', {'x': 0, 'y': 1}), {}, -1),
+                Case(('x - y', {'x': -1, 'y': 1}), {}, -2),
+                Case(('x - y', {'x': 2, 'y': 2}), {}, 0),
+                Case(('x - y', {'x': .5, 'y': .5}), {}, 0)])
+
+        # Matrix Product
+        with self.subTest(symbol='@'):
+            zero = np.matrix([(0, 0), (0, 0)]) # Zero Projection
+            idem = np.matrix([(1, 0), (0, 1)]) # Identity
+            exch = np.matrix([(0, 1), (1, 0)]) # Exchange
+            prj1 = np.matrix([(1, 0), (0, 0)]) # Projection 1
+            prj2 = np.matrix([(0, 0), (0, 1)]) # Projection 2
+
+            self.assertCaseEqual(peval, [
+                Case(('x @ y', {'x': idem, 'y': idem}), {}, idem),
+                Case(('x @ y', {'x': idem, 'y': prj1}), {}, prj1),
+                Case(('x @ y', {'x': prj2, 'y': idem}), {}, prj2),
+                Case(('x @ y', {'x': zero, 'y': idem}), {}, zero),
+                Case(('x @ y', {'x': prj1, 'y': zero}), {}, zero),
+                Case(('x @ y', {'x': exch, 'y': exch}), {}, idem),
+                Case(('x @ y', {'x': prj1, 'y': prj2}), {}, zero)])
+
     def test_Expression(self) -> None:
         pass # Implicitely tested by test_Parser
 
     def test_Parser(self) -> None:
         pass # Exlicitly tested by functions
+
+    def test_PyExpressionEval(self) -> None:
+        pass
 
     def test_Parser_eval(self) -> None:
         p = parser.Parser()
@@ -489,26 +738,12 @@ class TestParser(ModuleTestCase):
 
         f: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
-        self.assertExactEqual(f('1', {}), 1)
-        self.assertExactEqual(f('a', {'a': 2}), 2)
-        self.assertExactEqual(f('2*3', {}), 6)
         self.assertExactEqual(f('2^x', {'x': 3}), 8.0)
-        self.assertEqual(f('x<3', {'x': 3}), False)
-        self.assertEqual(f('x<3', {'x': 2}), True)
-        self.assertEqual(f('x<=3', {'x': 3}), True)
-        self.assertEqual(f('x<=3', {'x': 4}), False)
-        self.assertEqual(f('x>3', {'x': 4}), True)
-        self.assertEqual(f('x>=3', {'x': 3}), True)
-        self.assertExactEqual(f('2*x+1', {'x': 3}), 7)
-        self.assertExactEqual(f('2+3*x', {'x': 4}), 14)
-        self.assertExactEqual(f('(2+3)*x', {'x': 4}), 20)
         self.assertExactEqual(f('2-3^x', {'x': 4}), -79.0)
         self.assertExactEqual(f('-2-3^x', {'x': 4}), -83.0)
         self.assertExactEqual(f('-3^x', {'x': 4}), -81.0)
         self.assertExactEqual(f('(-3)^x', {'x': 4}), 81.0)
         self.assertExactEqual(f('2*x+y', {'x': 4, 'y': 1}), 9)
-        self.assertEqual(f("x||y", {'x': 'hi ', 'y': 'u'}), 'hi u')
-        self.assertEqual(f("'x'||'y'", {}), 'xy')
         self.assertEqual(f("'x'=='x'", {}), True)
         self.assertEqual(f("(a+b)==c", {'a': 1, 'b': 2, 'c': 3}), True)
         self.assertEqual(f("(a+b)!=c", {'a': 1, 'b': 2, 'c': 3}), False)
@@ -516,9 +751,11 @@ class TestParser(ModuleTestCase):
             f("(a^2-b^2)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), True)
         self.assertEqual(
             f("(a^2-b^2+1)==((a+b)*(a-b))", {'a': 4859, 'b': 13150}), False)
+        self.assertEqual(f("x||y", {'x': 'hi ', 'y': 'u'}), 'hi u')
+        self.assertEqual(f("'x'||'y'", {}), 'xy')
         self.assertEqual(f("concat('hi',' ','u')", {}), 'hi u')
-        self.assertExactEqual(f('iif(a>b,5,6)', {'a':8,'b':3}),5)
-        self.assertExactEqual(f('iif(a,b,c)', {'a':None,'b':1,'c':3}),3)
+        self.assertExactEqual(f('if(a>b,5,6)', {'a':8, 'b':3}), 5)
+        self.assertExactEqual(f('if(a,b,c)', {'a':None, 'b':1, 'c':3}), 3)
         self.assertEqual(f('a,3', {'a': [1, 2]}), [1, 2, 3])
 
         # Checking if '"a b"' could be a variable (using it in sql)
@@ -568,10 +805,10 @@ class TestParser(ModuleTestCase):
     def test_Parser_variables(self) -> None:
         p = parser.Parser()
         f: AnyOp = lambda expr: p.parse(expr).variables
-        # TODO: use assertAllEqual
+        # TODO: use assertCaseEqual
 
         self.assertEqual(f('x * (y * atan(1))'), ['x', 'y'])
-        self.assertEqual(f('pow(x,y)'), ['x','y'])
+        self.assertEqual(f('pow(x,y)'), ['x', 'y'])
 
         # constants: E and PI
         self.assertEqual(f("PI"), [])
@@ -601,7 +838,7 @@ class TestParser(ModuleTestCase):
     def test_Parser_symbols(self) -> None:
         p = parser.Parser()
 
-        self.assertEqual(p.parse('pow(x,y)').symbols, ['pow','x','y'])
+        self.assertEqual(p.parse('pow(x,y)').symbols, ['pow', 'x', 'y'])
 
     def test_Parser_functions(self) -> None:
         p = parser.Parser()
@@ -628,11 +865,11 @@ class TestParser(ModuleTestCase):
 
         self.assertExactEqual(
             p.parse('testFunction(x)').eval(
-                {"x":2,"testFunction": testFunction1}), 13)
+                {"x":2, "testFunction": testFunction1}), 13)
 
         self.assertExactEqual(
             p.parse('testFunction(x , y)').eval(
-                {"x":2,"y":3,"testFunction": testFunction2}), 13)
+                {"x":2, "y":3, "testFunction": testFunction2}), 13)
 
         p.grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
         p.grammar.add(parser.Symbol(parser.FUNCTION, 'count', counter(0)))
@@ -721,13 +958,13 @@ class TestCall(ModuleTestCase):
 
     def test_safe_call(self) -> None:
         f = call.parameters
-        self.assertAllEqual(call.safe_call, [
+        self.assertCaseEqual(call.safe_call, [
             Case(args=(f, list), value=OrderedDict()),
             Case(args=(f, list), kwds={'test': True}, value=OrderedDict())])
 
     def test_parameters(self) -> None:
         f = call.parameters
-        self.assertAllEqual(call.parameters, [
+        self.assertCaseEqual(call.parameters, [
             Case(args=(f, ), value=OrderedDict()),
             Case(args=(f, list), value=OrderedDict([('op', list)])),
             Case(args=(f, list), kwds={'test': True},
@@ -741,7 +978,7 @@ class TestOtree(ModuleTestCase):
     module = otree
 
     def test_has_base(self) -> None:
-        self.assertAllEqual(otree.has_base, [
+        self.assertCaseEqual(otree.has_base, [
             Case(args=(object, object), value=True),
             Case(args=(object, 'object'), value=True),
             Case(args=('object', object), value=True),
@@ -751,7 +988,7 @@ class TestOtree(ModuleTestCase):
             Case(args=('object', type), value=False)])
 
     def test_get_members(self) -> None:
-        self.assertAllComprise(otree.get_members, [
+        self.assertCaseContain(otree.get_members, [
             Case(args=(object, ), value='__class__'),
             Case(args=(otree, ), value='get_members'),
             Case(args=(otree, ), kwds={'classinfo': Function},
@@ -762,7 +999,7 @@ class TestOtree(ModuleTestCase):
                 'rules': {'about': lambda arg, attr: arg in attr},
                 'about': 'members'}, value='get_members')])
 
-        self.assertNoneComprise(otree.get_members, [
+        self.assertCaseNotContain(otree.get_members, [
             Case(args=(object, '*dummy*'), value='__class__'),
             Case(args=(otree, ), kwds={'classinfo': str},
                 value='get_members'),
@@ -774,7 +1011,7 @@ class TestOtree(ModuleTestCase):
                 'about': 'members'}, value='get_members')])
 
     def test_get_members_dict(self) -> None:
-        self.assertAllComprise(otree.get_members_dict, [
+        self.assertCaseContain(otree.get_members_dict, [
             Case(args=(object, ), value='object.__class__'),
             Case(args=(otree, ), value='nemoa.base.otree.get_members'),
             Case(args=(otree, ), kwds={'classinfo': Function},
@@ -785,7 +1022,7 @@ class TestOtree(ModuleTestCase):
                 'rules': {'about': lambda arg, attr: arg in attr},
                 'about': 'members'}, value='nemoa.base.otree.get_members')])
 
-        self.assertNoneComprise(otree.get_members_dict, [
+        self.assertCaseNotContain(otree.get_members_dict, [
             Case(args=(object, '*dummy*'), value='object.__class__'),
             Case(args=(otree, ), kwds={'classinfo': str},
                 value='nemoa.base.otree.get_members'),
@@ -798,7 +1035,7 @@ class TestOtree(ModuleTestCase):
                 'about': 'members'}, value='nemoa.base.otree.get_members')])
 
     def test_get_name(self) -> None:
-        self.assertAllEqual(otree.get_name, [
+        self.assertCaseEqual(otree.get_name, [
             Case(args=('', ), value='str'),
             Case(args=(0, ), value='int'),
             Case(args=(object, ), value='object'),
@@ -807,7 +1044,7 @@ class TestOtree(ModuleTestCase):
             Case(args=(otree, ), value='nemoa.base.otree')])
 
     def test_get_lang_repr(self) -> None:
-        self.assertAllEqual(otree.get_lang_repr, [
+        self.assertCaseEqual(otree.get_lang_repr, [
             Case(args=(set(), ), value='no elements'),
             Case(args=([], ), value='no items'),
             Case(args=(['a'], ), value="item 'a'"),
@@ -815,12 +1052,12 @@ class TestOtree(ModuleTestCase):
             Case(args=(['a', 'b'], 'or'), value="items 'a' or 'b'")])
 
     def test_get_summary(self) -> None:
-        self.assertAllEqual(otree.get_summary, [
+        self.assertCaseEqual(otree.get_summary, [
             Case(args=(object, ), value=otree.get_summary(object())),
             Case(args=('summary.\n', ), value='summary')])
 
     def test_call_attr(self) -> None:
-        self.assertAllEqual(otree.call_attr, [
+        self.assertCaseEqual(otree.call_attr, [
             Case(args=(otree, 'get_name', list), value='list'),
             Case(args=(otree, 'get_name', list), kwds={'test': True},
                 value='list')])
@@ -839,7 +1076,7 @@ class TestCheck(ModuleTestCase):
     module = check
 
     def test_has_type(self) -> None:
-        self.assertNoneRaises(TypeError, check.has_type, [
+        self.assertCaseNotRaises(TypeError, check.has_type, [
             Case(args=('', 0, int)),
             Case(args=('', '', str)),
             Case(args=('', list(), list)),
@@ -847,7 +1084,7 @@ class TestCheck(ModuleTestCase):
             Case(args=('', object, Callable)),
             Case(args=('', object, Any))])
 
-        self.assertAllRaises(TypeError, check.has_type, [
+        self.assertCaseRaises(TypeError, check.has_type, [
             Case(args=('', '', int)),
             Case(args=('', 1., int)),
             Case(args=('', 1, float)),
@@ -855,178 +1092,178 @@ class TestCheck(ModuleTestCase):
             Case(args=('', None, Callable))])
 
     def test_is_identifier(self) -> None:
-        self.assertNoneRaises(ValueError, check.is_identifier, [
+        self.assertCaseNotRaises(ValueError, check.is_identifier, [
             Case(args=('', 'id')),
             Case(args=('', 'ID')),
             Case(args=('', 'Table')),
             Case(args=('', 'Table1'))])
 
-        self.assertAllRaises(ValueError, check.is_identifier, [
+        self.assertCaseRaises(ValueError, check.is_identifier, [
             Case(args=('', '')),
             Case(args=('', '1')),
             Case(args=('', 'a b')),
             Case(args=('', 'a.b'))])
 
     def test_has_opt_type(self) -> None:
-        self.assertNoneRaises(TypeError, check.has_opt_type, [
+        self.assertCaseNotRaises(TypeError, check.has_opt_type, [
             Case(args=('', None, int)),
             Case(args=('', None, str)),
             Case(args=('', list(), list)),
             Case(args=('', dict(), dict))])
 
-        self.assertAllRaises(TypeError, check.has_opt_type, [
+        self.assertCaseRaises(TypeError, check.has_opt_type, [
             Case(args=('', '', int)),
             Case(args=('', 1., int)),
             Case(args=('', 1, float)),
             Case(args=('', dict(), list))])
 
     def test_is_callable(self) -> None:
-        self.assertNoneRaises(TypeError, check.is_callable, [
+        self.assertCaseNotRaises(TypeError, check.is_callable, [
             Case(args=('', int)),
             Case(args=('', dict)),
             Case(args=('', list)),
             Case(args=('', str))])
 
-        self.assertAllRaises(TypeError, check.has_type, [
+        self.assertCaseRaises(TypeError, check.has_type, [
             Case(args=('', None)),
             Case(args=('', 0)),
             Case(args=('', '')),
             Case(args=('', set()))])
 
     def test_is_typehint(self) -> None:
-        self.assertNoneRaises(TypeError, check.is_typehint, [
+        self.assertCaseNotRaises(TypeError, check.is_typehint, [
             Case(args=('', str)),
             Case(args=('', (int, float))),
             Case(args=('', Any)),
             Case(args=('', Callable))])
 
-        self.assertAllRaises(TypeError, check.is_typehint, [
+        self.assertCaseRaises(TypeError, check.is_typehint, [
             Case(args=('', None)),
             Case(args=('', 0)),
             Case(args=('', '')),
             Case(args=('', Union))])
 
     def test_is_class(self) -> None:
-        self.assertNoneRaises(TypeError, check.is_class, [
+        self.assertCaseNotRaises(TypeError, check.is_class, [
             Case(args=('', int)),
             Case(args=('', dict)),
             Case(args=('', list)),
             Case(args=('', str))])
 
-        self.assertAllRaises(TypeError, check.is_class, [
+        self.assertCaseRaises(TypeError, check.is_class, [
             Case(args=('', None)),
             Case(args=('', 0)),
             Case(args=('', '')),
             Case(args=('', set()))])
 
     def test_is_subclass(self) -> None:
-        self.assertNoneRaises(TypeError, check.is_subclass, [
+        self.assertCaseNotRaises(TypeError, check.is_subclass, [
             Case(args=('', int, object)),
             Case(args=('', dict, dict)),
             Case(args=('', list, object)),
             Case(args=('', str, str))])
 
-        self.assertAllRaises(TypeError, check.is_subclass, [
+        self.assertCaseRaises(TypeError, check.is_subclass, [
             Case(args=('', int, str)),
             Case(args=('', dict, list)),
             Case(args=('', object, float)),
             Case(args=('', str, complex))])
 
     def test_is_subset(self) -> None:
-        self.assertNoneRaises(ValueError, check.is_subset, [
+        self.assertCaseNotRaises(ValueError, check.is_subset, [
             Case(args=('', set(), '', set())),
             Case(args=('', {1}, '', {1, 2})),
             Case(args=('', {2}, '', {1, 2})),
             Case(args=('', {2, 1}, '', {1, 2}))])
 
-        self.assertAllRaises(ValueError, check.is_subset, [
+        self.assertCaseRaises(ValueError, check.is_subset, [
             Case(args=('', {1}, '', set())),
             Case(args=('', {2}, '', {1})),
             Case(args=('', {1, 2}, '', {1})),
             Case(args=('', {1, 2, 3}, '', set()))])
 
     def test_no_dublicates(self) -> None:
-        self.assertNoneRaises(ValueError, check.no_dublicates, [
+        self.assertCaseNotRaises(ValueError, check.no_dublicates, [
             Case(args=('', set())),
             Case(args=('', {1, 1, 2, 3})),
             Case(args=('', [1, 2, 3])),
             Case(args=('', {1: 1, 2: 2}))])
 
-        self.assertAllRaises(ValueError, check.no_dublicates, [
+        self.assertCaseRaises(ValueError, check.no_dublicates, [
             Case(args=('', (1, 1))),
             Case(args=('', [1, 2, 2]))])
 
     def test_is_positive(self) -> None:
-        self.assertNoneRaises(ValueError, check.is_positive, [
+        self.assertCaseNotRaises(ValueError, check.is_positive, [
             Case(args=('', 1)),
             Case(args=('', 1.))])
 
-        self.assertAllRaises(ValueError, check.is_positive, [
+        self.assertCaseRaises(ValueError, check.is_positive, [
             Case(args=('', 0)),
             Case(args=('', -1)),
             Case(args=('', -1.))])
 
     def test_is_negative(self) -> None:
-        self.assertNoneRaises(ValueError, check.is_negative, [
+        self.assertCaseNotRaises(ValueError, check.is_negative, [
             Case(args=('', -1)),
             Case(args=('', -1.))])
 
-        self.assertAllRaises(ValueError, check.is_negative, [
+        self.assertCaseRaises(ValueError, check.is_negative, [
             Case(args=('', 0)),
             Case(args=('', 1)),
             Case(args=('', 1.))])
 
     def test_is_not_positive(self) -> None:
-        self.assertNoneRaises(ValueError, check.is_not_positive, [
+        self.assertCaseNotRaises(ValueError, check.is_not_positive, [
             Case(args=('', 0)),
             Case(args=('', -1)),
             Case(args=('', -1.))])
 
-        self.assertAllRaises(ValueError, check.is_not_positive, [
+        self.assertCaseRaises(ValueError, check.is_not_positive, [
             Case(args=('', 1)),
             Case(args=('', 1.))])
 
     def test_is_not_negative(self) -> None:
-        self.assertNoneRaises(ValueError, check.is_not_negative, [
+        self.assertCaseNotRaises(ValueError, check.is_not_negative, [
             Case(args=('', 0)),
             Case(args=('', 1)),
             Case(args=('', 1.))])
 
-        self.assertAllRaises(ValueError, check.is_not_negative, [
+        self.assertCaseRaises(ValueError, check.is_not_negative, [
             Case(args=('', -1)),
             Case(args=('', -1.))])
 
     def test_has_attr(self) -> None:
-        self.assertNoneRaises(AttributeError, check.has_attr, [
+        self.assertCaseNotRaises(AttributeError, check.has_attr, [
             Case(args=('', 'format')),
             Case(args=(0, 'real')),
             Case(args=(1j, 'imag'))])
 
-        self.assertAllRaises(AttributeError, check.has_attr, [
+        self.assertCaseRaises(AttributeError, check.has_attr, [
             Case(args=(list(), 'keys')),
             Case(args=(0, ''))])
 
     def test_has_size(self) -> None:
-        self.assertNoneRaises(ValueError, check.has_size, [
+        self.assertCaseNotRaises(ValueError, check.has_size, [
             Case(args=('', set()), kwds={'size': 0}),
             Case(args=('', set()), kwds={'min_size': 0}),
             Case(args=('', tuple([1])), kwds={'max_size': 1}),
             Case(args=('', [1, 2]), kwds={'min_size': 1, 'max_size': 3})])
 
-        self.assertAllRaises(ValueError, check.has_size, [
+        self.assertCaseRaises(ValueError, check.has_size, [
             Case(args=('', set()), kwds={'size': 1}),
             Case(args=('', tuple()), kwds={'min_size': 1}),
             Case(args=('', set([1])), kwds={'max_size': 0}),
             Case(args=('', [1, 2]), kwds={'min_size': 3, 'max_size': 5})])
 
     def test_not_empty(self) -> None:
-        self.assertNoneRaises(ValueError, check.not_empty, [
+        self.assertCaseNotRaises(ValueError, check.not_empty, [
             Case(args=('', 'x')),
             Case(args=('', {1})),
             Case(args=('', [1])),
             Case(args=('', {1: 1}))])
 
-        self.assertAllRaises(ValueError, check.not_empty, [
+        self.assertCaseRaises(ValueError, check.not_empty, [
             Case(args=('', set())),
             Case(args=('', tuple())),
             Case(args=('', [])),
@@ -1145,7 +1382,7 @@ class TestEnv(ModuleTestCase):
 
     def test_get_var(self) -> None:
         cases = [Case(args=(key, )) for key in self.app_vars]
-        self.assertAllTrue(env.get_var, cases)
+        self.assertCaseTrue(env.get_var, cases)
 
     def test_get_vars(self) -> None:
         envvars = env.get_vars()
@@ -1379,7 +1616,7 @@ class TestLiteral(ModuleTestCase):
     module = literal
 
     def test_as_path(self) -> None:
-        self.assertAllEqual(literal.as_path, [
+        self.assertCaseEqual(literal.as_path, [
             Case(args=('a/b/c', ), value=Path('a/b/c')),
             Case(args=('%cwd%/test', ), value=Path.cwd() / 'test'),
             Case(args=('%home%/test', ), value=Path.home() / 'test')])
@@ -1389,27 +1626,27 @@ class TestLiteral(ModuleTestCase):
         self.assertEqual(literal.as_datetime(str(val)), val)
 
     def test_as_list(self) -> None:
-        self.assertAllEqual(literal.as_list, [
+        self.assertCaseEqual(literal.as_list, [
             Case(args=('a, 2, ()', ), value=['a', '2', '()']),
             Case(args=('[1, 2, 3]', ), value=[1, 2, 3])])
 
     def test_as_tuple(self) -> None:
-        self.assertAllEqual(literal.as_tuple, [
+        self.assertCaseEqual(literal.as_tuple, [
             Case(args=('a, 2, ()', ), value=('a', '2', '()')),
             Case(args=('(1, 2, 3)', ), value=(1, 2, 3))])
 
     def test_as_set(self) -> None:
-        self.assertAllEqual(literal.as_set, [
+        self.assertCaseEqual(literal.as_set, [
             Case(args=('a, 2, ()', ), value={'a', '2', '()'}),
             Case(args=('{1, 2, 3}', ), value={1, 2, 3})])
 
     def test_as_dict(self) -> None:
-        self.assertAllEqual(literal.as_dict, [
+        self.assertCaseEqual(literal.as_dict, [
             Case(args=("a = 'b', b = 1", ), value={'a': 'b', 'b': 1}),
             Case(args=("'a': 'b', 'b': 1", ), value={'a': 'b', 'b': 1})])
 
     def test_decode(self) -> None:
-        self.assertAllEqual(literal.decode, [
+        self.assertCaseEqual(literal.decode, [
             Case(args=('text', str), value='text'),
             Case(args=(repr(True), bool), value=True),
             Case(args=(repr(1), int), value=1),
@@ -1417,14 +1654,14 @@ class TestLiteral(ModuleTestCase):
             Case(args=(repr(1+1j), complex), value=1+1j)])
 
     def test_from_str(self) -> None:
-        self.assertAllEqual(literal.from_str, [
+        self.assertCaseEqual(literal.from_str, [
             Case(args=(chr(1) + 'a', 'printable'), value='a'),
             Case(args=('a, b', 'uax-31'), value='ab'),
             Case(args=('max(x)', 'uax-31'),
                 kwds={'spacer': '_'}, value='max_x_')])
 
     def test_encode(self) -> None:
-        self.assertAllEqual(literal.encode, [
+        self.assertCaseEqual(literal.encode, [
             Case(args=(chr(1) + 'a', ),
                 kwds={'charset': 'printable'}, value='a'),
             Case(args=('a, b', ),
@@ -1432,7 +1669,7 @@ class TestLiteral(ModuleTestCase):
 
     def test_estimate(self) -> None:
         Date = datetime.datetime
-        self.assertAllEqual(literal.estimate, [
+        self.assertCaseEqual(literal.estimate, [
             Case(args=('text', ), value=None),
             Case(args=(repr('text'), ), value=str),
             Case(args=(repr(True), ), value=bool),

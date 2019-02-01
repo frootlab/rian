@@ -11,7 +11,7 @@ import functools
 import inspect
 import io
 import types
-from typing import Any, NamedTuple, Tuple, Dict, List, Callable
+from typing import Any, NamedTuple, Tuple, Dict, Iterable, List, Callable
 import unittest
 import numpy as np
 from nemoa.base import pkg, otree
@@ -53,64 +53,12 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(type(a), type(b))
         self.assertEqual(a, b)
 
-    def assertIsSubclass(self, cls: type, supercls: type) -> None:
-        """Assert that a class is a subclass of another."""
-        self.assertTrue(issubclass(cls, supercls))
-
-    def assertAllSubclass(
-            self, func: AnyOp, supercls: type, cases: Cases) -> None:
-        """Assert outcome type of a class constructor."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertIsSubclass(func(*case.args, **case.kwds), supercls)
-
-    def assertAllIn(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations are in the given values."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertIn(func(*case.args, **case.kwds), case.value)
-
-    def assertNoneIn(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations are in the given values."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertNotIn(func(*case.args, **case.kwds), case.value)
-
-    def assertAllComprise(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations comprise the given values."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertIn(case.value, func(*case.args, **case.kwds))
-
-    def assertNoneComprise(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations comprise the given values."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertNotIn(case.value, func(*case.args, **case.kwds))
-
-    def assertAllTrue(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations cast to True."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertTrue(func(*case.args, **case.kwds))
-
-    def assertNoneTrue(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations cast to False."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertFalse(func(*case.args, **case.kwds))
-
-    def assertAllEqual(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations equal the given values."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertEqual(func(*case.args, **case.kwds), case.value)
-
-    def assertNoneEqual(self, func: AnyOp, cases: Cases) -> None:
-        """Assert that all function evaluations differ from the given values."""
-        for case in cases:
-            with self.subTest(case):
-                self.assertNotEqual(func(*case.args, **case.kwds), case.value)
+    def assertAllEqual(self, a: object, b: object) -> None:
+        """Assert that two objects are equal."""
+        if isinstance(a, np.ndarray):
+            self.assertTrue(np.alltrue(a == b))
+        else:
+            self.assertEqual(a, b)
 
     def assertNotRaises(
             self, cls: ErrMeta, func: AnyOp, *args: Any, **kwds: Any) -> None:
@@ -121,13 +69,72 @@ class BaseTestCase(unittest.TestCase):
             raise AssertionError(
                 f"function {func.__name__} raises error {cls.__name__}")
 
-    def assertAllRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
+    def assertIsSubclass(self, cls: type, supercls: type) -> None:
+        """Assert that a class is a subclass of another."""
+        self.assertTrue(issubclass(cls, supercls))
+
+    def assertCaseIsSubclass(
+            self, func: AnyOp, supercls: type, cases: Cases) -> None:
+        """Assert outcome type of a class constructor."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertIsSubclass(func(*case.args, **case.kwds), supercls)
+
+    def assertCaseIn(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations are in the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertIn(func(*case.args, **case.kwds), case.value)
+
+    def assertCaseNotIn(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations are in the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotIn(func(*case.args, **case.kwds), case.value)
+
+    def assertCaseContain(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations comprise the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertIn(case.value, func(*case.args, **case.kwds))
+
+    def assertCaseNotContain(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations comprise the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotIn(case.value, func(*case.args, **case.kwds))
+
+    def assertCaseTrue(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations cast to True."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertTrue(func(*case.args, **case.kwds))
+
+    def assertCaseFalse(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations cast to False."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertFalse(func(*case.args, **case.kwds))
+
+    def assertCaseEqual(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations equal the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertAllEqual(func(*case.args, **case.kwds), case.value)
+
+    def assertCaseNotEqual(self, func: AnyOp, cases: Cases) -> None:
+        """Assert that all function evaluations differ from the given values."""
+        for case in cases:
+            with self.subTest(case):
+                self.assertNotEqual(func(*case.args, **case.kwds), case.value)
+
+    def assertCaseRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
         """Assert that all function parameters raise an exception."""
         for case in cases:
             with self.subTest(case):
                 self.assertRaises(cls, func, *case.args, **case.kwds)
 
-    def assertNoneRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
+    def assertCaseNotRaises(self, cls: ErrMeta, func: AnyOp, cases: Cases) -> None:
         """Assert that no function parameter raises an exception."""
         for case in cases:
             with self.subTest(case):

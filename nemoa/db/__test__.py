@@ -171,7 +171,7 @@ class TestRecord(ModuleTestCase):
     def test_build(self) -> None:
 
         # Check types
-        self.assertAllSubclass(record.build, record.Record, [
+        self.assertCaseIsSubclass(record.build, record.Record, [
             Case(args=('id', 'name')),
             Case(args=(('id', int), ('name', str))),
             Case(args=('id', ('type', type, {'default': str})), )])

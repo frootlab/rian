@@ -118,17 +118,15 @@ class PyCore(Grammar):
 
         bool_and: AnyOp = lambda a, b: a and b
         bool_or: AnyOp = lambda a, b: a or b
+        is_in: AnyOp = lambda a, b: operator.contains(b, a)
         bind: AnyOp = lambda a, b: a + [b] if isinstance(a, list) else [a, b]
 
         self.update([
             Symbol(BINARY, ',', bind, 13), # Sequence binding
 
-            # Unary Operators
-            Symbol(UNARY, '+', operator.pos, 11), # Positive (Arithmetic)
-            Symbol(UNARY, '-', operator.neg, 11), # Negation (Arithmetic)
-            Symbol(UNARY, '~', operator.invert, 11), # Bitwise Inversion
-
-            # Binary Arithmetic Operators
+            # Arithmetic Operators
+            Symbol(UNARY, '+', operator.pos, 11), # Unary Plus
+            Symbol(UNARY, '-', operator.neg, 11), # Negation
             Symbol(BINARY, '**', operator.pow, 10), # Exponentiation
             Symbol(BINARY, '@', operator.matmul, 9), # Matrix Product
             Symbol(BINARY, '/', operator.truediv, 9), # Division
@@ -138,14 +136,15 @@ class PyCore(Grammar):
             Symbol(BINARY, '+', operator.add, 8), # Addition
             Symbol(BINARY, '-', operator.sub, 8), # Subtraction
 
-            # Binary Bitwise Operators
+            # Bitwise Operators
+            Symbol(UNARY, '~', operator.invert, 11), # Bitwise Inversion
             Symbol(BINARY, '>>', operator.rshift, 7), # Bitwise Right Shift
             Symbol(BINARY, '<<', operator.lshift, 7), # Bitwise Left Shift
             Symbol(BINARY, '&', operator.and_, 6), # Bitwise AND
             Symbol(BINARY, '^', operator.xor, 5), # Bitwise XOR
             Symbol(BINARY, '|', operator.or_, 4), # Bitwise OR
 
-            # Binary Ordering Operators
+            # Ordering Operators
             Symbol(BINARY, '==', operator.eq, 3), # Equality
             Symbol(BINARY, '!=', operator.ne, 3), # Inequality
             Symbol(BINARY, '>', operator.gt, 3), # Greater
@@ -153,7 +152,7 @@ class PyCore(Grammar):
             Symbol(BINARY, '>=', operator.ge, 3), # Greater or Equal
             Symbol(BINARY, '<=', operator.le, 3), # Lower or Equal
             Symbol(BINARY, 'is', operator.is_, 3), # Identity
-            Symbol(BINARY, 'in', operator.contains, 3), # Containment Test
+            Symbol(BINARY, 'in', is_in, 3), # Containment
 
             # Boolean Operators
             Symbol(UNARY, 'not', operator.not_, 2), # Boolean NOT
@@ -190,7 +189,7 @@ class PyBuiltins(PyCore):
 
         self.update(builtin)
 
-class Standard(Grammar):
+class PyExprEval(Grammar):
 
     def __init__(self) -> None:
         super().__init__()
@@ -209,8 +208,8 @@ class Standard(Grammar):
             Symbol(BINARY, '*', operator.mul, 3, True),
             Symbol(BINARY, '/', operator.truediv, 4, True),
             Symbol(BINARY, '%', operator.mod, 4, True),
-            Symbol(BINARY, '^', math.pow, 6, False), # nope
-            Symbol(BINARY, '||', concat, 1, False), # nope
+            Symbol(BINARY, '^', math.pow, 6, False),
+            Symbol(BINARY, '||', concat, 1, False),
             Symbol(BINARY, '==', operator.eq, 1, True),
             Symbol(BINARY, '!=', operator.ne, 1, True),
             Symbol(BINARY, '>', operator.gt, 1, True),
@@ -238,11 +237,11 @@ class Standard(Grammar):
             Symbol(FUNCTION, 'random', rnd, 0, False),
             Symbol(FUNCTION, 'fac', math.factorial, 0, False),
             Symbol(FUNCTION, 'pow', math.pow, 0, False),
-            Symbol(FUNCTION, 'atan2', math.atan2, 0, False), # nope
-            Symbol(FUNCTION, 'concat', concat, 0, False), # nope
-            Symbol(FUNCTION, 'iif', iif, 0, False), # nope
-            Symbol(CONSTANT, 'E', math.e, 0, False), # nope
-            Symbol(CONSTANT, 'PI', math.pi, 0, False)]) # nope
+            Symbol(FUNCTION, 'atan2', math.atan2, 0, False),
+            Symbol(FUNCTION, 'concat', concat, 0, False),
+            Symbol(FUNCTION, 'if', iif, 0, False),
+            Symbol(CONSTANT, 'E', math.e, 0, False),
+            Symbol(CONSTANT, 'PI', math.pi, 0, False)])
 
 #
 # Tokens
@@ -450,36 +449,42 @@ class Expression:
         return [sym for sym in self.symbols if sym not in functions]
 
 class Parser:
-    PRIMARY = 1
-    OPERATOR = 2
+    PRIM = 1
+    OPER = 2
     FUNCTION = 4
-    LPAREN = 8
-    RPAREN = 16
+    LEFT = 8
+    RIGHT = 16
     COMMA = 32
     SIGN = 64
     CALL = 128
-    NULLARY = 256
+    NULL = 256
 
     grammar: Grammar
+    _unary: dict
+    _binary: dict
 
     _expression: str
     _success: bool
     _errormsg: str
-    _pos: int
-    _cur_value: Union[str, float, int]
+    _cur_pos: int
+    _cur_key: Union[int, str]
+    _cur_val: Any
     _cur_priority: int
-    _cur_name: Union[str, int]
     _tmp_priority: int
 
     def __init__(self, grammar: Optional[Grammar] = None) -> None:
-        self.grammar = grammar or Standard()
+        self.grammar = grammar or PyExprEval() # TODO: change to PyCore()
+
+        # Update dictionaries with unary and binary operators
+        self._unary = self.grammar.get(UNARY)
+        self._binary = self.grammar.get(BINARY)
 
         self._expression = ''
         self._success = False
         self._error = ''
-        self._pos = 0
-        self._cur_name = 0
-        self._cur_value = 0
+        self._cur_pos = 0
+        self._cur_key = 0
+        self._cur_val = 0
         self._cur_priority = 0
         self._tmp_priority = 0
 
@@ -498,109 +503,108 @@ class Parser:
         self._expression = expression
         self._error = ''
         self._success = True
+        self._cur_pos = 0
+        self._cur_val = 0
+        self._cur_priority = 0
         self._tmp_priority = 0
-        self._pos = 0
 
         operators: List[Token] = []
         tokens: List[Token] = []
-        expect = self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
+        expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
         noperators = 0
 
-        while self._pos < len(self._expression):
+        while self._cur_pos < len(self._expression):
             if self._is_operator():
                 if self._is_sign() and expect & self.SIGN:
                     if self._is_minus():
                         self._cur_priority = 5
-                        self._cur_name = '-'
+                        self._cur_key = '-'
                         noperators += 1
                         self._add_operator(tokens, operators, UNARY)
-                    expect = \
-                        self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
+                    expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
                 elif self._is_comment():
                     pass
                 else:
-                    if expect and self.OPERATOR == 0:
-                        self._raise_error(self._pos, 'unexpect operator')
+                    if expect and self.OPER == 0:
+                        self._raise_error('unexpect operator')
                     noperators += 2
                     self._add_operator(tokens, operators, BINARY)
-                    expect = \
-                        self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
+                    expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
+            elif expect & self.SIGN and self._is_unary_sign():
+                noperators += 1
+                self._add_operator(tokens, operators, UNARY)
+                expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_number():
-                if expect and self.PRIMARY == 0:
-                    self._raise_error(self._pos, 'unexpect number')
-                tokens.append(Token(CONSTANT, 0, 0, self._cur_value))
-                expect = self.OPERATOR | self.RPAREN | self.COMMA
+                if expect and self.PRIM == 0:
+                    self._raise_error('unexpect number')
+                tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
+                expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_string():
-                if (expect & self.PRIMARY) == 0:
-                    self._raise_error(self._pos, 'unexpect string')
-                tokens.append(Token(CONSTANT, 0, 0, self._cur_value))
-                expect = self.OPERATOR | self.RPAREN | self.COMMA
-            elif self._is_left_parenth():
-                if (expect & self.LPAREN) == 0:
-                    self._raise_error(self._pos, 'unexpect \"(\"')
+                if not expect & self.PRIM:
+                    self._raise_error('unexpect string')
+                tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
+                expect = self.OPER | self.RIGHT | self.COMMA
+            elif self._is_left():
+                if not expect & self.LEFT:
+                    self._raise_error('unexpect \"(\"')
                 if expect & self.CALL:
                     noperators += 2
                     self._cur_priority = -2
-                    self._cur_name = -1
+                    self._cur_key = -1
                     self._add_operator(tokens, operators, FUNCTION)
                 expect = \
-                    self.PRIMARY | self.LPAREN | self.FUNCTION | \
-                    self.SIGN | self.NULLARY
-            elif self._is_right_parenth():
-                if expect & self.NULLARY:
-                    tok = Token(CONSTANT, 0, 0, [])
-                    tokens.append(tok)
-                elif (expect & self.RPAREN) == 0:
-                    self._raise_error(self._pos, 'unexpect \")\"')
+                    self.PRIM | self.LEFT | self.FUNCTION | \
+                    self.SIGN | self.NULL
+            elif self._is_right():
+                if expect & self.NULL:
+                    tokens.append(Token(CONSTANT, 0, 0, []))
+                elif not expect & self.RIGHT:
+                    self._raise_error('unexpect \")\"')
                 expect = \
-                    self.OPERATOR | self.RPAREN | self.COMMA | \
-                    self.LPAREN | self.CALL
+                    self.OPER | self.RIGHT | self.COMMA | \
+                    self.LEFT | self.CALL
             elif self._is_comma():
-                if (expect & self.COMMA) == 0:
-                    self._raise_error(self._pos, 'unexpect \",\"')
+                if not expect & self.COMMA:
+                    self._raise_error('unexpect \",\"')
                 self._add_operator(tokens, operators, BINARY)
                 noperators += 2
-                expect = \
-                    self.PRIMARY | self.LPAREN | self.FUNCTION | self.SIGN
+                expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_constant():
-                if (expect & self.PRIMARY) == 0:
-                    self._raise_error(self._pos, 'unexpect constant')
-                tok = Token(CONSTANT, 0, 0, self._cur_value)
+                if not expect & self.PRIM:
+                    self._raise_error('unexpect constant')
+                tok = Token(CONSTANT, 0, 0, self._cur_val)
                 tokens.append(tok)
-                expect = self.OPERATOR | self.RPAREN | self.COMMA
+                expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_binary_operator():
-                if (expect & self.FUNCTION) == 0:
-                    self._raise_error(self._pos, 'unexpect function')
+                if not expect & self.FUNCTION:
+                    self._raise_error('unexpect function')
                 self._add_operator(tokens, operators, BINARY)
                 noperators += 2
-                expect = self.LPAREN
+                expect = self.LEFT
             elif self._is_unary_operator():
-                if (expect & self.FUNCTION) == 0:
-                    self._raise_error(self._pos, 'unexpect function')
+                if not expect & self.FUNCTION:
+                    self._raise_error('unexpect function')
                 self._add_operator(tokens, operators, UNARY)
                 noperators += 1
-                expect = self.LPAREN
+                expect = self.LEFT
             elif self._is_variable():
-                if (expect & self.PRIMARY) == 0:
-                    self._raise_error(
-                        self._pos, f"unexpect variable '{self._cur_name}'")
-                tokens.append(Token(VARIABLE, self._cur_name, 0, 0))
-                expect = self.OPERATOR | self.RPAREN | self.COMMA \
-                    | self.LPAREN | self.CALL
+                if not expect & self.PRIM:
+                    self._raise_error(f"unexpect variable '{self._cur_key}'")
+                tokens.append(Token(VARIABLE, self._cur_key, 0, 0))
+                expect = self.OPER | self.RIGHT | self.COMMA \
+                    | self.LEFT | self.CALL
             elif self._is_space():
                 pass
             else:
-                if self._error == '':
-                    self._raise_error(
-                        self._pos, f"unknown character '{self._cur}'")
-                else:
-                    self._raise_error(self._pos, self._error)
+                if self._error:
+                    self._raise_error(self._error)
+                self._raise_error(f"unknown character '{self._cur_char}'")
         if self._tmp_priority < 0 or self._tmp_priority >= 10:
-            self._raise_error(self._pos, 'unmatched \"()\"')
+            self._raise_error('unmatched \"()\"')
         while operators:
             tokens.append(operators.pop())
         if noperators + 1 != len(tokens):
-            self._raise_error(self._pos, 'parity')
+            self._raise_error('parity')
 
         return Expression(tokens=tokens, grammar=self.grammar)
 
@@ -610,7 +614,7 @@ class Parser:
     def _add_operator(
             self, tokens: List[Token], operators: List[Token],
             typeid: int) -> None:
-        name = self._cur_name
+        name = self._cur_key
         priority = self._cur_priority + self._tmp_priority
         tok = Token(typeid, name, priority, 0)
         while operators:
@@ -620,27 +624,27 @@ class Parser:
         operators.append(tok)
 
     @property
-    def _cur(self) -> str:
-        return self._expression[self._pos]
+    def _cur_char(self) -> str:
+        return self._expression[self._cur_pos]
 
     @property
     def _prev(self) -> str:
-        return self._expression[self._pos - 1]
+        return self._expression[self._cur_pos - 1]
 
     def _is_number(self) -> bool:
         r = False
         string = ''
-        while self._pos < len(self._expression):
-            code = self._cur
+        while self._cur_pos < len(self._expression):
+            code = self._cur_char
             if code.isdecimal() or code == '.':
                 if not string and code == '.':
                     string = '0'
                 string += code
-                self._pos += 1
+                self._cur_pos += 1
                 try:
-                    self._cur_value = int(string)
+                    self._cur_val = int(string)
                 except ValueError:
-                    self._cur_value = float(string)
+                    self._cur_val = float(string)
                 r = True
             else:
                 break
@@ -649,17 +653,16 @@ class Parser:
     def _is_string(self) -> bool:
         r = False
         string = ''
-        startpos = self._pos
-        if self._pos < len(self._expression) and self._cur == "'":
-            self._pos += 1
-            while self._pos < len(self._expression):
-                code = self._cur
-                if code != '\'' or (string != '' and string[-1] == '\\'):
-                    string += self._cur
-                    self._pos += 1
+        startpos = self._cur_pos
+        if self._cur_pos < len(self._expression) and self._cur_char == "'":
+            self._cur_pos += 1
+            while self._cur_pos < len(self._expression):
+                if self._cur_char != '\'' or (string and string[-1] == '\\'):
+                    string += self._cur_char
+                    self._cur_pos += 1
                 else:
-                    self._pos += 1
-                    self._cur_value = self._unescape(string, startpos)
+                    self._cur_pos += 1
+                    self._cur_val = self._unescape(string, startpos)
                     r = True
                     break
         return r
@@ -668,28 +671,48 @@ class Parser:
         expr = self._expression
         constants = self.grammar.get(CONSTANT)
         for sym, const in constants.items():
-            start = self._pos
+            start = self._cur_pos
             end = start + len(sym)
             if sym != expr[start:end]:
                 continue
             if len(expr) <= end:
-                self._cur_value = const.value
-                self._pos = end
+                self._cur_val = const.value
+                self._cur_pos = end
                 return True
             if not expr[end].isalnum() and expr[end] != "_":
-                self._cur_value = const.value
-                self._pos = end
+                self._cur_val = const.value
+                self._cur_pos = end
                 return True
         return False
 
-    def _is_operator(self) -> bool:
-        for name, op in self.grammar.get(BINARY).items():
-            if not self._expression.startswith(name, self._pos):
+    def _is_unary_sign(self) -> bool:
+
+        # Check if operator is a unary sign operator
+        for key, symbol in self._unary.items():
+            if any(map(str.isalnum, key)):
                 continue
-            self._cur_priority = op.priority
-            self._cur_name = name
-            self._pos += len(name)
+            if not self._expression.startswith(key, self._cur_pos):
+                continue
+
+            self._cur_priority = symbol.priority
+            self._cur_key = key
+            self._cur_pos += len(key)
+
             return True
+
+    def _is_operator(self) -> bool:
+
+        # Check if operator is a binary operator
+        for key, symbol in self._binary.items():
+            if not self._expression.startswith(key, self._cur_pos):
+                continue
+
+            self._cur_priority = symbol.priority
+            self._cur_key = key
+            self._cur_pos += len(key)
+
+            return True
+
         return False
 
     def _is_sign(self) -> bool:
@@ -701,97 +724,99 @@ class Parser:
     def _is_minus(self) -> bool:
         return self._prev == '-'
 
-    def _is_left_parenth(self) -> bool:
-        if self._cur != '(':
+    def _is_left(self) -> bool:
+        if self._cur_char != '(':
             return False
-        self._pos += 1
+        self._cur_pos += 1
         self._tmp_priority += 10
         return True
 
-    def _is_right_parenth(self) -> bool:
-        if self._cur != ')':
+    def _is_right(self) -> bool:
+        if self._cur_char != ')':
             return False
-        self._pos += 1
+        self._cur_pos += 1
         self._tmp_priority -= 10
         return True
 
     def _is_comma(self) -> bool:
-        if self._cur != ',':
+        if self._cur_char != ',':
             return False
-        self._pos += 1
+        self._cur_pos += 1
         self._cur_priority = -1
-        self._cur_name = ','
+        self._cur_key = ','
         return True
 
     def _is_space(self) -> bool:
-        if not self._cur.isspace():
+        if not self._cur_char.isspace():
             return False
-        self._pos += 1
+        self._cur_pos += 1
         return True
 
     def _is_unary_operator(self) -> bool:
-        string = ''
-        for i, c in enumerate(self._expression[self._pos:]):
-            if c.upper() == c.lower():
-                if i == self._pos:
-                    break
-                if c != '_' and (c < '0' or c > '9'):
-                    break
-            string += c
-        if string and string in self.grammar.get(UNARY):
-            self._cur_name = string
-            self._cur_priority = 7
-            self._pos += len(string)
-            return True
-        return False
+        key = ''
+        for c in self._expression[self._cur_pos:]:
+            if c != '_' and not c.isalnum():
+                break
+            key += c
+        if not key or not key in self._unary:
+            return False
+        self._cur_key = key
+        self._cur_priority = self._unary[key].priority
+        self._cur_pos += len(key)
+        return True
 
     def _is_binary_operator(self) -> bool:
-        string = ''
-        for i, c in enumerate(self._expression[self._pos:]):
+        key = ''
+        for i, c in enumerate(self._expression[self._cur_pos:]):
             if c.upper() == c.lower():
-                if i == self._pos:
+                if i == self._cur_pos:
                     break
                 if c != '_' and (c < '0' or c > '9'):
                     break
-            string += c
-        if string and string in self.grammar.get(BINARY):
-            self._cur_name = string
-            self._cur_priority = 7
-            self._pos += len(string)
-            return True
-        return False
+            key += c
+        if not key:
+            return False
+        binary = self._binary
+        if not key in binary:
+            return False
+        symbol = binary[key]
+        self._cur_key = key
+        self._cur_priority = symbol.priority
+        self._cur_pos += len(key)
+
+        return True
 
     def _is_variable(self) -> bool:
         string = ''
         quoted = False
-        for i in range(self._pos, len(self._expression)):
+        for i in range(self._cur_pos, len(self._expression)):
             c = self._expression[i]
             if not quoted and (c.lower() == c.upper()):
                 if (c not in '_."') and (c < '0' or c > '9'):
                     break
-                if i == self._pos and c != '"':
+                if i == self._cur_pos and c != '"':
                     break
             if c == '"':
                 quoted = not quoted
             string += c
         if string:
-            self._cur_name = string
+            self._cur_key = string
             self._cur_priority = 4
-            self._pos += len(string)
+            self._cur_pos += len(string)
             return True
         return False
 
     def _is_comment(self) -> bool: # TODO: DO NOT USE COMMENTS
-        if self._prev == '/' and self._cur == '*':
-            self._pos = self._expression.index('*/', self._pos) + 2
-            if self._pos == 1:
-                self._pos = len(self._expression)
+        if self._prev == '/' and self._cur_char == '*':
+            self._cur_pos = self._expression.index('*/', self._cur_pos) + 2
+            if self._cur_pos == 1:
+                self._cur_pos = len(self._expression)
             return True
         return False
 
-    def _raise_error(self, column: int, msg: str) -> None:
+    def _raise_error(self, msg: str) -> None:
         self._success = False
-        self._error = f'parse error [column {column}]: {msg}'
+        self._error = f'parse error [column {self._cur_pos}]: {msg}'
         raise ValueError(self._error)
 
     def _unescape(self, string: str, pos: int) -> str:

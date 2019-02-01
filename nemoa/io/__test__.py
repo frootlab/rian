@@ -71,7 +71,7 @@ class TestPlain(ModuleTestCase):
         path = self.filepath
         string = str(self.filepath)
         fh = self.filepath.open(mode='r')
-        self.assertAllEqual(plain.get_name, [
+        self.assertCaseEqual(plain.get_name, [
             Case(args=(path, ), value=name),
             Case(args=(string, ), value=name),
             Case(args=(fh, ), value=name)])

@@ -11,7 +11,7 @@ import numpy as np
 from typing import Any
 from unittest import mock
 from nemoa import errors
-from nemoa.math import curve, graph, matrix, operator, parser, regression
+from nemoa.math import curve, graph, matrix, operator, regression
 from nemoa.math import vector
 from nemoa.types import AnyOp
 from nemoa.test import ModuleTestCase, MathTestCase
