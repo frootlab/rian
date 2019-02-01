@@ -834,14 +834,14 @@ class TestParser(ModuleTestCase):
             Case(('id(x)', {'x': None}), {}, id(None)),
             # Cannot test input() -> maybe remove it from PyBuiltins
             Case(('int(x)', {'x': 1.}), {}, 1.),
-            # isinstance()
-            # issublclass()
-            # iter()
-            # len()
-            # list()
-            # locals()
-            # map()
-            # max()
+            Case(('isinstance(a, b)', {'a': 1, 'b': int}), {}, True),
+            Case(('issubclass(a, b)', {'a': int, 'b': int}), {}, True),
+            Case(('list(iter(l))', {'l': [1, 2, 3]}), {}, [1, 2, 3]),
+            Case(('len(a)', {'a': [1, 2, 3]}), {}, 3),
+            Case(('list(a)', {'a': (1, 2, 3)}), {}, [1, 2, 3]),
+            Case(('bool(locals())', {}), {}, True),
+            Case(('list(map(o, l))', {'o': bool, 'l': [0]}), {}, [False]),
+            Case(('max(l)', {'l': [1, 2, 3]}), {}, 3),
         ])
 
     def test_Parser(self) -> None:
