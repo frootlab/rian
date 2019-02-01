@@ -512,8 +512,13 @@ class TestParser(ModuleTestCase):
                 Case(('x * y ** z', {'x': 2, 'y': 2, 'z': 2}), {}, 8),
                 Case(('(x * y) ** z', {'x': 2, 'y': 2, 'z': 2}), {}, 16)])
 
-        # Boolean and Bitwise Operators
-        # TODO
+        # Mixed Operators
+        with self.subTest():
+            self.assertCaseEqual(peval, [
+                Case(('x and y | z', {'x': 0, 'y': 2, 'z': 3}), {}, 0),
+                Case(('(x and y) | z', {'x': 0, 'y': 2, 'z': 3}), {}, 3),
+                Case(('x << y + z', {'x': 1, 'y': 2, 'z': 3}), {}, 32),
+                Case(('(x << y) + z', {'x': 1, 'y': 2, 'z': 3}), {}, 7)])
 
         # Bitwise and Arithmetic Operators
         # TODO
