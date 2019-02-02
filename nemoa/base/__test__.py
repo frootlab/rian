@@ -793,7 +793,6 @@ class TestParser(ModuleTestCase):
     def test_PyBuiltins(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltins())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
-        close: AnyOp = lambda fh: fh.close()
 
         self.assertCaseEqual(peval, [
             Case(('abs(x)', {'x': -1}), {}, 1),
@@ -853,22 +852,24 @@ class TestParser(ModuleTestCase):
             # Cannot test print() -> maybe remove it from PyBuiltins
             Case(("hasattr(property(), 'getter')", {}), {}, True),
             Case(('list(range(x))', {'x': 3}), {}, [0, 1, 2]),
+            # open() is not included
             Case(('repr(x)', {'x': 'x'}), {}, "'x'"),
             Case(('round(x)', {'x': .6}), {}, 1),
-
-            # Case(('set',
-            # Case(('setattr',
-            # Case(('slice',
-            # Case(('sorted',
-            # Case(('staticmethod',
-            # Case(('str',
-            # Case(('sum',
-            # Case(('super',
-            # Case(('tuple',
-            # Case(('type',
-            # Case(('vars',
-            # Case(('zip'
-        ])
+            Case(('set(l)', {'l': [1, 2, 3]}), {}, {1, 2, 3}),
+            Case(('setattr(o, a, v)',
+                {'o': mock.Mock(), 'a': 'a', 'v': True}), {}, None),
+            Case(('slice(n)', {'n': 3}), {}, slice(3)),
+            Case(('sorted(l)', {'l': [3, 2, 1]}), {}, [1, 2, 3]),
+            Case(("hasattr(staticmethod(f), '__func__')",
+                {'f': list}), {}, True),
+            Case(('str(o)', {'o': list()}), {}, '[]'),
+            Case(('sum(l)', {'l': [1, 2, 3]}), {}, 6),
+            # super() is currently not tested -> maybe remove it from PyBuiltins
+            Case(('tuple(l)', {'l': [1, 2, 3]}), {}, (1, 2, 3)),
+            Case(("getattr(type(o), '__name__')", {'o': list()}), {}, 'list'),
+            Case(('sorted(vars(o))', {'o': type}), {}, sorted(vars(type))),
+            Case(('list(zip(r, s))',
+                {'r': range(2), 's': range(2)}), {}, [(0, 0), (1, 1)])])
 
     def test_Parser(self) -> None:
         pass # Implicitely tested within grammars PyCore and PyExprEval
