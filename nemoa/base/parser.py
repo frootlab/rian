@@ -342,6 +342,18 @@ class Expression:
     #     for sid in [UNARY, BINARY, FUNCTION, CONSTANT]:
     #         trans_table[sid] = grammar.get(sid, builtin=False)
 
+    # var_counter = itertools.count()
+    # next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
+    # for field in fields:
+    #     if isinstance(field, str) and field.isidentifier():
+    #         mapping[field] = field
+    #         continue
+    #     var_name = next_var()
+    #     while occupied(var_name):
+    #         var_name = next_var()
+    #     mapping[field] = var_name
+
+
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
         stack = []
@@ -395,9 +407,9 @@ class Expression:
                 tokens.append(repl)
         return Expression(tokens=tokens, grammar=self.grammar)
 
-    def eval(self, *args: Any, values: Optional[dict] = None) -> Any:
-        if values is None:
-            values = dict(zip(self.variables, args))
+    def eval(self, *args: Any, **kwds: Any) -> Any:
+        values = dict(zip(self.variables, args))
+        values.update(kwds)
 
         stack = []
         unary = self.grammar.get(UNARY)
@@ -675,10 +687,8 @@ class Parser:
 
         return Expression(tokens=tokens, grammar=self.grammar)
 
-    def eval(
-            self, expression: str, *args: Any,
-            variables: Optional[dict] = None) -> Any:
-        return self.parse(expression).eval(*args, variables=variables)
+    def eval(self, expression: str, *args: Any, **kwds: Any) -> Any:
+        return self.parse(expression).eval(*args, **kwds)
 
     def _add_operator(
             self, tokens: List[Token], operators: List[Token],
