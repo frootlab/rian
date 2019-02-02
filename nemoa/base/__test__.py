@@ -806,85 +806,138 @@ class TestParser(ModuleTestCase):
                 Case(('x @ y', {'x': prj1, 'y': prj2}), {}, zero)])
 
     def test_PyBuiltins(self) -> None:
+        # The parser evaluation of the Python Builtin Grammar is seperately
+        # tested within individual categories
+        pass
+
+    def test_PyBuiltins_types(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltins())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
+        # Builtin Number Types
         self.assertCaseEqual(peval, [
-            Case(('abs(x)', {'x': -1}), {}, 1),
-            Case(('all(seq)', {'seq': [1, 1, 0]}), {}, False),
-            Case(('any(seq)', {'seq': [1, 1, 0]}), {}, True),
-            Case(('ascii(x)', {'x': 1}), {}, '1'),
-            Case(('bin(x)', {'x': 1}), {}, '0b1'),
             Case(('bool(x)', {'x': 1}), {}, True),
-            # Cannot test breakpoint() -> maybe remove it from PyBuiltins
+            Case(('complex(x)', {'x': 1}), {}, 1+0j),
+            Case(('float(x)', {'x': 1}), {}, 1.),
+            Case(('int(x)', {'x': 1.}), {}, 1.)])
+
+        # Builtin Container Types
+        self.assertCaseEqual(peval, [
             Case(('bytearray(x)', {'x': 1}), {}, bytearray(b'\x00')),
             Case(('bytearray(x, e)',
                 {'x': 'x', 'e': 'utf8'}), {}, bytearray(b'x')),
             Case(('bytes(x)', {'x': 1}), {}, b'\x00'),
             Case(('bytes(x, e)', {'x': 'x', 'e': 'utf8'}), {}, b'x'),
-            Case(('callable(f)', {'f': object}), {}, True),
+            Case(('dict(s)', {'s': [(1, 1)]}), {}, {1: 1}),
+            Case(('frozenset(l)', {'l': [1, 2]}), {}, frozenset([1, 2])),
+            Case(('list(a)', {'a': (1, 2, 3)}), {}, [1, 2, 3]),
+            Case(('list(memoryview(x))', {'x': b'x'}), {}, [120]),
+            Case(('str(o)', {'o': list()}), {}, '[]'),
+            Case(('set(l)', {'l': [1, 2, 3]}), {}, {1, 2, 3}),
+            Case(('tuple(l)', {'l': [1, 2, 3]}), {}, (1, 2, 3))])
+
+        # Further Builtin Types
+        # Note: object and type are tested in
+        self.assertCaseEqual(peval, [
+            Case(('slice(n)', {'n': 3}), {}, slice(3))])
+
+    def test_PyBuiltins_conversion(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltins())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Conversion
+        self.assertCaseEqual(peval, [
+            Case(('ascii(x)', {'x': 1}), {}, '1'),
+            Case(('bin(x)', {'x': 1}), {}, '0b1'),
             Case(('chr(x)', {'x': 65}), {}, 'A'),
+            Case(('format(x)', {'x': 'A'}), {}, 'A'),
+            Case(('hex(x)', {'x': 1}), {}, '0x1'),
+            Case(('oct(x)', {'x': 1}), {}, '0o1'),
+            Case(('ord(x)', {'x': 'A'}), {}, 65)])
+
+    def test_PyBuiltins_math(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltins())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Simple mathematical functions
+        self.assertCaseEqual(peval, [
+            Case(('abs(x)', {'x': -1}), {}, 1),
+            Case(('divmod(a, b)', {'a': 2, 'b': 1}), {}, (2, 0)),
+            Case(('max(l)', {'l': [1, 2, 3]}), {}, 3),
+            Case(('min(l)', {'l': [1, 2, 3]}), {}, 1),
+            Case(('pow(x, y)', {'x': 2, 'y': 2}), {}, 4),
+            Case(('round(x)', {'x': .6}), {}, 1),
+            Case(('sum(l)', {'l': [1, 2, 3]}), {}, 6)])
+
+    def test_PyBuiltins_oop(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltins())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Builtin Types for Object Oriented Programming
+        self.assertCaseEqual(peval, [
+            Case(('isinstance(object(), c)', {'c': object}), {}, True),
+            Case(('type(o)', {'o': object}), {}, type)])
+
+        # Builtin functions for Object and Class Tree Organisation
+        self.assertCaseEqual(peval, [
+            Case(('isinstance(a, b)', {'a': 1, 'b': int}), {}, True),
+            Case(('issubclass(a, b)', {'a': int, 'b': int}), {}, True)])
+
+        # Builtin functions for Attribute Organisation
+        self.assertCaseEqual(peval, [
+            Case(('delattr(o, a)', {'o': mock.Mock(), 'a': 'a'}), {}, None),
+            Case(('dir(o)', {'o': object}), {}, dir(object)),
+            Case(('getattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, 1.),
+            Case(('hasattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, True),
+            Case(('setattr(o, a, v)',
+                {'o': mock.Mock(), 'a': 'a', 'v': 0}), {}, None)])
+
+        # Builtin functions for special Methods
+        self.assertCaseEqual(peval, [
             Case(('bool(classmethod(f))', {'f': object}), {}, True),
+            Case(("hasattr(property(), 'getter')", {}), {}, True),
+            Case(("hasattr(staticmethod(f), '__func__')",
+                {'f': list}), {}, True)])
+
+        # Builtin functions for special Attributes
+        self.assertCaseEqual(peval, [
+            Case(('callable(o)', {'o': object}), {}, True),
+            Case(('hash(o)', {'o': 1}), {}, 1),
+            Case(('len(o)', {'o': [1, 2, 3]}), {}, 3),
+            Case(('repr(o)', {'o': 'x'}), {}, "'x'"),
+            Case(('sorted(vars(o))', {'o': type}), {}, sorted(vars(type)))])
+
+    def test_PyBuiltins_functional(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltins())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Functional Programming and Iterator functions
+        self.assertCaseEqual(peval, [
+            Case(('all(l)', {'l': [1, 1, 0]}), {}, False),
+            Case(('any(l)', {'l': [1, 1, 0]}), {}, True),
+            Case(('list(enumerate(l))', {'l': [1, 2]}), {}, [(0, 1), (1, 2)]),
+            Case(('list(filter(None, l))', {'l': []}), {}, []),
+            Case(('list(iter(l))', {'l': [1, 2, 3]}), {}, [1, 2, 3]),
+            Case(('list(map(f, l))', {'f': bool, 'l': [0]}), {}, [False]),
+            Case(('next(iter(l))', {'l': [1, 2, 3]}), {}, 1),
+            Case(('list(range(n))', {'n': 3}), {}, [0, 1, 2]),
+            Case(('sorted(l)', {'l': [3, 2, 1]}), {}, [1, 2, 3]),
+            Case(('list(zip(l, l))', {'l': range(2)}), {}, [(0, 0), (1, 1)])])
+
+    def test_PyBuiltins_runtime(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltins())
+        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+
+        # Runtime Evaluation and Meta Programming
+        # TODO: Untested functions: breakpoint(), help(), input(), print()
+        self.assertCaseEqual(peval, [
             Case(('bool(compile(a, b, c))',
                 {'a': '1', 'b': '1', 'c': 'eval'}), {}, True),
-            Case(('complex(x)', {'x': 1}), {}, 1+0j),
-            Case(('delattr(o, a)', {'o': mock.Mock(), 'a': 'a'}), {}, None),
-            Case(('dict(s)', {'s': [(1, 1)]}), {}, {1: 1}),
-            Case(('dir(o)', {'o': object}), {}, dir(object)),
-            Case(('divmod(a, b)', {'a': 2, 'b': 1}), {}, (2, 0)),
-            Case(('list(enumerate(l))',
-                {'l': [1, 2, 3]}), {}, [(0, 1), (1, 2), (2, 3)]),
             Case(('eval(e)', {'e': 'True'}), {}, True),
             Case(('exec(e)', {'e': 'True'}), {}, None),
-            Case(('list(filter(None, s))', {'s': []}), {}, []),
-            Case(('float(x)', {'x': 1}), {}, 1.),
-            Case(('format(t)', {'t': 'text'}), {}, 'text'),
-            Case(('frozenset(l)', {'l': [1, 2]}), {}, frozenset([1, 2])),
-            Case(('getattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, 1.),
             Case(('bool(globals())', {}), {}, True),
-            Case(('hasattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, True),
-            Case(('hash(x)', {'x': 1}), {}, 1),
-            # Cannot test help() -> maybe remove it from PyBuiltins
-            Case(('hex(x)', {'x': 1}), {}, '0x1'),
             Case(('id(x)', {'x': None}), {}, id(None)),
-            # Cannot test input() -> maybe remove it from PyBuiltins
-            Case(('int(x)', {'x': 1.}), {}, 1.),
-            Case(('isinstance(a, b)', {'a': 1, 'b': int}), {}, True),
-            Case(('issubclass(a, b)', {'a': int, 'b': int}), {}, True),
-            Case(('list(iter(l))', {'l': [1, 2, 3]}), {}, [1, 2, 3]),
-            Case(('len(a)', {'a': [1, 2, 3]}), {}, 3),
-            Case(('list(a)', {'a': (1, 2, 3)}), {}, [1, 2, 3]),
-            Case(('bool(locals())', {}), {}, True),
-            Case(('list(map(o, l))', {'o': bool, 'l': [0]}), {}, [False]),
-            Case(('max(l)', {'l': [1, 2, 3]}), {}, 3),
-            Case(('list(memoryview(x))', {'x': b'x'}), {}, [120]),
-            Case(('min(l)', {'l': [1, 2, 3]}), {}, 1),
-            Case(('next(iter(l))', {'l': [1, 2, 3]}), {}, 1),
-            Case(('isinstance(object(), c)', {'c': object}), {}, True),
-            Case(('oct(x)', {'x': 1}), {}, '0o1'),
-            Case(('ord(x)', {'x': 'A'}), {}, 65),
-            Case(('pow(x, y)', {'x': 2, 'y': 2}), {}, 4),
-            # Cannot test print() -> maybe remove it from PyBuiltins
-            Case(("hasattr(property(), 'getter')", {}), {}, True),
-            Case(('list(range(x))', {'x': 3}), {}, [0, 1, 2]),
-            # open() is not included
-            Case(('repr(x)', {'x': 'x'}), {}, "'x'"),
-            Case(('round(x)', {'x': .6}), {}, 1),
-            Case(('set(l)', {'l': [1, 2, 3]}), {}, {1, 2, 3}),
-            Case(('setattr(o, a, v)',
-                {'o': mock.Mock(), 'a': 'a', 'v': True}), {}, None),
-            Case(('slice(n)', {'n': 3}), {}, slice(3)),
-            Case(('sorted(l)', {'l': [3, 2, 1]}), {}, [1, 2, 3]),
-            Case(("hasattr(staticmethod(f), '__func__')",
-                {'f': list}), {}, True),
-            Case(('str(o)', {'o': list()}), {}, '[]'),
-            Case(('sum(l)', {'l': [1, 2, 3]}), {}, 6),
-            # super() is currently not tested -> maybe remove it from PyBuiltins
-            Case(('tuple(l)', {'l': [1, 2, 3]}), {}, (1, 2, 3)),
-            Case(("getattr(type(o), '__name__')", {'o': list()}), {}, 'list'),
-            Case(('sorted(vars(o))', {'o': type}), {}, sorted(vars(type))),
-            Case(('list(zip(r, s))',
-                {'r': range(2), 's': range(2)}), {}, [(0, 0), (1, 1)])])
+            Case(('bool(locals())', {}), {}, True)])
 
     def test_Parser(self) -> None:
         pass # Implicitely tested within grammars PyCore and PyExprEval
