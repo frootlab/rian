@@ -277,9 +277,9 @@ class TestOperator(ModuleTestCase):
             self.assertIsInstance(var.operator, operator.Identity)
             self.assertEqual(var.frame, ('x', ))
 
-        with self.subTest(args=('x^2', )):
-            var = create('x^2')
-            self.assertEqual(var.name, 'x^2')
+        with self.subTest(args=('x**2', )):
+            var = create('x**2')
+            self.assertEqual(var.name, 'x**2')
             self.assertIsInstance(var.operator, operator.Lambda)
             self.assertEqual(var.frame, ('x', ))
             self.assertEqual(int(var(0)), 0)
@@ -316,8 +316,8 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(var.operator, list)
             self.assertEqual(var.frame, ('x1', 'x2'))
 
-        with self.subTest(args=(('y', 'x^2', 'x'), )):
-            var = create(('y', 'x^2', 'x'))
+        with self.subTest(args=(('y', 'x**2', 'x'), )):
+            var = create(('y', 'x**2', 'x'))
             self.assertEqual(var.name, 'y')
             self.assertIsInstance(var.operator, operator.Lambda)
             self.assertEqual(var.frame, ('x', ))
@@ -325,8 +325,8 @@ class TestOperator(ModuleTestCase):
             self.assertEqual(int(var(1)), 1)
             self.assertEqual(int(var(2)), 4)
 
-        with self.subTest(args=(('y', 'max(x)^2', ('max(x)', 'z')), )):
-            var = create(('y', 'max(x)^2', ('max(x)', 'z')))
+        with self.subTest(args=(('y', 'max(x)**2', ('max(x)', 'z')), )):
+            var = create(('y', 'max(x)**2', ('max(x)', 'z')))
             self.assertEqual(var.name, 'y')
             self.assertIsInstance(var.operator, operator.Lambda)
             self.assertEqual(var.frame, ('max(x)', 'z'))
@@ -491,8 +491,8 @@ class TestOperator(ModuleTestCase):
             self.assertIsInstance(op, operator.Lambda)
             self.assertIsInstance(op, operator.Identity)
 
-        with self.subTest(args=('x^2 + y', )):
-            op = create('x^2 + y')
+        with self.subTest(args=('x**2 + y', )):
+            op = create('x**2 + y')
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
@@ -505,34 +505,34 @@ class TestOperator(ModuleTestCase):
             self.assertIsInstance(op, operator.Lambda)
             self.assertEqual(int(op(1)), 1)
 
-        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', )):
+        with self.subTest(args=('{x}**2 + y', ), variables=('{x}', )):
             self.assertRaises(
-                errors.NoSubsetError, create, '{x}^2 + y', variables=('{x}', ))
+                errors.NoSubsetError, create, '{x}**2 + y', variables=('{x}', ))
 
-        with self.subTest(args=('{x}^2 + y', ), variables=('{x}', 'y')):
-            op = create('{x}^2 + y', variables=('{x}', 'y'))
+        with self.subTest(args=('{x}**2 + y', ), variables=('{x}', 'y')):
+            op = create('{x}**2 + y', variables=('{x}', 'y'))
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(TypeError, op, 1)
             self.assertEqual(int(op(2, -4)), 0)
 
         with self.subTest(
-                args=('{x}^2 + y', ), variables=('{x}', 'y'),
+                args=('{x}**2 + y', ), variables=('{x}', 'y'),
                 domain=(None, ('{x}', '{y}'))):
             self.assertRaises(
-                errors.NoSubsetError, create, '{x}^2 + y', variables=('{x}', ),
+                errors.NoSubsetError, create, '{x}**2 + y', variables=('{x}', ),
                 domain=(None, ('{x}', '{y}')))
 
         with self.subTest(
-                args=('{x}^2 + y', ), variables=('{x}', 'y'),
+                args=('{x}**2 + y', ), variables=('{x}', 'y'),
                 domain=(None, ('y', '{x}'))):
-            op = create('{x}^2 + y', variables=('{x}', 'y'),
+            op = create('{x}**2 + y', variables=('{x}', 'y'),
                 domain=(None, ('y', '{x}')))
             self.assertIsInstance(op, operator.Lambda)
             self.assertRaises(IndexError, op, 1)
             self.assertEqual(int(op(-4, 2)), 0)
 
-        with self.subTest(args=('{x}^2', ), variables=('{x}', 'y')):
-            op = create('{x}^2', variables=('{x}', 'y'))
+        with self.subTest(args=('{x}**2', ), variables=('{x}', 'y')):
+            op = create('{x}**2', variables=('{x}', 'y'))
             self.assertIsInstance(op, operator.Lambda)
             self.assertEqual(int(op(2)), 4)
             self.assertEqual(int(op(2, 2)), 4)

@@ -435,10 +435,31 @@ class Expression:
         if not assemble:
             return self.eval
 
-        term = self.asstring().replace('^', '**')
-        term = f"lambda {','.join(self.variables)}:{term}"
+        grammar = self.grammar
 
-        return eval(term) # pylint: disable=W0123
+        # Get a string representation of the expression, which replaces all not
+        # builtin operators by surrogate functions.
+        translate = self._get_surrogates()
+        string = self.asstring(translate=translate)
+
+        # Create globals dictionary for surrogate functions
+        glob = {'__builtins__': None}
+
+        # 1. Add all builtin functions, used by the grammar
+        for sid in [FUNCTION]:
+            symbols = grammar.get(sid, builtin=True)
+            for key, sym in symbols.items():
+                glob[key] = sym.value
+
+        # 2. Add Surrogates for not builtins
+        for sid in [UNARY, BINARY, FUNCTION]:
+            symbols = grammar.get(sid, builtin=False)
+            for key, sur in translate[sid].items():
+                glob[sur] = symbols[key].value
+
+        # Create lambda term
+        term = f"lambda {','.join(self.variables)}:{string}"
+        return eval(term, glob) # pylint: disable=W0123
 
     def asstring(self, translate: Optional[dict] = None) -> str:
         voc = translate or {}
@@ -447,10 +468,6 @@ class Expression:
         for tok in self.tokens:
             if tok.type == CONSTANT:
                 stack.append(repr(tok.value))
-                # if isinstance(tok.value, str):
-                #     stack.append(repr(tok.value))
-                # else:
-                #     stack.append(tok.value)
             elif tok.type == BINARY:
                 b = stack.pop()
                 a = stack.pop()
@@ -510,7 +527,7 @@ class Expression:
         functions = self.grammar.get(FUNCTION)
         return [sym for sym in self.symbols if sym not in functions]
 
-    def _get_builtin_translation(self) -> dict:
+    def _get_surrogates(self) -> dict:
         # Search grammar for non-builtin symbols
         grammar = self.grammar
         occupied = set(sym.key for sym in grammar).union(self.symbols)
