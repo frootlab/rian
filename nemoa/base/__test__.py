@@ -515,7 +515,8 @@ class TestParser(ModuleTestCase):
 
         mean: AnyOp = lambda s: sum(s) / len(s)
         grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
-        self.assertIn('mean', grammar.get(parser.FUNCTION))
+        self.assertIn('mean', grammar.get(parser.FUNCTION, builtin=False))
+        self.assertNotIn('mean', grammar.get(parser.FUNCTION, builtin=True))
 
         p = parser.Parser(grammar=grammar)
         self.assertEqual(p.parse('mean(s)').variables, ['s'])

@@ -580,7 +580,7 @@ class Lambda(Operator):
         # lambda term usually may be considered to be a trusted expression, as
         # it has been created by using the expression parser
         getter = Getter(*fields, domain=dom, target=(tuple, variables))
-        func = pexpr.to_func(assemble)
+        func = pexpr.asfunc(assemble=assemble)
         final = compose(func, getter, unpack=True)
 
         setattr(type(self), '__call__', staticmethod(final))

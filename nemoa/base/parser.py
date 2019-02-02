@@ -105,20 +105,34 @@ class Symbol:
 class Grammar(set):
     """Base Class for Parser Grammars."""
 
-    def get(self, tid: int) -> Dict[str, Symbol]:
+    def get(
+            self, sid: int,
+            builtin: Optional[bool] = None) -> Dict[str, Symbol]:
         """Get symbols of given type.
 
         Args:
-            tid: Integer parameter representing the type of symbols. Meaningfull
+            sid: Integer parameter representing the type of symbols. Meaningfull
                 types are given by module contants.
+            builtin: Boolean parameter, which determines if ...
 
         Returns:
             OrderedDict containing Symbols in reverse lexical order to
             prioritize symbols with greater lenght.
 
         """
-        symbols = iter((sym.key, sym) for sym in self if sym.type == tid)
-        return collections.OrderedDict(sorted(symbols, reverse=True))
+        # Filter by type
+        key: AnyOp = lambda sym: sym.type == sid
+        symbols = filter(key, self)
+
+        # Optionally filter by builtin
+        if builtin is not None:
+            key = lambda sym: sym.builtin == builtin
+            symbols = filter(key, symbols)
+
+        # Create and return OrderedDict in reverse sort order to prioritize
+        # longer sombols
+        items = iter((sym.key, sym) for sym in symbols)
+        return collections.OrderedDict(sorted(items, reverse=True))
 
 class PyCore(Grammar):
     """Python Expression Symbols.
@@ -316,10 +330,17 @@ class Expression:
         return self.eval(*args, **kwds)
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}({repr(self.to_string())})'
+        return f'{type(self).__name__}({repr(self.asstring())})'
 
     def __str__(self) -> str:
-        return self.to_string()
+        return self.asstring()
+
+    # def get_trans_table(self) -> dict:
+    #     # Search grammar for non-builtin symbols
+    #     grammar = self.grammar
+    #     trans_table = {}
+    #     for sid in [UNARY, BINARY, FUNCTION, CONSTANT]:
+    #         trans_table[sid] = grammar.get(sid, builtin=False)
 
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
@@ -417,16 +438,16 @@ class Expression:
 
         return stack[0]
 
-    def to_func(self, assemble: bool = True) -> Callable:
+    def asfunc(self, assemble: bool = True) -> Callable:
         if not assemble:
             return self.eval
 
-        term = self.to_string().replace('^', '**')
+        term = self.asstring().replace('^', '**')
         term = f"lambda {','.join(self.variables)}:{term}"
 
         return eval(term) # pylint: disable=W0123
 
-    def to_string(self, python: bool = False) -> str:
+    def asstring(self, builtin: bool = False) -> str:
         stack = []
         for tok in self.tokens:
             if tok.type == CONSTANT:
@@ -438,7 +459,7 @@ class Expression:
                 b = stack.pop()
                 a = stack.pop()
                 f = tok.key
-                if f == '^' and python:
+                if f == '^' and builtin:
                     stack.append(f'{a}**{b}')
                 elif f == ',':
                     stack.append(f'{a}, {b}')
