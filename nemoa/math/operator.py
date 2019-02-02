@@ -580,16 +580,10 @@ class Lambda(Operator):
         # lambda term usually may be considered to be a trusted expression, as
         # it has been created by using the expression parser
         getter = Getter(*fields, domain=dom, target=(tuple, variables))
-        func: AnyOp
-        if assemble:
-            term = pexpr.to_string().replace('^', '**')
-            term = f"lambda {','.join(variables)}:{term}"
-            compiled = eval(term) # pylint: disable=W0123
-            func = compose(compiled, getter, unpack=True)
-        else:
-            func = compose(pexpr.eval, getter, unpack=True)
+        func = pexpr.to_func(assemble)
+        final = compose(func, getter, unpack=True)
 
-        setattr(type(self), '__call__', staticmethod(func))
+        setattr(type(self), '__call__', staticmethod(final))
 
 class Vector(collections.abc.Sequence, Operator):
     """Class for vectorial functions.

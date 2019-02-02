@@ -60,7 +60,7 @@ import math
 import operator
 import random
 import re
-from typing import Any, Dict, List, Match, Optional, Union
+from typing import Any, Callable, Dict, List, Match, Optional, Union
 from nemoa.base import check, env, stype
 from nemoa.types import AnyOp
 
@@ -416,6 +416,15 @@ class Expression:
             raise Exception('invalid expression (parity)')
 
         return stack[0]
+
+    def to_func(self, assemble: bool = True) -> Callable:
+        if not assemble:
+            return self.eval
+
+        term = self.to_string().replace('^', '**')
+        term = f"lambda {','.join(self.variables)}:{term}"
+
+        return eval(term) # pylint: disable=W0123
 
     def to_string(self, python: bool = False) -> str:
         stack = []
