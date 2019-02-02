@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright (c) 2019 Patrick Michl <patrick.michl@gmail.com>
+# Copyright (c) 2019 Patrick Michl
 # Copyright (c) 2014-2019 AxiaCore S.A.S.
 #
-# §1 This file is part of nemoa
-#
-#  Author: Patrick Michl <patrick.michl@gmail.com>, https://frootlab.github.io
+# §1 This file is part of nemoa, https://frootlab.github.io
 #
 #  nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -18,9 +15,7 @@
 #  You should have received a copy of the GNU General Public License along with
 #  nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-# §2 This file is forked from py-expression-eval, 0.3.6
-#
-#  Author: AxiaCore S.A.S., http://axiacore.com
+# §2 Parts of this file are based on py-expression-eval, 0.3.6
 #
 #  py-expression-eval is free software: you can redistribute it and/or modify it
 #  under the terms of the MIT License as published by the Massachusetts

@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2013-2019 Patrick Michl
 #
-# nemoa --- https://frootlab.github.io/nemoa
-# Copyright (C) 2013-2019, Patrick Michl
-#
-# This file is part of nemoa.
+# This file is part of nemoa, https://frootlab.github.io/nemoa
 #
 #  nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -24,7 +22,7 @@ methods from probabilistic graphical modeling [PGM]_ with machine learning [ML]_
 and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.504'
+__version__ = '0.5.505'
 __status__ = 'Development'
 __description__ = 'Graphical Modeling and structured Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
