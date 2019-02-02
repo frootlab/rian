@@ -793,6 +793,7 @@ class TestParser(ModuleTestCase):
     def test_PyBuiltins(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltins())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        close: AnyOp = lambda fh: fh.close()
 
         self.assertCaseEqual(peval, [
             Case(('abs(x)', {'x': -1}), {}, 1),
@@ -842,6 +843,31 @@ class TestParser(ModuleTestCase):
             Case(('bool(locals())', {}), {}, True),
             Case(('list(map(o, l))', {'o': bool, 'l': [0]}), {}, [False]),
             Case(('max(l)', {'l': [1, 2, 3]}), {}, 3),
+            Case(('list(memoryview(x))', {'x': b'x'}), {}, [120]),
+            Case(('min(l)', {'l': [1, 2, 3]}), {}, 1),
+            Case(('next(iter(l))', {'l': [1, 2, 3]}), {}, 1),
+            Case(('isinstance(object(), c)', {'c': object}), {}, True),
+            Case(('oct(x)', {'x': 1}), {}, '0o1'),
+            Case(('ord(x)', {'x': 'A'}), {}, 65),
+            Case(('pow(x, y)', {'x': 2, 'y': 2}), {}, 4),
+            # Cannot test print() -> maybe remove it from PyBuiltins
+            Case(("hasattr(property(), 'getter')", {}), {}, True),
+            Case(('list(range(x))', {'x': 3}), {}, [0, 1, 2]),
+            Case(('repr(x)', {'x': 'x'}), {}, "'x'"),
+            Case(('round(x)', {'x': .6}), {}, 1),
+
+            # Case(('set',
+            # Case(('setattr',
+            # Case(('slice',
+            # Case(('sorted',
+            # Case(('staticmethod',
+            # Case(('str',
+            # Case(('sum',
+            # Case(('super',
+            # Case(('tuple',
+            # Case(('type',
+            # Case(('vars',
+            # Case(('zip'
         ])
 
     def test_Parser(self) -> None:
@@ -881,7 +907,6 @@ class TestParser(ModuleTestCase):
             Case(("a==''", {'a':''}), {}, True)])
 
         self.assertRaises(ValueError, peval, "..5", {})
-
 
     def test_Expression(self) -> None:
         pass # Explicitely tested by partial test of the methods
@@ -963,38 +988,38 @@ class TestStype(ModuleTestCase):
         pass # Implicitly tested by test_create_domain()
 
     def test_create_field(self) -> None:
-        f = stype.create_field
+        create = stype.create_field
 
         with self.subTest():
-            self.assertRaises(TypeError, f)
+            self.assertRaises(TypeError, create)
 
         with self.subTest(args=('x', )):
-            field = f('x')
+            field = create('x')
             self.assertIsInstance(field, stype.Field)
             self.assertEqual(field.id, 'x')
             self.assertEqual(field.type, type(None))
 
         with self.subTest(args=(('x', int))):
-            field = f(('x', int))
+            field = create(('x', int))
             self.assertIsInstance(field, stype.Field)
             self.assertEqual(field.id, 'x')
             self.assertEqual(field.type, int)
 
     def test_create_basis(self) -> None:
-        f = stype.create_basis
+        create = stype.create_basis
 
         with self.subTest():
-            self.assertRaises(TypeError, f)
+            self.assertRaises(TypeError, create)
 
         with self.subTest(args=('x', )):
-            frame, basis = f('x')
+            frame, basis = create('x')
             self.assertEqual(frame, ('x', ))
             self.assertEqual(len(basis), 1)
             self.assertEqual(basis['x'].id, 'x')
             self.assertEqual(basis['x'].type, type(None))
 
         with self.subTest(args=(('x', 'y'), )):
-            frame, basis = f(('x', 'y'))
+            frame, basis = create(('x', 'y'))
             self.assertEqual(frame, ('x', 'y'))
             self.assertEqual(len(basis), 2)
             self.assertTrue('x' in basis)
@@ -1004,25 +1029,25 @@ class TestStype(ModuleTestCase):
         pass # Implicitly tested by test_create_domain()
 
     def test_create_domain(self) -> None:
-        f = stype.create_domain
+        create = stype.create_domain
 
         with self.subTest():
-            dom = f()
+            dom = create()
             self.assertEqual(dom.type, type(None))
             self.assertEqual(dom.frame, tuple())
 
         with self.subTest(args=(object, )):
-            dom = f(object)
+            dom = create(object)
             self.assertEqual(dom.type, object)
             self.assertEqual(dom.frame, tuple())
 
         with self.subTest(args=((tuple, ('a', 'b', 'c')), )):
-            dom = f((tuple, ('a', 'b', 'c')))
+            dom = create((tuple, ('a', 'b', 'c')))
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
         with self.subTest(args=(tuple, ), defaults={'fields': ('a', 'b', 'c')}):
-            dom = f(tuple, defaults={'fields': ('a', 'b', 'c')})
+            dom = create(tuple, defaults={'fields': ('a', 'b', 'c')})
             self.assertEqual(dom.type, tuple)
             self.assertEqual(dom.frame, ('a', 'b', 'c'))
 
