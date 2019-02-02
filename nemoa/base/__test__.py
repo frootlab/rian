@@ -805,13 +805,13 @@ class TestParser(ModuleTestCase):
                 Case(('x @ y', {'x': exch, 'y': exch}), {}, idem),
                 Case(('x @ y', {'x': prj1, 'y': prj2}), {}, zero)])
 
-    def test_PyBuiltins(self) -> None:
+    def test_PyBuiltin(self) -> None:
         # The parser evaluation of the Python Builtin Grammar is seperately
         # tested within individual categories
         pass
 
-    def test_PyBuiltins_types(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltins())
+    def test_PyBuiltin_types(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         # Builtin Number Types
@@ -841,8 +841,8 @@ class TestParser(ModuleTestCase):
         self.assertCaseEqual(peval, [
             Case(('slice(n)', {'n': 3}), {}, slice(3))])
 
-    def test_PyBuiltins_conversion(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltins())
+    def test_PyBuiltin_conversion(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         # Conversion
@@ -855,8 +855,8 @@ class TestParser(ModuleTestCase):
             Case(('oct(x)', {'x': 1}), {}, '0o1'),
             Case(('ord(x)', {'x': 'A'}), {}, 65)])
 
-    def test_PyBuiltins_math(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltins())
+    def test_PyBuiltin_math(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         # Simple mathematical functions
@@ -869,8 +869,8 @@ class TestParser(ModuleTestCase):
             Case(('round(x)', {'x': .6}), {}, 1),
             Case(('sum(l)', {'l': [1, 2, 3]}), {}, 6)])
 
-    def test_PyBuiltins_oop(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltins())
+    def test_PyBuiltin_oop(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         # Builtin Types for Object Oriented Programming
@@ -907,8 +907,8 @@ class TestParser(ModuleTestCase):
             Case(('repr(o)', {'o': 'x'}), {}, "'x'"),
             Case(('sorted(vars(o))', {'o': type}), {}, sorted(vars(type)))])
 
-    def test_PyBuiltins_functional(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltins())
+    def test_PyBuiltin_functional(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         # Functional Programming and Iterator functions
@@ -924,8 +924,8 @@ class TestParser(ModuleTestCase):
             Case(('sorted(l)', {'l': [3, 2, 1]}), {}, [1, 2, 3]),
             Case(('list(zip(l, l))', {'l': range(2)}), {}, [(0, 0), (1, 1)])])
 
-    def test_PyBuiltins_runtime(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltins())
+    def test_PyBuiltin_runtime(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
 
         # Runtime Evaluation and Meta Programming

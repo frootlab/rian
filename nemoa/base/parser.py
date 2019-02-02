@@ -179,7 +179,7 @@ class PyCore(Grammar):
             Symbol(BINARY, 'and', bool_and, 1), # Boolean AND
             Symbol(BINARY, 'or', bool_or, 0)]) # Boolean OR
 
-class PyBuiltins(PyCore):
+class PyBuiltin(PyCore):
     """Python Expression and Builtin Symbols."""
 
     def __init__(self) -> None:
