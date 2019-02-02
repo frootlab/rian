@@ -440,24 +440,27 @@ class Expression:
 
         return eval(term) # pylint: disable=W0123
 
-    def asstring(self, builtin: bool = False) -> str:
+    def asstring(self, translate: Optional[dict] = None) -> str:
+        voc = translate or {}
+
         stack = []
         for tok in self.tokens:
             if tok.type == CONSTANT:
-                if isinstance(tok.value, str):
-                    stack.append(repr(tok.value))
-                else:
-                    stack.append(tok.value)
+                stack.append(repr(tok.value))
+                # if isinstance(tok.value, str):
+                #     stack.append(repr(tok.value))
+                # else:
+                #     stack.append(tok.value)
             elif tok.type == BINARY:
                 b = stack.pop()
                 a = stack.pop()
                 f = tok.key
-                if f == '^' and builtin:
-                    stack.append(f'{a}**{b}')
-                elif f == ',':
+                if f == ',':
                     stack.append(f'{a}, {b}')
+                elif BINARY in voc and f in voc[BINARY]:
+                    stack.append(f'{voc[BINARY][f]}({a}, {b})')
                 else:
-                    stack.append(f'({a}{f}{b})')
+                    stack.append(f'({a} {f} {b})')
             elif tok.type == VARIABLE and isinstance(tok.key, str):
                 stack.append(tok.key)
             elif tok.type == UNARY:
@@ -465,12 +468,17 @@ class Expression:
                 f = tok.key
                 if f == '-':
                     stack.append(f'(-{a})')
+                elif UNARY in voc and f in voc[UNARY]:
+                    stack.append(f'{voc[UNARY][f]}({a})')
                 else:
                     stack.append(f'{f}({a})')
             elif tok.type == FUNCTION:
                 a = stack.pop()
                 f = stack.pop()
-                stack.append(f'{f}({a})')
+                if FUNCTION in voc and f in voc[FUNCTION]:
+                    stack.append(f'{voc[FUNCTION][f]}({a})')
+                else:
+                    stack.append(f'{f}({a})')
             else:
                 raise Exception('invalid expression')
 

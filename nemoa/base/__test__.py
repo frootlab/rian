@@ -995,17 +995,17 @@ class TestParser(ModuleTestCase):
 
         self.assertCaseEqual(psubs, [
             Case(("x / ((x + y))", {}, 1, 1), {}, .5),
-            Case(('x*(y*1)', {'y': 4}, 2), {}, 8)])
+            Case(('x * (y * 1)', {'y': 4}, 2), {}, 8)])
 
         self.assertCaseEqual(pvars, [
-            Case(('x*(y*atan(1))', {'y': 4}), {}, ['x'])])
+            Case(('x * (y * atan(1))', {'y': 4}), {}, ['x'])])
 
     def test_Expression_to_string(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
         pstr: AnyOp = lambda e: str(p.parse(e))
 
         self.assertCaseEqual(pstr, [
-            Case(("'a'=='b'", ), {}, "'a'=='b'"),
+            Case(("'a'=='b'", ), {}, "'a' == 'b'"),
             Case(("func(a,1.51,'ok')", ), {}, "func(a, 1.51, 'ok')")])
 
     def test_Expression_variables(self) -> None:
@@ -1014,7 +1014,7 @@ class TestParser(ModuleTestCase):
 
         self.assertCaseEqual(pvars, [
             Case(('x * (y * atan(1))', ), {}, ['x', 'y']),
-            Case(('pow(x,y)', ), {}, ['x', 'y']),
+            Case(('pow(x, y)', ), {}, ['x', 'y']),
             Case(("PI", ), {}, []),
             Case(("PI ", ), {}, []),
             Case(("E ", ), {}, []),
