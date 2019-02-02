@@ -335,25 +335,6 @@ class Expression:
     def __str__(self) -> str:
         return self.asstring()
 
-    # def get_trans_table(self) -> dict:
-    #     # Search grammar for non-builtin symbols
-    #     grammar = self.grammar
-    #     trans_table = {}
-    #     for sid in [UNARY, BINARY, FUNCTION, CONSTANT]:
-    #         trans_table[sid] = grammar.get(sid, builtin=False)
-
-    # var_counter = itertools.count()
-    # next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
-    # for field in fields:
-    #     if isinstance(field, str) and field.isidentifier():
-    #         mapping[field] = field
-    #         continue
-    #     var_name = next_var()
-    #     while occupied(var_name):
-    #         var_name = next_var()
-    #     mapping[field] = var_name
-
-
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
         stack = []
@@ -520,6 +501,23 @@ class Expression:
     def variables(self) -> List[str]:
         functions = self.grammar.get(FUNCTION)
         return [sym for sym in self.symbols if sym not in functions]
+
+    def _get_builtin_translation(self) -> dict:
+        # Search grammar for non-builtin symbols
+        grammar = self.grammar
+        occupied = set(sym.key for sym in grammar).union(self.symbols)
+
+        translation = {}
+        counter = itertools.count()
+        nextkey: AnyOp = lambda: 'f{i}'.format(i=next(counter))
+        for sid in [UNARY, BINARY, FUNCTION, CONSTANT]:
+            translation[sid] = {}
+            for key in grammar.get(sid, builtin=False):
+                newkey = nextkey()
+                while newkey in occupied:
+                    newkey = nextkey()
+                translation[sid][key] = newkey
+        return translation
 
 class Parser:
     PRIM = 1
