@@ -520,290 +520,290 @@ class TestParser(ModuleTestCase):
         p = parser.Parser(grammar=grammar)
         self.assertEqual(p.parse('mean(s)').variables, ['s'])
         self.assertEqual(p.parse('mean(s)').symbols, ['mean', 's'])
-        self.assertEqual(p.parse('mean(s)').eval({'s': [1, 2, 3]}), 2)
+        self.assertEqual(p.parse('mean(s)').eval([1, 2, 3]), 2)
 
     def test_PyCore(self) -> None:
         # The individual operators are tested within seperate tests. Here the
         # operator associativity and precedence is tested
         p = parser.Parser(grammar=parser.PyCore())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Boolean Operators
         with self.subTest():
             self.assertCaseEqual(peval, [
-                Case(('x and not(y)', {'x': 1, 'y': 0}), {}, True),
-                Case(('not(x and y)', {'x': 1, 'y': 0}), {}, True),
-                Case(('x or y and z', {'x': 1, 'y': 0, 'z': 0}), {}, True),
-                Case(('(x or y) and z', {'x': 1, 'y': 0, 'z': 0}), {}, False)])
+                Case(('x and not(y)', 1, 0), {}, True),
+                Case(('not(x and y)', 1, 0), {}, True),
+                Case(('x or y and z', 1, 0, 0), {}, True),
+                Case(('(x or y) and z', 1, 0, 0), {}, False)])
 
         # Bitwise Operators
         with self.subTest():
             self.assertCaseEqual(peval, [
-                Case(('x | (~y)', {'x': 1, 'y': 0}), {}, -1),
-                Case(('~(x | y)', {'x': 1, 'y': 0}), {}, -2),
-                Case(('x | y ^ z', {'x': 1, 'y': 0, 'z': 3}), {}, 3),
-                Case(('(x | y) ^ z', {'x': 1, 'y': 0, 'z': 3}), {}, 2),
-                Case(('x ^ y ^ z', {'x': 1, 'y': 0, 'z': 3}), {}, 2),
-                Case(('x ^ y & z', {'x': 3, 'y': 1, 'z': 0}), {}, 3),
-                Case(('(x ^ y) & z', {'x': 3, 'y': 1, 'z': 0}), {}, 0),
-                Case(('x & y >> z', {'x': 2, 'y': 4, 'z': 1}), {}, 2),
-                Case(('(x & y) >> z', {'x': 2, 'y': 4, 'z': 1}), {}, 0)])
+                Case(('x | (~y)', 1, 0), {}, -1),
+                Case(('~(x | y)', 1, 0), {}, -2),
+                Case(('x | y ^ z', 1, 0, 3), {}, 3),
+                Case(('(x | y) ^ z', 1, 0, 3), {}, 2),
+                Case(('x ^ y ^ z', 1, 0, 3), {}, 2),
+                Case(('x ^ y & z', 3, 1, 0), {}, 3),
+                Case(('(x ^ y) & z', 3, 1, 0), {}, 0),
+                Case(('x & y >> z', 2, 4, 1), {}, 2),
+                Case(('(x & y) >> z', 2, 4, 1), {}, 0)])
 
         # Arithmetic Operators
         with self.subTest():
             self.assertCaseEqual(peval, [
-                Case(('x + (-y)', {'x': 1, 'y': 1}), {}, 0),
-                Case(('-(x + y)', {'x': 1, 'y': 1}), {}, -2),
-                Case(('x + y * z', {'x': 1, 'y': 0, 'z': 0}), {}, 1),
-                Case(('(x + y) * z', {'x': 1, 'y': 0, 'z': 0}), {}, 0),
-                Case(('x * y ** z', {'x': 2, 'y': 2, 'z': 2}), {}, 8),
-                Case(('(x * y) ** z', {'x': 2, 'y': 2, 'z': 2}), {}, 16)])
+                Case(('x + (-y)', 1, 1), {}, 0),
+                Case(('-(x + y)', 1, 1), {}, -2),
+                Case(('x + y * z', 1, 0, 0), {}, 1),
+                Case(('(x + y) * z', 1, 0, 0), {}, 0),
+                Case(('x * y ** z', 2, 2, 2), {}, 8),
+                Case(('(x * y) ** z', 2, 2, 2), {}, 16)])
 
         # Mixed Operators
         with self.subTest():
             self.assertCaseEqual(peval, [
-                Case(('x and y | z', {'x': 0, 'y': 2, 'z': 3}), {}, 0),
-                Case(('(x and y) | z', {'x': 0, 'y': 2, 'z': 3}), {}, 3),
-                Case(('x << y + z', {'x': 1, 'y': 2, 'z': 3}), {}, 32),
-                Case(('(x << y) + z', {'x': 1, 'y': 2, 'z': 3}), {}, 7)])
+                Case(('x and y | z', 0, 2, 3), {}, 0),
+                Case(('(x and y) | z', 0, 2, 3), {}, 3),
+                Case(('x << y + z', 1, 2, 3), {}, 32),
+                Case(('(x << y) + z', 1, 2, 3), {}, 7)])
 
     def test_PyCore_boolean(self) -> None:
         p = parser.Parser(grammar=parser.PyCore())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Boolean OR
         with self.subTest(symbol='or'):
             self.assertCaseEqual(peval, [
-                Case(('x or y', {'x': True, 'y': False}), {}, True),
-                Case(('x or y', {'x': False, 'y': True}), {}, True),
-                Case(('x or y', {'x': False, 'y': False}), {}, False),
-                Case(('x or y', {'x': True, 'y': True}), {}, True)])
+                Case(('x or y', True, False), {}, True),
+                Case(('x or y', False, True), {}, True),
+                Case(('x or y', False, False), {}, False),
+                Case(('x or y', True, True), {}, True)])
 
         # Boolean AND
         with self.subTest(symbol='and'):
             self.assertCaseEqual(peval, [
-                Case(('x and y', {'x': True, 'y': False}), {}, False),
-                Case(('x and y', {'x': False, 'y': True}), {}, False),
-                Case(('x and y', {'x': False, 'y': False}), {}, False),
-                Case(('x and y', {'x': True, 'y': True}), {}, True)])
+                Case(('x and y', True, False), {}, False),
+                Case(('x and y', False, True), {}, False),
+                Case(('x and y', False, False), {}, False),
+                Case(('x and y', True, True), {}, True)])
 
         # Boolean NOT
         with self.subTest(symbol='not'):
             self.assertCaseEqual(peval, [
-                Case(('not(x)', {'x': True}), {}, False),
-                Case(('not(x)', {'x': False}), {}, True)])
+                Case(('not(x)', True), {}, False),
+                Case(('not(x)', False), {}, True)])
 
     def test_PyCore_ordering(self) -> None:
         p = parser.Parser(grammar=parser.PyCore())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Equality
         with self.subTest(symbol='=='):
             self.assertCaseEqual(peval, [
-                Case(('x == y', {'x': 1, 'y': 1}), {}, True),
-                Case(('x == y', {'x': 1, 'y': 2}), {}, False),
-                Case(('x == y', {'x': 'a', 'y': 'a'}), {}, True),
-                Case(('x == y', {'x': 'a', 'y': 'b'}), {}, False)])
+                Case(('x == y', 1, 1), {}, True),
+                Case(('x == y', 1, 2), {}, False),
+                Case(('x == y', 'a', 'a'), {}, True),
+                Case(('x == y', 'a', 'b'), {}, False)])
 
         # Inequality
         with self.subTest(symbol='!='):
             self.assertCaseEqual(peval, [
-                Case(('x != y', {'x': 1, 'y': 1}), {}, False),
-                Case(('x != y', {'x': 1, 'y': 2}), {}, True),
-                Case(('x != y', {'x': 'a', 'y': 'a'}), {}, False),
-                Case(('x != y', {'x': 'a', 'y': 'b'}), {}, True)])
+                Case(('x != y', 1, 1), {}, False),
+                Case(('x != y', 1, 2), {}, True),
+                Case(('x != y', 'a', 'a'), {}, False),
+                Case(('x != y', 'a', 'b'), {}, True)])
 
         # Greater
         with self.subTest(symbol='>'):
             self.assertCaseEqual(peval, [
-                Case(('x > y', {'x': 1, 'y': 1}), {}, False),
-                Case(('x > y', {'x': 2, 'y': 1}), {}, True),
-                Case(('x > y', {'x': 'a', 'y': 'a'}), {}, False),
-                Case(('x > y', {'x': 'b', 'y': 'a'}), {}, True)])
+                Case(('x > y', 1, 1), {}, False),
+                Case(('x > y', 2, 1), {}, True),
+                Case(('x > y', 'a', 'a'), {}, False),
+                Case(('x > y', 'b', 'a'), {}, True)])
 
         # Greater or Equal
         with self.subTest(symbol='>='):
             self.assertCaseEqual(peval, [
-                Case(('x >= y', {'x': 1, 'y': 2}), {}, False),
-                Case(('x >= y', {'x': 1, 'y': 1}), {}, True),
-                Case(('x >= y', {'x': 'a', 'y': 'b'}), {}, False),
-                Case(('x >= y', {'x': 'a', 'y': 'a'}), {}, True)])
+                Case(('x >= y', 1, 2), {}, False),
+                Case(('x >= y', 1, 1), {}, True),
+                Case(('x >= y', 'a', 'b'), {}, False),
+                Case(('x >= y', 'a', 'a'), {}, True)])
 
         # Lower
         with self.subTest(symbol='<'):
             self.assertCaseEqual(peval, [
-                Case(('x < y', {'x': 1, 'y': 1}), {}, False),
-                Case(('x < y', {'x': 1, 'y': 2}), {}, True),
-                Case(('x < y', {'x': 'a', 'y': 'a'}), {}, False),
-                Case(('x < y', {'x': 'a', 'y': 'b'}), {}, True)])
+                Case(('x < y', 1, 1), {}, False),
+                Case(('x < y', 1, 2), {}, True),
+                Case(('x < y', 'a', 'a'), {}, False),
+                Case(('x < y', 'a', 'b'), {}, True)])
 
         # Lower or Equal
         with self.subTest(symbol='<='):
             self.assertCaseEqual(peval, [
-                Case(('x <= y', {'x': 2, 'y': 1}), {}, False),
-                Case(('x <= y', {'x': 1, 'y': 1}), {}, True),
-                Case(('x <= y', {'x': 'b', 'y': 'a'}), {}, False),
-                Case(('x <= y', {'x': 'a', 'y': 'a'}), {}, True)])
+                Case(('x <= y', 2, 1), {}, False),
+                Case(('x <= y', 1, 1), {}, True),
+                Case(('x <= y', 'b', 'a'), {}, False),
+                Case(('x <= y', 'a', 'a'), {}, True)])
 
         # Identity
         with self.subTest(symbol='is'):
             self.assertCaseEqual(peval, [
-                Case(('x is y', {'x': True, 'y': True}), {}, True),
-                Case(('x is y', {'x': True, 'y': False}), {}, False)])
+                Case(('x is y', True, True), {}, True),
+                Case(('x is y', True, False), {}, False)])
 
         # Containment
         with self.subTest(symbol='in'):
             self.assertCaseEqual(peval, [
-                Case(('x in y', {'x': 'a', 'y': 'a'}), {}, True),
-                Case(('x in y', {'x': 'a', 'y': 'b'}), {}, False),
-                Case(('x in y', {'x': 'a', 'y': 'ba'}), {}, True),
-                Case(('x in y', {'x': 'ab', 'y': 'ba'}), {}, False)])
+                Case(('x in y', 'a', 'a'), {}, True),
+                Case(('x in y', 'a', 'b'), {}, False),
+                Case(('x in y', 'a', 'ba'), {}, True),
+                Case(('x in y', 'ab', 'ba'), {}, False)])
 
     def test_PyCore_bitwise(self) -> None:
         p = parser.Parser(grammar=parser.PyCore())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Bitwise Inversion
         with self.subTest(symbol='~'):
             self.assertCaseEqual(peval, [
-                Case(('~x', {'x': 0}), {}, -1),
-                Case(('~x', {'x': -1}), {}, 0),
-                Case(('~x', {'x': 1}), {}, -2),
-                Case(('~x', {'x': -2}), {}, 1),
-                Case(('~(~x)', {'x': 3}), {}, 3)])
+                Case(('~x', 0), {}, -1),
+                Case(('~x', -1), {}, 0),
+                Case(('~x', 1), {}, -2),
+                Case(('~x', -2), {}, 1),
+                Case(('~(~x)', 3), {}, 3)])
 
         # Bitwise Right Shift
         with self.subTest(symbol='>>'):
             self.assertCaseEqual(peval, [
-                Case(('x >> y', {'x': 1, 'y': 1}), {}, 0),
-                Case(('x >> y', {'x': 2, 'y': 2}), {}, 0),
-                Case(('x >> y', {'x': 1, 'y': 2}), {}, 0),
-                Case(('x >> y', {'x': 2, 'y': 1}), {}, 1)])
+                Case(('x >> y', 1, 1), {}, 0),
+                Case(('x >> y', 2, 2), {}, 0),
+                Case(('x >> y', 1, 2), {}, 0),
+                Case(('x >> y', 2, 1), {}, 1)])
 
         # Bitwise Left Shift
         with self.subTest(symbol='>>'):
             self.assertCaseEqual(peval, [
-                Case(('x << y', {'x': 1, 'y': 1}), {}, 2),
-                Case(('x << y', {'x': 2, 'y': 2}), {}, 8),
-                Case(('x << y', {'x': 1, 'y': 2}), {}, 4),
-                Case(('x << y', {'x': 2, 'y': 1}), {}, 4)])
+                Case(('x << y', 1, 1), {}, 2),
+                Case(('x << y', 2, 2), {}, 8),
+                Case(('x << y', 1, 2), {}, 4),
+                Case(('x << y', 2, 1), {}, 4)])
 
         # Bitwise AND
         with self.subTest(symbol='&'):
             self.assertCaseEqual(peval, [
-                Case(('x & y', {'x': 2, 'y': 2}), {}, 2),
-                Case(('x & y', {'x': 2, 'y': 3}), {}, 2),
-                Case(('x & y', {'x': 1, 'y': 3}), {}, 1),
-                Case(('x & y', {'x': 1, 'y': 2}), {}, 0)])
+                Case(('x & y', 2, 2), {}, 2),
+                Case(('x & y', 2, 3), {}, 2),
+                Case(('x & y', 1, 3), {}, 1),
+                Case(('x & y', 1, 2), {}, 0)])
 
         # Bitwise XOR
         with self.subTest(symbol='^'):
             self.assertCaseEqual(peval, [
-                Case(('x ^ y', {'x': 2, 'y': 2}), {}, 0),
-                Case(('x ^ y', {'x': 2, 'y': 3}), {}, 1),
-                Case(('x ^ y', {'x': 1, 'y': 3}), {}, 2),
-                Case(('x ^ y', {'x': 1, 'y': 2}), {}, 3)])
+                Case(('x ^ y', 2, 2), {}, 0),
+                Case(('x ^ y', 2, 3), {}, 1),
+                Case(('x ^ y', 1, 3), {}, 2),
+                Case(('x ^ y', 1, 2), {}, 3)])
 
         # Bitwise OR
         with self.subTest(symbol='|'):
             self.assertCaseEqual(peval, [
-                Case(('x | y', {'x': 2, 'y': 2}), {}, 2),
-                Case(('x | y', {'x': 2, 'y': 3}), {}, 3),
-                Case(('x | y', {'x': 1, 'y': 3}), {}, 3),
-                Case(('x | y', {'x': 1, 'y': 2}), {}, 3)])
+                Case(('x | y', 2, 2), {}, 2),
+                Case(('x | y', 2, 3), {}, 3),
+                Case(('x | y', 1, 3), {}, 3),
+                Case(('x | y', 1, 2), {}, 3)])
 
     def test_PyCore_arithmetic(self) -> None:
         p = parser.Parser(grammar=parser.PyCore())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Unary Plus
         with self.subTest(symbol='+'):
             self.assertCaseEqual(peval, [
-                Case(('+x', {'x': 1}), {}, 1),
-                Case(('+x', {'x': -1}), {}, -1),
-                Case(('+(+x)', {'x': 1}), {}, 1),
-                Case(('+(+x)', {'x': -1}), {}, -1)])
+                Case(('+x', 1), {}, 1),
+                Case(('+x', -1), {}, -1),
+                Case(('+(+x)', 1), {}, 1),
+                Case(('+(+x)', -1), {}, -1)])
 
         # Negation
         with self.subTest(symbol='-'):
             self.assertCaseEqual(peval, [
-                Case(('-x', {'x': 1}), {}, -1),
-                Case(('-x', {'x': -1}), {}, 1),
-                Case(('-(-x)', {'x': 1}), {}, 1),
-                Case(('-(-x)', {'x': -1}), {}, -1)])
+                Case(('-x', 1), {}, -1),
+                Case(('-x', -1), {}, 1),
+                Case(('-(-x)', 1), {}, 1),
+                Case(('-(-x)', -1), {}, -1)])
 
         # Exponentiation
         with self.subTest(symbol='**'):
             self.assertCaseEqual(peval, [
-                Case(('x ** y', {'x': 1, 'y': 1}), {}, 1),
-                Case(('x ** y', {'x': 1., 'y': 1}), {}, 1.),
-                Case(('x ** y', {'x': 4, 'y': .5}), {}, 2.),
-                Case(('x ** y', {'x': 2, 'y': 2.}), {}, 4.)])
+                Case(('x ** y', 1, 1), {}, 1),
+                Case(('x ** y', 1., 1), {}, 1.),
+                Case(('x ** y', 4, .5), {}, 2.),
+                Case(('x ** y', 2, 2.), {}, 4.)])
 
         # Division
         with self.subTest(symbol='/'):
             self.assertCaseEqual(peval, [
-                Case(('x / y', {'x': 1, 'y': 1}), {}, 1.),
-                Case(('x / y', {'x': 2, 'y': 1}), {}, 2.),
-                Case(('x / y', {'x': 1, 'y': .2}), {}, 5.),
-                Case(('x / y', {'x': 1, 'y': 2}), {}, .5)])
+                Case(('x / y', 1, 1), {}, 1.),
+                Case(('x / y', 2, 1), {}, 2.),
+                Case(('x / y', 1, .2), {}, 5.),
+                Case(('x / y', 1, 2), {}, .5)])
 
         # Floor Division
         with self.subTest(symbol='//'):
             self.assertCaseEqual(peval, [
-                Case(('x // y', {'x': 1, 'y': 1}), {}, 1),
-                Case(('x // y', {'x': 2, 'y': 1}), {}, 2),
-                Case(('x // y', {'x': 1, 'y': .2}), {}, 4),
-                Case(('x // y', {'x': 1, 'y': 2}), {}, 0)])
+                Case(('x // y', 1, 1), {}, 1),
+                Case(('x // y', 2, 1), {}, 2),
+                Case(('x // y', 1, .2), {}, 4),
+                Case(('x // y', 1, 2), {}, 0)])
 
         # Remainder
         with self.subTest(symbol='%'):
             self.assertCaseEqual(peval, [
-                Case(('x % y', {'x': 2, 'y': 3}), {}, 2),
-                Case(('x % y', {'x': 3, 'y': 2}), {}, 1),
-                Case(('x % y', {'x': 2, 'y': 1}), {}, 0),
-                Case(('x % y', {'x': .1, 'y': .5}), {}, .1)])
+                Case(('x % y', 2, 3), {}, 2),
+                Case(('x % y', 3, 2), {}, 1),
+                Case(('x % y', 2, 1), {}, 0),
+                Case(('x % y', .1, .5), {}, .1)])
 
         # Multiplication
         with self.subTest(symbol='*'):
             self.assertCaseEqual(peval, [
-                Case(('x * y', {'x': -1, 'y': -1}), {}, 1),
-                Case(('x * y', {'x': 2, 'y': .5}), {}, 1),
-                Case(('x * y', {'x': 2, 'y': 2}), {}, 4),
-                Case(('x * y', {'x': -.5, 'y': .5}), {}, -.25)])
+                Case(('x * y', -1, -1), {}, 1),
+                Case(('x * y', 2, .5), {}, 1),
+                Case(('x * y', 2, 2), {}, 4),
+                Case(('x * y', -.5, .5), {}, -.25)])
 
         # Addition
         with self.subTest(symbol='+'):
             self.assertCaseEqual(peval, [
-                Case(('x + y', {'x': 0, 'y': 1}), {}, 1),
-                Case(('x + y', {'x': -1, 'y': 1}), {}, 0),
-                Case(('x + y', {'x': 2, 'y': 2}), {}, 4),
-                Case(('x + y', {'x': .5, 'y': .5}), {}, 1)])
+                Case(('x + y', 0, 1), {}, 1),
+                Case(('x + y', -1, 1), {}, 0),
+                Case(('x + y', 2, 2), {}, 4),
+                Case(('x + y', .5, .5), {}, 1)])
 
         # Subtraction
         with self.subTest(symbol='-'):
             self.assertCaseEqual(peval, [
-                Case(('x - y', {'x': 0, 'y': 1}), {}, -1),
-                Case(('x - y', {'x': -1, 'y': 1}), {}, -2),
-                Case(('x - y', {'x': 2, 'y': 2}), {}, 0),
-                Case(('x - y', {'x': .5, 'y': .5}), {}, 0)])
+                Case(('x - y', 0, 1), {}, -1),
+                Case(('x - y', -1, 1), {}, -2),
+                Case(('x - y', 2, 2), {}, 0),
+                Case(('x - y', .5, .5), {}, 0)])
 
         # Matrix Product
         with self.subTest(symbol='@'):
-            zero = np.matrix([(0, 0), (0, 0)]) # Zero Projection
-            idem = np.matrix([(1, 0), (0, 1)]) # Identity
-            exch = np.matrix([(0, 1), (1, 0)]) # Exchange
-            prj1 = np.matrix([(1, 0), (0, 0)]) # Projection 1
-            prj2 = np.matrix([(0, 0), (0, 1)]) # Projection 2
+            N = np.matrix([(0, 0), (0, 0)]) # Zero Matrix
+            I = np.matrix([(1, 0), (0, 1)]) # Identity Matrix
+            C = np.matrix([(0, 1), (1, 0)]) # Row Exchange Matrix
+            X = np.matrix([(1, 0), (0, 0)]) # Projection to 'x' Component
+            Y = np.matrix([(0, 0), (0, 1)]) # Projection to 'y' Component
 
             self.assertCaseEqual(peval, [
-                Case(('x @ y', {'x': idem, 'y': idem}), {}, idem),
-                Case(('x @ y', {'x': idem, 'y': prj1}), {}, prj1),
-                Case(('x @ y', {'x': prj2, 'y': idem}), {}, prj2),
-                Case(('x @ y', {'x': zero, 'y': idem}), {}, zero),
-                Case(('x @ y', {'x': prj1, 'y': zero}), {}, zero),
-                Case(('x @ y', {'x': exch, 'y': exch}), {}, idem),
-                Case(('x @ y', {'x': prj1, 'y': prj2}), {}, zero)])
+                Case(('X @ Y', I, I), {}, I),
+                Case(('X @ Y', I, X), {}, X),
+                Case(('X @ Y', Y, I), {}, Y),
+                Case(('X @ Y', N, I), {}, N),
+                Case(('X @ Y', X, N), {}, N),
+                Case(('X @ Y', C, C), {}, I),
+                Case(('X @ Y', X, Y), {}, N)])
 
     def test_PyBuiltin(self) -> None:
         # The parser evaluation of the Python Builtin Grammar is seperately
@@ -812,200 +812,196 @@ class TestParser(ModuleTestCase):
 
     def test_PyBuiltin_types(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Builtin Number Types
         self.assertCaseEqual(peval, [
-            Case(('bool(x)', {'x': 1}), {}, True),
-            Case(('complex(x)', {'x': 1}), {}, 1+0j),
-            Case(('float(x)', {'x': 1}), {}, 1.),
-            Case(('int(x)', {'x': 1.}), {}, 1.)])
+            Case(('bool(x)', 1), {}, True),
+            Case(('complex(x)', 1), {}, 1+0j),
+            Case(('float(x)', 1), {}, 1.),
+            Case(('int(x)', 1.), {}, 1.)])
 
         # Builtin Container Types
         self.assertCaseEqual(peval, [
-            Case(('bytearray(x)', {'x': 1}), {}, bytearray(b'\x00')),
-            Case(('bytearray(x, e)',
-                {'x': 'x', 'e': 'utf8'}), {}, bytearray(b'x')),
-            Case(('bytes(x)', {'x': 1}), {}, b'\x00'),
-            Case(('bytes(x, e)', {'x': 'x', 'e': 'utf8'}), {}, b'x'),
-            Case(('dict(s)', {'s': [(1, 1)]}), {}, {1: 1}),
-            Case(('frozenset(l)', {'l': [1, 2]}), {}, frozenset([1, 2])),
-            Case(('list(a)', {'a': (1, 2, 3)}), {}, [1, 2, 3]),
-            Case(('list(memoryview(x))', {'x': b'x'}), {}, [120]),
-            Case(('str(o)', {'o': list()}), {}, '[]'),
-            Case(('set(l)', {'l': [1, 2, 3]}), {}, {1, 2, 3}),
-            Case(('tuple(l)', {'l': [1, 2, 3]}), {}, (1, 2, 3))])
+            Case(('bytearray(x)', 1), {}, bytearray(b'\x00')),
+            Case(('bytearray(x, e)', 'x', 'utf8'), {}, bytearray(b'x')),
+            Case(('bytes(x)', 1), {}, b'\x00'),
+            Case(('bytes(x, e)', 'x', 'utf8'), {}, b'x'),
+            Case(('dict(s)', [(1, 1)]), {}, {1: 1}),
+            Case(('frozenset(l)', [1, 2]), {}, frozenset([1, 2])),
+            Case(('list(a)', (1, 2, 3)), {}, [1, 2, 3]),
+            Case(('list(memoryview(x))', b'x'), {}, [120]),
+            Case(('str(o)', list()), {}, '[]'),
+            Case(('set(l)', [1, 2, 3]), {}, {1, 2, 3}),
+            Case(('tuple(l)', [1, 2, 3]), {}, (1, 2, 3))])
 
         # Further Builtin Types
-        # Note: object and type are tested in
+        # Note: object and type are tested within test_PyBuiltin_oop()
         self.assertCaseEqual(peval, [
-            Case(('slice(n)', {'n': 3}), {}, slice(3))])
+            Case(('slice(n)', 3), {}, slice(3))])
 
     def test_PyBuiltin_conversion(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Conversion
         self.assertCaseEqual(peval, [
-            Case(('ascii(x)', {'x': 1}), {}, '1'),
-            Case(('bin(x)', {'x': 1}), {}, '0b1'),
-            Case(('chr(x)', {'x': 65}), {}, 'A'),
-            Case(('format(x)', {'x': 'A'}), {}, 'A'),
-            Case(('hex(x)', {'x': 1}), {}, '0x1'),
-            Case(('oct(x)', {'x': 1}), {}, '0o1'),
-            Case(('ord(x)', {'x': 'A'}), {}, 65)])
+            Case(('ascii(x)', 1), {}, '1'),
+            Case(('bin(x)', 1), {}, '0b1'),
+            Case(('chr(x)', 65), {}, 'A'),
+            Case(('format(x)', 'A'), {}, 'A'),
+            Case(('hex(x)', 1), {}, '0x1'),
+            Case(('oct(x)', 1), {}, '0o1'),
+            Case(('ord(x)', 'A'), {}, 65)])
 
     def test_PyBuiltin_math(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Simple mathematical functions
         self.assertCaseEqual(peval, [
-            Case(('abs(x)', {'x': -1}), {}, 1),
-            Case(('divmod(a, b)', {'a': 2, 'b': 1}), {}, (2, 0)),
-            Case(('max(l)', {'l': [1, 2, 3]}), {}, 3),
-            Case(('min(l)', {'l': [1, 2, 3]}), {}, 1),
-            Case(('pow(x, y)', {'x': 2, 'y': 2}), {}, 4),
-            Case(('round(x)', {'x': .6}), {}, 1),
-            Case(('sum(l)', {'l': [1, 2, 3]}), {}, 6)])
+            Case(('abs(x)', -1), {}, 1),
+            Case(('divmod(a, b)', 2, 1), {}, (2, 0)),
+            Case(('max(l)', [1, 2, 3]), {}, 3),
+            Case(('min(l)', [1, 2, 3]), {}, 1),
+            Case(('pow(x, y)', 2, 2), {}, 4),
+            Case(('round(x)', .6), {}, 1),
+            Case(('sum(l)', [1, 2, 3]), {}, 6)])
 
     def test_PyBuiltin_oop(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Builtin Types for Object Oriented Programming
         self.assertCaseEqual(peval, [
-            Case(('isinstance(object(), c)', {'c': object}), {}, True),
-            Case(('type(o)', {'o': object}), {}, type)])
+            Case(('isinstance(object(), c)', object), {}, True),
+            Case(('type(o)', object), {}, type)])
 
         # Builtin functions for Object and Class Tree Organisation
         self.assertCaseEqual(peval, [
-            Case(('isinstance(a, b)', {'a': 1, 'b': int}), {}, True),
-            Case(('issubclass(a, b)', {'a': int, 'b': int}), {}, True)])
+            Case(('isinstance(a, b)', 1, int), {}, True),
+            Case(('issubclass(a, b)', int, int), {}, True)])
 
         # Builtin functions for Attribute Organisation
         self.assertCaseEqual(peval, [
-            Case(('delattr(o, a)', {'o': mock.Mock(), 'a': 'a'}), {}, None),
-            Case(('dir(o)', {'o': object}), {}, dir(object)),
-            Case(('getattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, 1.),
-            Case(('hasattr(o, a)', {'o': 1j, 'a': 'imag'}), {}, True),
-            Case(('setattr(o, a, v)',
-                {'o': mock.Mock(), 'a': 'a', 'v': 0}), {}, None)])
+            Case(('delattr(o, a)', mock.Mock(), 'a'), {}, None),
+            Case(('dir(o)', object), {}, dir(object)),
+            Case(('getattr(o, a)', 1j, 'imag'), {}, 1.),
+            Case(('hasattr(o, a)', 1j, 'imag'), {}, True),
+            Case(('setattr(o, a, v)', mock.Mock(), 'a', 0), {}, None)])
 
         # Builtin functions for special Methods
         self.assertCaseEqual(peval, [
-            Case(('bool(classmethod(f))', {'f': object}), {}, True),
-            Case(("hasattr(property(), 'getter')", {}), {}, True),
-            Case(("hasattr(staticmethod(f), '__func__')",
-                {'f': list}), {}, True)])
+            Case(('bool(classmethod(o))', object), {}, True),
+            Case(("hasattr(property(), 'getter')", ), {}, True),
+            Case(("hasattr(staticmethod(f), '__func__')", list), {}, True)])
 
         # Builtin functions for special Attributes
         self.assertCaseEqual(peval, [
-            Case(('callable(o)', {'o': object}), {}, True),
-            Case(('hash(o)', {'o': 1}), {}, 1),
-            Case(('len(o)', {'o': [1, 2, 3]}), {}, 3),
-            Case(('repr(o)', {'o': 'x'}), {}, "'x'"),
-            Case(('sorted(vars(o))', {'o': type}), {}, sorted(vars(type)))])
+            Case(('callable(o)', object), {}, True),
+            Case(('hash(o)', 1), {}, 1),
+            Case(('len(o)', [1, 2, 3]), {}, 3),
+            Case(('repr(o)', 'x'), {}, "'x'"),
+            Case(('sorted(vars(o))', type), {}, sorted(vars(type)))])
 
     def test_PyBuiltin_functional(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Functional Programming and Iterator functions
         self.assertCaseEqual(peval, [
-            Case(('all(l)', {'l': [1, 1, 0]}), {}, False),
-            Case(('any(l)', {'l': [1, 1, 0]}), {}, True),
-            Case(('list(enumerate(l))', {'l': [1, 2]}), {}, [(0, 1), (1, 2)]),
-            Case(('list(filter(None, l))', {'l': []}), {}, []),
-            Case(('list(iter(l))', {'l': [1, 2, 3]}), {}, [1, 2, 3]),
-            Case(('list(map(f, l))', {'f': bool, 'l': [0]}), {}, [False]),
-            Case(('next(iter(l))', {'l': [1, 2, 3]}), {}, 1),
-            Case(('list(range(n))', {'n': 3}), {}, [0, 1, 2]),
-            Case(('sorted(l)', {'l': [3, 2, 1]}), {}, [1, 2, 3]),
-            Case(('list(zip(l, l))', {'l': range(2)}), {}, [(0, 0), (1, 1)])])
+            Case(('all(l)', [1, 1, 0]), {}, False),
+            Case(('any(l)', [1, 1, 0]), {}, True),
+            Case(('list(enumerate(l))', [1, 2]), {}, [(0, 1), (1, 2)]),
+            Case(('list(filter(None, l))', []), {}, []),
+            Case(('list(iter(l))', [1, 2, 3]), {}, [1, 2, 3]),
+            Case(('list(map(f, l))', bool, [0]), {}, [False]),
+            Case(('next(iter(l))', [1, 2, 3]), {}, 1),
+            Case(('list(range(n))', 3), {}, [0, 1, 2]),
+            Case(('sorted(l)', [3, 2, 1]), {}, [1, 2, 3]),
+            Case(('list(zip(l, l))', range(2)), {}, [(0, 0), (1, 1)])])
 
     def test_PyBuiltin_runtime(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Runtime Evaluation and Meta Programming
         # TODO: Untested functions: breakpoint(), help(), input(), print()
         self.assertCaseEqual(peval, [
-            Case(('bool(compile(a, b, c))',
-                {'a': '1', 'b': '1', 'c': 'eval'}), {}, True),
-            Case(('eval(e)', {'e': 'True'}), {}, True),
-            Case(('exec(e)', {'e': 'True'}), {}, None),
-            Case(('bool(globals())', {}), {}, True),
-            Case(('id(x)', {'x': None}), {}, id(None)),
-            Case(('bool(locals())', {}), {}, True)])
+            Case(('bool(compile(a, b, c))', '1', '1', 'eval'), {}, True),
+            Case(('eval(e)', 'True'), {}, True),
+            Case(('exec(e)', 'True'), {}, None),
+            Case(('bool(globals())', ), {}, True),
+            Case(('id(x)', None), {}, id(None)),
+            Case(('bool(locals())', ), {}, True)])
 
     def test_Parser(self) -> None:
-        pass # Implicitely tested within grammars PyCore and PyExprEval
+        pass # Implicitely tested within grammars
 
     def test_PyExprEval(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
-        peval: AnyOp = lambda expr, val: p.parse(expr).eval(val)
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         self.assertCaseEqual(peval, [
-            Case(("Ee1", {"Ee1": 2}), {}, 2),
-            Case(("Ee1+1", {"Ee1": 1}), {}, 2),
-            Case(('2^x', {'x': 3}), {}, 8.),
-            Case(('2-3^x', {'x': 4}), {}, -79.),
-            Case(('-2-3^x', {'x': 4}), {}, -83.),
-            Case(('-3^x', {'x': 4}), {}, -81.),
-            Case(('(-3)^x', {'x': 4}), {}, 81.),
-            Case(('2*x+y', {'x': 4, 'y': 1}), {}, 9),
-            Case(("'x'=='x'", {}), {}, True),
-            Case(("(a+b)==c", {'a': 1, 'b': 2, 'c': 3}), {}, True),
-            Case(("(a+b)!=c", {'a': 1, 'b': 2, 'c': 3}), {}, False),
-            Case(("x||y", {'x': 'hi ', 'y': 'u'}), {}, 'hi u'),
-            Case(("'x'||'y'", {}), {}, 'xy'),
-            Case(("concat('hi',' ','u')", {}), {}, 'hi u'),
-            Case(('if(a>b,5,6)', {'a':8, 'b':3}), {}, 5),
-            Case(('if(a,b,c)', {'a':None, 'b':1, 'c':3}), {}, 3),
-            Case(('a,3', {'a': [1, 2]}), {}, [1, 2, 3]),
-            Case((".1", {}), {}, peval("0.1", {})),
-            Case((".1*.2", {}), {}, peval("0.1*0.2", {})),
-            Case((".5^3", {}), {}, .125),
-            Case(("16^.5", {}), {}, 4.),
-            Case(("8300*.8", {}), {}, 6640.),
-            Case(('"a b"*2', {'"a b"': 2}), {}, 4),
-            Case(("a^2-b^2==(a+b)*(a-b)", {'a': 12, 'b': 4}), {}, True),
-            Case(("a^2-b^2+1==(a+b)*(a-b)", {'a': 5, 'b': 2}), {}, False),
-            Case(("concat('a\n','\n','\rb')=='a\n\n\rb'", {}), {}, True),
-            Case(("a==''", {'a':''}), {}, True)])
+            Case(("Ee1", 2), {}, 2),
+            Case(("Ee1 + 1", 1), {}, 2),
+            Case(('2^x', 3), {}, 8.),
+            Case(('2 - 3^x', 4), {}, -79.),
+            Case(('-2 - 3^x', 4), {}, -83.),
+            Case(('-3^x', 4), {}, -81.),
+            Case(('(-3)^x', 4), {}, 81.),
+            Case(('2*x + y', 4, 1), {}, 9),
+            Case(("'x' == 'x'", ), {}, True),
+            Case(("(a + b) == c", 1, 2, 3), {}, True),
+            Case(("(a + b) != c", 1, 2, 3), {}, False),
+            Case(("x || y", 'hi ', 'u'), {}, 'hi u'),
+            Case(("'x' || 'y'", ), {}, 'xy'),
+            Case(("concat('hi', ' ', 'u')", ), {}, 'hi u'),
+            Case(('if(a>b, 5, 6)', 8, 3), {}, 5),
+            Case(('if(a, b, c)', None, 1, 3), {}, 3),
+            Case(('a, 3', [1, 2]), {}, [1, 2, 3]),
+            Case((".1", ), {}, .1),
+            Case((".1*.2", ), {}, peval("0.1*0.2")),
+            Case((".5^3", ), {}, .125),
+            Case(("16^.5", ), {}, 4.),
+            Case(("8300*.8", ), {}, 6640.),
+            Case(('"a b"*2', 2), {}, 4),
+            Case(("a^2-b^2==(a+b)*(a-b)", 12, 4), {}, True),
+            Case(("a^2-b^2+1==(a+b)*(a-b)", 5, 2), {}, False),
+            Case(("concat('a\n','\n','\rb')=='a\n\n\rb'", ), {}, True),
+            Case(("a==''", ''), {}, True)])
 
-        self.assertRaises(ValueError, peval, "..5", {})
+        self.assertRaises(ValueError, peval, '..5')
 
     def test_Expression(self) -> None:
         pass # Explicitely tested by partial test of the methods
 
     def test_Expression_subst(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
-        peval: AnyOp = lambda e, v, w, val: p.parse(e).subst(v, w).eval(val)
+        peval: AnyOp = lambda e, v, w, *args: p.parse(e).subst(v, w).eval(*args)
 
         self.assertCaseEqual(peval, [
-            Case(('2*x+1', 'x', '4*x', {'x': 3}), {}, 25),
-            Case(('a+1', 'a', 'b', {'b': 3}), {}, 4)])
+            Case(('2*x + 1', 'x', '4*x', 3), {}, 25),
+            Case(('a + 1', 'a', 'b', 3), {}, 4)])
 
     def test_Expression_simplify(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
-        peval: AnyOp = lambda expr, d, val: p.parse(expr).simplify(d).eval(val)
-        pvars: AnyOp = lambda expr, d: p.parse(expr).simplify(d).variables
+        psubs: AnyOp = lambda e, d, *args: p.parse(e).simplify(d).eval(*args)
+        pvars: AnyOp = lambda e, d: p.parse(e).simplify(d).variables
 
         # expr = p.parse('x * (y * atan(1))').simplify({'y': 4})
         # self.assertIn('x*3.141592', expr.to_string())
 
-        self.assertCaseEqual(peval, [
-            Case(("x/((x+y))", {}, {'x': 1, 'y': 1}), {}, 0.5),
-            Case(('x*(y*1)', {'y': 4}, {'x': 2}), {}, 8)])
+        self.assertCaseEqual(psubs, [
+            Case(("x / ((x + y))", {}, 1, 1), {}, .5),
+            Case(('x*(y*1)', {'y': 4}, 2), {}, 8)])
 
         self.assertCaseEqual(pvars, [
             Case(('x*(y*atan(1))', {'y': 4}), {}, ['x'])])
 
     def test_Expression_to_string(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
-        pstr: AnyOp = lambda expr: str(p.parse(expr))
+        pstr: AnyOp = lambda e: str(p.parse(e))
 
         self.assertCaseEqual(pstr, [
             Case(("'a'=='b'", ), {}, "'a'=='b'"),
@@ -1013,9 +1009,9 @@ class TestParser(ModuleTestCase):
 
     def test_Expression_variables(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
-        getvars: AnyOp = lambda expr: p.parse(expr).variables
+        pvars: AnyOp = lambda e: p.parse(e).variables
 
-        self.assertCaseEqual(getvars, [
+        self.assertCaseEqual(pvars, [
             Case(('x * (y * atan(1))', ), {}, ['x', 'y']),
             Case(('pow(x,y)', ), {}, ['x', 'y']),
             Case(("PI", ), {}, []),
@@ -1044,8 +1040,10 @@ class TestParser(ModuleTestCase):
 
     def test_Parser_symbols(self) -> None:
         p = parser.Parser(grammar=parser.PyExprEval())
+        psyms: AnyOp = lambda e: p.parse(e).symbols
 
-        self.assertEqual(p.parse('pow(x,y)').symbols, ['pow', 'x', 'y'])
+        self.assertCaseEqual(psyms, [
+            Case(('pow(x,y)', ), {}, ['pow', 'x', 'y'])])
 
     def test_Token(self) -> None:
         pass # Implicitely tested by test_Parser

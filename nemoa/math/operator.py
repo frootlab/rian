@@ -579,18 +579,15 @@ class Lambda(Operator):
         # If the term is trusted create and compile lambda term. Note, that the
         # lambda term usually may be considered to be a trusted expression, as
         # it has been created by using the expression parser
-        getter: AnyOp
+        getter = Getter(*fields, domain=dom, target=(tuple, variables))
         func: AnyOp
         if assemble:
-            getter = Getter(*fields, domain=dom, target=(tuple, variables))
             term = pexpr.to_string().replace('^', '**')
             term = f"lambda {','.join(variables)}:{term}"
             compiled = eval(term) # pylint: disable=W0123
-            runner: AnyOp = lambda x: compiled(*x)
-            func = compose(runner, getter)
+            func = compose(compiled, getter, unpack=True)
         else:
-            getter = Getter(*fields, domain=dom, target=(dict, variables))
-            func = compose(pexpr.eval, getter)
+            func = compose(pexpr.eval, getter, unpack=True)
 
         setattr(type(self), '__call__', staticmethod(func))
 
@@ -798,9 +795,9 @@ def compose(*args: OptOp, unpack: bool = False) -> AnyOp:
     # arguments
     circ: AnyOp
     if unpack:
-        circ = lambda f, g: lambda *p: f(*g(*p))
+        circ = lambda f, g: lambda *cargs: f(*g(*cargs))
     else:
-        circ = lambda f, g: lambda *p: f(g(*p))
+        circ = lambda f, g: lambda *cargs: f(g(*cargs))
     return functools.reduce(circ, ops) or Identity()
 
 #

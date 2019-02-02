@@ -127,9 +127,7 @@ class PyCore(Grammar):
     https://docs.python.org/3/reference/expressions.html
 
     In difference to standard Python grammar, however, some expressions are not
-    valid:
-        Invalid: x + -y
-        Valid: x + (-y)
+    valid: Invalid: x + -y -> Valid: x + (-y)
 
     """
 
@@ -180,7 +178,7 @@ class PyCore(Grammar):
             Symbol(BINARY, 'or', bool_or, 0)]) # Boolean OR
 
 class PyBuiltin(PyCore):
-    """Python Expression and Builtin Symbols."""
+    """Python Builtin Symbols."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -210,6 +208,7 @@ class PyBuiltin(PyCore):
         self.update(builtin)
 
 class PyExprEval(Grammar):
+    """Symbols used by py-expression-eval."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -287,10 +286,10 @@ class Token:
     def __str__(self) -> str:
         if self.type in [UNARY, BINARY, VARIABLE]:
             return str(self.key)
-        if self.type == CONSTANT:
-            return self.value
         if self.type == FUNCTION:
             return getattr(self.key, '__name__', 'CALL')
+        if self.type == CONSTANT:
+            return self.value
         return 'Invalid Token'
 
 #
@@ -313,8 +312,8 @@ class Expression:
             self.tokens = tokens
             self.grammar = grammar
 
-    def __call__(self, *args: Any) -> Any:
-        return self.eval(*args)
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self.eval(*args, **kwds)
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}({repr(self.to_string())})'
@@ -375,8 +374,10 @@ class Expression:
                 tokens.append(repl)
         return Expression(tokens=tokens, grammar=self.grammar)
 
-    def eval(self, values: Optional[dict] = None) -> Any:
-        values = values or {}
+    def eval(self, *args: Any, values: Optional[dict] = None) -> Any:
+        if values is None:
+            values = dict(zip(self.variables, args))
+
         stack = []
         unary = self.grammar.get(UNARY)
         binary = self.grammar.get(BINARY)
@@ -644,8 +645,10 @@ class Parser:
 
         return Expression(tokens=tokens, grammar=self.grammar)
 
-    def eval(self, expression: str, variables: Optional[dict] = None) -> Any:
-        return self.parse(expression).eval(variables)
+    def eval(
+            self, expression: str, *args: Any,
+            variables: Optional[dict] = None) -> Any:
+        return self.parse(expression).eval(*args, variables=variables)
 
     def _add_operator(
             self, tokens: List[Token], operators: List[Token],
