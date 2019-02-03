@@ -1,13 +1,13 @@
 Nemoa
 =====
 
-*Nemoa* is an open source data analysis framework for enterprise and scientific
-*application and based on the `Python`_ programming language.
+*Nemoa* is an open source data analysis framework for enterprise- and scientific
+application and based on the `Python`_ programming language.
 
-The key goal of nemoa is to provide a **long-term** data analysis framework,
+The key goal of *nemoa* is to provide a **long-term** data analysis framework,
 which seemingly integrates into existing data systems and thereby offers state
-of the art machine intelligence. To achieve this goal nemoa orchestrates
-established frameworks like `TensorFlow`_ and `SQLAlchemy`_ and dynamically
+of the art machine intelligence. To achieve this goal *nemoa* orchestrates
+established frameworks like `TensorFlow®`_ and `SQLAlchemy`_ and dynamically
 extends their capabilities by **community driven** algorithms for `probabilistic
 graphical modeling`_, `machine learning`_ and `structured data-analysis`_.
 
@@ -30,7 +30,7 @@ Authors
 Nemoa is maintained by the `FrootLab`_ organization.
 
 .. _Python: https://www.python.org/
-.. _TensorFlow: https://www.tensorflow.org/
+.. _TensorFlow®: https://www.tensorflow.org/
 .. _SQLAlchemy: https://www.sqlalchemy.org/
 .. _probabilistic graphical modeling:
     https://en.wikipedia.org/wiki/Graphical_model
