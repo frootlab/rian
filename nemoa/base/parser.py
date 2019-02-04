@@ -303,14 +303,15 @@ class Token:
     id: Union[str, int] = 0
     priority: int = 0
     value: Any = 0
+    key: str = ''
 
     def __str__(self) -> str:
         if self.type in [UNARY, BINARY, VARIABLE]:
-            return str(self.id)
+            return self.key or str(self.id)
         if self.type == FUNCTION:
-            return getattr(self.id, '__name__', 'CALL')
+            return self.key or getattr(self.id, '__name__', 'CALL')
         if self.type == CONSTANT:
-            return repr(self.value)
+            return self.key
         return 'Invalid Token'
 
 #
@@ -355,19 +356,19 @@ class Expression:
                 stack.append(tok)
             elif tok.type == VARIABLE and tok.id in values:
                 value = values[tok.id]
-                stack.append(Token(CONSTANT, 0, 0, value))
+                stack.append(Token(CONSTANT, 0, 0, value, tok.key))
             elif tok.type == BINARY and len(stack) > 1:
                 if not isinstance(tok.id, str):
                     raise ValueError() #TODO
                 b, a = stack.pop(), stack.pop()
                 value = binary[tok.id].value(a.value, b.value)
-                stack.append(Token(CONSTANT, 0, 0, value))
+                stack.append(Token(CONSTANT, 0, 0, value, tok.key))
             elif tok.type == UNARY and stack:
                 if not isinstance(tok.id, str):
                     raise ValueError() # TODO
                 a = stack.pop()
                 value = unary[tok.id].value(a.value)
-                stack.append(Token(CONSTANT, 0, 0, value))
+                stack.append(Token(CONSTANT, 0, 0, value, tok.key))
             else:
                 while stack:
                     tokens.append(stack.pop(0))
@@ -393,6 +394,8 @@ class Expression:
             for etok in expr.tokens:
                 repl = Token(etok.type, etok.id, etok.priority, etok.value)
                 tokens.append(repl)
+                # tokens.append(dataclasses.replace(etok))
+
         return Expression(tokens=tokens, vocabulary=self.vocabulary)
 
     def eval(self, *args: Any, **kwds: Any) -> Any:
@@ -471,8 +474,7 @@ class Expression:
         stack = []
         for tok in self.tokens:
             if tok.type == CONSTANT:
-                # print(tok.id, tok.value)
-                stack.append(repr(tok.value))
+                stack.append(tok.key)
             elif tok.type == BINARY:
                 b = stack.pop()
                 a = stack.pop()
@@ -568,7 +570,8 @@ class Parser:
     _success: bool
     _errormsg: str
     _cur_pos: int
-    _cur_key: Union[int, str]
+    _cur_id: Union[int, str]
+    _cur_key: str
     _cur_val: Any
     _cur_priority: int
     _tmp_priority: int
@@ -580,7 +583,8 @@ class Parser:
         self._success = False
         self._error = ''
         self._cur_pos = 0
-        self._cur_key = 0
+        self._cur_id = 0
+        self._cur_key = ''
         self._cur_val = 0
         self._cur_priority = 0
         self._tmp_priority = 0
@@ -619,12 +623,11 @@ class Parser:
                 if self._is_sign() and expect & self.SIGN:
                     if self._is_minus():
                         self._cur_priority = 5
+                        self._cur_id = '-'
                         self._cur_key = '-'
                         nops += 1
                         self._add_operator(tokens, operators, UNARY)
                     expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
-                # elif self._is_comment():
-                #     pass
                 else:
                     if expect and self.OPER == 0:
                         self._raise_error('unexpect operator')
@@ -632,8 +635,8 @@ class Parser:
                     self._add_operator(tokens, operators, BINARY)
                     expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
             elif self._is_unary_sign():
+                key = self._cur_key
                 if not expect & self.SIGN:
-                    key = self._cur_key
                     self._raise_error(f"unexpected unary operator '{key}'")
                 nops += 1
                 self._add_operator(tokens, operators, UNARY)
@@ -641,12 +644,14 @@ class Parser:
             elif self._is_number():
                 if not expect & self.PRIM:
                     self._raise_error('unexpected number')
-                tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
+                key, val = self._cur_key, self._cur_val
+                tokens.append(Token(CONSTANT, 0, 0, val, key))
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_string():
                 if not expect & self.PRIM:
                     self._raise_error('unexpected string')
-                tokens.append(Token(CONSTANT, 0, 0, self._cur_val))
+                key, val = self._cur_key, self._cur_val
+                tokens.append(Token(CONSTANT, 0, 0, val, key))
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_left():
                 if not expect & self.LEFT:
@@ -654,14 +659,14 @@ class Parser:
                 if expect & self.CALL:
                     nops += 2
                     self._cur_priority = -2
-                    self._cur_key = -1
+                    self._cur_id = -1
                     self._add_operator(tokens, operators, FUNCTION)
                 expect = \
                     self.PRIM | self.LEFT | self.FUNCTION | \
                     self.SIGN | self.NULL
             elif self._is_right():
                 if expect & self.NULL:
-                    tokens.append(Token(CONSTANT, 0, 0, _Null()))
+                    tokens.append(Token(CONSTANT, 0, 0, _Null(), ''))
                 elif not expect & self.RIGHT:
                     self._raise_error('unexpected \")\"')
                 expect = \
@@ -676,28 +681,29 @@ class Parser:
             elif self._is_constant():
                 if not expect & self.PRIM:
                     self._raise_error('unexpected constant')
-                tok = Token(CONSTANT, 0, 0, self._cur_val)
-                tokens.append(tok)
+                key, val = self._cur_key, self._cur_val
+                tokens.append(Token(CONSTANT, 0, 0, val, key))
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_binary_operator():
+                key = self._cur_key
                 if not expect & self.FUNCTION:
-                    key = self._cur_key
                     self._raise_error(f"unexpected function '{key}'")
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
                 expect = self.LEFT
             elif self._is_unary_operator():
+                key = self._cur_key
                 if not expect & self.FUNCTION:
-                    key = self._cur_key
                     self._raise_error(f"unexpected unary operator '{key}'")
                 self._add_operator(tokens, operators, UNARY)
                 nops += 1
                 expect = self.LEFT
             elif self._is_variable():
+                index = self._cur_id
+                key = self._cur_key
                 if not expect & self.PRIM:
-                    key = self._cur_key
                     self._raise_error(f"unexpect variable '{key}'")
-                tokens.append(Token(VARIABLE, self._cur_key, 0, 0))
+                tokens.append(Token(VARIABLE, index, 0, 0, key))
                 expect = self.OPER | self.RIGHT | self.COMMA \
                     | self.LEFT | self.CALL
             elif self._is_space():
@@ -721,14 +727,14 @@ class Parser:
     def _add_operator(
             self, tokens: List[Token], operators: List[Token],
             typeid: int) -> None:
-        name = self._cur_key
         priority = self._cur_priority + self._tmp_priority
-        tok = Token(typeid, name, priority, 0)
         while operators:
-            if tok.priority > operators[-1].priority:
+            if priority > operators[-1].priority:
                 break
             tokens.append(operators.pop())
-        operators.append(tok)
+        index = self._cur_id
+        key = self._cur_key
+        operators.append(Token(typeid, index, priority, key))
 
     @property
     def _cur_char(self) -> str:
@@ -739,28 +745,29 @@ class Parser:
         return self._expression[self._cur_pos - 1]
 
     def _is_number(self) -> bool:
-        r = False
         key = ''
         while self._cur_pos < len(self._expression):
             c = self._cur_char
-            if c.isdecimal() or c == '.':
-                if not key and c == '.':
-                    key = '0'
-                key += c
-                self._cur_pos += 1
-                try:
-                    self._cur_val = int(key)
-                except ValueError:
-                    self._cur_val = float(key)
-                r = True
-            else:
+            if not c.isdecimal() and c != '.':
                 break
-        return r
+            if not key and c == '.':
+                key = '0'
+            key += c
+            self._cur_pos += 1
+        if key:
+            try:
+                self._cur_val = int(key)
+            except ValueError:
+                self._cur_val = float(key)
+            self._cur_id = key
+            self._cur_key = key
+            return True
+        return False
 
     def _is_string(self) -> bool:
         r = False
         key = ''
-        startpos = self._cur_pos
+        start = self._cur_pos
         if self._cur_pos < len(self._expression) and self._cur_char == "'":
             self._cur_pos += 1
             while self._cur_pos < len(self._expression):
@@ -769,26 +776,31 @@ class Parser:
                     self._cur_pos += 1
                 else:
                     self._cur_pos += 1
-                    self._cur_val = self._unescape(key, startpos)
+                    self._cur_val = self._unescape(key, start)
                     r = True
                     break
+        self._cur_key = repr(key)
+        self._cur_id = repr(key)
         return r
 
     def _is_constant(self) -> bool:
         expr = self._expression
-        constants = self.vocabulary.get(CONSTANT)
-        for sym, const in constants.items():
+        for key, sym in self.vocabulary.get(CONSTANT).items():
             start = self._cur_pos
-            end = start + len(sym)
-            if sym != expr[start:end]:
+            end = start + len(key)
+            if key != expr[start:end]:
                 continue
-            if len(expr) <= end:
-                self._cur_val = const.value
+            if len(expr) <= end: # TODO: Whats the sense?
+                self._cur_val = sym.value
                 self._cur_pos = end
+                self._cur_key = key
+                self._cur_id = key
                 return True
             if not expr[end].isalnum() and expr[end] != "_":
-                self._cur_val = const.value
+                self._cur_val = sym.value
                 self._cur_pos = end
+                self._cur_key = key
+                self._cur_id = key
                 return True
         return False
 
@@ -803,6 +815,7 @@ class Parser:
 
             self._cur_priority = symbol.priority
             self._cur_key = key
+            self._cur_id = key
             self._cur_pos += len(key)
 
             return True
@@ -823,6 +836,7 @@ class Parser:
                     continue
 
             self._cur_priority = symbol.priority
+            self._cur_id = key
             self._cur_key = key
             self._cur_pos += len(key)
 
@@ -855,6 +869,7 @@ class Parser:
             return False
         self._cur_pos += 1
         self._cur_priority = -1
+        self._cur_id = ','
         self._cur_key = ','
         return True
 
@@ -875,6 +890,7 @@ class Parser:
             break
         if not key in self._unary:
             return False
+        self._cur_id = key
         self._cur_key = key
         self._cur_priority = self._unary[key].priority
         self._cur_pos += len(key)
@@ -894,6 +910,7 @@ class Parser:
         if not key in binary:
             return False
         symbol = binary[key]
+        self._cur_id = key
         self._cur_key = key
         self._cur_priority = symbol.priority
         self._cur_pos += len(key)
@@ -916,6 +933,7 @@ class Parser:
         if not key:
             return False
 
+        self._cur_id = key
         self._cur_key = key
         self._cur_priority = 0 # 4 / WHY
         self._cur_pos += len(key)
