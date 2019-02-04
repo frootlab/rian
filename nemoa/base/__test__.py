@@ -509,16 +509,16 @@ class TestParser(ModuleTestCase):
         self.assertEqual(
             dataclasses.astuple(sym), (parser.UNARY, '*', conj, 0, False))
 
-    def test_Grammar(self) -> None:
-        grammar = parser.PyCore()
-        self.assertEqual(grammar.get(parser.FUNCTION), {})
+    def test_Vocabulary(self) -> None:
+        vocabulary = parser.PyCore()
+        self.assertEqual(vocabulary.get(parser.FUNCTION), {})
 
         mean: AnyOp = lambda s: sum(s) / len(s)
-        grammar.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
-        self.assertIn('mean', grammar.get(parser.FUNCTION, builtin=False))
-        self.assertNotIn('mean', grammar.get(parser.FUNCTION, builtin=True))
+        vocabulary.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
+        self.assertIn('mean', vocabulary.get(parser.FUNCTION, builtin=False))
+        self.assertNotIn('mean', vocabulary.get(parser.FUNCTION, builtin=True))
 
-        p = parser.Parser(grammar=grammar)
+        p = parser.Parser(vocabulary=vocabulary)
         self.assertEqual(p.parse('mean(s)').variables, ['s'])
         self.assertEqual(p.parse('mean(s)').symbols, ['mean', 's'])
         self.assertEqual(p.parse('mean(s)').eval([1, 2, 3]), 2)
@@ -526,7 +526,7 @@ class TestParser(ModuleTestCase):
     def test_PyCore(self) -> None:
         # The individual operators are tested within seperate tests. Here the
         # operator associativity and precedence is tested
-        p = parser.Parser(grammar=parser.PyCore())
+        p = parser.Parser(vocabulary=parser.PyCore())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Boolean Operators
@@ -569,7 +569,7 @@ class TestParser(ModuleTestCase):
                 Case(('(x << y) + z', 1, 2, 3), {}, 7)])
 
     def test_PyCore_boolean(self) -> None:
-        p = parser.Parser(grammar=parser.PyCore())
+        p = parser.Parser(vocabulary=parser.PyCore())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Boolean OR
@@ -595,7 +595,7 @@ class TestParser(ModuleTestCase):
                 Case(('not(x)', False), {}, True)])
 
     def test_PyCore_ordering(self) -> None:
-        p = parser.Parser(grammar=parser.PyCore())
+        p = parser.Parser(vocabulary=parser.PyCore())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Equality
@@ -661,7 +661,7 @@ class TestParser(ModuleTestCase):
                 Case(('x in y', 'ab', 'ba'), {}, False)])
 
     def test_PyCore_bitwise(self) -> None:
-        p = parser.Parser(grammar=parser.PyCore())
+        p = parser.Parser(vocabulary=parser.PyCore())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Bitwise Inversion
@@ -714,7 +714,7 @@ class TestParser(ModuleTestCase):
                 Case(('x | y', 1, 2), {}, 3)])
 
     def test_PyCore_arithmetic(self) -> None:
-        p = parser.Parser(grammar=parser.PyCore())
+        p = parser.Parser(vocabulary=parser.PyCore())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Unary Plus
@@ -807,12 +807,12 @@ class TestParser(ModuleTestCase):
                 Case(('X @ Y', X, Y), {}, N)])
 
     def test_PyBuiltin(self) -> None:
-        # The parser evaluation of the Python Builtin Grammar is seperately
+        # The parser evaluation of the Python Builtin Vocabulary is seperately
         # tested within individual categories
         pass
 
     def test_PyBuiltin_constants(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Builtin Constants
@@ -823,7 +823,7 @@ class TestParser(ModuleTestCase):
             Case(('Ellipsis', ), {}, Ellipsis)])
 
     def test_PyBuiltin_types(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Builtin Number Types
@@ -853,7 +853,7 @@ class TestParser(ModuleTestCase):
             Case(('slice(n)', 3), {}, slice(3))])
 
     def test_PyBuiltin_conversion(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Conversion
@@ -867,7 +867,7 @@ class TestParser(ModuleTestCase):
             Case(('ord(x)', 'A'), {}, 65)])
 
     def test_PyBuiltin_math(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Simple mathematical functions
@@ -881,7 +881,7 @@ class TestParser(ModuleTestCase):
             Case(('sum(l)', [1, 2, 3]), {}, 6)])
 
     def test_PyBuiltin_oop(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Builtin Types for Object Oriented Programming
@@ -917,7 +917,7 @@ class TestParser(ModuleTestCase):
             Case(('sorted(vars(o))', type), {}, sorted(vars(type)))])
 
     def test_PyBuiltin_functional(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Functional Programming and Iterator functions
@@ -934,7 +934,7 @@ class TestParser(ModuleTestCase):
             Case(('list(zip(l, l))', range(2)), {}, [(0, 0), (1, 1)])])
 
     def test_PyBuiltin_runtime(self) -> None:
-        p = parser.Parser(grammar=parser.PyBuiltin())
+        p = parser.Parser(vocabulary=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Runtime Evaluation and Meta Programming
@@ -948,10 +948,12 @@ class TestParser(ModuleTestCase):
             Case(('bool(locals())', ), {}, True)])
 
     def test_Parser(self) -> None:
-        pass # Implicitely tested within grammars
+        # Implicitely tested within test_PyCore(), test_PyBuiltin() and
+        # test_PyExprEval()
+        pass
 
     def test_PyExprEval(self) -> None:
-        p = parser.Parser(grammar=parser.PyExprEval())
+        p = parser.Parser(vocabulary=parser.PyExprEval())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         self.assertCaseEqual(peval, [
@@ -989,7 +991,7 @@ class TestParser(ModuleTestCase):
         pass # Explicitely tested by partial test of the methods
 
     def test_Expression_subst(self) -> None:
-        p = parser.Parser(grammar=parser.PyExprEval())
+        p = parser.Parser(vocabulary=parser.PyExprEval())
         peval: AnyOp = lambda e, v, w, *args: p.parse(e).subst(v, w).eval(*args)
 
         self.assertCaseEqual(peval, [
@@ -997,7 +999,7 @@ class TestParser(ModuleTestCase):
             Case(('a + 1', 'a', 'b', 3), {}, 4)])
 
     def test_Expression_simplify(self) -> None:
-        p = parser.Parser(grammar=parser.PyExprEval())
+        p = parser.Parser(vocabulary=parser.PyExprEval())
         psubs: AnyOp = lambda e, d, *args: p.parse(e).simplify(d).eval(*args)
         pvars: AnyOp = lambda e, d: p.parse(e).simplify(d).variables
 
@@ -1012,7 +1014,7 @@ class TestParser(ModuleTestCase):
             Case(('x * (y * atan(1))', {'y': 4}), {}, ['x'])])
 
     def test_Expression_to_string(self) -> None:
-        p = parser.Parser(grammar=parser.PyExprEval())
+        p = parser.Parser(vocabulary=parser.PyExprEval())
         pstr: AnyOp = lambda e: str(p.parse(e))
 
         self.assertCaseEqual(pstr, [
@@ -1020,7 +1022,7 @@ class TestParser(ModuleTestCase):
             Case(("func(a,1.51,'ok')", ), {}, "func(a, 1.51, 'ok')")])
 
     def test_Expression_variables(self) -> None:
-        p = parser.Parser(grammar=parser.PyExprEval())
+        p = parser.Parser(vocabulary=parser.PyExprEval())
         pvars: AnyOp = lambda e: p.parse(e).variables
 
         self.assertCaseEqual(pvars, [
@@ -1051,7 +1053,7 @@ class TestParser(ModuleTestCase):
             Case(('E_', ), {}, ["E_"])])
 
     def test_Parser_symbols(self) -> None:
-        p = parser.Parser(grammar=parser.PyExprEval())
+        p = parser.Parser(vocabulary=parser.PyExprEval())
         psyms: AnyOp = lambda e: p.parse(e).symbols
 
         self.assertCaseEqual(psyms, [

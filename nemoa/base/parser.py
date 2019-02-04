@@ -82,7 +82,7 @@ def _pack(a: Any, b: Any) -> _Pack:
     return _Pack([a, b])
 
 #
-# Symbols and Grammars
+# Symbols and Vocabularies
 #
 
 @dataclasses.dataclass(frozen=True)
@@ -102,8 +102,8 @@ class Symbol:
         check.has_type('priority', self.priority, int)
         check.has_type('builtin', self.builtin, bool)
 
-class Grammar(set):
-    """Base Class for Parser Grammars."""
+class Vocabulary(set):
+    """Base Class for Parser Vocabularies."""
 
     def get(
             self, sid: int,
@@ -134,14 +134,15 @@ class Grammar(set):
         items = iter((sym.key, sym) for sym in symbols)
         return collections.OrderedDict(sorted(items, reverse=True))
 
-class PyCore(Grammar):
+class PyCore(Vocabulary):
     """Python Expression Symbols.
 
-    This grammar is based on
+    This vocabulary is based on
     https://docs.python.org/3/reference/expressions.html
 
-    In difference to standard Python grammar, however, some expressions are not
-    valid: Invalid: x + -y -> Valid: x + (-y)
+    Hint:
+        In difference to standard Python interpreter, some expressions are not
+        valid: Invalid: x + -y -> Valid: x + (-y)
 
     """
 
@@ -204,7 +205,7 @@ class PyBuiltin(PyCore):
                 continue
 
             # If the Attribute is callable, defined within builtins and not an
-            # exception, append it as a function symbol to the grammar.
+            # exception, append it as a function symbol to the vocabulary.
             obj = getattr(builtins, name)
             if callable(obj):
                 if not hasattr(obj, '__module__'):
@@ -216,12 +217,17 @@ class PyBuiltin(PyCore):
                 builtin.append(Symbol(FUNCTION, name, obj, 12))
                 continue
 
-            # Append non-callable Attributes as constant symbols to the grammar.
+            # Append non-callable Attributes as constant symbols to the
+            # vocabulary.
             builtin.append(Symbol(CONSTANT, name, obj))
 
         self.update(builtin)
 
-class PyExprEval(Grammar):
+
+class Test:  # TODO: Remove when tested
+    pass
+
+class PyExprEval(Vocabulary):
     """Symbols used by py-expression-eval."""
 
     def __init__(self) -> None:
@@ -283,6 +289,7 @@ class PyExprEval(Grammar):
             Symbol(FUNCTION, 'concat', concat, 0, False),
 
             # Constants
+            Symbol(CONSTANT, 'Test', Test()), # TODO: Remove when tested
             Symbol(CONSTANT, 'E', math.e, 0, False),
             Symbol(CONSTANT, 'PI', math.pi, 0, False)])
 
@@ -312,36 +319,36 @@ class Token:
 
 class Expression:
     tokens: List[Token]
-    grammar: Grammar
+    vocabulary: Vocabulary
 
     def __init__(
             self, expression: Optional[str] = None,
             tokens: Optional[List[Token]] = None,
-            grammar: Optional[Grammar] = None) -> None:
+            vocabulary: Optional[Vocabulary] = None) -> None:
         if expression:
             expr = Parser().parse(expression)
             self.tokens = expr.tokens
-            self.grammar = expr.grammar
-        elif tokens and grammar:
+            self.vocabulary = expr.vocabulary
+        elif tokens and vocabulary:
             self.tokens = tokens
-            self.grammar = grammar
+            self.vocabulary = vocabulary
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.eval(*args, **kwds)
 
     def __repr__(self) -> str:
-        return f'{type(self).__name__}({repr(self.asstring())})'
+        return f'{type(self).__name__}({repr(self.as_string())})'
 
     def __str__(self) -> str:
-        return self.asstring()
+        return self.as_string()
 
     def simplify(self, values: Optional[dict] = None) -> 'Expression':
         values = values or {}
         stack = []
         tokens = []
 
-        unary = self.grammar.get(UNARY)
-        binary = self.grammar.get(BINARY)
+        unary = self.vocabulary.get(UNARY)
+        binary = self.vocabulary.get(BINARY)
 
         for tok in self.tokens:
             if tok.type == CONSTANT:
@@ -367,7 +374,7 @@ class Expression:
                 tokens.append(tok)
         while stack:
             tokens.append(stack.pop(0))
-        return Expression(tokens=tokens, grammar=self.grammar)
+        return Expression(tokens=tokens, vocabulary=self.vocabulary)
 
     def subst(
             self, variable: str,
@@ -386,16 +393,16 @@ class Expression:
             for etok in expr.tokens:
                 repl = Token(etok.type, etok.key, etok.priority, etok.value)
                 tokens.append(repl)
-        return Expression(tokens=tokens, grammar=self.grammar)
+        return Expression(tokens=tokens, vocabulary=self.vocabulary)
 
     def eval(self, *args: Any, **kwds: Any) -> Any:
         values = dict(zip(self.variables, args))
         values.update(kwds)
 
         stack = []
-        unary = self.grammar.get(UNARY)
-        binary = self.grammar.get(BINARY)
-        functions = self.grammar.get(FUNCTION)
+        unary = self.vocabulary.get(UNARY)
+        binary = self.vocabulary.get(BINARY)
+        functions = self.vocabulary.get(FUNCTION)
         for tok in self.tokens:
             if tok.type == CONSTANT:
                 stack.append(tok.value)
@@ -431,29 +438,26 @@ class Expression:
 
         return stack[0]
 
-    def asfunc(self, assemble: bool = True) -> Callable:
+    def as_func(self, assemble: bool = True) -> Callable:
         if not assemble:
             return self.eval
 
-        grammar = self.grammar
+        vocabulary = self.vocabulary
 
         # Get a string representation of the expression, which replaces all not
         # builtin operators by surrogate functions.
         translate = self._get_surrogates()
-        string = self.asstring(translate=translate)
+        string = self.as_string(translate=translate)
 
-        # Create globals dictionary for surrogate functions
+        # Create globals dictionary, which includes all functions, that are
+        # found in the vocabulary and surrogate functions for not builtin
+        # operators and constants
         glob = {'__builtins__': None}
-
-        # 1. Add all builtin functions, used by the grammar
-        for sid in [FUNCTION]:
-            symbols = grammar.get(sid, builtin=True)
-            for key, sym in symbols.items():
-                glob[key] = sym.value
-
-        # 2. Add Surrogates for not builtins
-        for sid in [UNARY, BINARY, FUNCTION]:
-            symbols = grammar.get(sid, builtin=False)
+        symbols = vocabulary.get(FUNCTION)
+        for key, sym in symbols.items():
+            glob[key] = sym.value
+        for sid in [UNARY, BINARY, CONSTANT]:
+            symbols = vocabulary.get(sid, builtin=False)
             for key, sur in translate[sid].items():
                 glob[sur] = symbols[key].value
 
@@ -461,7 +465,7 @@ class Expression:
         term = f"lambda {','.join(self.variables)}:{string}"
         return eval(term, glob) # pylint: disable=W0123
 
-    def asstring(self, translate: Optional[dict] = None) -> str:
+    def as_string(self, translate: Optional[dict] = None) -> str:
         voc = translate or {}
 
         stack = []
@@ -524,20 +528,20 @@ class Expression:
 
     @property
     def variables(self) -> List[str]:
-        functions = self.grammar.get(FUNCTION)
+        functions = self.vocabulary.get(FUNCTION)
         return [sym for sym in self.symbols if sym not in functions]
 
     def _get_surrogates(self) -> dict:
-        # Search grammar for non-builtin symbols
-        grammar = self.grammar
-        occupied = set(sym.key for sym in grammar).union(self.symbols)
+        # Search vocabulary for non-builtin symbols
+        vocabulary = self.vocabulary
+        occupied = set(sym.key for sym in vocabulary).union(self.symbols)
 
         translation = {}
         counter = itertools.count()
         nextkey: AnyOp = lambda: 'f{i}'.format(i=next(counter))
         for sid in [UNARY, BINARY, FUNCTION, CONSTANT]:
             translation[sid] = {}
-            for key in grammar.get(sid, builtin=False):
+            for key in vocabulary.get(sid, builtin=False):
                 newkey = nextkey()
                 while newkey in occupied:
                     newkey = nextkey()
@@ -555,7 +559,7 @@ class Parser:
     CALL = 128
     NULL = 256
 
-    grammar: Grammar
+    vocabulary: Vocabulary
     _unary: dict
     _binary: dict
 
@@ -568,8 +572,8 @@ class Parser:
     _cur_priority: int
     _tmp_priority: int
 
-    def __init__(self, grammar: Optional[Grammar] = None) -> None:
-        self.grammar = grammar or PyCore()
+    def __init__(self, vocabulary: Optional[Vocabulary] = None) -> None:
+        self.vocabulary = vocabulary or PyCore()
 
         self._expression = ''
         self._success = False
@@ -601,8 +605,8 @@ class Parser:
         self._tmp_priority = 0
 
         # Update dictionaries with unary and binary operators
-        self._unary = self.grammar.get(UNARY)
-        self._binary = self.grammar.get(BINARY)
+        self._unary = self.vocabulary.get(UNARY)
+        self._binary = self.vocabulary.get(BINARY)
 
         operators: List[Token] = []
         tokens: List[Token] = []
@@ -708,7 +712,7 @@ class Parser:
         if nops + 1 != len(tokens):
             self._raise_error('parity')
 
-        return Expression(tokens=tokens, grammar=self.grammar)
+        return Expression(tokens=tokens, vocabulary=self.vocabulary)
 
     def eval(self, expression: str, *args: Any, **kwds: Any) -> Any:
         return self.parse(expression).eval(*args, **kwds)
@@ -771,7 +775,7 @@ class Parser:
 
     def _is_constant(self) -> bool:
         expr = self._expression
-        constants = self.grammar.get(CONSTANT)
+        constants = self.vocabulary.get(CONSTANT)
         for sym, const in constants.items():
             start = self._cur_pos
             end = start + len(sym)
