@@ -223,10 +223,6 @@ class PyBuiltin(PyCore):
 
         self.update(builtin)
 
-
-class Test:  # TODO: Remove when tested
-    pass
-
 class PyExprEval(Vocabulary):
     """Symbols used by py-expression-eval."""
 
@@ -289,7 +285,6 @@ class PyExprEval(Vocabulary):
             Symbol(FUNCTION, 'concat', concat, 0, False),
 
             # Constants
-            Symbol(CONSTANT, 'Test', Test()), # TODO: Remove when tested
             Symbol(CONSTANT, 'E', math.e, 0, False),
             Symbol(CONSTANT, 'PI', math.pi, 0, False)])
 
@@ -470,19 +465,26 @@ class Expression:
 
     def as_string(self, translate: Optional[dict] = None) -> str:
         voc = translate or {}
+        voc_constant = voc.get(CONSTANT, {})
+        voc_binary = voc.get(BINARY, {})
+        voc_unary = voc.get(UNARY, {})
+        voc_function = voc.get(FUNCTION, {})
 
         stack = []
         for tok in self.tokens:
             if tok.type == CONSTANT:
-                stack.append(tok.key)
+                if tok.key in voc_constant:
+                    stack.append(f'{voc_constant[tok.key]}')
+                else:
+                    stack.append(tok.key)
             elif tok.type == BINARY:
                 b = stack.pop()
                 a = stack.pop()
                 f = tok.id
                 if f == ',':
                     stack.append(f'{a}, {b}')
-                elif BINARY in voc and f in voc[BINARY]:
-                    stack.append(f'{voc[BINARY][f]}({a}, {b})')
+                elif f in voc_binary:
+                    stack.append(f'{voc_binary[f]}({a}, {b})')
                 else:
                     stack.append(f'({a} {f} {b})')
             elif tok.type == VARIABLE and isinstance(tok.id, str):
@@ -492,15 +494,15 @@ class Expression:
                 f = tok.id
                 if f == '-':
                     stack.append(f'(-{a})')
-                elif UNARY in voc and f in voc[UNARY]:
-                    stack.append(f'{voc[UNARY][f]}({a})')
+                elif f in voc_unary:
+                    stack.append(f'{voc_unary[f]}({a})')
                 else:
                     stack.append(f'{f}({a})')
             elif tok.type == FUNCTION:
                 a = stack.pop()
                 f = stack.pop()
-                if FUNCTION in voc and f in voc[FUNCTION]:
-                    stack.append(f'{voc[FUNCTION][f]}({a})')
+                if f in voc_function:
+                    stack.append(f'{voc_function[f]}({a})')
                 else:
                     stack.append(f'{f}({a})')
             else:
@@ -538,23 +540,44 @@ class Expression:
         # Search vocabulary for non-builtin symbols
         vocabulary = self.vocabulary
         occupied = set(sym.key for sym in vocabulary).union(self.symbols)
-
         translation = {}
+
+        # Create surrogates for unary operators
         counter = itertools.count()
-        nextkey: AnyOp = lambda: 'f{i}'.format(i=next(counter))
-        for sid in [UNARY, BINARY, FUNCTION, CONSTANT]:
-            translation[sid] = {}
-            for key in vocabulary.get(sid, builtin=False):
+        nextkey: AnyOp = lambda: 'u{i}'.format(i=next(counter))
+        translation[UNARY] = {}
+        for key in vocabulary.get(UNARY, builtin=False):
+            newkey = nextkey()
+            while newkey in occupied:
                 newkey = nextkey()
-                while newkey in occupied:
-                    newkey = nextkey()
-                translation[sid][key] = newkey
+            translation[UNARY][key] = newkey
+
+        # Create surrogates for binary operators
+        counter = itertools.count()
+        nextkey: AnyOp = lambda: 'b{i}'.format(i=next(counter))
+        translation[BINARY] = {}
+        for key in vocabulary.get(BINARY, builtin=False):
+            newkey = nextkey()
+            while newkey in occupied:
+                newkey = nextkey()
+            translation[BINARY][key] = newkey
+
+        # Create surrogates for constants
+        counter = itertools.count()
+        nextkey: AnyOp = lambda: 'C{i}'.format(i=next(counter))
+        translation[CONSTANT] = {}
+        for key in vocabulary.get(CONSTANT, builtin=False):
+            newkey = nextkey()
+            while newkey in occupied:
+                newkey = nextkey()
+            translation[CONSTANT][key] = newkey
+
         return translation
 
 class Parser:
     PRIM = 1
     OPER = 2
-    FUNCTION = 4
+    FUNC = 4
     LEFT = 8
     RIGHT = 16
     COMMA = 32
@@ -615,7 +638,7 @@ class Parser:
 
         operators: List[Token] = []
         tokens: List[Token] = []
-        expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
+        expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
         nops = 0
 
         while self._cur_pos < len(self._expression):
@@ -627,20 +650,20 @@ class Parser:
                         self._cur_key = '-'
                         nops += 1
                         self._add_operator(tokens, operators, UNARY)
-                    expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
+                    expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
                 else:
                     if expect and self.OPER == 0:
                         self._raise_error('unexpect operator')
                     nops += 2
                     self._add_operator(tokens, operators, BINARY)
-                    expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
+                    expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
             elif self._is_unary_sign():
                 key = self._cur_key
                 if not expect & self.SIGN:
                     self._raise_error(f"unexpected unary operator '{key}'")
                 nops += 1
                 self._add_operator(tokens, operators, UNARY)
-                expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
+                expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
             elif self._is_number():
                 if not expect & self.PRIM:
                     self._raise_error('unexpected number')
@@ -662,7 +685,7 @@ class Parser:
                     self._cur_id = -1
                     self._add_operator(tokens, operators, FUNCTION)
                 expect = \
-                    self.PRIM | self.LEFT | self.FUNCTION | \
+                    self.PRIM | self.LEFT | self.FUNC | \
                     self.SIGN | self.NULL
             elif self._is_right():
                 if expect & self.NULL:
@@ -677,7 +700,7 @@ class Parser:
                     self._raise_error('unexpected \",\"')
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
-                expect = self.PRIM | self.LEFT | self.FUNCTION | self.SIGN
+                expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
             elif self._is_constant():
                 if not expect & self.PRIM:
                     self._raise_error('unexpected constant')
@@ -686,14 +709,14 @@ class Parser:
                 expect = self.OPER | self.RIGHT | self.COMMA
             elif self._is_binary_operator():
                 key = self._cur_key
-                if not expect & self.FUNCTION:
+                if not expect & self.FUNC:
                     self._raise_error(f"unexpected function '{key}'")
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
                 expect = self.LEFT
             elif self._is_unary_operator():
                 key = self._cur_key
-                if not expect & self.FUNCTION:
+                if not expect & self.FUNC:
                     self._raise_error(f"unexpected unary operator '{key}'")
                 self._add_operator(tokens, operators, UNARY)
                 nops += 1
