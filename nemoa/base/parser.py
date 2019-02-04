@@ -300,17 +300,17 @@ class PyExprEval(Vocabulary):
 @dataclasses.dataclass(frozen=True)
 class Token:
     type: int
-    key: Union[str, int] = 0
+    id: Union[str, int] = 0
     priority: int = 0
     value: Any = 0
 
     def __str__(self) -> str:
         if self.type in [UNARY, BINARY, VARIABLE]:
-            return str(self.key)
+            return str(self.id)
         if self.type == FUNCTION:
-            return getattr(self.key, '__name__', 'CALL')
+            return getattr(self.id, '__name__', 'CALL')
         if self.type == CONSTANT:
-            return self.value
+            return repr(self.value)
         return 'Invalid Token'
 
 #
@@ -353,20 +353,20 @@ class Expression:
         for tok in self.tokens:
             if tok.type == CONSTANT:
                 stack.append(tok)
-            elif tok.type == VARIABLE and tok.key in values:
-                value = values[tok.key]
+            elif tok.type == VARIABLE and tok.id in values:
+                value = values[tok.id]
                 stack.append(Token(CONSTANT, 0, 0, value))
             elif tok.type == BINARY and len(stack) > 1:
-                if not isinstance(tok.key, str):
+                if not isinstance(tok.id, str):
                     raise ValueError() #TODO
                 b, a = stack.pop(), stack.pop()
-                value = binary[tok.key].value(a.value, b.value)
+                value = binary[tok.id].value(a.value, b.value)
                 stack.append(Token(CONSTANT, 0, 0, value))
             elif tok.type == UNARY and stack:
-                if not isinstance(tok.key, str):
+                if not isinstance(tok.id, str):
                     raise ValueError() # TODO
                 a = stack.pop()
-                value = unary[tok.key].value(a.value)
+                value = unary[tok.id].value(a.value)
                 stack.append(Token(CONSTANT, 0, 0, value))
             else:
                 while stack:
@@ -387,11 +387,11 @@ class Expression:
             if tok.type != VARIABLE:
                 tokens.append(tok)
                 continue
-            if tok.key != variable:
+            if tok.id != variable:
                 tokens.append(tok)
                 continue
             for etok in expr.tokens:
-                repl = Token(etok.type, etok.key, etok.priority, etok.value)
+                repl = Token(etok.type, etok.id, etok.priority, etok.value)
                 tokens.append(repl)
         return Expression(tokens=tokens, vocabulary=self.vocabulary)
 
@@ -406,19 +406,19 @@ class Expression:
         for tok in self.tokens:
             if tok.type == CONSTANT:
                 stack.append(tok.value)
-            elif tok.type == BINARY and isinstance(tok.key, str):
+            elif tok.type == BINARY and isinstance(tok.id, str):
                 b, a = stack.pop(), stack.pop()
-                stack.append(binary[tok.key].value(a, b))
-            elif tok.type == VARIABLE and isinstance(tok.key, str):
-                if tok.key in values:
-                    stack.append(values[tok.key])
-                elif tok.key in functions:
-                    stack.append(functions[tok.key].value)
+                stack.append(binary[tok.id].value(a, b))
+            elif tok.type == VARIABLE and isinstance(tok.id, str):
+                if tok.id in values:
+                    stack.append(values[tok.id])
+                elif tok.id in functions:
+                    stack.append(functions[tok.id].value)
                 else:
-                    raise Exception(f"undefined variable '{tok.key}'")
-            elif tok.type == UNARY and isinstance(tok.key, str):
+                    raise Exception(f"undefined variable '{tok.id}'")
+            elif tok.type == UNARY and isinstance(tok.id, str):
                 a = stack.pop()
-                stack.append(unary[tok.key].value(a))
+                stack.append(unary[tok.id].value(a))
             elif tok.type == FUNCTION:
                 a = stack.pop()
                 func = stack.pop()
@@ -471,22 +471,23 @@ class Expression:
         stack = []
         for tok in self.tokens:
             if tok.type == CONSTANT:
+                # print(tok.id, tok.value)
                 stack.append(repr(tok.value))
             elif tok.type == BINARY:
                 b = stack.pop()
                 a = stack.pop()
-                f = tok.key
+                f = tok.id
                 if f == ',':
                     stack.append(f'{a}, {b}')
                 elif BINARY in voc and f in voc[BINARY]:
                     stack.append(f'{voc[BINARY][f]}({a}, {b})')
                 else:
                     stack.append(f'({a} {f} {b})')
-            elif tok.type == VARIABLE and isinstance(tok.key, str):
-                stack.append(tok.key)
+            elif tok.type == VARIABLE and isinstance(tok.id, str):
+                stack.append(tok.id)
             elif tok.type == UNARY:
                 a = stack.pop()
-                f = tok.key
+                f = tok.id
                 if f == '-':
                     stack.append(f'(-{a})')
                 elif UNARY in voc and f in voc[UNARY]:
@@ -519,11 +520,11 @@ class Expression:
         for tok in self.tokens:
             if tok.type != VARIABLE:
                 continue
-            if tok.key in symlist:
+            if tok.id in symlist:
                 continue
-            if not isinstance(tok.key, str):
+            if not isinstance(tok.id, str):
                 raise ValueError() # TODO
-            symlist.append(tok.key)
+            symlist.append(tok.id)
         return symlist
 
     @property
