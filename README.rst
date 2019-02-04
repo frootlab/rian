@@ -1,7 +1,7 @@
 Nemoa
 =====
 
-*Nemoa* is an open source data analysis framework for enterprise- and scientific
+*Nemoa* is an open source data analysis framework for enterprise and scientific
 application and based on the `Python`_ programming language.
 
 The key goal of *nemoa* is to provide a **long-term** data analysis framework,

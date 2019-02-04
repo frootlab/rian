@@ -811,6 +811,17 @@ class TestParser(ModuleTestCase):
         # tested within individual categories
         pass
 
+    def test_PyBuiltin_constants(self) -> None:
+        p = parser.Parser(grammar=parser.PyBuiltin())
+        peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
+
+        # Builtin Constants
+        self.assertCaseEqual(peval, [
+            Case(('True', ), {}, True),
+            Case(('False', ), {}, False),
+            Case(('None', ), {}, None),
+            Case(('Ellipsis', ), {}, Ellipsis)])
+
     def test_PyBuiltin_types(self) -> None:
         p = parser.Parser(grammar=parser.PyBuiltin())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)

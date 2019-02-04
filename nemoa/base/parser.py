@@ -153,7 +153,7 @@ class PyCore(Grammar):
         is_in: AnyOp = lambda a, b: operator.contains(b, a)
 
         self.update([
-            # Sequence Operators
+            # Binding Operators
             Symbol(BINARY, ',', _pack, 13), # Sequence packing
 
             # Arithmetic Operators
