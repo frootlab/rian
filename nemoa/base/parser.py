@@ -60,9 +60,11 @@ import math
 import operator
 import random
 import re
-from typing import Any, Callable, Dict, List, Match, Optional, Union
+from typing import Any, Callable, Dict, List, Match, Optional, Tuple, Union
 from nemoa.base import check, env, stype
 from nemoa.types import AnyOp
+
+OptVars = Optional[stype.Frame]
 
 UNARY = 0
 BINARY = 1
@@ -316,18 +318,28 @@ class Token:
 class Expression:
     tokens: List[Token]
     vocabulary: Vocabulary
+    mapping: dict
+
+    _symbols: Tuple[str, ...]
+    _variables: Tuple[str, ...]
 
     def __init__(
             self, expression: Optional[str] = None,
             tokens: Optional[List[Token]] = None,
-            vocabulary: Optional[Vocabulary] = None) -> None:
+            vocabulary: Optional[Vocabulary] = None,
+            mapping: Optional[dict] = None) -> None:
+        self._symbols = tuple()
+        self._variables = tuple()
+
         if expression:
-            expr = Parser().parse(expression)
+            expr = Parser(vocabulary).parse(expression)
             self.tokens = expr.tokens
             self.vocabulary = expr.vocabulary
+            self.mapping = expr.mapping
         elif tokens and vocabulary:
             self.tokens = tokens
             self.vocabulary = vocabulary
+            self.mapping = mapping or {}
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.eval(*args, **kwds)
@@ -370,7 +382,8 @@ class Expression:
                 tokens.append(tok)
         while stack:
             tokens.append(stack.pop(0))
-        return Expression(tokens=tokens, vocabulary=self.vocabulary)
+        return Expression(
+            tokens=tokens, vocabulary=self.vocabulary, mapping=self.mapping)
 
     def subst(
             self, variable: str,
@@ -519,7 +532,10 @@ class Expression:
         return rexpr
 
     @property
-    def symbols(self) -> List[str]:
+    def symbols(self) -> Tuple[str, ...]:
+        if self._symbols:
+            return self._symbols
+
         symlist: List[str] = []
         for tok in self.tokens:
             if tok.type != VARIABLE:
@@ -529,12 +545,22 @@ class Expression:
             if not isinstance(tok.id, str):
                 raise ValueError() # TODO
             symlist.append(tok.id)
-        return symlist
+        self._symbols = tuple(symlist)
+        return self._symbols
 
     @property
-    def variables(self) -> List[str]:
-        functions = self.vocabulary.get(FUNCTION)
-        return [sym for sym in self.symbols if sym not in functions]
+    def variables(self) -> Tuple[str, ...]:
+        if self._variables:
+            return self._variables
+
+        funcs = self.vocabulary.get(FUNCTION)
+        self._variables = tuple(sym for sym in self.symbols if sym not in funcs)
+        return self._variables
+
+    @property
+    def orig_variables(self) -> Tuple[str, ...]:
+        invert = dict((v, f) for f, v in self.mapping.items())
+        return tuple(invert.get(v, v) for v in self.variables)
 
     def _get_surrogates(self) -> dict:
         # Search vocabulary for non-builtin symbols
@@ -590,6 +616,7 @@ class Parser:
     _binary: dict
 
     _expression: str
+    _mapping: dict
     _success: bool
     _errormsg: str
     _cur_pos: int
@@ -603,6 +630,7 @@ class Parser:
         self.vocabulary = vocabulary or PyCore()
 
         self._expression = ''
+        self._mapping = {}
         self._success = False
         self._error = ''
         self._cur_pos = 0
@@ -623,7 +651,16 @@ class Parser:
     def expression(self) -> str:
         return self._expression
 
-    def parse(self, expression: str) -> Expression:
+    def parse(self, expression: str, variables: OptVars = None) -> Expression:
+        # The given variables are not required to be valid variable names to the
+        # parser. In such a case all unquoted variables are exchanged by
+        # surrogates
+        if variables:
+            mapping = self._get_mapping(expression, variables)
+            expression = self._replace_vars(expression, mapping)
+        else:
+            mapping = {}
+
         self._expression = expression
         self._error = ''
         self._success = True
@@ -742,7 +779,8 @@ class Parser:
         if nops + 1 != len(tokens):
             self._raise_error('parity')
 
-        return Expression(tokens=tokens, vocabulary=self.vocabulary)
+        return Expression(
+            tokens=tokens, vocabulary=self.vocabulary, mapping=mapping)
 
     def eval(self, expression: str, *args: Any, **kwds: Any) -> Any:
         return self.parse(expression).eval(*args, **kwds)
@@ -962,6 +1000,64 @@ class Parser:
         self._cur_pos += len(key)
         return True
 
+    def _get_mapping(self, expr: str, variables: OptVars = None) -> dict:
+        if not variables:
+            return {}
+
+        # Create an operator that checks, if a given variable name <var> is
+        # already occupied by the expression. Thereby ignore appearances within
+        # quoted (single or double) terms.
+        quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
+        raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
+        fmt: AnyOp = lambda var: raw.format(var=re.escape(var))
+        matches: AnyOp = lambda var: re.finditer(fmt(var), expr)
+        hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
+        occupied: AnyOp = lambda var: any(map(hit, matches(var)))
+
+        # Use the operator to create a field mapping from the set of field IDs
+        # in the frame to valid variable names.
+        fields = set(variables)
+        mapping: Dict[stype.FieldID, str] = {}
+        var_counter = itertools.count()
+        next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
+        for field in fields:
+            if isinstance(field, str) and field.isidentifier():
+                mapping[field] = field
+                continue
+            var_name = next_var()
+            while occupied(var_name):
+                var_name = next_var()
+            mapping[field] = var_name
+
+        # Create and return variable mapping
+        get_var: AnyOp = lambda field: mapping.get(field, '')
+        return dict(zip(variables, map(get_var, variables)))
+
+    def _replace_vars(self, expression: str, mapping: dict) -> str:
+        # Declare replacement function
+        def repl(mo: Match) -> str:
+            if mo.group('var'):
+                return mapping.get(mo.group('var'), mo.group('var'))
+            if mo.group('str2'):
+                return mo.group('str2')
+            return mo.group('str1')
+
+        # Build operator that creates an regex pattern for a given field ID
+        re_str1 = "(?P<str1>\"[^\"]+\")" # RegEx for double quoted terms
+        re_str2 = "(?P<str2>'[^']+')" # RegEx for single quoted terms
+        re_var = "(?P<var>{var})" # Unformated RegEx for variable
+        raw = '|'.join([re_str1, re_str2, re_var]) # Unformated RegEx
+        pattern: AnyOp = lambda var: raw.format(var=re.escape(var))
+
+        # Iterate all field ids and succesively replace invalid variable names
+        new_expr = expression
+        for field, var in mapping.items():
+            if field == var:
+                continue
+            new_expr = re.sub(pattern(field), repl, new_expr)
+
+        return new_expr
+
     def _raise_error(self, msg: str) -> None:
         self._success = False
         self._error = f'parse error [column {self._cur_pos}]: {msg}'
@@ -972,72 +1068,11 @@ class Parser:
         return key.encode(encoding).decode('unicode_escape')
 
 #
-# Workarounds
+# Constructor
 #
 
-OptVars = Optional[stype.Frame]
-
-def parse(expr: str, variables: OptVars = None) -> Expression:
-    if variables:
-        vmap = get_var_mapping(expr, variables)
-        expr = subst(expr, vmap)
-
-    return Parser().parse(expr).simplify({})
-
-def get_var_mapping(expr: str, variables: OptVars = None) -> dict:
-    if not variables:
-        return {}
-
-    # Create an operator that checks, if a given variable name <var> is
-    # already occupied by the expression. Thereby ignore appearances within
-    # quoted (single or double) terms.
-    quoted = "\"[^\"]+\"|'[^']+'" # RegEx for quoted terms
-    raw = quoted + "|(?P<var>{var})" # Unformated RegEx for matches
-    fmt: AnyOp = lambda var: raw.format(var=re.escape(var))
-    matches: AnyOp = lambda var: re.finditer(fmt(var), expr)
-    hit: AnyOp = lambda obj: obj.group('var') # Test if match is a var
-    occupied: AnyOp = lambda var: any(map(hit, matches(var)))
-
-    # Use the operator to create a field mapping from the set of field IDs
-    # in the frame to valid variable names.
-    fields = set(variables)
-    mapping: Dict[stype.FieldID, str] = {}
-    var_counter = itertools.count()
-    next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
-    for field in fields:
-        if isinstance(field, str) and field.isidentifier():
-            mapping[field] = field
-            continue
-        var_name = next_var()
-        while occupied(var_name):
-            var_name = next_var()
-        mapping[field] = var_name
-
-    # Create and return variable mapping
-    get_var: AnyOp = lambda field: mapping.get(field, '')
-    return dict(zip(variables, map(get_var, variables)))
-
-def subst(expr: str, mapping: dict) -> str:
-    # Declare replacement function
-    def repl(mo: Match) -> str:
-        if mo.group('var'):
-            return mapping.get(mo.group('var'), mo.group('var'))
-        if mo.group('str2'):
-            return mo.group('str2')
-        return mo.group('str1')
-
-    # Build operator that creates an regex pattern for a given field ID
-    re_str1 = "(?P<str1>\"[^\"]+\")" # RegEx for double quoted terms
-    re_str2 = "(?P<str2>'[^']+')" # RegEx for single quoted terms
-    re_var = "(?P<var>{var})" # Unformated RegEx for variable
-    raw = '|'.join([re_str1, re_str2, re_var]) # Unformated RegEx
-    pattern: AnyOp = lambda var: raw.format(var=re.escape(var))
-
-    # Iterate all field ids and succesively replace invalid variable names
-    new_expr = expr
-    for field, var in mapping.items():
-        if field == var:
-            continue
-        new_expr = re.sub(pattern(field), repl, new_expr)
-
-    return new_expr
+def parse(
+        expression: str, variables: OptVars = None,
+        vocabulary: Optional[Vocabulary] = None) -> Expression:
+    parser = Parser(vocabulary)
+    return parser.parse(expression, variables=variables)

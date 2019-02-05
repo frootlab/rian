@@ -519,8 +519,8 @@ class TestParser(ModuleTestCase):
         self.assertNotIn('mean', vocabulary.get(parser.FUNCTION, builtin=True))
 
         p = parser.Parser(vocabulary=vocabulary)
-        self.assertEqual(p.parse('mean(s)').variables, ['s'])
-        self.assertEqual(p.parse('mean(s)').symbols, ['mean', 's'])
+        self.assertEqual(p.parse('mean(s)').variables, ('s', ))
+        self.assertEqual(p.parse('mean(s)').symbols, ('mean', 's'))
         self.assertEqual(p.parse('mean(s)').eval([1, 2, 3]), 2)
 
     def test_PyCore(self) -> None:
@@ -975,7 +975,6 @@ class TestParser(ModuleTestCase):
             Case(('if(a, b, c)', None, 1, 3), {}, 3),
             Case(('a, 3', [1, 2]), {}, [1, 2, 3]),
             Case((".1", ), {}, .1),
-            Case((".1*.2", ), {}, peval("0.1*0.2")),
             Case((".5^3", ), {}, .125),
             Case(("16^.5", ), {}, 4.),
             Case(("8300*.8", ), {}, 6640.),
@@ -1011,7 +1010,7 @@ class TestParser(ModuleTestCase):
             Case(('x * (y * 1)', {'y': 4}, 2), {}, 8)])
 
         self.assertCaseEqual(pvars, [
-            Case(('x * (y * atan(1))', {'y': 4}), {}, ['x'])])
+            Case(('x * (y * atan(1))', {'y': 4}), {}, ('x', ))])
 
     def test_Expression_to_string(self) -> None:
         p = parser.Parser(vocabulary=parser.PyExprEval())
@@ -1026,38 +1025,38 @@ class TestParser(ModuleTestCase):
         pvars: AnyOp = lambda e: p.parse(e).variables
 
         self.assertCaseEqual(pvars, [
-            Case(('x * (y * atan(1))', ), {}, ['x', 'y']),
-            Case(('pow(x, y)', ), {}, ['x', 'y']),
-            Case(("PI", ), {}, []),
-            Case(("PI ", ), {}, []),
-            Case(("E ", ), {}, []),
-            Case((" E", ), {}, []),
-            Case(("E", ), {}, []),
-            Case(("E+1", ), {}, []),
-            Case(("E/1", ), {}, []),
-            Case(("sin(PI)+E", ), {}, []),
-            Case(('Pie', ), {}, ["Pie"]),
-            Case(('PIe', ), {}, ["PIe"]),
-            Case(('Eval', ), {}, ["Eval"]),
-            Case(('Eval1', ), {}, ["Eval1"]),
-            Case(('EPI', ), {}, ["EPI"]),
-            Case(('PIE', ), {}, ["PIE"]),
-            Case(('Engage', ), {}, ["Engage"]),
-            Case(('Engage * PIE', ), {}, ["Engage", "PIE"]),
-            Case(('Engage_', ), {}, ["Engage_"]),
-            Case(('Engage1', ), {}, ["Engage1"]),
-            Case(('E1', ), {}, ["E1"]),
-            Case(('PI2', ), {}, ["PI2"]),
-            Case(('(E1 + PI)', ), {}, ["E1"]),
-            Case(('E1_', ), {}, ["E1_"]),
-            Case(('E_', ), {}, ["E_"])])
+            Case(('x * (y * atan(1))', ), {}, ('x', 'y')),
+            Case(('pow(x, y)', ), {}, ('x', 'y')),
+            Case(("PI", ), {}, tuple()),
+            Case(("PI ", ), {}, tuple()),
+            Case(("E ", ), {}, tuple()),
+            Case((" E", ), {}, tuple()),
+            Case(("E", ), {}, tuple()),
+            Case(("E+1", ), {}, tuple()),
+            Case(("E/1", ), {}, tuple()),
+            Case(("sin(PI)+E", ), {}, tuple()),
+            Case(('Pie', ), {}, ('Pie', )),
+            Case(('PIe', ), {}, ('PIe', )),
+            Case(('Eval', ), {}, ('Eval', )),
+            Case(('Eval1', ), {}, ('Eval1', )),
+            Case(('EPI', ), {}, ('EPI', )),
+            Case(('PIE', ), {}, ('PIE', )),
+            Case(('Engage', ), {}, ('Engage', )),
+            Case(('Engage * PIE', ), {}, ('Engage', 'PIE')),
+            Case(('Engage_', ), {}, ('Engage_', )),
+            Case(('Engage1', ), {}, ('Engage1', )),
+            Case(('E1', ), {}, ('E1', )),
+            Case(('PI2', ), {}, ('PI2', )),
+            Case(('(E1 + PI)', ), {}, ('E1', )),
+            Case(('E1_', ), {}, ('E1_', )),
+            Case(('E_', ), {}, ('E_', ))])
 
     def test_Parser_symbols(self) -> None:
         p = parser.Parser(vocabulary=parser.PyExprEval())
         psyms: AnyOp = lambda e: p.parse(e).symbols
 
         self.assertCaseEqual(psyms, [
-            Case(('pow(x,y)', ), {}, ['pow', 'x', 'y'])])
+            Case(('pow(x,y)', ), {}, ('pow', 'x', 'y'))])
 
     def test_Token(self) -> None:
         pass # Implicitely tested by test_Parser

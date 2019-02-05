@@ -557,17 +557,14 @@ class Lambda(Operator):
         # required to be valid variable names. In the first step a mapping from
         # field IDs to valid variable names is created.
         frame = self._domain.frame
-        varmap = parser.get_var_mapping(self._expression, frame)
 
         # Substitute the expression using the variable mapping and parse it.
         # Therupon get the variables of the expression and the corresponding
         # original field IDs.
-        expr = parser.subst(self._expression, varmap)
-        pexpr = parser.parse(expr)
-        variables = tuple(pexpr.variables)
+        pexpr = parser.parse(self._expression, variables=frame)
+        variables = pexpr.variables
         self._variables = variables
-        invert = dict((v, f) for f, v in varmap.items())
-        fields = tuple(invert.get(v, v) for v in variables)
+        fields = pexpr.orig_variables
 
         # If the Domain frame is not given, create and bind a new domain with a
         # frame, that is given by the field names.
