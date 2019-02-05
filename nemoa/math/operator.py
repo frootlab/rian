@@ -475,7 +475,7 @@ class Lambda(Operator):
             to map the fields (given as names) to their indices within the
             domain tuple.
         default:
-        assemble: Optional Boolean parameter, which determines if the operator
+        compile: Optional Boolean parameter, which determines if the operator
             is compiled after it is parsed.
 
     """
@@ -487,7 +487,7 @@ class Lambda(Operator):
     def __new__(
             cls, expression: str = '', domain: stype.DomLike = None,
             variables: StrTuple = tuple(), default: OptOp = None,
-            assemble: bool = True) -> Operator:
+            compile: bool = True) -> Operator:
         # If no expression and no default operator is given, the Lambda operator
         # is a zero operator.
         if not expression and not default:
@@ -505,16 +505,16 @@ class Lambda(Operator):
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
             variables: StrTuple = tuple(), default: OptOp = None,
-            assemble: bool = True) -> None:
+            compile: bool = True) -> None:
         # Initialize Base Class
-        super().__init__(
-            *variables, domain=domain, target=(None, (expression, )))
+        target = (None, (expression, ))
+        super().__init__(*variables, domain=domain, target=target)
 
         # Bind Attributes
         self._expression = expression
 
         # Build Operator
-        self._build(assemble=assemble, default=default)
+        self._build(compile=compile, default=default)
 
     def __repr__(self) -> str:
         name = type(self).__name__
@@ -545,7 +545,7 @@ class Lambda(Operator):
     # Protected
     #
 
-    def _build(self, assemble: bool, default: OptOp = None) -> None:
+    def _build(self, compile: bool = True, default: OptOp = None) -> None:
         # If no expression is provided, use the default operator, or if also not
         # provided the Zero(None) operator.
         if not self._expression:
@@ -554,17 +554,16 @@ class Lambda(Operator):
             return
 
         # If the domain uses a frame, the given field IDs of the domain are not
-        # required to be valid variable names. In the first step a mapping from
-        # field IDs to valid variable names is created.
+        # required to be valid variable names to the parser, which requires to
+        # pass the the frame to the parser.
         frame = self._domain.frame
+        expr = parser.parse(self._expression, variables=frame)
 
-        # Substitute the expression using the variable mapping and parse it.
-        # Therupon get the variables of the expression and the corresponding
-        # original field IDs.
-        pexpr = parser.parse(self._expression, variables=frame)
-        variables = pexpr.variables
-        self._variables = variables
-        fields = pexpr.orig_variables
+        # The parser internally substitutes the field IDs by valid variable
+        # names. The finally used variable names are provided by the attribute
+        # 'variables' and the corresponding original field IDs by 'origin'.
+        variables = self._variables = expr.variables
+        fields = expr.origin
 
         # If the Domain frame is not given, create and bind a new domain with a
         # frame, that is given by the field names.
@@ -577,7 +576,7 @@ class Lambda(Operator):
         # lambda term usually may be considered to be a trusted expression, as
         # it has been created by using the expression parser
         getter = Getter(*fields, domain=dom, target=(tuple, variables))
-        func = pexpr.as_func(assemble=assemble)
+        func = expr.as_func(compile=compile)
         final = compose(func, getter, unpack=True)
 
         setattr(type(self), '__call__', staticmethod(final))

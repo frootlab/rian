@@ -322,6 +322,7 @@ class Expression:
 
     _symbols: Tuple[str, ...]
     _variables: Tuple[str, ...]
+    _origin: Tuple[str, ...]
 
     def __init__(
             self, expression: Optional[str] = None,
@@ -330,6 +331,7 @@ class Expression:
             mapping: Optional[dict] = None) -> None:
         self._symbols = tuple()
         self._variables = tuple()
+        self._origin = tuple()
 
         if expression:
             expr = Parser(vocabulary).parse(expression)
@@ -393,23 +395,17 @@ class Expression:
             expr = Parser().parse(str(expr))
         tokens = []
         for tok in self.tokens:
-            if tok.type != VARIABLE:
-                tokens.append(tok)
-                continue
-            if tok.id != variable:
+            if tok.type != VARIABLE or tok.id != variable:
                 tokens.append(tok)
                 continue
             for etok in expr.tokens:
-                repl = Token(etok.type, etok.id, etok.priority, etok.value)
-                tokens.append(repl)
-                # tokens.append(dataclasses.replace(etok))
-
-        return Expression(tokens=tokens, vocabulary=self.vocabulary)
+                tokens.append(dataclasses.replace(etok))
+        return Expression(
+            tokens=tokens, vocabulary=self.vocabulary, mapping=self.mapping)
 
     def eval(self, *args: Any, **kwds: Any) -> Any:
         values = dict(zip(self.variables, args))
         values.update(kwds)
-
         stack = []
         unary = self.vocabulary.get(UNARY)
         binary = self.vocabulary.get(BINARY)
@@ -449,8 +445,9 @@ class Expression:
 
         return stack[0]
 
-    def as_func(self, assemble: bool = True) -> Callable:
-        if not assemble:
+    def as_func(self, compile: bool = True) -> Callable:
+        """ """
+        if not compile:
             return self.eval
 
         vocabulary = self.vocabulary
@@ -477,6 +474,7 @@ class Expression:
         return eval(term, glob) # pylint: disable=W0123
 
     def as_string(self, translate: Optional[dict] = None) -> str:
+        """ """
         voc = translate or {}
         voc_constant = voc.get(CONSTANT, {})
         voc_binary = voc.get(BINARY, {})
@@ -558,9 +556,13 @@ class Expression:
         return self._variables
 
     @property
-    def orig_variables(self) -> Tuple[str, ...]:
+    def origin(self) -> Tuple[str, ...]:
+        if self._origin:
+            return self._origin
+
         invert = dict((v, f) for f, v in self.mapping.items())
-        return tuple(invert.get(v, v) for v in self.variables)
+        self._origin = tuple(invert.get(v, v) for v in self.variables)
+        return self._origin
 
     def _get_surrogates(self) -> dict:
         # Search vocabulary for non-builtin symbols
