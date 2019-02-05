@@ -387,19 +387,18 @@ class Expression:
         return Expression(
             tokens=tokens, vocabulary=self.vocabulary, mapping=self.mapping)
 
-    def subst(
-            self, variable: str,
-            expr: Union['Expression', str]) -> 'Expression':
+    def subst(self, key: str, expr: Union['Expression', str]) -> 'Expression':
         """Substitute variable in expression."""
         if not isinstance(expr, Expression):
             expr = Parser().parse(str(expr))
         tokens = []
+        copy: AnyOp = lambda obj: dataclasses.replace(obj)
         for tok in self.tokens:
-            if tok.type != VARIABLE or tok.id != variable:
+            if tok.type != VARIABLE or tok.key != key:
                 tokens.append(tok)
                 continue
             for etok in expr.tokens:
-                tokens.append(dataclasses.replace(etok))
+                tokens.append(copy(etok))
         return Expression(
             tokens=tokens, vocabulary=self.vocabulary, mapping=self.mapping)
 
