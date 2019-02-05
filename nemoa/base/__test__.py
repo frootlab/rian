@@ -494,6 +494,9 @@ class TestCatalog(ModuleTestCase):
 class TestParser(ModuleTestCase):
     module = parser
 
+    def test_parse(self) -> None:
+        pass # Implicitely tested
+
     def test_Symbol(self) -> None:
         conj: AnyOp = lambda z: complex(z).real - complex(z).imag * 1j
         self.assertCaseRaises(TypeError, parser.Symbol, [
