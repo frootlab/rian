@@ -23,12 +23,11 @@ __docformat__ = 'google'
 
 import getopt
 import sys
-from typing import Any, Callable
+from typing import Any
 from nemoa.base import env
 from nemoa.core import ui
 from nemoa.core.ui import shell
-import nemoa.test
-from nemoa.types import OptStr, BoolOp
+from nemoa.types import BoolOp
 import nemoa
 
 def print_scripts(workspace: str) -> None:
@@ -57,8 +56,6 @@ def print_usage() -> None:
         "      Open workspace and execute script\n"
         "    -a --arguments    "
         "      Arguments passed to script\n"
-        "    -t --test         "
-        "      Run unittest on current installation\n"
         "    -v --version      "
         "      Print version")
 
@@ -87,16 +84,6 @@ def run_shell() -> None:
     banner = name + ' ' +  version
     shell.run(banner=banner)
 
-def run_unittest(module: OptStr = None) -> None:
-    """Run unittest."""
-    ui.info(f"testing nemoa {env.get_var('version')}")
-    cur_level = ui.get_notification_level()
-    ui.set_notification_level('CRITICAL')
-    try:
-        nemoa.test.run(module=module, stream=sys.stderr)
-    finally:
-        ui.set_notification_level(cur_level)
-
 def main() -> Any:
     """Launch nemoa."""
     argv = sys.argv[1:]
@@ -104,7 +91,7 @@ def main() -> Any:
         return run_shell()
 
     # Get command line options
-    short = "hvtslw:s:a:"
+    short = "hvslw:s:a:"
     long = ["workspace=", "script=", "arguments="]
     try:
         opts, args = getopt.getopt(argv, short, long)
@@ -123,8 +110,6 @@ def main() -> Any:
         return print_usage()
     if given('-v', '--version'):
         return print_version()
-    if given('-t', '--test'):
-        return run_unittest(*args)
     if given('-s', '--shell'):
         return run_shell()
     if given('-l', '--list'):
