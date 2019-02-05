@@ -21,26 +21,9 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import os
-import sys
-
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, path)
-
-from collections import OrderedDict
-import datetime
-import dataclasses
-import math
-from unittest import mock
-from pathlib import Path
-from typing import Any, Callable, Union
-import numpy as np
-from nemoa.base import abc, array, attrib, binary, call, catalog, check, env
-from nemoa.base import literal, mapping, otree, parser, pkg, stack, stype
-from nemoa.base import nbase
-from nemoa.test import ModuleTestCase, Case
-from nemoa.types import AnyOp, Module, PathLikeList, StrList, NaN, Method
-from nemoa.types import Function
+from nemoa.base import pkg
+from nemoa.test import ModuleTestCase
+from nemoa.types import Module
 
 #
 # Test Cases
@@ -83,7 +66,7 @@ class TestPkg(ModuleTestCase):
 
     def test_get_module(self) -> None:
         this = pkg.get_module()
-        self.assertEqual(this.__name__, __name__)
+        self.assertEqual(getattr(this, '__name__', None), __name__)
 
     def test_crop_functions(self) -> None:
         name = pkg.crop_functions.__name__

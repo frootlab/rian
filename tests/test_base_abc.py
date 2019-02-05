@@ -28,7 +28,7 @@ from nemoa.test import ModuleTestCase
 # Test Cases
 #
 
-class TestAbc(ModuleTestCase):
+class TestModule(ModuleTestCase):
     module = abc
 
     def test_SingletonMeta(self) -> None:

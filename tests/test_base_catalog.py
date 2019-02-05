@@ -21,26 +21,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import os
-import sys
-
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, path)
-
-from collections import OrderedDict
-import datetime
-import dataclasses
-import math
-from unittest import mock
-from pathlib import Path
-from typing import Any, Callable, Union
-import numpy as np
-from nemoa.base import abc, array, attrib, binary, call, catalog, check, env
-from nemoa.base import literal, mapping, otree, parser, pkg, stack, stype
-from nemoa.base import nbase
-from nemoa.test import ModuleTestCase, Case
-from nemoa.types import AnyOp, Module, PathLikeList, StrList, NaN, Method
-from nemoa.types import Function
+from nemoa.base import catalog
+from nemoa.test import ModuleTestCase
 
 #
 # Test Cases
@@ -94,15 +76,15 @@ class TestCatalog(ModuleTestCase):
         class Reg:
             name: str
 
-        @catalog.register(Reg, name='euclid')
-        def euclid_norm(x: float, y: float) -> float:
-            return math.sqrt(x ** 2 + y ** 2)
+        @catalog.register(Reg, name='test')
+        def test(x: float, y: float) -> float:
+            return x ** 2 + y ** 2
 
         man = catalog.Manager()
-        card = man.get(euclid_norm)
+        card = man.get(test)
         self.assertEqual(card.category, Reg)
-        self.assertEqual(card.reference, euclid_norm)
-        self.assertEqual(card.data, {'name': 'euclid'})
+        self.assertEqual(card.reference, test)
+        self.assertEqual(card.data, {'name': 'test'})
 
     def test_search(self) -> None:
 

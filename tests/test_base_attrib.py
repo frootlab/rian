@@ -21,26 +21,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import os
-import sys
-
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, path)
-
-from collections import OrderedDict
-import datetime
-import dataclasses
-import math
-from unittest import mock
-from pathlib import Path
-from typing import Any, Callable, Union
-import numpy as np
-from nemoa.base import abc, array, attrib, binary, call, catalog, check, env
-from nemoa.base import literal, mapping, otree, parser, pkg, stack, stype
-from nemoa.base import nbase
-from nemoa.test import ModuleTestCase, Case
-from nemoa.types import AnyOp, Module, PathLikeList, StrList, NaN, Method
-from nemoa.types import Function
+from typing import Any
+from nemoa.base import attrib
+from nemoa.test import ModuleTestCase
+from nemoa.types import StrList
 
 #
 # Test Cases
@@ -54,21 +38,21 @@ class TestAttrib(ModuleTestCase):
         group = Group()
         group.data = 'test'
         self.assertEqual(
-            group._attr_group_data['data'], 'test') # pylint: disable=W0112
+            group._attr_group_data['data'], 'test') # pylint: disable=W0212
 
     def test_MetaData(self) -> None:
         Group = type('Group', (attrib.Group, ), {'meta': attrib.MetaData()})
         group = Group()
         group.meta = 'test'
         self.assertEqual(
-            group._attr_group_meta['meta'], 'test') # pylint: disable=W0112
+            group._attr_group_meta['meta'], 'test') # pylint: disable=W0212
 
     def test_Temporary(self) -> None:
         Group = type('Group', (attrib.Group, ), {'temp': attrib.Temporary()})
         group = Group()
         group.temp = 'test'
         self.assertEqual(
-            group._attr_group_temp['temp'], 'test') # pylint: disable=W0112
+            group._attr_group_temp['temp'], 'test') # pylint: disable=W0212
 
     def test_Virtual(self) -> None:
         val: Any
@@ -189,7 +173,8 @@ class TestAttrib(ModuleTestCase):
             self.assertEqual(group.store['a9'], 'ok')
 
         with self.subTest(category='test'):
-            attrs = group._get_attr_names(category='test')
+            attrs = group._get_attr_names( # pylint: disable=W0212
+                category='test')
             self.assertEqual(attrs, ['aa'])
 
         with self.subTest(category='test'):
