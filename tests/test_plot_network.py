@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public License along with
 #  nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-"""Unittests for submodules of package 'nemoa.math'."""
+"""Unittests for module 'nemoa.plot.network'."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -22,10 +22,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import networkx as nx
-from nemoa.plot import Plot, network, heatmap, histogram, scatter
+from nemoa.plot import network
 from nemoa.test import ModuleTestCase
 
-class TestGraph(ModuleTestCase):
+#
+# Test Cases
+#
+
+class TestNetwork(ModuleTestCase):
     module = network
 
     def setUp(self) -> None:
