@@ -70,7 +70,10 @@ class TestParser(test.ModuleTest):
 
     def test_PyOperators(self) -> None:
         # The individual operators are tested within seperate tests. Here the
-        # operator associativity and precedence is tested
+        # operator associativity and precedence is tested.
+        # Note: The Precedence is not required to be tested between different
+        # operators of same precedence, like comparison operators. In this case
+        # the operators are always evaluated from left to right.
         p = parser.Parser(vocabulary=parser.PyOperators())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
@@ -104,6 +107,10 @@ class TestParser(test.ModuleTest):
                 Case(('(x + y) * z', 1, 0, 0), {}, 0),
                 Case(('x * y ** z', 2, 2, 2), {}, 8),
                 Case(('(x * y) ** z', 2, 2, 2), {}, 16)])
+
+        # Comparison Operators
+        # The Precedence is not required to be tested between different
+        # comparison operators, since it is always evaluated from left to right
 
         # Mixed Operators
         with self.subTest():

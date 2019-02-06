@@ -72,15 +72,29 @@ class TestParser(test.ModuleTest):
 
     def test_SQLOperators(self) -> None:
         # The individual operators are tested within seperate tests. Here the
-        # operator associativity and precedence is tested
+        # operator associativity and precedence is tested.
+        # Note: The Precedence is not required to be tested between different
+        # operators of same precedence, like comparison operators. In this case
+        # the operators are always evaluated from left to right.
         parse = parser.parse_clause
         peval: AnyOp = lambda expr, *args: parse(expr).eval(*args)
 
         # Logical Operators
-        # TODO
+        with self.subTest():
+            self.assertCaseEqual(peval, [
+                Case(('x AND NOT(y)', 1, 0), {}, True),
+                Case(('NOT(x AND y)', 1, 0), {}, True),
+                Case(('x OR y AND z', 1, 0, 0), {}, True),
+                Case(('(x OR y) AND z', 1, 0, 0), {}, False)])
 
         # Bitwise Operators
-        # TODO
+        with self.subTest():
+            self.assertCaseEqual(peval, [
+                Case(('x | y ^ z', 1, 0, 3), {}, 3),
+                Case(('(x | y) ^ z', 1, 0, 3), {}, 2),
+                Case(('x ^ y ^ z', 1, 0, 3), {}, 2),
+                Case(('x ^ y & z', 3, 1, 0), {}, 3),
+                Case(('(x ^ y) & z', 3, 1, 0), {}, 0)])
 
         # Arithmetic Operators
         with self.subTest():
@@ -232,3 +246,38 @@ class TestParser(test.ModuleTest):
                 Case(('x IN y', 'a', ['b', 'c']), {}, False),
                 Case(('x IN y', 'a', 'ba'), {}, True),
                 Case(('x IN y', 'ab', 'ba'), {}, False)])
+
+        # Matching
+        with self.subTest(symbol='LIKE'):
+            self.assertCaseEqual(peval, [
+                Case(('x LIKE y', 'ab', 'a_'), {}, True),
+                Case(('x LIKE y', 'ab', 'a%'), {}, True),
+                Case(('x LIKE y', 'ab', '%'), {}, True),
+                Case(('x LIKE y', 'ab', '_'), {}, False),
+                Case(('x LIKE y', 'ab', '__'), {}, True)])
+
+    def test_SQLOperators_logical(self) -> None:
+        parse = parser.parse_clause
+        peval: AnyOp = lambda expr, *args: parse(expr).eval(*args)
+
+        # Boolean OR
+        with self.subTest(symbol='OR'):
+            self.assertCaseEqual(peval, [
+                Case(('x OR y', True, False), {}, True),
+                Case(('x OR y', False, True), {}, True),
+                Case(('x OR y', False, False), {}, False),
+                Case(('x OR y', True, True), {}, True)])
+
+        # Boolean AND
+        with self.subTest(symbol='AND'):
+            self.assertCaseEqual(peval, [
+                Case(('x AND y', True, False), {}, False),
+                Case(('x AND y', False, True), {}, False),
+                Case(('x AND y', False, False), {}, False),
+                Case(('x AND y', True, True), {}, True)])
+
+        # Boolean NOT
+        with self.subTest(symbol='NOT'):
+            self.assertCaseEqual(peval, [
+                Case(('NOT(x)', True), {}, False),
+                Case(('NOT(x)', False), {}, True)])
