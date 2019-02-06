@@ -16,13 +16,13 @@
 #
 """Nemoa data analysis.
 
-Nemoa is an open source data analysis framework for enterprise and scientific
-applications. Nemoa is based on the Python programming language and utilizes
-methods from probabilistic graphical modeling [PGM]_ with machine learning [ML]_
-and structured data-analysis [SDA]_.
+Nemoa is an integrated data analysis framework for collaborative data science
+and enterprise application. Nemoa is open source and based on the Python
+programming language. Nemoa utilizes methods from probabilistic graphical
+modeling [PGM]_, machine learning [ML]_ and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.536'
+__version__ = '0.5.537'
 __status__ = 'Development'
 __description__ = 'Graphical Modeling and structured Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
@@ -36,7 +36,6 @@ __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 __credits__ = ['Willi Jäger', 'Rainer König']
 __docformat__ = 'google'
 
-import nemoa.dataset
 import nemoa.model
 import nemoa.network
 import nemoa.system
