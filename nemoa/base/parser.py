@@ -72,6 +72,16 @@ FUNCTION = 2
 CONSTANT = 3
 VARIABLE = 4
 
+_PRIM = 1
+_OPER = 2
+_FUNC = 4
+_LEFT = 8
+_RIGHT = 16
+_COMMA = 32
+_SIGN = 64
+_CALL = 128
+_NULL = 256
+
 class _Pack(list):
     """Protected Class for packed Arguments."""
 
@@ -316,32 +326,22 @@ class Token:
 #
 
 class Expression:
-    tokens: List[Token]
-    vocabulary: Vocabulary
-    mapping: dict
-
+    _tokens: List[Token]
+    _vocabulary: Vocabulary
+    _mapping: dict
     _symbols: Tuple[str, ...]
     _variables: Tuple[str, ...]
     _origin: Tuple[str, ...]
 
     def __init__(
-            self, expression: Optional[str] = None,
-            tokens: Optional[List[Token]] = None,
-            vocabulary: Optional[Vocabulary] = None,
+            self, tokens: List[Token], vocabulary: Vocabulary,
             mapping: Optional[dict] = None) -> None:
+        self._tokens = tokens
+        self._vocabulary = vocabulary
+        self._mapping = mapping or {}
         self._symbols = tuple()
         self._variables = tuple()
         self._origin = tuple()
-
-        if expression:
-            expr = Parser(vocabulary).parse(expression)
-            self.tokens = expr.tokens
-            self.vocabulary = expr.vocabulary
-            self.mapping = expr.mapping
-        elif tokens and vocabulary:
-            self.tokens = tokens
-            self.vocabulary = vocabulary
-            self.mapping = mapping or {}
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.eval(*args, **kwds)
@@ -357,10 +357,10 @@ class Expression:
         stack = []
         tokens = []
 
-        unary = self.vocabulary.get(UNARY)
-        binary = self.vocabulary.get(BINARY)
+        unary = self._vocabulary.get(UNARY)
+        binary = self._vocabulary.get(BINARY)
 
-        for tok in self.tokens:
+        for tok in self._tokens:
             if tok.type == CONSTANT:
                 stack.append(tok)
             elif tok.type == VARIABLE and tok.id in values:
@@ -384,8 +384,7 @@ class Expression:
                 tokens.append(tok)
         while stack:
             tokens.append(stack.pop(0))
-        return Expression(
-            tokens=tokens, vocabulary=self.vocabulary, mapping=self.mapping)
+        return Expression(tokens, self._vocabulary, self._mapping)
 
     def subst(self, key: str, expr: Union['Expression', str]) -> 'Expression':
         """Substitute variable in expression."""
@@ -393,23 +392,22 @@ class Expression:
             expr = Parser().parse(str(expr))
         tokens = []
         copy: AnyOp = lambda obj: dataclasses.replace(obj)
-        for tok in self.tokens:
+        for tok in self._tokens:
             if tok.type != VARIABLE or tok.key != key:
                 tokens.append(tok)
                 continue
-            for etok in expr.tokens:
+            for etok in expr._tokens:
                 tokens.append(copy(etok))
-        return Expression(
-            tokens=tokens, vocabulary=self.vocabulary, mapping=self.mapping)
+        return Expression(tokens, self._vocabulary, self._mapping)
 
     def eval(self, *args: Any, **kwds: Any) -> Any:
         values = dict(zip(self.variables, args))
         values.update(kwds)
         stack = []
-        unary = self.vocabulary.get(UNARY)
-        binary = self.vocabulary.get(BINARY)
-        functions = self.vocabulary.get(FUNCTION)
-        for tok in self.tokens:
+        unary = self._vocabulary.get(UNARY)
+        binary = self._vocabulary.get(BINARY)
+        functions = self._vocabulary.get(FUNCTION)
+        for tok in self._tokens:
             if tok.type == CONSTANT:
                 stack.append(tok.value)
             elif tok.type == BINARY and isinstance(tok.id, str):
@@ -449,7 +447,7 @@ class Expression:
         if not compile:
             return self.eval
 
-        vocabulary = self.vocabulary
+        vocabulary = self._vocabulary
 
         # Get a string representation of the expression, which replaces all not
         # builtin operators by surrogate functions.
@@ -481,7 +479,7 @@ class Expression:
         voc_function = voc.get(FUNCTION, {})
 
         stack = []
-        for tok in self.tokens:
+        for tok in self._tokens:
             if tok.type == CONSTANT:
                 if tok.key in voc_constant:
                     stack.append(f'{voc_constant[tok.key]}')
@@ -534,7 +532,7 @@ class Expression:
             return self._symbols
 
         symlist: List[str] = []
-        for tok in self.tokens:
+        for tok in self._tokens:
             if tok.type != VARIABLE:
                 continue
             if tok.id in symlist:
@@ -550,7 +548,7 @@ class Expression:
         if self._variables:
             return self._variables
 
-        funcs = self.vocabulary.get(FUNCTION)
+        funcs = self._vocabulary.get(FUNCTION)
         self._variables = tuple(sym for sym in self.symbols if sym not in funcs)
         return self._variables
 
@@ -559,13 +557,13 @@ class Expression:
         if self._origin:
             return self._origin
 
-        invert = dict((v, f) for f, v in self.mapping.items())
+        invert = dict((v, f) for f, v in self._mapping.items())
         self._origin = tuple(invert.get(v, v) for v in self.variables)
         return self._origin
 
     def _get_surrogates(self) -> dict:
         # Search vocabulary for non-builtin symbols
-        vocabulary = self.vocabulary
+        vocabulary = self._vocabulary
         occupied = set(sym.key for sym in vocabulary).union(self.symbols)
         translation: Dict[int, Dict[str, str]] = {}
         nextkey: Callable[[], str]
@@ -603,44 +601,32 @@ class Expression:
         return translation
 
 class Parser:
-    PRIM = 1
-    OPER = 2
-    FUNC = 4
-    LEFT = 8
-    RIGHT = 16
-    COMMA = 32
-    SIGN = 64
-    CALL = 128
-    NULL = 256
-
-    vocabulary: Vocabulary
+    _vocabulary: Vocabulary
     _unary: dict
     _binary: dict
-
     _expression: str
     _mapping: dict
     _success: bool
-    _errormsg: str
+    _cur_error: str
     _cur_pos: int
     _cur_id: Union[int, str]
     _cur_key: str
     _cur_val: Any
     _cur_priority: int
-    _tmp_priority: int
+    _cur_offset: int
 
     def __init__(self, vocabulary: Optional[Vocabulary] = None) -> None:
-        self.vocabulary = vocabulary or PyOperators()
-
+        self._vocabulary = vocabulary or PyOperators()
         self._expression = ''
         self._mapping = {}
         self._success = False
-        self._error = ''
+        self._cur_error = ''
         self._cur_pos = 0
         self._cur_id = 0
         self._cur_key = ''
         self._cur_val = 0
         self._cur_priority = 0
-        self._tmp_priority = 0
+        self._cur_offset = 0
 
     def __repr__(self) -> str:
         return f'{type(self).__name__}()'
@@ -663,126 +649,123 @@ class Parser:
         else:
             mapping = {}
 
+        # Reset instance variables
         self._expression = expression
-        self._error = ''
         self._success = True
+        self._cur_error = ''
         self._cur_pos = 0
         self._cur_val = 0
         self._cur_priority = 0
-        self._tmp_priority = 0
+        self._cur_offset = 0
 
         # Update dictionaries with unary and binary operators
-        self._unary = self.vocabulary.get(UNARY)
-        self._binary = self.vocabulary.get(BINARY)
+        self._unary = self._vocabulary.get(UNARY)
+        self._binary = self._vocabulary.get(BINARY)
 
         operators: List[Token] = []
         tokens: List[Token] = []
-        expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
+        expect = _PRIM | _LEFT | _FUNC | _SIGN
         nops = 0
 
         while self._cur_pos < len(self._expression):
             if self._is_operator():
-                if self._is_sign() and expect & self.SIGN:
+                if self._is_sign() and expect & _SIGN:
                     if self._is_minus():
                         self._cur_priority = 5
                         self._cur_id = '-'
                         self._cur_key = '-'
                         nops += 1
                         self._add_operator(tokens, operators, UNARY)
-                    expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
+                    expect = _PRIM | _LEFT | _FUNC | _SIGN
                 else:
-                    if expect and self.OPER == 0:
+                    if expect and _OPER == 0:
                         self._raise_error('unexpect operator')
                     nops += 2
                     self._add_operator(tokens, operators, BINARY)
-                    expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
+                    expect = _PRIM | _LEFT | _FUNC | _SIGN
             elif self._is_unary_sign():
                 key = self._cur_key
-                if not expect & self.SIGN:
+                if not expect & _SIGN:
                     self._raise_error(f"unexpected unary operator '{key}'")
                 nops += 1
                 self._add_operator(tokens, operators, UNARY)
-                expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
+                expect = _PRIM | _LEFT | _FUNC | _SIGN
             elif self._is_number():
-                if not expect & self.PRIM:
+                if not expect & _PRIM:
                     self._raise_error('unexpected number')
                 key, val = self._cur_key, self._cur_val
                 tokens.append(Token(CONSTANT, 0, 0, val, key))
-                expect = self.OPER | self.RIGHT | self.COMMA
+                expect = _OPER | _RIGHT | _COMMA
             elif self._is_string():
-                if not expect & self.PRIM:
+                if not expect & _PRIM:
                     self._raise_error('unexpected string')
                 key, val = self._cur_key, self._cur_val
                 tokens.append(Token(CONSTANT, 0, 0, val, key))
-                expect = self.OPER | self.RIGHT | self.COMMA
+                expect = _OPER | _RIGHT | _COMMA
             elif self._is_left():
-                if not expect & self.LEFT:
+                if not expect & _LEFT:
                     self._raise_error('unexpected \"(\"')
-                if expect & self.CALL:
+                if expect & _CALL:
                     nops += 2
                     self._cur_priority = -2
                     self._cur_id = -1
                     self._add_operator(tokens, operators, FUNCTION)
-                expect = \
-                    self.PRIM | self.LEFT | self.FUNC | \
-                    self.SIGN | self.NULL
+                expect = _PRIM | _LEFT | _FUNC | _SIGN | _NULL
             elif self._is_right():
-                if expect & self.NULL:
+                if expect & _NULL:
                     tokens.append(Token(CONSTANT, 0, 0, _Null(), ''))
-                elif not expect & self.RIGHT:
+                elif not expect & _RIGHT:
                     self._raise_error('unexpected \")\"')
-                expect = \
-                    self.OPER | self.RIGHT | self.COMMA | \
-                    self.LEFT | self.CALL
+                expect = _OPER | _RIGHT | _COMMA | _LEFT | _CALL
             elif self._is_comma():
-                if not expect & self.COMMA:
+                if not expect & _COMMA:
                     self._raise_error('unexpected \",\"')
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
-                expect = self.PRIM | self.LEFT | self.FUNC | self.SIGN
+                expect = _PRIM | _LEFT | _FUNC | _SIGN
             elif self._is_constant():
-                if not expect & self.PRIM:
+                if not expect & _PRIM:
                     self._raise_error('unexpected constant')
                 key, val = self._cur_key, self._cur_val
                 tokens.append(Token(CONSTANT, 0, 0, val, key))
-                expect = self.OPER | self.RIGHT | self.COMMA
+                expect = _OPER | _RIGHT | _COMMA
             elif self._is_binary_operator():
                 key = self._cur_key
-                if not expect & self.FUNC:
+                if not expect & _FUNC:
                     self._raise_error(f"unexpected function '{key}'")
                 self._add_operator(tokens, operators, BINARY)
                 nops += 2
-                expect = self.LEFT
+                expect = _LEFT
             elif self._is_unary_operator():
                 key = self._cur_key
-                if not expect & self.FUNC:
+                if not expect & _FUNC:
                     self._raise_error(f"unexpected unary operator '{key}'")
                 self._add_operator(tokens, operators, UNARY)
                 nops += 1
-                expect = self.LEFT
+                expect = _LEFT
             elif self._is_variable():
                 index = self._cur_id
                 key = self._cur_key
-                if not expect & self.PRIM:
+                if not expect & _PRIM:
                     self._raise_error(f"unexpect variable '{key}'")
                 tokens.append(Token(VARIABLE, index, 0, 0, key))
-                expect = self.OPER | self.RIGHT | self.COMMA \
-                    | self.LEFT | self.CALL
+                expect = _OPER | _RIGHT | _COMMA | _LEFT | _CALL
             elif self._is_space():
                 pass
             else:
-                if self._error:
-                    self._raise_error(self._error)
+                if self._cur_error:
+                    self._raise_error(self._cur_error)
                 self._raise_error(f"unknown character '{self._cur_char}'")
-        if self._tmp_priority < 0 or self._tmp_priority >= 100:
+
+        if self._cur_offset < 0 or self._cur_offset >= 100:
             self._raise_error('unmatched \"()\"')
+
         while operators:
             tokens.append(operators.pop())
         if nops + 1 != len(tokens):
             self._raise_error('parity')
 
-        return Expression(
-            tokens=tokens, vocabulary=self.vocabulary, mapping=mapping)
+        return Expression(tokens, self._vocabulary, mapping)
 
     def eval(self, expression: str, *args: Any, **kwds: Any) -> Any:
         return self.parse(expression).eval(*args, **kwds)
@@ -790,7 +773,7 @@ class Parser:
     def _add_operator(
             self, tokens: List[Token], operators: List[Token],
             typeid: int) -> None:
-        priority = self._cur_priority + self._tmp_priority
+        priority = self._cur_priority + self._cur_offset
         while operators:
             if priority > operators[-1].priority:
                 break
@@ -848,7 +831,7 @@ class Parser:
 
     def _is_constant(self) -> bool:
         expr = self._expression
-        for key, sym in self.vocabulary.get(CONSTANT).items():
+        for key, sym in self._vocabulary.get(CONSTANT).items():
             start = self._cur_pos
             end = start + len(key)
             if key != expr[start:end]:
@@ -918,14 +901,14 @@ class Parser:
         if self._cur_char != '(':
             return False
         self._cur_pos += 1
-        self._tmp_priority += 100
+        self._cur_offset += 100
         return True
 
     def _is_right(self) -> bool:
         if self._cur_char != ')':
             return False
         self._cur_pos += 1
-        self._tmp_priority -= 100
+        self._cur_offset -= 100
         return True
 
     def _is_comma(self) -> bool:
@@ -1063,8 +1046,8 @@ class Parser:
 
     def _raise_error(self, msg: str) -> None:
         self._success = False
-        self._error = f'parse error [column {self._cur_pos}]: {msg}'
-        raise ValueError(self._error)
+        self._cur_error = f'parse error [column {self._cur_pos}]: {msg}'
+        raise ValueError(self._cur_error)
 
     def _unescape(self, key: str, pos: int) -> str:
         encoding = env.get_var('encoding') or 'UTF-8'
@@ -1077,5 +1060,4 @@ class Parser:
 def parse(
         expression: str, variables: OptVars = None,
         vocabulary: Optional[Vocabulary] = None) -> Expression:
-    parser = Parser(vocabulary)
-    return parser.parse(expression, variables=variables)
+    return Parser(vocabulary).parse(expression, variables=variables)
