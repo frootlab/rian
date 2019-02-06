@@ -45,7 +45,7 @@
 #  py-expression-eval is ported to Python and modified by: Vera Mazhuga
 #  <ctrl-alt-delete@live.com>, http://vero4ka.info/
 #
-"""Expression Parser."""
+"""Generic Expression Parser."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -73,10 +73,10 @@ CONSTANT = 3
 VARIABLE = 4
 
 class _Pack(list):
-    """Class for packed arguments."""
+    """Protected Class for packed arguments."""
 
 class _Null:
-    """Sentinel Class for no arguments."""
+    """Protected Sentinel Class for no arguments."""
 
 def _pack(a: Any, b: Any) -> _Pack:
     if isinstance(a, list):
@@ -137,7 +137,7 @@ class Vocabulary(set):
         return collections.OrderedDict(sorted(items, reverse=True))
 
 class PyCore(Vocabulary):
-    """Python Expression Symbols.
+    """Python3 Expression Symbols.
 
     This vocabulary is based on
     https://docs.python.org/3/reference/expressions.html
@@ -179,7 +179,7 @@ class PyCore(Vocabulary):
             Symbol(BINARY, '^', operator.xor, 5), # Bitwise XOR
             Symbol(BINARY, '|', operator.or_, 4), # Bitwise OR
 
-            # Ordering Operators
+            # Comparison Operators
             Symbol(BINARY, '==', operator.eq, 3), # Equality
             Symbol(BINARY, '!=', operator.ne, 3), # Inequality
             Symbol(BINARY, '>', operator.gt, 3), # Greater
@@ -189,13 +189,13 @@ class PyCore(Vocabulary):
             Symbol(BINARY, 'is', operator.is_, 3), # Identity
             Symbol(BINARY, 'in', is_in, 3), # Containment
 
-            # Boolean Operators
+            # Logical Operators
             Symbol(UNARY, 'not', operator.not_, 2), # Boolean NOT
             Symbol(BINARY, 'and', bool_and, 1), # Boolean AND
             Symbol(BINARY, 'or', bool_or, 0)]) # Boolean OR
 
 class PyBuiltin(PyCore):
-    """Python Builtin Symbols."""
+    """Python3 Builtin Symbols."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -567,11 +567,12 @@ class Expression:
         # Search vocabulary for non-builtin symbols
         vocabulary = self.vocabulary
         occupied = set(sym.key for sym in vocabulary).union(self.symbols)
-        translation = {}
+        translation: Dict[int, Dict[str, str]] = {}
+        nextkey: Callable[[], str]
 
         # Create surrogates for unary operators
         counter = itertools.count()
-        nextkey: AnyOp = lambda: 'u{i}'.format(i=next(counter))
+        nextkey = lambda: 'u{i}'.format(i=next(counter))
         translation[UNARY] = {}
         for key in vocabulary.get(UNARY, builtin=False):
             newkey = nextkey()
@@ -581,7 +582,7 @@ class Expression:
 
         # Create surrogates for binary operators
         counter = itertools.count()
-        nextkey: AnyOp = lambda: 'b{i}'.format(i=next(counter))
+        nextkey = lambda: 'b{i}'.format(i=next(counter))
         translation[BINARY] = {}
         for key in vocabulary.get(BINARY, builtin=False):
             newkey = nextkey()
@@ -591,7 +592,7 @@ class Expression:
 
         # Create surrogates for constants
         counter = itertools.count()
-        nextkey: AnyOp = lambda: 'C{i}'.format(i=next(counter))
+        nextkey = lambda: 'C{i}'.format(i=next(counter))
         translation[CONSTANT] = {}
         for key in vocabulary.get(CONSTANT, builtin=False):
             newkey = nextkey()
@@ -881,6 +882,7 @@ class Parser:
             self._cur_pos += len(key)
 
             return True
+        return False
 
     def _is_operator(self) -> bool:
 
