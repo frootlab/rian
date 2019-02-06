@@ -28,7 +28,7 @@ import operator
 from typing import Any, Sequence
 import uuid
 import numpy as np
-from nemoa.base import parser
+from nemoa.base import parser, phonetic
 from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION
 
 #
@@ -219,7 +219,9 @@ class SQLFunctions(SQLOperators):
             Symbol(FUNCTION, 'COVAR_SAMP', sql_covar_samp, 20, False)])
 
         # String Functions
-        # TODO: POSITION(search IN str) -> Requires RegEx Operator definition
+        # TODO:
+        # POSITION(search IN str) -> Requires RegEx Operator definition
+        # QUOTE(x) Quote SQL in string x
         self.update([
             Symbol(FUNCTION, 'ASCII', ascii, 20, False),
             Symbol(FUNCTION, 'CHR', chr, 20, False),
@@ -243,8 +245,7 @@ class SQLFunctions(SQLOperators):
             Symbol(FUNCTION, 'OCTET_LENGTH', sql_octet_length, 20, False),
             Symbol(FUNCTION, 'GREATEST', sql_greatest, 20, False),
             Symbol(FUNCTION, 'LEAST', sql_least, 20, False),
-            # QUOTE(x) Quote SQL in string x
-            # SOUNDEX(x) Soundex index of string x
+            Symbol(FUNCTION, 'SOUNDEX', phonetic.soundex, 20, False),
             Symbol(FUNCTION, 'MD5', sql_md5, 20, False),
             Symbol(FUNCTION, 'SHA1', sql_sha1, 20, False),
             Symbol(FUNCTION, 'UUID', uuid.uuid1, 20, False)])
