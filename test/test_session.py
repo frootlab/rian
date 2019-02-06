@@ -181,16 +181,13 @@ class TestCase(test.GenericTest):
     def test_session_path(self) -> None:
 
         with self.subTest(cmd="nemoa.path('basepath')"):
-            test = isinstance(nemoa.path('basepath'), str)
-            self.assertTrue(test)
+            self.assertTrue(isinstance(nemoa.path('basepath'), str))
 
         with self.subTest(cmd="nemoa.path('baseconf')"):
-            test = isinstance(nemoa.path('baseconf'), str)
-            self.assertTrue(test)
+            self.assertTrue(isinstance(nemoa.path('baseconf'), str))
 
         with self.subTest(cmd="nemoa.path('datasets')"):
-            test = isinstance(nemoa.path('datasets'), str)
-            self.assertTrue(test)
+            self.assertTrue(isinstance(nemoa.path('datasets'), str))
 
         with self.subTest(cmd="nemoa.path('networks')"):
             test = isinstance(nemoa.path('networks'), str)
