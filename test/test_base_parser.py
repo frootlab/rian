@@ -55,7 +55,7 @@ class TestParser(test.ModuleTest):
             dataclasses.astuple(sym), (parser.UNARY, '*', conj, 0, False))
 
     def test_Vocabulary(self) -> None:
-        vocabulary = parser.PyCore()
+        vocabulary = parser.PyOperators()
         self.assertEqual(vocabulary.get(parser.FUNCTION), {})
 
         mean: AnyOp = lambda s: sum(s) / len(s)
@@ -68,13 +68,13 @@ class TestParser(test.ModuleTest):
         self.assertEqual(p.parse('mean(s)').symbols, ('mean', 's'))
         self.assertEqual(p.parse('mean(s)').eval([1, 2, 3]), 2)
 
-    def test_PyCore(self) -> None:
+    def test_PyOperators(self) -> None:
         # The individual operators are tested within seperate tests. Here the
         # operator associativity and precedence is tested
-        p = parser.Parser(vocabulary=parser.PyCore())
+        p = parser.Parser(vocabulary=parser.PyOperators())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
-        # Boolean Operators
+        # Logical Operators
         with self.subTest():
             self.assertCaseEqual(peval, [
                 Case(('x and not(y)', 1, 0), {}, True),
@@ -113,8 +113,8 @@ class TestParser(test.ModuleTest):
                 Case(('x << y + z', 1, 2, 3), {}, 32),
                 Case(('(x << y) + z', 1, 2, 3), {}, 7)])
 
-    def test_PyCore_boolean(self) -> None:
-        p = parser.Parser(vocabulary=parser.PyCore())
+    def test_PyOperators_logical(self) -> None:
+        p = parser.Parser(vocabulary=parser.PyOperators())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Boolean OR
@@ -139,8 +139,8 @@ class TestParser(test.ModuleTest):
                 Case(('not(x)', True), {}, False),
                 Case(('not(x)', False), {}, True)])
 
-    def test_PyCore_ordering(self) -> None:
-        p = parser.Parser(vocabulary=parser.PyCore())
+    def test_PyOperators_comparison(self) -> None:
+        p = parser.Parser(vocabulary=parser.PyOperators())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Equality
@@ -205,8 +205,8 @@ class TestParser(test.ModuleTest):
                 Case(('x in y', 'a', 'ba'), {}, True),
                 Case(('x in y', 'ab', 'ba'), {}, False)])
 
-    def test_PyCore_bitwise(self) -> None:
-        p = parser.Parser(vocabulary=parser.PyCore())
+    def test_PyOperators_bitwise(self) -> None:
+        p = parser.Parser(vocabulary=parser.PyOperators())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Bitwise Inversion
@@ -258,8 +258,8 @@ class TestParser(test.ModuleTest):
                 Case(('x | y', 1, 3), {}, 3),
                 Case(('x | y', 1, 2), {}, 3)])
 
-    def test_PyCore_arithmetic(self) -> None:
-        p = parser.Parser(vocabulary=parser.PyCore())
+    def test_PyOperators_arithmetic(self) -> None:
+        p = parser.Parser(vocabulary=parser.PyOperators())
         peval: AnyOp = lambda expr, *args: p.parse(expr).eval(*args)
 
         # Unary Plus
@@ -493,7 +493,7 @@ class TestParser(test.ModuleTest):
             Case(('bool(locals())', ), {}, True)])
 
     def test_Parser(self) -> None:
-        # Implicitely tested within test_PyCore(), test_PyBuiltin() and
+        # Implicitely tested within test_PyOperators(), test_PyBuiltin() and
         # test_PyExprEval()
         pass
 

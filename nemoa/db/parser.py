@@ -71,10 +71,11 @@ class SQLOperators(parser.Vocabulary):
             Symbol(BINARY, '<=', operator.le, 3, True), # Lower or Equal
             Symbol(BINARY, 'IN', comp_in, 3, False), # Containment
 
-            # SQL Compound Operators
+            # TODO: SQL Compound Operators
             # See: https://www.w3schools.com/sql/sql_operators.asp
 
             # Logical Operators
+            # TODO: ALL, ANY, BETWEEN, EXISTS, LIKE, SOME
             Symbol(UNARY, 'NOT', operator.not_, 2, True), # Boolean NOT
             Symbol(BINARY, 'AND', bool_and, 1, True), # Boolean AND
             Symbol(BINARY, 'OR', bool_or, 0, True)]) # Boolean OR

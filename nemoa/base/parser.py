@@ -136,8 +136,8 @@ class Vocabulary(set):
         items = iter((sym.key, sym) for sym in symbols)
         return collections.OrderedDict(sorted(items, reverse=True))
 
-class PyCore(Vocabulary):
-    """Python3 Expression Symbols.
+class PyOperators(Vocabulary):
+    """Python3 Operators.
 
     This vocabulary is based on
     https://docs.python.org/3/reference/expressions.html
@@ -194,8 +194,8 @@ class PyCore(Vocabulary):
             Symbol(BINARY, 'and', bool_and, 1), # Boolean AND
             Symbol(BINARY, 'or', bool_or, 0)]) # Boolean OR
 
-class PyBuiltin(PyCore):
-    """Python3 Builtin Symbols."""
+class PyBuiltin(PyOperators):
+    """Python3 Operators and Builtins."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -629,7 +629,7 @@ class Parser:
     _tmp_priority: int
 
     def __init__(self, vocabulary: Optional[Vocabulary] = None) -> None:
-        self.vocabulary = vocabulary or PyCore()
+        self.vocabulary = vocabulary or PyOperators()
 
         self._expression = ''
         self._mapping = {}
