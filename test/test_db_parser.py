@@ -152,3 +152,31 @@ class TestParser(test.ModuleTest):
                 Case(('x - y', -1, 1), {}, -2),
                 Case(('x - y', 2, 2), {}, 0),
                 Case(('x - y', .5, .5), {}, 0)])
+
+    def test_SQLOperators_bitwise(self) -> None:
+        parse = parser.parse_clause
+        peval: AnyOp = lambda expr, *args: parse(expr).eval(*args)
+
+        # Bitwise AND
+        with self.subTest(symbol='&'):
+            self.assertCaseEqual(peval, [
+                Case(('x & y', 2, 2), {}, 2),
+                Case(('x & y', 2, 3), {}, 2),
+                Case(('x & y', 1, 3), {}, 1),
+                Case(('x & y', 1, 2), {}, 0)])
+
+        # Bitwise XOR
+        with self.subTest(symbol='^'):
+            self.assertCaseEqual(peval, [
+                Case(('x ^ y', 2, 2), {}, 0),
+                Case(('x ^ y', 2, 3), {}, 1),
+                Case(('x ^ y', 1, 3), {}, 2),
+                Case(('x ^ y', 1, 2), {}, 3)])
+
+        # Bitwise OR
+        with self.subTest(symbol='|'):
+            self.assertCaseEqual(peval, [
+                Case(('x | y', 2, 2), {}, 2),
+                Case(('x | y', 2, 3), {}, 3),
+                Case(('x | y', 1, 3), {}, 3),
+                Case(('x | y', 1, 2), {}, 3)])
