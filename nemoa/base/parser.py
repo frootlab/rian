@@ -165,11 +165,12 @@ class PyOperators(Vocabulary):
         bool_or: AnyOp = lambda a, b: a or b
         is_in: AnyOp = lambda a, b: operator.contains(b, a)
 
+        # Binding Operators
         self.update([
-            # Binding Operators
-            Symbol(BINARY, ',', _pack, 13), # Sequence packing
+            Symbol(BINARY, ',', _pack, 13)]) # Sequence packing
 
-            # Arithmetic Operators
+        # Arithmetic Operators
+        self.update([
             Symbol(UNARY, '+', operator.pos, 11), # Unary Plus
             Symbol(UNARY, '-', operator.neg, 11), # Negation
             Symbol(BINARY, '**', operator.pow, 10), # Exponentiation
@@ -179,17 +180,19 @@ class PyOperators(Vocabulary):
             Symbol(BINARY, '%', operator.mod, 9), # Remainder
             Symbol(BINARY, '*', operator.mul, 9), # Multiplication
             Symbol(BINARY, '+', operator.add, 8), # Addition
-            Symbol(BINARY, '-', operator.sub, 8), # Subtraction
+            Symbol(BINARY, '-', operator.sub, 8)]) # Subtraction
 
-            # Bitwise Operators
+        # Bitwise Operators
+        self.update([
             Symbol(UNARY, '~', operator.invert, 11), # Bitwise Inversion
             Symbol(BINARY, '>>', operator.rshift, 7), # Bitwise Right Shift
             Symbol(BINARY, '<<', operator.lshift, 7), # Bitwise Left Shift
             Symbol(BINARY, '&', operator.and_, 6), # Bitwise AND
             Symbol(BINARY, '^', operator.xor, 5), # Bitwise XOR
-            Symbol(BINARY, '|', operator.or_, 4), # Bitwise OR
+            Symbol(BINARY, '|', operator.or_, 4)]) # Bitwise OR
 
-            # Comparison Operators
+        # Comparison Operators
+        self.update([
             Symbol(BINARY, '==', operator.eq, 3), # Equality
             Symbol(BINARY, '!=', operator.ne, 3), # Inequality
             Symbol(BINARY, '>', operator.gt, 3), # Greater
@@ -197,9 +200,10 @@ class PyOperators(Vocabulary):
             Symbol(BINARY, '>=', operator.ge, 3), # Greater or Equal
             Symbol(BINARY, '<=', operator.le, 3), # Lower or Equal
             Symbol(BINARY, 'is', operator.is_, 3), # Identity
-            Symbol(BINARY, 'in', is_in, 3), # Containment
+            Symbol(BINARY, 'in', is_in, 3)]) # Containment
 
-            # Logical Operators
+        # Logical Operators
+        self.update([
             Symbol(UNARY, 'not', operator.not_, 2), # Boolean NOT
             Symbol(BINARY, 'and', bool_and, 1), # Boolean AND
             Symbol(BINARY, 'or', bool_or, 0)]) # Boolean OR

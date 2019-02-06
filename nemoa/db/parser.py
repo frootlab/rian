@@ -21,14 +21,16 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-import fnmatch # Used for SQL-Like
+import fnmatch
+import functools
 import operator
 from typing import Any, Sequence
+import numpy as np
 from nemoa.base import parser
-from nemoa.base.parser import Symbol, UNARY, BINARY
+from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION
 
 #
-# SQL Functions
+# SQL Operators
 #
 
 def sql_and(a: Any, b: Any) -> bool:
@@ -60,10 +62,6 @@ def sql_like(string: str, pattern: str) -> bool:
     # Use fnmatch.fnmatch to match the given string
     return fnmatch.fnmatch(string, pattern)
 
-#
-# SQL Clause Vocabulary
-#
-
 class SQLOperators(parser.Vocabulary):
     """SQL:2016 Clause Operator Vocabulary.
 
@@ -75,25 +73,29 @@ class SQLOperators(parser.Vocabulary):
     def __init__(self) -> None:
         super().__init__()
 
+        # Binding Operators
         self.update([
-            # Binding Operators
-            Symbol(BINARY, ',', parser._pack, 13, True), # pylint: disable=W0212
+            Symbol(BINARY, ',', parser._pack, 30, True)]) # pylint: disable=W0212
+            #Symbol(BINARY, 'AS', parser._pack, 13, True),
 
-            # Arithmetic Operators
+        # Arithmetic Operators
+        self.update([
             Symbol(UNARY, '+', operator.pos, 11, True), # Unary Plus
             Symbol(UNARY, '-', operator.neg, 11, True), # Negation
             Symbol(BINARY, '/', operator.truediv, 10, True), # Division
             Symbol(BINARY, '%', operator.mod, 10, True), # Remainder
             Symbol(BINARY, '*', operator.mul, 10, True), # Multiplication
             Symbol(BINARY, '+', operator.add, 9, True), # Addition
-            Symbol(BINARY, '-', operator.sub, 9, True), # Subtraction
+            Symbol(BINARY, '-', operator.sub, 9, True)]) # Subtraction
 
-            # Bitwise Operators
+        # Bitwise Operators
+        self.update([
             Symbol(BINARY, '&', operator.and_, 7, True), # Bitwise AND
             Symbol(BINARY, '^', operator.xor, 6, True), # Bitwise XOR
-            Symbol(BINARY, '|', operator.or_, 5, True), # Bitwise OR
+            Symbol(BINARY, '|', operator.or_, 5, True)]) # Bitwise OR
 
-            # Comparison Operators
+        # Comparison Operators
+        self.update([
             Symbol(BINARY, '=', operator.eq, 4, False), # Equality
             Symbol(BINARY, '<>', operator.ne, 4, False), # Inequality
             Symbol(BINARY, '>', operator.gt, 4, True), # Greater
@@ -101,18 +103,20 @@ class SQLOperators(parser.Vocabulary):
             Symbol(BINARY, '>=', operator.ge, 4, True), # Greater or Equal
             Symbol(BINARY, '<=', operator.le, 4, True), # Lower or Equal
             Symbol(BINARY, 'IN', sql_in, 4, False), # Containment
-            Symbol(BINARY, 'LIKE', sql_like, 4, False), # Matching
+            Symbol(BINARY, 'LIKE', sql_like, 4, False)]) # Matching
 
-            # Logical Operators
-            # TODO: ALL, ANY, BETWEEN, EXISTS, SOME
+        # Logical Operators
+        # TODO: ALL, ANY, BETWEEN, EXISTS, SOME
+        self.update([
             Symbol(UNARY, 'NOT', operator.not_, 3, False), # Boolean NOT
             Symbol(BINARY, 'AND', sql_and, 2, False), # Boolean AND
-            Symbol(BINARY, 'OR', sql_or, 1, False), # Boolean OR
+            Symbol(BINARY, 'OR', sql_or, 1, False)]) # Boolean OR
 
-            # Inplace- / Compound Operators
-            # Hint: For immutable targets such as strings, numbers, and tuples,
-            # the updated value is computed, but not assigned back to the input
-            # variable
+        # Compound Operators
+        # Hint: For immutable targets such as strings, numbers, and tuples,
+        # the updated value is computed, but not assigned back to the input
+        # variable
+        self.update([
             Symbol(BINARY, '+=', operator.iadd, 0, False),
             Symbol(BINARY, '-=', operator.isub, 0, False),
             Symbol(BINARY, '*=', operator.imul, 0, False),
@@ -122,16 +126,45 @@ class SQLOperators(parser.Vocabulary):
             Symbol(BINARY, '^-=', operator.ixor, 0, False),
             Symbol(BINARY, '|*=', operator.ior, 0, False)])
 
+#
+# SQL Functions
+#
 
-# class SQLFunctions(SQLOperators):
-#     """SQL:2016 Clause Operator and Function Vocabulary.
-#
-#     This Vocabulary follows the specifications of the ISO standard SQL:2016
-#     (ISO 9075:2016), which is developed by a common committee of ISO and IEC.
-#
-#     """
-#     def __init__(self) -> None:
-#         super().__init__()
+def sql_covar_pop(seqa: Sequence, seqb: Sequence) -> Any:
+    """SQL-COVAR_POP Function."""
+    return np.cov(seqa, seqb, ddof=0)[0, 1]
+
+def sql_covar_samp(seqa: Sequence, seqb: Sequence) -> Any:
+    """SQL-COVAR_SAMP Function."""
+    return np.cov(seqa, seqb, ddof=1)[0, 1]
+
+class SQLFunctions(SQLOperators):
+    """SQL:2016 Clause Operator and Function Vocabulary.
+
+    This Vocabulary follows the specifications of the ISO standard SQL:2016
+    (ISO 9075:2016), which is developed by a common committee of ISO and IEC.
+
+    """
+    def __init__(self) -> None:
+        super().__init__()
+
+        # Aggregate Functions
+        self.update([
+            Symbol(FUNCTION, 'COUNT', len, 20, False),
+            Symbol(FUNCTION, 'MIN', min, 20, False),
+            Symbol(FUNCTION, 'MAX', max, 20, False),
+            Symbol(FUNCTION, 'SUM', sum, 20, False),
+            Symbol(FUNCTION, 'AVG', np.mean, 20, False),
+            Symbol(FUNCTION, 'STDDEV_POP',
+                functools.partial(np.std, ddof=0), 20, False),
+            Symbol(FUNCTION, 'STDDEV_SAMP',
+                functools.partial(np.std, ddof=1), 20, False),
+            Symbol(FUNCTION, 'VAR_POP',
+                functools.partial(np.var, ddof=0), 20, False),
+            Symbol(FUNCTION, 'VAR_SAMP',
+                functools.partial(np.var, ddof=1), 20, False),
+            Symbol(FUNCTION, 'COVAR_POP', sql_covar_pop, 20, False),
+            Symbol(FUNCTION, 'COVAR_SAMP', sql_covar_samp, 20, False)])
 
 #
 # Constructors
@@ -141,4 +174,4 @@ class SQLOperators(parser.Vocabulary):
 
 def parse_clause(
         clause: str, variables: parser.OptVars = None) -> parser.Expression:
-    return parser.Parser(SQLOperators()).parse(clause, variables=variables)
+    return parser.Parser(SQLFunctions()).parse(clause, variables=variables)
