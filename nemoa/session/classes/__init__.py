@@ -18,6 +18,4 @@ def new(*args, **kwds):
     module = pkg.get_submodule(name=mname)
     if not hasattr(module, cname):
         raise NameError(f"class '{mname}.{cname}' is not known")
-    cinst = getattr(module, cname)(**kwds)
-
-    return cinst
+    return getattr(module, cname)(**kwds)

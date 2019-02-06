@@ -5,7 +5,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.types import Any
+from typing import Any
+from nemoa.session import classes
 
 def cur():
     """Get current session instance."""
@@ -23,7 +24,6 @@ def log(*args, **kwds):
 
 def new(*args, **kwds):
     """Create session instance from session dictionary."""
-    from nemoa.session import classes
     return classes.new(*args, **kwds)
 
 def open(*args, **kwds):
