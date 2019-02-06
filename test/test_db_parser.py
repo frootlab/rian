@@ -49,6 +49,27 @@ class TestParser(test.ModuleTest):
             Case(('ab', '_'), {}, False),
             Case(('ab', '_%'), {}, True)])
 
+    def test_sql_and(self) -> None:
+        self.assertCaseEqual(parser.sql_and, [
+            Case((False, False), {}, False),
+            Case((False, True), {}, False),
+            Case((True, False), {}, False),
+            Case((True, True), {}, True)])
+
+    def test_sql_or(self) -> None:
+        self.assertCaseEqual(parser.sql_or, [
+            Case((False, False), {}, False),
+            Case((False, True), {}, True),
+            Case((True, False), {}, True),
+            Case((True, True), {}, True)])
+
+    def test_sql_in(self) -> None:
+        self.assertCaseEqual(parser.sql_in, [
+            Case((1, [1, 2]), {}, True),
+            Case(('a', 'ab'), {}, True),
+            Case((1, [2, 3]), {}, False),
+            Case(('a', 'bc'), {}, False)])
+
     def test_SQLOperators(self) -> None:
         # The individual operators are tested within seperate tests. Here the
         # operator associativity and precedence is tested
