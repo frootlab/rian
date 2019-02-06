@@ -180,3 +180,55 @@ class TestParser(test.ModuleTest):
                 Case(('x | y', 2, 3), {}, 3),
                 Case(('x | y', 1, 3), {}, 3),
                 Case(('x | y', 1, 2), {}, 3)])
+
+    def test_SQLOperators_comparison(self) -> None:
+        parse = parser.parse_clause
+        peval: AnyOp = lambda expr, *args: parse(expr).eval(*args)
+
+        # Equality
+        with self.subTest(symbol='='):
+            self.assertCaseEqual(peval, [
+                Case(('x = y', 1, 1), {}, True),
+                Case(('x = y', 1, 2), {}, False),
+                Case(('x = y', 'a', 'a'), {}, True),
+                Case(('x = y', 'a', 'b'), {}, False)])
+
+        # Greater
+        with self.subTest(symbol='>'):
+            self.assertCaseEqual(peval, [
+                Case(('x > y', 1, 1), {}, False),
+                Case(('x > y', 2, 1), {}, True),
+                Case(('x > y', 'a', 'a'), {}, False),
+                Case(('x > y', 'b', 'a'), {}, True)])
+
+        # Greater or Equal
+        with self.subTest(symbol='>='):
+            self.assertCaseEqual(peval, [
+                Case(('x >= y', 1, 2), {}, False),
+                Case(('x >= y', 1, 1), {}, True),
+                Case(('x >= y', 'a', 'b'), {}, False),
+                Case(('x >= y', 'a', 'a'), {}, True)])
+
+        # Lower
+        with self.subTest(symbol='<'):
+            self.assertCaseEqual(peval, [
+                Case(('x < y', 1, 1), {}, False),
+                Case(('x < y', 1, 2), {}, True),
+                Case(('x < y', 'a', 'a'), {}, False),
+                Case(('x < y', 'a', 'b'), {}, True)])
+
+        # Lower or Equal
+        with self.subTest(symbol='<='):
+            self.assertCaseEqual(peval, [
+                Case(('x <= y', 2, 1), {}, False),
+                Case(('x <= y', 1, 1), {}, True),
+                Case(('x <= y', 'b', 'a'), {}, False),
+                Case(('x <= y', 'a', 'a'), {}, True)])
+
+        # Containment
+        with self.subTest(symbol='IN'):
+            self.assertCaseEqual(peval, [
+                Case(('x IN y', 'a', ['a', 'b']), {}, True),
+                Case(('x IN y', 'a', ['b', 'c']), {}, False),
+                Case(('x IN y', 'a', 'ba'), {}, True),
+                Case(('x IN y', 'ab', 'ba'), {}, False)])
