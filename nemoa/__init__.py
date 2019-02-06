@@ -22,7 +22,7 @@ programming language. Nemoa utilizes methods from probabilistic graphical
 modeling [PGM]_, machine learning [ML]_ and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.540'
+__version__ = '0.5.541'
 __status__ = 'Development'
 __description__ = 'Graphical Modeling and structured Data Analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
@@ -36,7 +36,6 @@ __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 __credits__ = ['Willi Jäger', 'Rainer König']
 __docformat__ = 'google'
 
-import nemoa.model
 from nemoa import session
 
 def about(*args, **kwds):
