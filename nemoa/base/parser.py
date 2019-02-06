@@ -73,10 +73,10 @@ CONSTANT = 3
 VARIABLE = 4
 
 class _Pack(list):
-    """Protected Class for packed arguments."""
+    """Protected Class for packed Arguments."""
 
 class _Null:
-    """Protected Sentinel Class for no arguments."""
+    """Protected Sentinel Class for No-Arguments."""
 
 def _pack(a: Any, b: Any) -> _Pack:
     if isinstance(a, list):
@@ -89,7 +89,7 @@ def _pack(a: Any, b: Any) -> _Pack:
 
 @dataclasses.dataclass(frozen=True)
 class Symbol:
-    """Data Class for Symbols."""
+    """Data Class for Parser Symbols."""
     type: int
     key: str
     value: Any

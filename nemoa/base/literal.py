@@ -66,6 +66,7 @@ def from_str(text: str, charset: OptStr = None, spacer: OptStr = None) -> str:
         # Get set of non-printable ASCII characters
         ascii_charset = set(chr(i) for i in range(128))
         ascii_non_printable = ascii_charset.difference(string.printable)
+
         # Replace non printable characters by spacer
         mapping = {ord(char): spacer for char in ascii_non_printable}
         return text.translate(mapping)
@@ -77,6 +78,7 @@ def from_str(text: str, charset: OptStr = None, spacer: OptStr = None) -> str:
         ascii_charset = set(chr(i) for i in range(128))
         ascii_id_charset = string.ascii_letters + string.digits + '_'
         ascii_nonid_charset = ascii_charset.difference(ascii_id_charset)
+
         # Replace non identifiable characters by spacer
         mapping = {ord(char): spacer for char in ascii_nonid_charset}
         return text.translate(mapping)

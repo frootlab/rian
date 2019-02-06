@@ -21,10 +21,44 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import fnmatch # Used for SQL-Like
 import operator
+from typing import Any, Sequence
 from nemoa.base import parser
 from nemoa.base.parser import Symbol, UNARY, BINARY
-from nemoa.types import AnyOp
+
+#
+# SQL Functions
+#
+
+def sql_and(a: Any, b: Any) -> bool:
+    """SQL-AND Operator."""
+    return a and b
+
+def sql_or(a: Any, b: Any) -> bool:
+    """SQL-OR Operator."""
+    return a or b
+
+def sql_in(a: Any, b: Sequence) -> bool:
+    """SQL-IN Operator."""
+    return a in b
+
+def sql_like(string: str, pattern: str) -> bool:
+    """SQL-LIKE Operator.
+
+    The LIKE operator is used in a WHERE clause to search for a specified
+    pattern in a column. There are two wildcards used in conjunction with the
+    LIKE operator: The percent (%) sign represents zero, one, or multiple
+    characters. The underscore (_)represents a single character.
+
+    """
+    # Translate SQL wildcards to Unix wildcards
+    # TODO: Better use regular expressions, since the translation approach
+    # raises the problem, that '*' and '?' are not allowed anymore
+    pattern = pattern.translate(str.maketrans('%_', '*?'))
+
+    # Use fnmatch.fnmatch to match the given string
+    return fnmatch.fnmatch(string, pattern)
 
 #
 # SQL Clause Vocabulary
@@ -41,15 +75,11 @@ class SQLOperators(parser.Vocabulary):
     def __init__(self) -> None:
         super().__init__()
 
-        bool_and: AnyOp = lambda a, b: a and b
-        bool_or: AnyOp = lambda a, b: a or b
-        comp_in: AnyOp = lambda a, b: operator.contains(b, a)
-
         self.update([
             # Binding Operators
             Symbol(BINARY, ',', parser._pack, 13, True), # pylint: disable=W0212
 
-            # SQL Arithmetic Operators
+            # Arithmetic Operators
             Symbol(UNARY, '+', operator.pos, 11, True), # Unary Plus
             Symbol(UNARY, '-', operator.neg, 11, True), # Negation
             Symbol(BINARY, '/', operator.truediv, 9, True), # Division
@@ -58,27 +88,28 @@ class SQLOperators(parser.Vocabulary):
             Symbol(BINARY, '+', operator.add, 8, True), # Addition
             Symbol(BINARY, '-', operator.sub, 8, True), # Subtraction
 
-            # SQL Bitwise Operators
+            # Bitwise Operators
             Symbol(BINARY, '&', operator.and_, 6, True), # Bitwise AND
             Symbol(BINARY, '^', operator.xor, 5, True), # Bitwise XOR
             Symbol(BINARY, '|', operator.or_, 4, True), # Bitwise OR
 
-            # SQL Comparison Operators
+            # Comparison Operators
             Symbol(BINARY, '=', operator.eq, 3, False), # Equality
             Symbol(BINARY, '>', operator.gt, 3, True), # Greater
             Symbol(BINARY, '<', operator.lt, 3, True), # Lower
             Symbol(BINARY, '>=', operator.ge, 3, True), # Greater or Equal
             Symbol(BINARY, '<=', operator.le, 3, True), # Lower or Equal
-            Symbol(BINARY, 'IN', comp_in, 3, False), # Containment
+            Symbol(BINARY, 'IN', sql_in, 3, False), # Containment
+            Symbol(BINARY, 'LIKE', sql_like, 3, False), # Matching
 
-            # TODO: SQL Compound Operators
-            # See: https://www.w3schools.com/sql/sql_operators.asp
+            # Compound Operators
+            # TODO: See: https://www.w3schools.com/sql/sql_operators.asp
 
             # Logical Operators
-            # TODO: ALL, ANY, BETWEEN, EXISTS, LIKE, SOME
-            Symbol(UNARY, 'NOT', operator.not_, 2, True), # Boolean NOT
-            Symbol(BINARY, 'AND', bool_and, 1, True), # Boolean AND
-            Symbol(BINARY, 'OR', bool_or, 0, True)]) # Boolean OR
+            # TODO: ALL, ANY, BETWEEN, EXISTS, SOME
+            Symbol(UNARY, 'NOT', operator.not_, 2, False), # Boolean NOT
+            Symbol(BINARY, 'AND', sql_and, 1, False), # Boolean AND
+            Symbol(BINARY, 'OR', sql_or, 0, False)]) # Boolean OR
 
 # class SQLFunctions(SQLOperators):
 #     """SQL:2016 Clause Operator and Function Vocabulary.
@@ -89,3 +120,13 @@ class SQLOperators(parser.Vocabulary):
 #     """
 #     def __init__(self) -> None:
 #         super().__init__()
+
+#
+# Constructors
+#
+
+#def parse_projection(): ...
+
+def parse_clause(
+        clause: str, variables: parser.OptVars = None) -> parser.Expression:
+    return parser.Parser(SQLOperators()).parse(clause, variables=variables)
