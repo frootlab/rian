@@ -811,13 +811,28 @@ class Parser:
         return False
 
     def _is_string(self) -> bool:
-        r = False
-        key = ''
         start = self._cur_pos
-        if self._cur_pos < len(self._expression) and self._cur_char == "'":
+        if start >= len(self._expression):
+            self._cur_key = ''
+            self._cur_id = ''
+            return False
+        key = ''
+        r = False
+        if self._cur_char == "'":
             self._cur_pos += 1
             while self._cur_pos < len(self._expression):
                 if self._cur_char != '\'' or (key and key[-1] == '\\'):
+                    key += self._cur_char
+                    self._cur_pos += 1
+                else:
+                    self._cur_pos += 1
+                    self._cur_val = self._unescape(key, start)
+                    r = True
+                    break
+        elif self._cur_char == '"':
+            self._cur_pos += 1
+            while self._cur_pos < len(self._expression):
+                if self._cur_char != '\"' or (key and key[-1] == '\\'):
                     key += self._cur_char
                     self._cur_pos += 1
                 else:

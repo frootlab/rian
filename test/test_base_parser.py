@@ -523,7 +523,7 @@ class TestParser(test.ModuleTest):
             Case((".5^3", ), {}, .125),
             Case(("16^.5", ), {}, 4.),
             Case(("8300*.8", ), {}, 6640.),
-            Case(('"a b"*2', 2), {}, 4),
+            Case(('"abc"*2', 2), {}, 'abcabc'),
             Case(("a^2-b^2==(a+b)*(a-b)", 12, 4), {}, True),
             Case(("a^2-b^2+1==(a+b)*(a-b)", 5, 2), {}, False),
             Case(("concat('a\n','\n','\rb')=='a\n\n\rb'", ), {}, True),
