@@ -23,8 +23,10 @@ __docformat__ = 'google'
 
 import fnmatch
 import functools
+import hashlib
 import operator
 from typing import Any, Sequence
+import uuid
 import numpy as np
 from nemoa.base import parser
 from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION
@@ -75,7 +77,8 @@ class SQLOperators(parser.Vocabulary):
 
         # Binding Operators
         self.update([
-            Symbol(BINARY, ',', parser._pack, 30, True)]) # pylint: disable=W0212
+            Symbol(BINARY, ',', parser._pack, 30, True), # pylint: disable=W0212
+            Symbol(BINARY, '||', operator.concat, 1, False)])
             #Symbol(BINARY, 'AS', parser._pack, 13, True),
 
         # Arithmetic Operators
@@ -138,6 +141,54 @@ def sql_covar_samp(seqa: Sequence, seqb: Sequence) -> Any:
     """SQL-COVAR_SAMP Function."""
     return np.cov(seqa, seqb, ddof=1)[0, 1]
 
+def sql_locate(search: str, string: str, start: int = 0) -> int:
+    """SQL-LOCATE Function."""
+    return string.find(search, start)
+
+def sql_lpad(string: str, width: int, fillchar: str = ' ') -> str:
+    """SQL-LPAD Function."""
+    return string.rjust(width, fillchar)
+
+def sql_rpad(string: str, width: int, fillchar: str = ' ') -> str:
+    """SQL-RPAD Function."""
+    return string.ljust(width, fillchar)
+
+def sql_repeat(string: str, count: int) -> str:
+    """SQL-REPEAT Function."""
+    return string * count
+
+def sql_space(count: int) -> str:
+    """SQL-SPACE Function."""
+    return ' ' * count
+
+def sql_substr(string: str, start: int, length: int = 0) -> str:
+    """SQL-SUBSTRING Function."""
+    return string[start: start + length] if length else string[start:]
+
+def sql_translate(string: str, in_chars: str, out_chars: str) -> str:
+    """SQL-TRANSLATE Function."""
+    return string.translate(str.maketrans(in_chars, out_chars))
+
+def sql_octet_length(string: str) -> int:
+    """SQL-OCTET_LENGTH Function."""
+    return len(string.encode('utf-8'))
+
+def sql_greatest(*args: Any) -> Any:
+    """SQL-GREATEST Function."""
+    return max(args)
+
+def sql_least(*args: Any) -> Any:
+    """SQL-LEAST Function."""
+    return min(args)
+
+def sql_md5(string: str) -> str:
+    """SQL-MD5 Function."""
+    return hashlib.md5(string.encode('utf-8')).hexdigest()
+
+def sql_sha1(string: str) -> str:
+    """SQL-SHA1 Function."""
+    return hashlib.sha1(string.encode('utf-8')).hexdigest()
+
 class SQLFunctions(SQLOperators):
     """SQL:2016 Clause Operator and Function Vocabulary.
 
@@ -148,6 +199,11 @@ class SQLFunctions(SQLOperators):
     def __init__(self) -> None:
         super().__init__()
 
+        sql_stddev_pop = functools.partial(np.std, ddof=0)
+        sql_stddev_samp = functools.partial(np.std, ddof=1)
+        sql_var_pop = functools.partial(np.var, ddof=0)
+        sql_var_samp = functools.partial(np.var, ddof=1)
+
         # Aggregate Functions
         self.update([
             Symbol(FUNCTION, 'COUNT', len, 20, False),
@@ -155,16 +211,43 @@ class SQLFunctions(SQLOperators):
             Symbol(FUNCTION, 'MAX', max, 20, False),
             Symbol(FUNCTION, 'SUM', sum, 20, False),
             Symbol(FUNCTION, 'AVG', np.mean, 20, False),
-            Symbol(FUNCTION, 'STDDEV_POP',
-                functools.partial(np.std, ddof=0), 20, False),
-            Symbol(FUNCTION, 'STDDEV_SAMP',
-                functools.partial(np.std, ddof=1), 20, False),
-            Symbol(FUNCTION, 'VAR_POP',
-                functools.partial(np.var, ddof=0), 20, False),
-            Symbol(FUNCTION, 'VAR_SAMP',
-                functools.partial(np.var, ddof=1), 20, False),
+            Symbol(FUNCTION, 'STDDEV_POP', sql_stddev_pop, 20, False),
+            Symbol(FUNCTION, 'STDDEV_SAMP', sql_stddev_samp, 20, False),
+            Symbol(FUNCTION, 'VAR_POP', sql_var_pop, 20, False),
+            Symbol(FUNCTION, 'VAR_SAMP', sql_var_samp, 20, False),
             Symbol(FUNCTION, 'COVAR_POP', sql_covar_pop, 20, False),
             Symbol(FUNCTION, 'COVAR_SAMP', sql_covar_samp, 20, False)])
+
+        # String Functions
+        # TODO: POSITION(search IN str) -> Requires RegEx Operator definition
+        self.update([
+            Symbol(FUNCTION, 'ASCII', ascii, 20, False),
+            Symbol(FUNCTION, 'CHR', chr, 20, False),
+            Symbol(FUNCTION, 'CONCAT', operator.concat, 20, False),
+            Symbol(FUNCTION, 'LOCATE', sql_locate, 20, False),
+            Symbol(FUNCTION, 'LOWER', str.lower, 20, False),
+            Symbol(FUNCTION, 'UPPER', str.upper, 20, False),
+            Symbol(FUNCTION, 'LPAD', sql_lpad, 20, False),
+            Symbol(FUNCTION, 'RPAD', sql_rpad, 20, False),
+            Symbol(FUNCTION, 'LTRIM', str.lstrip, 20, False),
+            Symbol(FUNCTION, 'RTRIM', str.rstrip, 20, False),
+            Symbol(FUNCTION, 'TRIM', str.strip, 20, False),
+            Symbol(FUNCTION, 'REPEAT', sql_repeat, 20, False),
+            Symbol(FUNCTION, 'SPACE', sql_space, 20, False),
+            Symbol(FUNCTION, 'CHAR', str, 20, False),
+            Symbol(FUNCTION, 'SUBSTR', sql_substr, 20, False),
+            Symbol(FUNCTION, 'REPLACE', str.replace, 20, False),
+            Symbol(FUNCTION, 'INITCAP', str.capitalize, 20, False),
+            Symbol(FUNCTION, 'TRANSLATE', sql_translate, 20, False),
+            Symbol(FUNCTION, 'LENGTH', len, 20, False),
+            Symbol(FUNCTION, 'OCTET_LENGTH', sql_octet_length, 20, False),
+            Symbol(FUNCTION, 'GREATEST', sql_greatest, 20, False),
+            Symbol(FUNCTION, 'LEAST', sql_least, 20, False),
+            # QUOTE(x) Quote SQL in string x
+            # SOUNDEX(x) Soundex index of string x
+            Symbol(FUNCTION, 'MD5', sql_md5, 20, False),
+            Symbol(FUNCTION, 'SHA1', sql_sha1, 20, False),
+            Symbol(FUNCTION, 'UUID', uuid.uuid1, 20, False)])
 
 #
 # Constructors
