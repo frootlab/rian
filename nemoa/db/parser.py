@@ -82,34 +82,46 @@ class SQLOperators(parser.Vocabulary):
             # Arithmetic Operators
             Symbol(UNARY, '+', operator.pos, 11, True), # Unary Plus
             Symbol(UNARY, '-', operator.neg, 11, True), # Negation
-            Symbol(BINARY, '/', operator.truediv, 9, True), # Division
-            Symbol(BINARY, '%', operator.mod, 9, True), # Remainder
-            Symbol(BINARY, '*', operator.mul, 9, True), # Multiplication
-            Symbol(BINARY, '+', operator.add, 8, True), # Addition
-            Symbol(BINARY, '-', operator.sub, 8, True), # Subtraction
+            Symbol(BINARY, '/', operator.truediv, 10, True), # Division
+            Symbol(BINARY, '%', operator.mod, 10, True), # Remainder
+            Symbol(BINARY, '*', operator.mul, 10, True), # Multiplication
+            Symbol(BINARY, '+', operator.add, 9, True), # Addition
+            Symbol(BINARY, '-', operator.sub, 9, True), # Subtraction
 
             # Bitwise Operators
-            Symbol(BINARY, '&', operator.and_, 6, True), # Bitwise AND
-            Symbol(BINARY, '^', operator.xor, 5, True), # Bitwise XOR
-            Symbol(BINARY, '|', operator.or_, 4, True), # Bitwise OR
+            Symbol(BINARY, '&', operator.and_, 7, True), # Bitwise AND
+            Symbol(BINARY, '^', operator.xor, 6, True), # Bitwise XOR
+            Symbol(BINARY, '|', operator.or_, 5, True), # Bitwise OR
 
             # Comparison Operators
-            Symbol(BINARY, '=', operator.eq, 3, False), # Equality
-            Symbol(BINARY, '>', operator.gt, 3, True), # Greater
-            Symbol(BINARY, '<', operator.lt, 3, True), # Lower
-            Symbol(BINARY, '>=', operator.ge, 3, True), # Greater or Equal
-            Symbol(BINARY, '<=', operator.le, 3, True), # Lower or Equal
-            Symbol(BINARY, 'IN', sql_in, 3, False), # Containment
-            Symbol(BINARY, 'LIKE', sql_like, 3, False), # Matching
-
-            # Compound Operators
-            # TODO: See: https://www.w3schools.com/sql/sql_operators.asp
+            Symbol(BINARY, '=', operator.eq, 4, False), # Equality
+            Symbol(BINARY, '<>', operator.ne, 4, False), # Inequality
+            Symbol(BINARY, '>', operator.gt, 4, True), # Greater
+            Symbol(BINARY, '<', operator.lt, 4, True), # Lower
+            Symbol(BINARY, '>=', operator.ge, 4, True), # Greater or Equal
+            Symbol(BINARY, '<=', operator.le, 4, True), # Lower or Equal
+            Symbol(BINARY, 'IN', sql_in, 4, False), # Containment
+            Symbol(BINARY, 'LIKE', sql_like, 4, False), # Matching
 
             # Logical Operators
             # TODO: ALL, ANY, BETWEEN, EXISTS, SOME
-            Symbol(UNARY, 'NOT', operator.not_, 2, False), # Boolean NOT
-            Symbol(BINARY, 'AND', sql_and, 1, False), # Boolean AND
-            Symbol(BINARY, 'OR', sql_or, 0, False)]) # Boolean OR
+            Symbol(UNARY, 'NOT', operator.not_, 3, False), # Boolean NOT
+            Symbol(BINARY, 'AND', sql_and, 2, False), # Boolean AND
+            Symbol(BINARY, 'OR', sql_or, 1, False), # Boolean OR
+
+            # Inplace- / Compound Operators
+            # Hint: For immutable targets such as strings, numbers, and tuples,
+            # the updated value is computed, but not assigned back to the input
+            # variable
+            Symbol(BINARY, '+=', operator.iadd, 0, False),
+            Symbol(BINARY, '-=', operator.isub, 0, False),
+            Symbol(BINARY, '*=', operator.imul, 0, False),
+            Symbol(BINARY, '/=', operator.itruediv, 0, False),
+            Symbol(BINARY, '%=', operator.imod, 0, False),
+            Symbol(BINARY, '&=', operator.iand, 0, False),
+            Symbol(BINARY, '^-=', operator.ixor, 0, False),
+            Symbol(BINARY, '|*=', operator.ior, 0, False)])
+
 
 # class SQLFunctions(SQLOperators):
 #     """SQL:2016 Clause Operator and Function Vocabulary.

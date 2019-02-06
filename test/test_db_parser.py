@@ -207,6 +207,14 @@ class TestParser(test.ModuleTest):
                 Case(('x = y', 'a', 'a'), {}, True),
                 Case(('x = y', 'a', 'b'), {}, False)])
 
+        # Inequality
+        with self.subTest(symbol='<>'):
+            self.assertCaseEqual(peval, [
+                Case(('x <> y', 1, 1), {}, False),
+                Case(('x <> y', 1, 2), {}, True),
+                Case(('x <> y', 'a', 'a'), {}, False),
+                Case(('x <> y', 'a', 'b'), {}, True)])
+
         # Greater
         with self.subTest(symbol='>'):
             self.assertCaseEqual(peval, [
