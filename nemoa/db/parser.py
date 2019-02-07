@@ -24,8 +24,9 @@ __docformat__ = 'google'
 import fnmatch
 import functools
 import hashlib
+import math
 import operator
-from typing import Any, Sequence
+from typing import Any, Sequence, Union
 import uuid
 import numpy as np
 from nemoa.base import parser, phonetic
@@ -189,6 +190,10 @@ def sql_sha1(string: str) -> str:
     """SQL-SHA1 Function."""
     return hashlib.sha1(string.encode('utf-8')).hexdigest()
 
+def sql_cot(x: Union[float, int, bool]) -> float:
+    """SQL-COT Function."""
+    return 1 / math.tan(x)
+
 class SQLFunctions(SQLOperators):
     """SQL:2016 Clause Operator and Function Vocabulary.
 
@@ -249,6 +254,22 @@ class SQLFunctions(SQLOperators):
             Symbol(FUNCTION, 'MD5', sql_md5, 20, False),
             Symbol(FUNCTION, 'SHA1', sql_sha1, 20, False),
             Symbol(FUNCTION, 'UUID', uuid.uuid1, 20, False)])
+
+        # Trigonometric Functions
+        self.update([
+            Symbol(FUNCTION, 'ASIN', math.asin, 20, False),
+            Symbol(FUNCTION, 'ACOS', math.acos, 20, False),
+            Symbol(FUNCTION, 'ATAN', math.atan, 20, False),
+            Symbol(FUNCTION, 'ATAN2', math.atan2, 20, False),
+            Symbol(FUNCTION, 'SIN', math.sin, 20, False),
+            Symbol(FUNCTION, 'COS', math.cos, 20, False),
+            Symbol(FUNCTION, 'TAN', math.tan, 20, False),
+            Symbol(FUNCTION, 'COT', sql_cot, 20, False),
+            Symbol(FUNCTION, 'SINH', math.sinh, 20, False),
+            Symbol(FUNCTION, 'COSH', math.cosh, 20, False),
+            Symbol(FUNCTION, 'TANH', math.tanh, 20, False),
+            Symbol(FUNCTION, 'ATANH', math.atanh, 20, False)])
+
 
 #
 # Constructors
