@@ -33,6 +33,7 @@ import uuid
 import numpy as np
 from nemoa.base import parser, phonetic
 from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION, CONSTANT
+from nemoa.db import dtype
 
 #
 # SQL Operators
@@ -84,7 +85,6 @@ class SQLOperators(parser.Vocabulary):
         self.update([
             Symbol(BINARY, ',', parser._pack, 30, True), # pylint: disable=W0212
             Symbol(BINARY, '||', operator.concat, 1)])
-            #Symbol(BINARY, 'AS', parser._pack, 13, True),
 
         # Arithmetic Operators
         self.update([
@@ -208,15 +208,15 @@ class SQLFunctions(SQLOperators):
             """SQL-COT Function."""
             return 1 / math.tan(x)
 
-        def sql_date() -> datetime.date:
+        def sql_date() -> dtype.Date:
             """SQL-CURRENT_DATE Function."""
             return datetime.datetime.now().date()
 
-        def sql_time() -> datetime.time:
+        def sql_time() -> dtype.Time:
             """SQL-CURRENT_TIME Function."""
             return datetime.datetime.now().time()
 
-        def sql_datetime() -> datetime.datetime:
+        def sql_timestamp() -> dtype.TimeStamp:
             """SQL-CURRENT_TIMESTAMP Function."""
             return datetime.datetime.now()
 
@@ -224,6 +224,12 @@ class SQLFunctions(SQLOperators):
         sql_stddev_samp = functools.partial(np.std, ddof=1)
         sql_var_pop = functools.partial(np.var, ddof=0)
         sql_var_samp = functools.partial(np.var, ddof=1)
+
+        # # Function Argument Binding
+        # self.update([
+        #     Symbol(BINARY, 'AS', parser._pack, 30),
+        #     Symbol(BINARY, '||', operator.concat, 1)])
+        #     #Symbol(BINARY, 'AS', parser._pack, 13, True),
 
         # Aggregate Functions
         self.update([
@@ -311,7 +317,7 @@ class SQLFunctions(SQLOperators):
         self.update([
             Symbol(CONSTANT, 'CURRENT_DATE', sql_date, factory=True),
             Symbol(CONSTANT, 'CURRENT_TIME', sql_time, factory=True),
-            Symbol(CONSTANT, 'CURRENT_TIMESTAMP', sql_datetime, factory=True),
+            Symbol(CONSTANT, 'CURRENT_TIMESTAMP', sql_timestamp, factory=True),
             # Symbol(FUNCTION, 'EXTRACT', abs, 20),
             # EXTRACT(MONTH FROM x)
             # EXTRACT(DAY FROM x)
