@@ -289,6 +289,17 @@ class SQLFunctions(SQLOperators):
             Symbol(FUNCTION, 'SETSEED', random.seed, 20, False),
             Symbol(FUNCTION, 'RAND', random.random, 20, False)])
 
+        # Date and time functions
+        # Allow Syntax: EXTRACT(YEAR FROM x)
+        self.update([
+            Symbol(FUNCTION, 'CURRENT_DATE', abs, 20, False),
+            Symbol(FUNCTION, 'CURRENT_TIME', abs, 20, False),
+            Symbol(FUNCTION, 'CURRENT_TIMESTAMP', abs, 20, False),
+            Symbol(FUNCTION, 'EXTRACT', abs, 20, False),
+            # EXTRACT(MONTH FROM x)
+            # EXTRACT(DAY FROM x)
+            # EXTRACT(HOUR FROM x)
+            ])
 
 #
 # Constructors

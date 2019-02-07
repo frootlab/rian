@@ -14,7 +14,7 @@
 #  You should have received a copy of the GNU General Public License along with
 #  nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-"""Classes and functions for structured types."""
+"""Structural / Symbolic Types."""
 
 __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
@@ -22,10 +22,11 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import functools
-from typing import Any, NamedTuple, Hashable, Tuple, Union, Type, Optional
-from typing import Mapping, Dict
+from typing import Any, Callable, NamedTuple, Hashable, Tuple, Union, Type
+from typing import Optional, Mapping, Dict
 from nemoa.base import check
-from nemoa.types import OptType, NoneType
+from nemoa.math import operator
+from nemoa.types import AnyOp, OptOp, OptType, NoneType
 
 Keywords = Optional[Mapping[str, Any]]
 FieldID = Hashable
@@ -38,9 +39,86 @@ Fields = Dict[FieldID, 'Field']
 Frame = Tuple[FieldID, ...]
 Basis = Tuple[Frame, Fields]
 DomLike = Union[OptType, Tuple[OptType, Frame], 'Domain']
+VarLike = Union[
+    str,                        # Variable(<name>, Identity, (<name>, ))
+    Tuple[str],                 # Variable(<name>, Identity, (<name>, ))
+    Tuple[str, FieldID],        # Variable(<name>, Identity, (<id>, ))
+    Tuple[str, Frame],          # Variable(<name>, Identity, <frame>)
+    Tuple[str, AnyOp],          # Variable(<name>, <operator>, (<name>, ))
+    Tuple[str, AnyOp, FieldID], # Variable(<name>, <operator>, (<id>, ))
+    Tuple[str, AnyOp, Frame],   # Variable(<name>, <operator>, <frame>)
+    Tuple[str, str, FieldID],   # Variable(<name>, <lambda>, (<id>, ))
+    Tuple[str, str, Frame]]     # Variable(<name>, <lambda>, <frame>)
 
 #
-# Parameter Classes
+# Variables
+#
+
+class Variable(NamedTuple):
+    """Class for the storage of variable definitions."""
+    name: str
+    operator: AnyOp
+    frame: Frame
+
+    def __call__(self, *args: Any) -> Any:
+        return self.operator(*args)
+
+def create_variable(var: VarLike, default: OptOp = None) -> Variable:
+    """Create variable from variable definition.
+
+    Args:
+        var: Variable defintion
+        default:
+
+    Returns:
+
+    """
+    # Check Arguments
+    check.has_type('var', var, (str, tuple))
+    check.not_empty('var', var)
+
+    # Get Defaults
+    default = default or operator.Identity()
+
+    # Get Variable Arguments
+    args: VarLike
+    if isinstance(var, str):
+        if var.isidentifier():
+            args = (var, default, (var, ))
+        else:
+            op = operator.Lambda(expression=var)
+            args = (var, op, op.variables)
+    elif len(var) == 1:
+        args = (var[0], default, (var[0], ))
+    elif len(var) == 2:
+        if callable(var[1]):
+            args = (var[0], var[1], (var[0], ))
+        elif isinstance(var[1], tuple):
+            args = (var[0], default, var[1])
+        else:
+            args = (var[0], default, (var[1], ))
+    elif callable(var[1]):
+        if isinstance(var[2], tuple):
+            args = (var[0], var[1], var[2])
+        else:
+            args = (var[0], var[1], (var[2], ))
+    elif isinstance(var[2], tuple):
+        op = operator.Lambda(expression=var[1], domain=(None, var[2]))
+        args = (var[0], op, var[2])
+    else:
+        op = operator.Lambda(expression=var[1], domain=(None, (var[2], )))
+        args = (var[0], op, (var[2], ))
+
+    # Check Variable Arguments
+    check.has_type('variable name', args[0], str)
+    check.has_type('variable operator', args[1], Callable)
+    check.has_type('variable frame', args[2], tuple)
+
+    # Create and return Variable
+    return Variable(*args)
+
+#
+# Fields
 #
 
 class Field(NamedTuple):
@@ -52,36 +130,6 @@ class Field(NamedTuple):
         name = type(self).__name__
         dtype = 'None' if self.type == NoneType else self.type.__name__
         return f"{name}({repr(self.id)}, {dtype})"
-
-class Domain(NamedTuple):
-    """Class for Domain Parameters."""
-    type: Type = NoneType
-    frame: Frame = tuple()
-    basis: Fields = dict()
-
-    def __repr__(self) -> str:
-        name = type(self).__name__
-        dtype = 'None' if self.type == NoneType else self.type.__name__
-        if not self.basis:
-            return f"{name}({dtype})"
-        if len(self.basis) == 1:
-            field = repr(tuple(self.basis.values())[0])
-            return f"{name}({dtype}, {field})"
-        fields = ', '.join(map(repr, map(self.basis.get, self.frame)))
-        return f"{name}({dtype}, ({fields}))"
-
-    def __hash__(self) -> int:
-        value = hash(self.type) ^ hash(self.frame)
-        for field in self.basis.items():
-            value ^= hash(field)
-        return value
-
-    def __bool__(self) -> bool:
-        return self.type != NoneType or bool(self.frame) or bool(self.basis)
-
-#
-# Constructors
-#
 
 @functools.lru_cache(maxsize=256)
 def create_field(field: FieldLike) -> Field:
@@ -111,6 +159,36 @@ def create_field(field: FieldLike) -> Field:
 
     # Create and return Field
     return Field(*args)
+
+#
+# Domains
+#
+
+class Domain(NamedTuple):
+    """Class for Domain Parameters."""
+    type: Type = NoneType
+    frame: Frame = tuple()
+    basis: Fields = dict()
+
+    def __repr__(self) -> str:
+        name = type(self).__name__
+        dtype = 'None' if self.type == NoneType else self.type.__name__
+        if not self.basis:
+            return f"{name}({dtype})"
+        if len(self.basis) == 1:
+            field = repr(tuple(self.basis.values())[0])
+            return f"{name}({dtype}, {field})"
+        fields = ', '.join(map(repr, map(self.basis.get, self.frame)))
+        return f"{name}({dtype}, ({fields}))"
+
+    def __hash__(self) -> int:
+        value = hash(self.type) ^ hash(self.frame)
+        for field in self.basis.items():
+            value ^= hash(field)
+        return value
+
+    def __bool__(self) -> bool:
+        return self.type != NoneType or bool(self.frame) or bool(self.basis)
 
 def create_basis(arg: Any) -> Basis:
     """Create domain frame and basis from given field definitions.

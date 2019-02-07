@@ -25,8 +25,8 @@ import types
 from typing import Any, NewType, Tuple, List, Optional, Iterator, Union
 from nemoa.base import attrib, check, abc
 from nemoa.db import record, cursor
-from nemoa.errors import RowLookupError, ProxyError
-from nemoa.errors import InvalidTypeError
+from nemoa.errors import RowLookupError, ProxyError, InvalidTypeError
+from nemoa.math import stype
 from nemoa.types import StrList, StrTuple, OptOp, SeqOp, OptType
 from nemoa.types import OptStrTuple, OptInt, OptStr
 from nemoa.types import Mapping, OptMapping
@@ -388,7 +388,7 @@ class Table(attrib.Group):
             row._delete() # pylint: disable=W0212
 
     def select(
-            self, *args: cursor.VarLike, where: OptOp = None,
+            self, *args: stype.VarLike, where: OptOp = None,
             groupby: cursor.GroupByType = None, dtype: OptType = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, mode: OptStr = None) -> cursor.Cursor:

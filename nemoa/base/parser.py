@@ -61,10 +61,10 @@ import operator
 import random
 import re
 from typing import Any, Callable, Dict, List, Match, Optional, Tuple, Union
-from nemoa.base import check, env, stype
+from nemoa.base import check, env
 from nemoa.types import AnyOp
 
-OptVars = Optional[stype.Frame]
+OptVars = Optional[Tuple[str, ...]]
 
 UNARY = 0
 BINARY = 1
@@ -1022,9 +1022,9 @@ class Parser:
         # Use the operator to create a field mapping from the set of field IDs
         # in the frame to valid variable names.
         fields = set(variables)
-        mapping: Dict[stype.FieldID, str] = {}
+        mapping: Dict[str, str] = {}
         var_counter = itertools.count()
-        next_var: AnyOp = lambda: 'X{i}'.format(i=next(var_counter))
+        next_var: AnyOp = lambda: 'x{i}'.format(i=next(var_counter))
         for field in fields:
             if isinstance(field, str) and field.isidentifier():
                 mapping[field] = field

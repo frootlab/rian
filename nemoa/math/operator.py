@@ -25,97 +25,17 @@ import collections
 import functools
 import itertools
 import operator
-from typing import NamedTuple, List, Optional, Tuple, Sequence, Union
+from typing import List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable
-from nemoa.base import abc, check, parser, stype
+from nemoa.base import abc, check, parser
 from nemoa.errors import InvalidTypeError
-from nemoa.types import Method, Mapping, NoneType, Callable, OptOp, SeqHom
+from nemoa.math import stype
+from nemoa.types import Method, Mapping, NoneType, OptOp, SeqHom
 from nemoa.types import SeqOp, AnyOp, StrList, StrTuple
-from nemoa.base.stype import FieldID, Frame
+from nemoa.math.stype import FieldID, Frame
 
 Key = Optional[Union[FieldID, Frame]]
 Item = Tuple[FieldID, Any]
-VarLike = Union[
-    str,                        # Variable(<name>, Identity, (<name>, ))
-    Tuple[str],                 # Variable(<name>, Identity, (<name>, ))
-    Tuple[str, FieldID],        # Variable(<name>, Identity, (<id>, ))
-    Tuple[str, Frame],          # Variable(<name>, Identity, <frame>)
-    Tuple[str, AnyOp],          # Variable(<name>, <operator>, (<name>, ))
-    Tuple[str, AnyOp, FieldID], # Variable(<name>, <operator>, (<id>, ))
-    Tuple[str, AnyOp, Frame],   # Variable(<name>, <operator>, <frame>)
-    Tuple[str, str, FieldID],   # Variable(<name>, <lambda>, (<id>, ))
-    Tuple[str, str, Frame]]     # Variable(<name>, <lambda>, <frame>)
-
-#
-# Variables
-#
-
-class Variable(NamedTuple):
-    """Class for the storage of variable definitions."""
-    name: str
-    operator: AnyOp
-    frame: Frame
-
-    def __call__(self, *args: Any) -> Any:
-        return self.operator(*args)
-
-#
-# Constructors for Parameter Classes
-#
-
-def create_variable(var: VarLike, default: OptOp = None) -> Variable:
-    """Create variable from variable definition.
-
-    Args:
-        var: Variable defintion
-        default:
-
-    Returns:
-
-    """
-    # Check Arguments
-    check.has_type('var', var, (str, tuple))
-    check.not_empty('var', var)
-
-    # Get Defaults
-    default = default or Identity()
-
-    # Get Variable Arguments
-    args: VarLike
-    if isinstance(var, str):
-        if var.isidentifier():
-            args = (var, default, (var, ))
-        else:
-            op = Lambda(expression=var)
-            args = (var, op, op.variables)
-    elif len(var) == 1:
-        args = (var[0], default, (var[0], ))
-    elif len(var) == 2:
-        if callable(var[1]):
-            args = (var[0], var[1], (var[0], ))
-        elif isinstance(var[1], tuple):
-            args = (var[0], default, var[1])
-        else:
-            args = (var[0], default, (var[1], ))
-    elif callable(var[1]):
-        if isinstance(var[2], tuple):
-            args = (var[0], var[1], var[2])
-        else:
-            args = (var[0], var[1], (var[2], ))
-    elif isinstance(var[2], tuple):
-        op = Lambda(expression=var[1], domain=(None, var[2]))
-        args = (var[0], op, var[2])
-    else:
-        op = Lambda(expression=var[1], domain=(None, (var[2], )))
-        args = (var[0], op, (var[2], ))
-
-    # Check Variable Arguments
-    check.has_type('variable name', args[0], str)
-    check.has_type('variable operator', args[1], Callable)
-    check.has_type('variable frame', args[2], tuple)
-
-    # Create and return Variable
-    return Variable(*args)
 
 #
 # Operator Classes
@@ -487,7 +407,7 @@ class Lambda(Operator):
     def __new__(
             cls, expression: str = '', domain: stype.DomLike = None,
             variables: StrTuple = tuple(), default: OptOp = None,
-            compile: bool = True) -> Operator:
+            compile: bool = True) -> Operator: # pylint: disable=W0622
         # If no expression and no default operator is given, the Lambda operator
         # is a zero operator.
         if not expression and not default:
@@ -505,7 +425,7 @@ class Lambda(Operator):
     def __init__(
             self, expression: str = '', domain: stype.DomLike = None,
             variables: StrTuple = tuple(), default: OptOp = None,
-            compile: bool = True) -> None:
+            compile: bool = True) -> None: # pylint: disable=W0622
         # Initialize Base Class
         target = (None, (expression, ))
         super().__init__(*variables, domain=domain, target=target)
@@ -545,7 +465,9 @@ class Lambda(Operator):
     # Protected
     #
 
-    def _build(self, compile: bool = True, default: OptOp = None) -> None:
+    def _build(
+            self, compile: bool = True, # pylint: disable=W0622
+            default: OptOp = None) -> None:
         # If no expression is provided, use the default operator, or if also not
         # provided the Zero(None) operator.
         if not self._expression:
@@ -599,12 +521,11 @@ class Vector(collections.abc.Sequence, Operator):
     """
     __slots__ = ['_variables', '_built_components']
 
-    _variables: Tuple[Variable, ...]
+    _variables: Tuple[stype.Variable, ...]
     _built_components: Tuple[AnyOp, ...]
 
-
     def __new__(
-            cls, *args: VarLike, domain: stype.DomLike = None,
+            cls, *args: stype.VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> Operator:
         # If no variables are defined, the returned operator is the Zero
         # morphism onto the target's empty object.
@@ -616,7 +537,7 @@ class Vector(collections.abc.Sequence, Operator):
         return super().__new__(cls)
 
     def __init__(
-            self, *args: VarLike, domain: stype.DomLike = None,
+            self, *args: stype.VarLike, domain: stype.DomLike = None,
             target: stype.DomLike = None, default: OptOp = None) -> None:
         # Initialize Operator Base Class
         Operator.__init__(self)
@@ -665,8 +586,9 @@ class Vector(collections.abc.Sequence, Operator):
             return tuple()
         return tuple(var.name for var in self._variables)
 
-    def _update_variables(self, *args: VarLike, default: OptOp = None) -> None:
-        var: AnyOp = lambda arg: create_variable(arg, default=default)
+    def _update_variables(
+            self, *args: stype.VarLike, default: OptOp = None) -> None:
+        var: AnyOp = lambda arg: stype.create_variable(arg, default=default)
         self._variables = tuple(map(var, args))
 
     def _update_domain(self, domain: stype.DomLike = None) -> None:
@@ -956,7 +878,7 @@ def create_grouper(
     return lambda seq: grouper(sorted(seq, key=getter))
 
 def create_aggregator(
-        *args: VarLike, domain: stype.DomLike = None,
+        *args: stype.VarLike, domain: stype.DomLike = None,
         target: type = tuple) -> SeqOp:
     """Creates an aggregation operator with specified variables.
 
@@ -1011,7 +933,7 @@ def create_aggregator(
     raise ValueError(f"type '{target.__name__}' is not supported")
 
 def create_group_aggregator(
-        *args: VarLike, key: Key = None, domain: stype.DomLike = None,
+        *args: stype.VarLike, key: Key = None, domain: stype.DomLike = None,
         target: type = tuple, presorted: bool = False) -> SeqOp:
     """Creates a group aggregation operator.
 

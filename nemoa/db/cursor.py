@@ -25,7 +25,7 @@ import random
 from typing import List, NewType, Tuple, Union, Optional
 from nemoa.base import attrib
 from nemoa.db import record
-from nemoa.math import operator
+from nemoa.math import operator, stype
 from nemoa.errors import InvalidTypeError, NemoaError
 from nemoa.types import StrList, StrTuple, OptIntList, OptOp, Callable, OptInt
 from nemoa.types import OptStr, Iterator, Mapping, SeqOp, AnyOp, OptType, BoolOp
@@ -59,7 +59,6 @@ AggAttr = Union[str, Tuple[str, AnyOp]]
 OptSeqOp = Optional[SeqOp]
 
 # Variables
-VarLike = operator.VarLike
 ColNames = Tuple[str, ...]
 OptColNames = Optional[ColNames]
 
@@ -174,7 +173,7 @@ class Cursor(attrib.Group):
     #
 
     def __init__(
-            self, *args: VarLike, where: PredLike = None,
+            self, *args: stype.VarLike, where: PredLike = None,
             groupby: GroupByType = None, having: PredLike = None,
             orderby: OrderByType = None, reverse: bool = False,
             batchsize: OptInt = None, dtype: OptType = None,
@@ -318,7 +317,7 @@ class Cursor(attrib.Group):
         raise InvalidTypeError('where', where, (type(None), str)) # TODO: Type!
 
     def _set_aggregator(
-            self, *args: VarLike, groupby: GroupByType = None,
+            self, *args: stype.VarLike, groupby: GroupByType = None,
             having: PredLike = None) -> None:
 
         if not groupby:
@@ -356,7 +355,7 @@ class Cursor(attrib.Group):
             return
 
         # Get variable names
-        variables = map(operator.create_variable, args)
+        variables = map(stype.create_variable, args)
         names = tuple(var.name for var in variables)
 
         if isinstance(having, str):
@@ -399,7 +398,7 @@ class Cursor(attrib.Group):
         self._sorter = operator.create_sorter(
             *keys, domain=domain, reverse=reverse)
 
-    def _set_mapper(self, *args: VarLike, dtype: OptType = None) -> None:
+    def _set_mapper(self, *args: stype.VarLike, dtype: OptType = None) -> None:
         # Validate Arguments
         if dtype and not args:
             raise CursorError(
@@ -407,7 +406,7 @@ class Cursor(attrib.Group):
                 'requires the definition of variables')
 
         # Get variable names
-        variables = map(operator.create_variable, args)
+        variables = map(stype.create_variable, args)
         names = tuple(var.name for var in variables)
 
         # If the result set is aggregated by a grouping operator, the mapper
