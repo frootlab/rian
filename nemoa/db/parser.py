@@ -38,35 +38,6 @@ from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION, CONSTANT
 # SQL Operators
 #
 
-def sql_and(a: Any, b: Any) -> bool:
-    """SQL-AND Operator."""
-    return a and b
-
-def sql_or(a: Any, b: Any) -> bool:
-    """SQL-OR Operator."""
-    return a or b
-
-def sql_in(a: Any, b: Sequence) -> bool:
-    """SQL-IN Operator."""
-    return a in b
-
-def sql_like(string: str, pattern: str) -> bool:
-    """SQL-LIKE Operator.
-
-    The LIKE operator is used in a WHERE clause to search for a specified
-    pattern in a column. There are two wildcards used in conjunction with the
-    LIKE operator: The percent (%) sign represents zero, one, or multiple
-    characters. The underscore (_)represents a single character.
-
-    """
-    # Translate SQL wildcards to Unix wildcards
-    # TODO: Better use regular expressions, since the translation approach
-    # raises the problem, that '*' and '?' are not allowed anymore
-    pattern = pattern.translate(str.maketrans('%_', '*?'))
-
-    # Use fnmatch.fnmatch to match the given string
-    return fnmatch.fnmatch(string, pattern)
-
 class SQLOperators(parser.Vocabulary):
     """SQL:2016 Clause Operator Vocabulary.
 
@@ -77,6 +48,37 @@ class SQLOperators(parser.Vocabulary):
 
     def __init__(self) -> None:
         super().__init__()
+
+        def sql_and(a: Any, b: Any) -> bool:
+            """SQL-AND Operator."""
+            return a and b
+
+        def sql_or(a: Any, b: Any) -> bool:
+            """SQL-OR Operator."""
+            return a or b
+
+        def sql_in(a: Any, b: Sequence) -> bool:
+            """SQL-IN Operator."""
+            return a in b
+
+        def sql_like(string: str, pattern: str) -> bool:
+            """SQL-LIKE Operator.
+
+            The LIKE operator is used in a WHERE clause to search for a
+            specified pattern in a column. There are two wildcards used in
+            conjunction with the LIKE operator: The percent (%) sign represents
+            zero, one, or multiple characters. The underscore (_)represents a
+            single character.
+
+            """
+            # Translate SQL wildcards to Unix wildcards
+            # TODO: Better use regular expressions, since the translation
+            # approach raises the problem, that '*' and '?' are not allowed
+            # anymore
+            pattern = pattern.translate(str.maketrans('%_', '*?'))
+
+            # Use fnmatch.fnmatch to match the given string
+            return fnmatch.fnmatch(string, pattern)
 
         # Binding Operators
         self.update([
@@ -136,78 +138,6 @@ class SQLOperators(parser.Vocabulary):
 # SQL Functions
 #
 
-def sql_covar_pop(seqa: Sequence, seqb: Sequence) -> Any:
-    """SQL-COVAR_POP Function."""
-    return np.cov(seqa, seqb, ddof=0)[0, 1]
-
-def sql_covar_samp(seqa: Sequence, seqb: Sequence) -> Any:
-    """SQL-COVAR_SAMP Function."""
-    return np.cov(seqa, seqb, ddof=1)[0, 1]
-
-def sql_locate(search: str, string: str, start: int = 0) -> int:
-    """SQL-LOCATE Function."""
-    return string.find(search, start)
-
-def sql_lpad(string: str, width: int, fillchar: str = ' ') -> str:
-    """SQL-LPAD Function."""
-    return string.rjust(width, fillchar)
-
-def sql_rpad(string: str, width: int, fillchar: str = ' ') -> str:
-    """SQL-RPAD Function."""
-    return string.ljust(width, fillchar)
-
-def sql_repeat(string: str, count: int) -> str:
-    """SQL-REPEAT Function."""
-    return string * count
-
-def sql_space(count: int) -> str:
-    """SQL-SPACE Function."""
-    return ' ' * count
-
-def sql_substr(string: str, start: int, length: int = 0) -> str:
-    """SQL-SUBSTRING Function."""
-    return string[start: start + length] if length else string[start:]
-
-def sql_translate(string: str, in_chars: str, out_chars: str) -> str:
-    """SQL-TRANSLATE Function."""
-    return string.translate(str.maketrans(in_chars, out_chars))
-
-def sql_octet_length(string: str) -> int:
-    """SQL-OCTET_LENGTH Function."""
-    return len(string.encode('utf-8'))
-
-def sql_greatest(*args: Any) -> Any:
-    """SQL-GREATEST Function."""
-    return max(args)
-
-def sql_least(*args: Any) -> Any:
-    """SQL-LEAST Function."""
-    return min(args)
-
-def sql_md5(string: str) -> str:
-    """SQL-MD5 Function."""
-    return hashlib.md5(string.encode('utf-8')).hexdigest()
-
-def sql_sha1(string: str) -> str:
-    """SQL-SHA1 Function."""
-    return hashlib.sha1(string.encode('utf-8')).hexdigest()
-
-def sql_cot(x: Union[float, int, bool]) -> float:
-    """SQL-COT Function."""
-    return 1 / math.tan(x)
-
-def sql_date() -> datetime.date:
-    """SQL-CURRENT_DATE Function."""
-    return datetime.datetime.now().date()
-
-def sql_time() -> datetime.time:
-    """SQL-CURRENT_TIME Function."""
-    return datetime.datetime.now().time()
-
-def sql_datetime() -> datetime.datetime:
-    """SQL-CURRENT_TIMESTAMP Function."""
-    return datetime.datetime.now()
-
 class SQLFunctions(SQLOperators):
     """SQL:2016 Clause Operator and Function Vocabulary.
 
@@ -217,6 +147,78 @@ class SQLFunctions(SQLOperators):
     """
     def __init__(self) -> None:
         super().__init__()
+
+        def sql_covar_pop(seqa: Sequence, seqb: Sequence) -> Any:
+            """SQL-COVAR_POP Function."""
+            return np.cov(seqa, seqb, ddof=0)[0, 1]
+
+        def sql_covar_samp(seqa: Sequence, seqb: Sequence) -> Any:
+            """SQL-COVAR_SAMP Function."""
+            return np.cov(seqa, seqb, ddof=1)[0, 1]
+
+        def sql_locate(search: str, string: str, start: int = 0) -> int:
+            """SQL-LOCATE Function."""
+            return string.find(search, start)
+
+        def sql_lpad(string: str, width: int, fillchar: str = ' ') -> str:
+            """SQL-LPAD Function."""
+            return string.rjust(width, fillchar)
+
+        def sql_rpad(string: str, width: int, fillchar: str = ' ') -> str:
+            """SQL-RPAD Function."""
+            return string.ljust(width, fillchar)
+
+        def sql_repeat(string: str, count: int) -> str:
+            """SQL-REPEAT Function."""
+            return string * count
+
+        def sql_space(count: int) -> str:
+            """SQL-SPACE Function."""
+            return ' ' * count
+
+        def sql_substr(string: str, start: int, length: int = 0) -> str:
+            """SQL-SUBSTRING Function."""
+            return string[start: start + length] if length else string[start:]
+
+        def sql_translate(string: str, in_chars: str, out_chars: str) -> str:
+            """SQL-TRANSLATE Function."""
+            return string.translate(str.maketrans(in_chars, out_chars))
+
+        def sql_octet_length(string: str) -> int:
+            """SQL-OCTET_LENGTH Function."""
+            return len(string.encode('utf-8'))
+
+        def sql_greatest(*args: Any) -> Any:
+            """SQL-GREATEST Function."""
+            return max(args)
+
+        def sql_least(*args: Any) -> Any:
+            """SQL-LEAST Function."""
+            return min(args)
+
+        def sql_md5(string: str) -> str:
+            """SQL-MD5 Function."""
+            return hashlib.md5(string.encode('utf-8')).hexdigest()
+
+        def sql_sha1(string: str) -> str:
+            """SQL-SHA1 Function."""
+            return hashlib.sha1(string.encode('utf-8')).hexdigest()
+
+        def sql_cot(x: Union[float, int, bool]) -> float:
+            """SQL-COT Function."""
+            return 1 / math.tan(x)
+
+        def sql_date() -> datetime.date:
+            """SQL-CURRENT_DATE Function."""
+            return datetime.datetime.now().date()
+
+        def sql_time() -> datetime.time:
+            """SQL-CURRENT_TIME Function."""
+            return datetime.datetime.now().time()
+
+        def sql_datetime() -> datetime.datetime:
+            """SQL-CURRENT_TIMESTAMP Function."""
+            return datetime.datetime.now()
 
         sql_stddev_pop = functools.partial(np.std, ddof=0)
         sql_stddev_samp = functools.partial(np.std, ddof=1)
