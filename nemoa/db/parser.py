@@ -26,6 +26,7 @@ import functools
 import hashlib
 import math
 import operator
+import random
 from typing import Any, Sequence, Union
 import uuid
 import numpy as np
@@ -269,6 +270,24 @@ class SQLFunctions(SQLOperators):
             Symbol(FUNCTION, 'COSH', math.cosh, 20, False),
             Symbol(FUNCTION, 'TANH', math.tanh, 20, False),
             Symbol(FUNCTION, 'ATANH', math.atanh, 20, False)])
+
+        # Numeric Functions
+        self.update([
+            Symbol(FUNCTION, 'ABS', abs, 20, False),
+            Symbol(FUNCTION, 'SIGN', np.sign, 20, False),
+            Symbol(FUNCTION, 'MOD', operator.mod, 20, False),
+            Symbol(FUNCTION, 'CEIL', math.ceil, 20, False),
+            Symbol(FUNCTION, 'FLOOR', math.floor, 20, False),
+            Symbol(FUNCTION, 'ROUND', round, 20, False),
+            Symbol(FUNCTION, 'TRUNCATE', math.trunc, 20, False),
+            Symbol(FUNCTION, 'SQRT', math.sqrt, 20, False),
+            Symbol(FUNCTION, 'EXP', math.exp, 20, False),
+            Symbol(FUNCTION, 'POWER', pow, 20, False),
+            Symbol(FUNCTION, 'LN', math.log, 20, False),
+            Symbol(FUNCTION, 'LOG', math.log, 20, False),
+            Symbol(FUNCTION, 'LOG10', math.log10, 20, False),
+            Symbol(FUNCTION, 'SETSEED', random.seed, 20, False),
+            Symbol(FUNCTION, 'RAND', random.random, 20, False)])
 
 
 #
