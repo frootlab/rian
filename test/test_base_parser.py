@@ -52,18 +52,19 @@ class TestParser(test.ModuleTest):
 
         sym = parser.Symbol(parser.UNARY, '*', conj)
         self.assertEqual(
-            dataclasses.astuple(sym), (parser.UNARY, '*', conj, 0, False))
+            dataclasses.astuple(sym),
+            (parser.UNARY, '*', conj, 0, False, False))
 
     def test_Vocabulary(self) -> None:
-        vocabulary = parser.PyOperators()
-        self.assertEqual(vocabulary.get(parser.FUNCTION), {})
+        voc = parser.PyOperators()
+        self.assertEqual(voc.search(type=parser.FUNCTION), {})
 
         mean: AnyOp = lambda s: sum(s) / len(s)
-        vocabulary.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
-        self.assertIn('mean', vocabulary.get(parser.FUNCTION, builtin=False))
-        self.assertNotIn('mean', vocabulary.get(parser.FUNCTION, builtin=True))
+        voc.add(parser.Symbol(parser.FUNCTION, 'mean', mean))
+        self.assertIn('mean', voc.search(type=parser.FUNCTION, builtin=False))
+        self.assertNotIn('mean', voc.search(type=parser.FUNCTION, builtin=True))
 
-        p = parser.Parser(vocabulary=vocabulary)
+        p = parser.Parser(vocabulary=voc)
         self.assertEqual(p.parse('mean(s)').variables, ('s', ))
         self.assertEqual(p.parse('mean(s)').symbols, ('mean', 's'))
         self.assertEqual(p.parse('mean(s)').eval([1, 2, 3]), 2)

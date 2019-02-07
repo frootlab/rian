@@ -37,38 +37,70 @@ class TestParser(test.ModuleTest):
         pass # Implicitely tested in test_SQLOperators
 
     def test_sql_like(self) -> None:
-        self.assertCaseEqual(parser.sql_like, [
-            Case(('a', 'a%'), {}, True),
-            Case(('a', 'a_'), {}, False),
-            Case(('ab', 'a%'), {}, True),
-            Case(('ab', 'a_'), {}, True),
-            Case(('ba', 'a%'), {}, False),
-            Case(('ba', '%a'), {}, True),
-            Case(('ab', '%a'), {}, False),
-            Case(('ab', '__'), {}, True),
-            Case(('ab', '_'), {}, False),
-            Case(('ab', '_%'), {}, True)])
+        pass # Implicitely tested in test_SQLOperators
 
     def test_sql_and(self) -> None:
-        self.assertCaseEqual(parser.sql_and, [
-            Case((False, False), {}, False),
-            Case((False, True), {}, False),
-            Case((True, False), {}, False),
-            Case((True, True), {}, True)])
+        pass # Implicitely tested in test_SQLOperators
 
     def test_sql_or(self) -> None:
-        self.assertCaseEqual(parser.sql_or, [
-            Case((False, False), {}, False),
-            Case((False, True), {}, True),
-            Case((True, False), {}, True),
-            Case((True, True), {}, True)])
+        pass # Implicitely tested in test_SQLOperators
 
     def test_sql_in(self) -> None:
-        self.assertCaseEqual(parser.sql_in, [
-            Case((1, [1, 2]), {}, True),
-            Case(('a', 'ab'), {}, True),
-            Case((1, [2, 3]), {}, False),
-            Case(('a', 'bc'), {}, False)])
+        pass # Implicitely tested in test_SQLOperators
+
+    def test_sql_cot(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_covar_pop(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_covar_samp(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_date(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_datetime(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_time(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_greatest(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_least(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_locate(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_lpad(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_md5(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_octet_length(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_repeat(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_rpad(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_sha1(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_space(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_substr(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
+
+    def test_sql_translate(self) -> None:
+        pass # Implicitely tested in test_SQLFunctions
 
     def test_SQLOperators(self) -> None:
         # The individual operators are tested within seperate tests. Here the
@@ -258,11 +290,18 @@ class TestParser(test.ModuleTest):
         # Matching
         with self.subTest(symbol='LIKE'):
             self.assertCaseEqual(peval, [
-                Case(('x LIKE y', 'ab', 'a_'), {}, True),
+                Case(('x LIKE y', 'a', 'a%'), {}, True),
+                Case(('x LIKE y', 'a', 'a_'), {}, False),
                 Case(('x LIKE y', 'ab', 'a%'), {}, True),
-                Case(('x LIKE y', 'ab', '%'), {}, True),
+                Case(('x LIKE y', 'ab', 'a_'), {}, True),
+                Case(('x LIKE y', 'ba', 'a%'), {}, False),
+                Case(('x LIKE y', 'ba', '%a'), {}, True),
+                Case(('x LIKE y', 'ab', '%a'), {}, False),
+                Case(('x LIKE y', 'ab', '__'), {}, True),
                 Case(('x LIKE y', 'ab', '_'), {}, False),
-                Case(('x LIKE y', 'ab', '__'), {}, True)])
+                Case(('x LIKE y', 'ab', '_%'), {}, True),
+                Case(('x LIKE y', 'ab', '%_'), {}, True),
+                Case(('x LIKE y', 'ab', '%'), {}, True)])
 
     def test_SQLOperators_logical(self) -> None:
         parse = parser.parse_clause

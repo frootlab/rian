@@ -21,6 +21,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import datetime
 import fnmatch
 import functools
 import hashlib
@@ -31,7 +32,7 @@ from typing import Any, Sequence, Union
 import uuid
 import numpy as np
 from nemoa.base import parser, phonetic
-from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION
+from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION, CONSTANT
 
 #
 # SQL Operators
@@ -80,7 +81,7 @@ class SQLOperators(parser.Vocabulary):
         # Binding Operators
         self.update([
             Symbol(BINARY, ',', parser._pack, 30, True), # pylint: disable=W0212
-            Symbol(BINARY, '||', operator.concat, 1, False)])
+            Symbol(BINARY, '||', operator.concat, 1)])
             #Symbol(BINARY, 'AS', parser._pack, 13, True),
 
         # Arithmetic Operators
@@ -101,35 +102,35 @@ class SQLOperators(parser.Vocabulary):
 
         # Comparison Operators
         self.update([
-            Symbol(BINARY, '=', operator.eq, 4, False), # Equality
-            Symbol(BINARY, '<>', operator.ne, 4, False), # Inequality
+            Symbol(BINARY, '=', operator.eq, 4), # Equality
+            Symbol(BINARY, '<>', operator.ne, 4), # Inequality
             Symbol(BINARY, '>', operator.gt, 4, True), # Greater
             Symbol(BINARY, '<', operator.lt, 4, True), # Lower
             Symbol(BINARY, '>=', operator.ge, 4, True), # Greater or Equal
             Symbol(BINARY, '<=', operator.le, 4, True), # Lower or Equal
-            Symbol(BINARY, 'IN', sql_in, 4, False), # Containment
-            Symbol(BINARY, 'LIKE', sql_like, 4, False)]) # Matching
+            Symbol(BINARY, 'IN', sql_in, 4), # Containment
+            Symbol(BINARY, 'LIKE', sql_like, 4)]) # Matching
 
         # Logical Operators
         # TODO: ALL, ANY, BETWEEN, EXISTS, SOME
         self.update([
-            Symbol(UNARY, 'NOT', operator.not_, 3, False), # Boolean NOT
-            Symbol(BINARY, 'AND', sql_and, 2, False), # Boolean AND
-            Symbol(BINARY, 'OR', sql_or, 1, False)]) # Boolean OR
+            Symbol(UNARY, 'NOT', operator.not_, 3), # Boolean NOT
+            Symbol(BINARY, 'AND', sql_and, 2), # Boolean AND
+            Symbol(BINARY, 'OR', sql_or, 1)]) # Boolean OR
 
         # Compound Operators
         # Hint: For immutable targets such as strings, numbers, and tuples,
         # the updated value is computed, but not assigned back to the input
         # variable
         self.update([
-            Symbol(BINARY, '+=', operator.iadd, 0, False),
-            Symbol(BINARY, '-=', operator.isub, 0, False),
-            Symbol(BINARY, '*=', operator.imul, 0, False),
-            Symbol(BINARY, '/=', operator.itruediv, 0, False),
-            Symbol(BINARY, '%=', operator.imod, 0, False),
-            Symbol(BINARY, '&=', operator.iand, 0, False),
-            Symbol(BINARY, '^-=', operator.ixor, 0, False),
-            Symbol(BINARY, '|*=', operator.ior, 0, False)])
+            Symbol(BINARY, '+=', operator.iadd, 0),
+            Symbol(BINARY, '-=', operator.isub, 0),
+            Symbol(BINARY, '*=', operator.imul, 0),
+            Symbol(BINARY, '/=', operator.itruediv, 0),
+            Symbol(BINARY, '%=', operator.imod, 0),
+            Symbol(BINARY, '&=', operator.iand, 0),
+            Symbol(BINARY, '^-=', operator.ixor, 0),
+            Symbol(BINARY, '|*=', operator.ior, 0)])
 
 #
 # SQL Functions
@@ -195,6 +196,18 @@ def sql_cot(x: Union[float, int, bool]) -> float:
     """SQL-COT Function."""
     return 1 / math.tan(x)
 
+def sql_date() -> datetime.date:
+    """SQL-CURRENT_DATE Function."""
+    return datetime.datetime.now().date()
+
+def sql_time() -> datetime.time:
+    """SQL-CURRENT_TIME Function."""
+    return datetime.datetime.now().time()
+
+def sql_datetime() -> datetime.datetime:
+    """SQL-CURRENT_TIMESTAMP Function."""
+    return datetime.datetime.now()
+
 class SQLFunctions(SQLOperators):
     """SQL:2016 Clause Operator and Function Vocabulary.
 
@@ -212,90 +225,92 @@ class SQLFunctions(SQLOperators):
 
         # Aggregate Functions
         self.update([
-            Symbol(FUNCTION, 'COUNT', len, 20, False),
-            Symbol(FUNCTION, 'MIN', min, 20, False),
-            Symbol(FUNCTION, 'MAX', max, 20, False),
-            Symbol(FUNCTION, 'SUM', sum, 20, False),
-            Symbol(FUNCTION, 'AVG', np.mean, 20, False),
-            Symbol(FUNCTION, 'STDDEV_POP', sql_stddev_pop, 20, False),
-            Symbol(FUNCTION, 'STDDEV_SAMP', sql_stddev_samp, 20, False),
-            Symbol(FUNCTION, 'VAR_POP', sql_var_pop, 20, False),
-            Symbol(FUNCTION, 'VAR_SAMP', sql_var_samp, 20, False),
-            Symbol(FUNCTION, 'COVAR_POP', sql_covar_pop, 20, False),
-            Symbol(FUNCTION, 'COVAR_SAMP', sql_covar_samp, 20, False)])
+            Symbol(FUNCTION, 'COUNT', len, 20),
+            Symbol(FUNCTION, 'MIN', min, 20),
+            Symbol(FUNCTION, 'MAX', max, 20),
+            Symbol(FUNCTION, 'SUM', sum, 20),
+            Symbol(FUNCTION, 'AVG', np.mean, 20),
+            Symbol(FUNCTION, 'STDDEV_POP', sql_stddev_pop, 20),
+            Symbol(FUNCTION, 'STDDEV_SAMP', sql_stddev_samp, 20),
+            Symbol(FUNCTION, 'VAR_POP', sql_var_pop, 20),
+            Symbol(FUNCTION, 'VAR_SAMP', sql_var_samp, 20),
+            Symbol(FUNCTION, 'COVAR_POP', sql_covar_pop, 20),
+            Symbol(FUNCTION, 'COVAR_SAMP', sql_covar_samp, 20)])
 
         # String Functions
         # TODO:
         # POSITION(search IN str) -> Requires RegEx Operator definition
         # QUOTE(x) Quote SQL in string x
         self.update([
-            Symbol(FUNCTION, 'ASCII', ascii, 20, False),
-            Symbol(FUNCTION, 'CHR', chr, 20, False),
-            Symbol(FUNCTION, 'CONCAT', operator.concat, 20, False),
-            Symbol(FUNCTION, 'LOCATE', sql_locate, 20, False),
-            Symbol(FUNCTION, 'LOWER', str.lower, 20, False),
-            Symbol(FUNCTION, 'UPPER', str.upper, 20, False),
-            Symbol(FUNCTION, 'LPAD', sql_lpad, 20, False),
-            Symbol(FUNCTION, 'RPAD', sql_rpad, 20, False),
-            Symbol(FUNCTION, 'LTRIM', str.lstrip, 20, False),
-            Symbol(FUNCTION, 'RTRIM', str.rstrip, 20, False),
-            Symbol(FUNCTION, 'TRIM', str.strip, 20, False),
-            Symbol(FUNCTION, 'REPEAT', sql_repeat, 20, False),
-            Symbol(FUNCTION, 'SPACE', sql_space, 20, False),
-            Symbol(FUNCTION, 'CHAR', str, 20, False),
-            Symbol(FUNCTION, 'SUBSTR', sql_substr, 20, False),
-            Symbol(FUNCTION, 'REPLACE', str.replace, 20, False),
-            Symbol(FUNCTION, 'INITCAP', str.capitalize, 20, False),
-            Symbol(FUNCTION, 'TRANSLATE', sql_translate, 20, False),
-            Symbol(FUNCTION, 'LENGTH', len, 20, False),
-            Symbol(FUNCTION, 'OCTET_LENGTH', sql_octet_length, 20, False),
-            Symbol(FUNCTION, 'GREATEST', sql_greatest, 20, False),
-            Symbol(FUNCTION, 'LEAST', sql_least, 20, False),
-            Symbol(FUNCTION, 'SOUNDEX', phonetic.soundex, 20, False),
-            Symbol(FUNCTION, 'MD5', sql_md5, 20, False),
-            Symbol(FUNCTION, 'SHA1', sql_sha1, 20, False),
-            Symbol(FUNCTION, 'UUID', uuid.uuid1, 20, False)])
+            Symbol(FUNCTION, 'ASCII', ascii, 20),
+            Symbol(FUNCTION, 'CHR', chr, 20),
+            Symbol(FUNCTION, 'CONCAT', operator.concat, 20),
+            Symbol(FUNCTION, 'LOCATE', sql_locate, 20),
+            Symbol(FUNCTION, 'LOWER', str.lower, 20),
+            Symbol(FUNCTION, 'UPPER', str.upper, 20),
+            Symbol(FUNCTION, 'LPAD', sql_lpad, 20),
+            Symbol(FUNCTION, 'RPAD', sql_rpad, 20),
+            Symbol(FUNCTION, 'LTRIM', str.lstrip, 20),
+            Symbol(FUNCTION, 'RTRIM', str.rstrip, 20),
+            Symbol(FUNCTION, 'TRIM', str.strip, 20),
+            Symbol(FUNCTION, 'REPEAT', sql_repeat, 20),
+            Symbol(FUNCTION, 'SPACE', sql_space, 20),
+            Symbol(FUNCTION, 'CHAR', str, 20),
+            Symbol(FUNCTION, 'SUBSTR', sql_substr, 20),
+            Symbol(FUNCTION, 'REPLACE', str.replace, 20),
+            Symbol(FUNCTION, 'INITCAP', str.capitalize, 20),
+            Symbol(FUNCTION, 'TRANSLATE', sql_translate, 20),
+            Symbol(FUNCTION, 'LENGTH', len, 20),
+            Symbol(FUNCTION, 'OCTET_LENGTH', sql_octet_length, 20),
+            Symbol(FUNCTION, 'GREATEST', sql_greatest, 20),
+            Symbol(FUNCTION, 'LEAST', sql_least, 20),
+            Symbol(FUNCTION, 'SOUNDEX', phonetic.soundex, 20),
+            Symbol(FUNCTION, 'MD5', sql_md5, 20),
+            Symbol(FUNCTION, 'SHA1', sql_sha1, 20),
+            Symbol(FUNCTION, 'UUID', uuid.uuid1, 20)])
 
         # Trigonometric Functions
         self.update([
-            Symbol(FUNCTION, 'ASIN', math.asin, 20, False),
-            Symbol(FUNCTION, 'ACOS', math.acos, 20, False),
-            Symbol(FUNCTION, 'ATAN', math.atan, 20, False),
-            Symbol(FUNCTION, 'ATAN2', math.atan2, 20, False),
-            Symbol(FUNCTION, 'SIN', math.sin, 20, False),
-            Symbol(FUNCTION, 'COS', math.cos, 20, False),
-            Symbol(FUNCTION, 'TAN', math.tan, 20, False),
-            Symbol(FUNCTION, 'COT', sql_cot, 20, False),
-            Symbol(FUNCTION, 'SINH', math.sinh, 20, False),
-            Symbol(FUNCTION, 'COSH', math.cosh, 20, False),
-            Symbol(FUNCTION, 'TANH', math.tanh, 20, False),
-            Symbol(FUNCTION, 'ATANH', math.atanh, 20, False)])
+            Symbol(FUNCTION, 'ASIN', math.asin, 20),
+            Symbol(FUNCTION, 'ACOS', math.acos, 20),
+            Symbol(FUNCTION, 'ATAN', math.atan, 20),
+            Symbol(FUNCTION, 'ATAN2', math.atan2, 20),
+            Symbol(FUNCTION, 'SIN', math.sin, 20),
+            Symbol(FUNCTION, 'COS', math.cos, 20),
+            Symbol(FUNCTION, 'TAN', math.tan, 20),
+            Symbol(FUNCTION, 'COT', sql_cot, 20),
+            Symbol(FUNCTION, 'SINH', math.sinh, 20),
+            Symbol(FUNCTION, 'COSH', math.cosh, 20),
+            Symbol(FUNCTION, 'TANH', math.tanh, 20),
+            Symbol(FUNCTION, 'ATANH', math.atanh, 20)])
 
         # Numeric Functions
         self.update([
-            Symbol(FUNCTION, 'ABS', abs, 20, False),
-            Symbol(FUNCTION, 'SIGN', np.sign, 20, False),
-            Symbol(FUNCTION, 'MOD', operator.mod, 20, False),
-            Symbol(FUNCTION, 'CEIL', math.ceil, 20, False),
-            Symbol(FUNCTION, 'FLOOR', math.floor, 20, False),
-            Symbol(FUNCTION, 'ROUND', round, 20, False),
-            Symbol(FUNCTION, 'TRUNCATE', math.trunc, 20, False),
-            Symbol(FUNCTION, 'SQRT', math.sqrt, 20, False),
-            Symbol(FUNCTION, 'EXP', math.exp, 20, False),
-            Symbol(FUNCTION, 'POWER', pow, 20, False),
-            Symbol(FUNCTION, 'LN', math.log, 20, False),
-            Symbol(FUNCTION, 'LOG', math.log, 20, False),
-            Symbol(FUNCTION, 'LOG10', math.log10, 20, False),
-            Symbol(FUNCTION, 'SETSEED', random.seed, 20, False),
-            Symbol(FUNCTION, 'RAND', random.random, 20, False)])
+            Symbol(FUNCTION, 'ABS', abs, 20),
+            Symbol(FUNCTION, 'SIGN', np.sign, 20),
+            Symbol(FUNCTION, 'MOD', operator.mod, 20),
+            Symbol(FUNCTION, 'CEIL', math.ceil, 20),
+            Symbol(FUNCTION, 'FLOOR', math.floor, 20),
+            Symbol(FUNCTION, 'ROUND', round, 20),
+            Symbol(FUNCTION, 'TRUNCATE', math.trunc, 20),
+            Symbol(FUNCTION, 'SQRT', math.sqrt, 20),
+            Symbol(FUNCTION, 'EXP', math.exp, 20),
+            Symbol(FUNCTION, 'POWER', pow, 20),
+            Symbol(FUNCTION, 'LN', math.log, 20),
+            Symbol(FUNCTION, 'LOG', math.log, 20),
+            Symbol(FUNCTION, 'LOG10', math.log10, 20),
+            Symbol(FUNCTION, 'SETSEED', random.seed, 20),
+            Symbol(FUNCTION, 'RAND', random.random, 20)])
 
         # Date and time functions
         # Allow Syntax: EXTRACT(YEAR FROM x)
+        # -> add binding operator 'FROM'
+        # -> add binding operator 'AS'
         self.update([
-            Symbol(FUNCTION, 'CURRENT_DATE', abs, 20, False),
-            Symbol(FUNCTION, 'CURRENT_TIME', abs, 20, False),
-            Symbol(FUNCTION, 'CURRENT_TIMESTAMP', abs, 20, False),
-            Symbol(FUNCTION, 'EXTRACT', abs, 20, False),
+            Symbol(CONSTANT, 'CURRENT_DATE', sql_date, factory=True),
+            Symbol(CONSTANT, 'CURRENT_TIME', sql_time, factory=True),
+            Symbol(CONSTANT, 'CURRENT_TIMESTAMP', sql_datetime, factory=True),
+            # Symbol(FUNCTION, 'EXTRACT', abs, 20),
             # EXTRACT(MONTH FROM x)
             # EXTRACT(DAY FROM x)
             # EXTRACT(HOUR FROM x)

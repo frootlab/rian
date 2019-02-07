@@ -105,6 +105,7 @@ class Symbol:
     value: Any
     priority: int = 0
     builtin: bool = False
+    factory: bool = False
 
     def __post_init__(self) -> None:
         check.has_type('type', self.type, int)
@@ -113,36 +114,51 @@ class Symbol:
             check.is_callable('value', self.value)
         check.has_type('priority', self.priority, int)
         check.has_type('builtin', self.builtin, bool)
+        check.has_type('factory', self.factory, bool)
 
 class Vocabulary(set):
     """Base Class for Parser Vocabularies."""
 
-    def get(
-            self, sid: int,
+    def get(self, type: int, key: str) -> Symbol:
+        """Get symbol from vocabulary."""
+        for sym in self:
+            if sym.type == type and sym.key == key:
+                return sym
+        raise IndexError() # TODO
+
+    def search(
+            self, type: Optional[int] = None,
             builtin: Optional[bool] = None) -> Dict[str, Symbol]:
-        """Get symbols of given type.
+        """Search for symbols within the vocabulary.
 
         Args:
-            sid: Integer parameter representing the type of symbols. Meaningfull
-                types are given by module contants.
-            builtin: Boolean parameter, which determines if ...
+            type: Integer parameter representing the type of symbols.
+            builtin: Optional Boolean parameter representing the 'builtin' flag
+                of the symbols. For 'True', only symbols are returned, that are
+                marked to be builtin symbols, for 'False' only symbols, that are
+                marked not to be builtin. By default the 'builtin' flag is
+                ignored in the search result.
 
         Returns:
             OrderedDict containing Symbols in reverse lexical order to
             prioritize symbols with greater lenght.
 
         """
-        # Filter by type
-        key: AnyOp = lambda sym: sym.type == sid
-        symbols = filter(key, self)
+        key: AnyOp
+        symbols = filter(None, self)
 
-        # Optionally filter by builtin
+        # Filter by type
+        if type is not None:
+            key = lambda sym: sym.type == type
+            symbols = filter(key, symbols)
+
+        # Filter by builtin
         if builtin is not None:
             key = lambda sym: sym.builtin == builtin
             symbols = filter(key, symbols)
 
         # Create and return OrderedDict in reverse sort order to prioritize
-        # longer sombols
+        # symbols with greater length
         items = iter((sym.key, sym) for sym in symbols)
         return collections.OrderedDict(sorted(items, reverse=True))
 
@@ -254,7 +270,7 @@ class PyExprEval(Vocabulary):
         self.update([
             # Sequence Operators
             Symbol(BINARY, ',', _pack, 0, True),
-            Symbol(BINARY, '||', concat, 1, False),
+            Symbol(BINARY, '||', concat, 1),
 
             # Arithmetic Operators
             Symbol(UNARY, '-', operator.neg, 0, True),
@@ -263,7 +279,7 @@ class PyExprEval(Vocabulary):
             Symbol(BINARY, '*', operator.mul, 3, True),
             Symbol(BINARY, '/', operator.truediv, 4, True),
             Symbol(BINARY, '%', operator.mod, 4, True),
-            Symbol(BINARY, '^', math.pow, 6, False),
+            Symbol(BINARY, '^', math.pow, 6),
 
             # Ordering Operators
             Symbol(BINARY, '==', operator.eq, 1, True),
@@ -282,27 +298,27 @@ class PyExprEval(Vocabulary):
             Symbol(FUNCTION, 'round', round, 0, True),
             Symbol(FUNCTION, 'min', min, 0, True),
             Symbol(FUNCTION, 'max', max, 0, True),
-            Symbol(FUNCTION, 'sin', math.sin, 0, False),
-            Symbol(FUNCTION, 'cos', math.cos, 0, False),
-            Symbol(FUNCTION, 'tan', math.tan, 0, False),
-            Symbol(FUNCTION, 'asin', math.asin, 0, False),
-            Symbol(FUNCTION, 'acos', math.acos, 0, False),
-            Symbol(FUNCTION, 'atan', math.atan, 0, False),
-            Symbol(FUNCTION, 'sqrt', math.sqrt, 0, False),
-            Symbol(FUNCTION, 'log', math.log, 0, False),
-            Symbol(FUNCTION, 'ceil', math.ceil, 0, False),
-            Symbol(FUNCTION, 'floor', math.floor, 0, False),
-            Symbol(FUNCTION, 'exp', math.exp, 0, False),
-            Symbol(FUNCTION, 'random', rnd, 0, False),
-            Symbol(FUNCTION, 'fac', math.factorial, 0, False),
-            Symbol(FUNCTION, 'pow', math.pow, 0, False),
-            Symbol(FUNCTION, 'atan2', math.atan2, 0, False),
-            Symbol(FUNCTION, 'if', iif, 0, False),
-            Symbol(FUNCTION, 'concat', concat, 0, False),
+            Symbol(FUNCTION, 'sin', math.sin, 0),
+            Symbol(FUNCTION, 'cos', math.cos, 0),
+            Symbol(FUNCTION, 'tan', math.tan, 0),
+            Symbol(FUNCTION, 'asin', math.asin, 0),
+            Symbol(FUNCTION, 'acos', math.acos, 0),
+            Symbol(FUNCTION, 'atan', math.atan, 0),
+            Symbol(FUNCTION, 'sqrt', math.sqrt, 0),
+            Symbol(FUNCTION, 'log', math.log, 0),
+            Symbol(FUNCTION, 'ceil', math.ceil, 0),
+            Symbol(FUNCTION, 'floor', math.floor, 0),
+            Symbol(FUNCTION, 'exp', math.exp, 0),
+            Symbol(FUNCTION, 'random', rnd, 0),
+            Symbol(FUNCTION, 'fac', math.factorial, 0),
+            Symbol(FUNCTION, 'pow', math.pow, 0),
+            Symbol(FUNCTION, 'atan2', math.atan2, 0),
+            Symbol(FUNCTION, 'if', iif, 0),
+            Symbol(FUNCTION, 'concat', concat, 0),
 
             # Constants
-            Symbol(CONSTANT, 'E', math.e, 0, False),
-            Symbol(CONSTANT, 'PI', math.pi, 0, False)])
+            Symbol(CONSTANT, 'E', math.e, 0),
+            Symbol(CONSTANT, 'PI', math.pi, 0)])
 
 #
 # Tokens
@@ -361,8 +377,8 @@ class Expression:
         stack = []
         tokens = []
 
-        unary = self._vocabulary.get(UNARY)
-        binary = self._vocabulary.get(BINARY)
+        unary = self._vocabulary.search(type=UNARY)
+        binary = self._vocabulary.search(type=BINARY)
 
         for tok in self._tokens:
             if tok.type == CONSTANT:
@@ -376,7 +392,7 @@ class Expression:
                 b, a = stack.pop(), stack.pop()
                 value = binary[tok.id].value(a.value, b.value)
                 stack.append(Token(CONSTANT, 0, 0, value, tok.key))
-            elif tok.type == UNARY and stack:
+            elif stack and tok.type == UNARY:
                 if not isinstance(tok.id, str):
                     raise ValueError() # TODO
                 a = stack.pop()
@@ -408,9 +424,9 @@ class Expression:
         values = dict(zip(self.variables, args))
         values.update(kwds)
         stack = []
-        unary = self._vocabulary.get(UNARY)
-        binary = self._vocabulary.get(BINARY)
-        functions = self._vocabulary.get(FUNCTION)
+        unary = self._vocabulary.search(type=UNARY)
+        binary = self._vocabulary.search(type=BINARY)
+        functions = self._vocabulary.search(type=FUNCTION)
         for tok in self._tokens:
             if tok.type == CONSTANT:
                 stack.append(tok.value)
@@ -451,24 +467,27 @@ class Expression:
         if not compile:
             return self.eval
 
-        vocabulary = self._vocabulary
-
         # Get a string representation of the expression, which replaces all not
         # builtin operators by surrogate functions.
-        translate = self._get_surrogates()
-        string = self.as_string(translate=translate)
+        tran = self._get_tran()
+        string = self.as_string(translate=tran)
 
         # Create globals dictionary, which includes all functions, that are
         # found in the vocabulary and surrogate functions for not builtin
         # operators and constants
         glob = {'__builtins__': None}
-        symbols = vocabulary.get(FUNCTION)
+        voc = self._vocabulary
+        symbols = voc.search(type=FUNCTION)
         for key, sym in symbols.items():
             glob[key] = sym.value
-        for sid in [UNARY, BINARY, CONSTANT]:
-            symbols = vocabulary.get(sid, builtin=False)
-            for key, sur in translate[sid].items():
-                glob[sur] = symbols[key].value
+        for tid in [UNARY, BINARY, CONSTANT]:
+            symbols = voc.search(type=tid, builtin=False)
+            for key, sur in tran[tid].items():
+                sym = symbols[key]
+                if sym.factory:
+                    glob[sur] = sym.value()
+                else:
+                    glob[sur] = sym.value
 
         # Create lambda term
         term = f"lambda {','.join(self.variables)}:{string}"
@@ -476,17 +495,17 @@ class Expression:
 
     def as_string(self, translate: Optional[dict] = None) -> str:
         """ """
-        voc = translate or {}
-        voc_constant = voc.get(CONSTANT, {})
-        voc_binary = voc.get(BINARY, {})
-        voc_unary = voc.get(UNARY, {})
-        voc_function = voc.get(FUNCTION, {})
+        tran = translate or {}
+        tran_constant = tran.get(CONSTANT, {})
+        tran_binary = tran.get(BINARY, {})
+        tran_unary = tran.get(UNARY, {})
+        tran_function = tran.get(FUNCTION, {})
 
         stack = []
         for tok in self._tokens:
             if tok.type == CONSTANT:
-                if tok.key in voc_constant:
-                    stack.append(f'{voc_constant[tok.key]}')
+                if tok.key in tran_constant:
+                    stack.append(f'{tran_constant[tok.key]}')
                 else:
                     stack.append(tok.key)
             elif tok.type == BINARY:
@@ -495,8 +514,8 @@ class Expression:
                 f = tok.id
                 if f == ',':
                     stack.append(f'{a}, {b}')
-                elif f in voc_binary:
-                    stack.append(f'{voc_binary[f]}({a}, {b})')
+                elif f in tran_binary:
+                    stack.append(f'{tran_binary[f]}({a}, {b})')
                 else:
                     stack.append(f'({a} {f} {b})')
             elif tok.type == VARIABLE and isinstance(tok.id, str):
@@ -506,15 +525,15 @@ class Expression:
                 f = tok.id
                 if f == '-':
                     stack.append(f'(-{a})')
-                elif f in voc_unary:
-                    stack.append(f'{voc_unary[f]}({a})')
+                elif f in tran_unary:
+                    stack.append(f'{tran_unary[f]}({a})')
                 else:
                     stack.append(f'{f}({a})')
             elif tok.type == FUNCTION:
                 a = stack.pop()
                 f = stack.pop()
-                if f in voc_function:
-                    stack.append(f'{voc_function[f]}({a})')
+                if f in tran_function:
+                    stack.append(f'{tran_function[f]}({a})')
                 else:
                     stack.append(f'{f}({a})')
             else:
@@ -552,7 +571,7 @@ class Expression:
         if self._variables:
             return self._variables
 
-        funcs = self._vocabulary.get(FUNCTION)
+        funcs = self._vocabulary.search(type=FUNCTION)
         self._variables = tuple(sym for sym in self.symbols if sym not in funcs)
         return self._variables
 
@@ -565,44 +584,44 @@ class Expression:
         self._origin = tuple(invert.get(v, v) for v in self.variables)
         return self._origin
 
-    def _get_surrogates(self) -> dict:
+    def _get_tran(self) -> dict:
         # Search vocabulary for non-builtin symbols
-        vocabulary = self._vocabulary
-        occupied = set(sym.key for sym in vocabulary).union(self.symbols)
-        translation: Dict[int, Dict[str, str]] = {}
+        voc = self._vocabulary
+        occupied = set(sym.key for sym in voc).union(self.symbols)
+        tran: Dict[int, Dict[str, str]] = {}
         nextkey: Callable[[], str]
 
         # Create surrogates for unary operators
         counter = itertools.count()
         nextkey = lambda: 'u{i}'.format(i=next(counter))
-        translation[UNARY] = {}
-        for key in vocabulary.get(UNARY, builtin=False):
+        tran[UNARY] = {}
+        for key in voc.search(type=UNARY, builtin=False):
             newkey = nextkey()
             while newkey in occupied:
                 newkey = nextkey()
-            translation[UNARY][key] = newkey
+            tran[UNARY][key] = newkey
 
         # Create surrogates for binary operators
         counter = itertools.count()
         nextkey = lambda: 'b{i}'.format(i=next(counter))
-        translation[BINARY] = {}
-        for key in vocabulary.get(BINARY, builtin=False):
+        tran[BINARY] = {}
+        for key in voc.search(type=BINARY, builtin=False):
             newkey = nextkey()
             while newkey in occupied:
                 newkey = nextkey()
-            translation[BINARY][key] = newkey
+            tran[BINARY][key] = newkey
 
         # Create surrogates for constants
         counter = itertools.count()
         nextkey = lambda: 'C{i}'.format(i=next(counter))
-        translation[CONSTANT] = {}
-        for key in vocabulary.get(CONSTANT, builtin=False):
+        tran[CONSTANT] = {}
+        for key in voc.search(type=CONSTANT, builtin=False):
             newkey = nextkey()
             while newkey in occupied:
                 newkey = nextkey()
-            translation[CONSTANT][key] = newkey
+            tran[CONSTANT][key] = newkey
 
-        return translation
+        return tran
 
 class Parser:
     _vocabulary: Vocabulary
@@ -663,8 +682,8 @@ class Parser:
         self._cur_offset = 0
 
         # Update dictionaries with unary and binary operators
-        self._unary = self._vocabulary.get(UNARY)
-        self._binary = self._vocabulary.get(BINARY)
+        self._unary = self._vocabulary.search(type=UNARY)
+        self._binary = self._vocabulary.search(type=BINARY)
 
         operators: List[Token] = []
         tokens: List[Token] = []
@@ -849,20 +868,15 @@ class Parser:
         return r
 
     def _is_constant(self) -> bool:
+        voc = self._vocabulary
         expr = self._expression
-        for key, sym in self._vocabulary.get(CONSTANT).items():
+        for key, sym in voc.search(type=CONSTANT).items():
             start = self._cur_pos
             end = start + len(key)
             if key != expr[start:end]:
                 continue
-            if len(expr) <= end: # TODO: Whats the sense?
-                self._cur_val = sym.value
-                self._cur_pos = end
-                self._cur_key = key
-                self._cur_id = key
-                return True
-            if not expr[end].isalnum() and expr[end] != "_":
-                self._cur_val = sym.value
+            if len(expr) <= end or expr[end] != '_' and not expr[end].isalnum():
+                self._cur_val = sym.value() if sym.factory else sym.value
                 self._cur_pos = end
                 self._cur_key = key
                 self._cur_id = key
