@@ -22,7 +22,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 def soundex(string: str) -> str:
-    """Calculate soundex index.
+    """Calculate Soundex Index.
 
     Soundex is a phonetic algorithm for indexing names by sound, as pronounced
     in English. The goal is for homophones to be encoded to the same
@@ -30,21 +30,22 @@ def soundex(string: str) -> str:
     spelling.
 
     """
-    # Clear string
+    # Clear String
     string = ''.join(filter(str.isalpha, string)).upper()
     if len(string) < 2:
         return string.ljust(4, '0')[:4]
 
-    # Apply soundex replacement rules
+    # Apply Soundex Replacement Rules
     first = string[0]
     src = 'AEIOUYHWBFPVCGJKQSXZDTLMNR'
-    tgt = '00000000111122222222334556'
+    tgt = '000000**111122222222334556'
     trans = str.maketrans(src, tgt)
-    string = string.translate(trans).replace('0', '')
+    string = string.translate(trans).replace('*', '')
     for c in '123456':
         string = string.replace(c * 2, c)
+    string = string.replace('0', '')
 
-    # Apply representation
+    # Apply Representation
     if first.translate(trans) == string[0]:
         string = string[1:]
     return first + string.ljust(3, '0')[:3]
