@@ -22,7 +22,7 @@ Nemoa utilizes methods from probabilistic graphical modeling [PGM]_, machine
 learning [ML]_ and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.564'
+__version__ = '0.5.566'
 __status__ = 'Development'
 __description__ = 'enterprise data analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
@@ -33,7 +33,7 @@ __author__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'
 __maintainer__ = 'Patrick Michl'
 __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
-__credits__ = ['Willi Jäger', 'Rainer König']
+__credits__ = ['Willi Jäger']
 __docformat__ = 'google'
 
 from nemoa import session

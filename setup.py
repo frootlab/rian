@@ -1,5 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright (c) 2013-2019 Patrick Michl
+#
+# This file is part of nemoa, https://frootlab.github.io/nemoa
+#
+#  nemoa is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+#  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License along with
+#  nemoa. If not, see <http://www.gnu.org/licenses/>.
+#
 """Setuptools based installation."""
 
 __author__ = 'Patrick Michl'
@@ -8,9 +23,10 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import os
+import pathlib
 import re
 import sys
-from pathlib import Path
+import subprocess
 import setuptools
 from setuptools.command.install import install as Installer
 
@@ -22,21 +38,18 @@ class CustomInstaller(Installer): # type: ignore
     """Customized setuptools install command."""
 
     def run(self) -> None:
-        """Run installer."""
         Installer.run(self)
-        # Run post installation script
-        import subprocess
         subprocess.call([sys.executable, __file__, 'postinstall'])
 
 def get_vars() -> dict:
-    """Get __VAR__ module variables from package __init__ file."""
-    text = Path(PKGNAME, '__init__.py').read_text()
+    """Get module variables from __init__ file."""
+    text = pathlib.Path(PKGNAME, '__init__.py').read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
     pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
     dvars = {}
-    for match in re.finditer(pattern, text, re.M):
-        dvars[str(match.group(1))] = str(match.group(2))
+    for mo in re.finditer(pattern, text, re.M):
+        dvars[str(mo.group(1))] = str(mo.group(2))
     return dvars
 
 def install() -> None:
@@ -49,22 +62,29 @@ def install() -> None:
         name=PKGNAME,
         version=pkg_vars['version'],
         description=pkg_vars['description'],
-        long_description=Path('.', 'README.md').read_text(),
+        long_description=pathlib.Path('.', 'README.rst').read_text(),
+        long_description_content_type='text/x-rst',
         classifiers=[
-            'Development Status :: 3 - Alpha',
+            'Development Status :: 2 - Pre-Alpha',
             'Intended Audience :: Science/Research',
-            'Topic :: Scientific/Engineering',
-            'Operating System :: OS Independent',
-            'License :: OSI Approved :: GPLv3',
+            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
             'Programming Language :: Python :: 3',
-    		'Programming Language :: Python :: 3.7'],
+    		'Programming Language :: Python :: 3.7',
+            'Operating System :: OS Independent',
+            'Topic :: Scientific/Engineering :: Artificial Intelligence',
+            'Topic :: Scientific/Engineering :: Information Analysis',
+            'Topic :: Database :: Database Engines/Servers',
+            'Topic :: Software Development :: Libraries :: Python Modules'],
         keywords=(
             "data-analysis "
+            "enterprise-data-analysis "
             "data-science "
+            "collaborative-data-science "
             "data-visualization "
             "machine-learning "
+            "artificial-intelligence "
             "deep-learning "
-            "probabilistic-graphical-models "),
+            "probabilistic-graphical-model "),
         url=pkg_vars['url'],
         author=pkg_vars['author'],
         author_email=pkg_vars['email'],
@@ -113,17 +133,17 @@ def post_install() -> None:
     print('running postinstall')
 
     # copy user workspaces
-    user_src_base = str(Path('.', 'data', 'user'))
+    user_src_base = str(pathlib.Path('.', 'data', 'user'))
     user_tgt_base = appdirs.user_data_dir(
         appname=PKGNAME, appauthor=AUTHOR)
-    user_tgt_base = str(Path(user_tgt_base, 'workspaces'))
+    user_tgt_base = str(pathlib.Path(user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
     # copy site workspaces
-    site_src_base = str(Path('.', 'data', 'site'))
+    site_src_base = str(pathlib.Path('.', 'data', 'site'))
     site_tgt_base = appdirs.site_data_dir(
         appname=PKGNAME, appauthor=AUTHOR)
-    site_tgt_base = str(Path(site_tgt_base, 'workspaces'))
+    site_tgt_base = str(pathlib.Path(site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 
 if __name__ == '__main__':
