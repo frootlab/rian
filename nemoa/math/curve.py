@@ -30,8 +30,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import numpy as np
-from nemoa.base import array, call, catalog
-from nemoa.types import Any, NpArray, NpArrayLike, StrList
+from flib import array, call, catalog
+from flib.types import Any, NpArray, NpArrayLike, StrList
 
 #
 # Define Catalog Categories

@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import otree
+from flib import otree
 from nemoa.dataset.exports import archive, text, image
 
 def filetypes(filetype = None):
@@ -53,7 +53,7 @@ def save(
     if not otree.has_base(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
-    from nemoa.base import env
+    from flib import env
     import nemoa
 
     # get directory, filename and fileextension

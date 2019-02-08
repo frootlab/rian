@@ -33,9 +33,9 @@ import queue
 import sys
 import threading
 import time
-from nemoa.base import env, pkg
-from nemoa.types import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
-from nemoa.types import Module, OptStr
+from flib import env, pkg
+from flib.types import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
+from flib.types import Module, OptStr
 
 #
 # TTY Controle Classes

@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import array, env
+from flib import array, env
 from nemoa.io import csv, ini
 
 def filetypes():

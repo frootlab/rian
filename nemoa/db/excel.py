@@ -28,7 +28,7 @@ except ImportError as err:
         "requires package openpyxl: "
         "https://pypi.org/project/openpyxl") from err
 
-from nemoa.base import attrib
+from flib import attrib
 from nemoa.db import table
 
 #

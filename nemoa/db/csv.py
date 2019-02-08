@@ -21,11 +21,11 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import attrib
+from flib import attrib
 from nemoa.db import table
 from nemoa.io import csv, ini
-from nemoa.types import Any, FileRef
-from nemoa.errors import ConnectError, DisconnectError
+from flib.types import Any, FileRef
+from flib.errors import ConnectError, DisconnectError
 
 #
 # CSV Table Proxy Class

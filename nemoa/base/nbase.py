@@ -22,8 +22,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from nemoa.base import check, mapping, env, otree
-from nemoa.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
+from flib import check, mapping, env, otree
+from flib.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.

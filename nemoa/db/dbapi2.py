@@ -44,15 +44,15 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from abc import ABC, abstractmethod
-from nemoa.base import attrib
-from nemoa.types import Any, OptList, OptInt, OptBool
-from nemoa.errors import NemoaError
+from flib import attrib
+from flib.types import Any, OptList, OptInt, OptBool
+from flib.errors import UserError
 
 #
 # DB-API 2.0 Exceptions
 #
 
-class Error(NemoaError):
+class Error(UserError):
     """DB-API Error.
 
     Exception that is the base class of all other error exceptions. You can use
@@ -61,7 +61,7 @@ class Error(NemoaError):
     subclass of the Python StandardError (defined in the module exceptions).
     """
 
-class Warning(NemoaError): # pylint: disable=W0622
+class Warning(UserError): # pylint: disable=W0622
     """DB-API Warning.
 
     Exception raised for important warnings like data truncations while

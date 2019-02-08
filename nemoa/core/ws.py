@@ -24,11 +24,11 @@ __docformat__ = 'google'
 import datetime
 from pathlib import Path
 from typing import ClassVar, Optional
-from nemoa.base import attrib, env
+from flib import attrib, env
 from nemoa.core import dcmeta
-from nemoa.errors import FileFormatError
+from flib.errors import FileFormatError
 from nemoa.io import ini, zip as archive
-from nemoa.types import StrList, PathLike, OptBytes, OptPathLike
+from flib.types import StrList, PathLike, OptBytes, OptPathLike
 
 class Workspace(archive.File, attrib.Group):
     """Workspaces.

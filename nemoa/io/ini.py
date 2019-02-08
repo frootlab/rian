@@ -25,10 +25,10 @@ from configparser import ConfigParser
 from io import StringIO
 import re
 from typing import cast
-from nemoa.base import literal, check
+from flib import literal, check
 from nemoa.io import plain
-from nemoa.types import OptBool, OptStr, StrDict
-from nemoa.types import Union, Optional, OptType, Dict, FileRef
+from flib.types import OptBool, OptStr, StrDict
+from flib.types import Union, Optional, OptType, Dict, FileRef
 
 #
 # Structural Types
@@ -54,7 +54,7 @@ def load(
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             mode.
         scheme: Dictionary of dictionaries, which determines the structure of
             the configuration dictionary. If scheme is None, the INI-file is
@@ -67,10 +67,10 @@ def load(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :func:`literal.decode <nemoa.base.literal.decode>`.
+            :func:`literal.decode <flib.literal.decode>`.
         autocast: If no scheme is given autocast determines, if the values are
             automatically converted to types, estimated by the function
-            :func:`literal.estimate <nemoa.base.literal.estimate>`
+            :func:`literal.estimate <flib.literal.estimate>`
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non empty, non
             comment line in the string identifies a section.
@@ -101,10 +101,10 @@ def decode(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :func:`literal.decode <nemoa.base.literal.decode>`.
+            :func:`literal.decode <flib.literal.decode>`.
         autocast: If no scheme is given autocast determines, if the values are
             automatically converted to types, estimated by the function
-            :func:`literal.estimate <nemoa.base.literal.estimate>`
+            :func:`literal.estimate <flib.literal.estimate>`
         flat: Determines if the desired INI format structure contains sections
             or not. By default sections are used, if the first non blank, non
             comment line in the string identifies a section.
@@ -163,7 +163,7 @@ def save(
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in writing
+            <flib.abc.FileAccessor>` or an opened file object in writing
             mode.
         flat: Determines if the desired INI format structure contains sections.
             By default sections are used, if the dictionary contains
@@ -242,7 +242,7 @@ def get_comment(file: FileRef) -> str:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             or writing mode.
 
     Returns:
@@ -271,10 +271,10 @@ def parse(
             the values of the inner dictionaries define the type of the
             parameters by their own type, e.g. str, int, float etc. Accepted
             types can be found in the documentation of the function
-            :func:`literal.decode <nemoa.base.literal.decode>`.
+            :func:`literal.decode <flib.literal.decode>`.
         autocast: If no scheme is given autocast determines, if the values are
             automatically converted to types, estimated by the function
-            :func:`literal.estimate <nemoa.base.literal.estimate>`
+            :func:`literal.estimate <flib.literal.estimate>`
 
     Return:
         Structured configuration dictionary.

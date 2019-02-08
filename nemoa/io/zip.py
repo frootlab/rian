@@ -27,11 +27,11 @@ from zipfile import BadZipFile, ZipFile, ZipInfo
 import io
 from pathlib import Path, PurePath
 from typing import Any, List, Optional
-from nemoa.base import abc, env
-from nemoa.errors import DirNotEmptyError, FileNotGivenError
-from nemoa.types import BinaryFileLike, BytesLike, OptBytes, OptStr, OptPathLike
-from nemoa.types import PathLike, PathLikeList, ErrMeta, ErrType, ErrStack
-from nemoa.types import FileLike, StrList, OptPath, AnyOp
+from flib import abc, env
+from flib.errors import DirNotEmptyError, FileNotGivenError
+from flib.types import BinaryFileLike, BytesLike, OptBytes, OptStr, OptPathLike
+from flib.types import PathLike, PathLikeList, ErrMeta, ErrType, ErrStack
+from flib.types import FileLike, StrList, OptPath, AnyOp
 
 #
 # Class for ZipFiles
@@ -205,7 +205,7 @@ class File:
                 be written by setting the argument is_dir to True.
 
         Returns:
-            :class:`File accessor <nemoa.base.abc.FileAccessor>` to ZipFile
+            :class:`File accessor <flib.abc.FileAccessor>` to ZipFile
             member.
 
         """

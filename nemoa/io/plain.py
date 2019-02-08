@@ -24,7 +24,7 @@ __docformat__ = 'google'
 import contextlib
 import io
 from nemoa.io import FileConnector, FileInfo
-from nemoa.types import StrList, Iterator, FileRef, OptStr
+from flib.types import StrList, Iterator, FileRef, OptStr
 
 #
 # Module Attributes
@@ -61,7 +61,7 @@ def openx(file: FileRef, mode: str = 'rt') -> IterTextIO:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             or writing mode.
         mode: String, which characters specify the mode in which the file stream
             is wrapped. The default mode is reading mode. Suported characters
@@ -93,7 +93,7 @@ def load(file: FileRef) -> str:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             or writing mode.
 
     Returns:
@@ -111,7 +111,7 @@ def save(text: str, file: FileRef) -> None:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in writing
+            <flib.abc.FileAccessor>` or an opened file object in writing
             mode.
 
     """
@@ -125,7 +125,7 @@ def get_comment(file: FileRef) -> str:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             mode.
 
     Returns:
@@ -150,7 +150,7 @@ def get_content(file: FileRef, lines: int = 0) -> StrList:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             mode.
         lines: Number of content lines, that are returned. By default all lines
             are returned.
@@ -177,7 +177,7 @@ def get_name(file: FileRef) -> OptStr:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, a :class:`file accessor
-            <nemoa.base.abc.FileAccessor>` or an opened file object in reading
+            <flib.abc.FileAccessor>` or an opened file object in reading
             or writing mode.
 
     Returns:

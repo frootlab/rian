@@ -11,7 +11,7 @@ import types
 from typing import Any, Callable, ClassVar, Dict, Hashable, IO, Iterable
 from typing import Iterator, List, Mapping, Optional, Sequence, Set, Tuple
 from typing import Type, TypeVar, Union, Container, Sized, Generic
-from nemoa.base import abc
+from flib import abc
 
 # Type-Variables for Generic Structural Types
 S = TypeVar('S')

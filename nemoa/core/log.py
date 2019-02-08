@@ -31,10 +31,10 @@ import importlib
 import logging
 import warnings
 from pathlib import Path
-from nemoa.base import attrib, env, abc
-from nemoa.errors import ExistsError, NotExistsError
-from nemoa.types import void, Any, AnyOp, ClassVar, PathLike, StrList
-from nemoa.types import StrOrInt, OptPath, Void
+from flib import attrib, env, abc
+from flib.errors import ExistsError, NotExistsError
+from flib.types import void, Any, AnyOp, ClassVar, PathLike, StrList
+from flib.types import StrOrInt, OptPath, Void
 
 #
 # Logger Class

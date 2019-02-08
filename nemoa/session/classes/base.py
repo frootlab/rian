@@ -9,11 +9,10 @@ import glob
 import imp
 import logging
 import os
-import sys
 import traceback
+from flib import env, stack
 import nemoa
 from nemoa import workspace
-from nemoa.base import env, pkg, stack
 from nemoa.core import tty
 from nemoa.io import ini
 
@@ -73,9 +72,6 @@ class Session:
 
         # reset workspace to default values
         self._set_workspace_reset()
-
-        # initialize exception handler
-        # self._init_exception_handler()
 
         # update basepaths from user configuration
         configfile = self._config['default']['path']['baseconf']

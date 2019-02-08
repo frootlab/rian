@@ -29,7 +29,7 @@ except ImportError as err:
         "https://matplotlib.org") from err
 
 import matplotlib.pyplot as plt
-from nemoa.types import Any, OptDict
+from flib.types import Any, OptDict
 
 #
 # Plot Class

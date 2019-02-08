@@ -23,8 +23,8 @@ __docformat__ = 'google'
 
 from datetime import datetime as Date
 from typing import Any
-from nemoa.base import attrib
-from nemoa.types import StrList
+from flib import attrib
+from flib.types import StrList
 
 
 # Dublin Core (DC) Attributes

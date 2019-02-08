@@ -9,7 +9,7 @@ import os
 import networkx as nx
 import numpy as np
 import nemoa
-from nemoa.base import call, otree
+from flib import call, otree
 from nemoa.plot import Plot, network, heatmap, histogram
 
 def filetypes():

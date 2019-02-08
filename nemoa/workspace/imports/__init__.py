@@ -27,7 +27,7 @@ def load(arg, base = None, filetype = None, **kwds):
     """Import workspace dictionary from file or workspace."""
 
     import os
-    from nemoa.base import env
+    from flib import env
 
     if os.path.isfile(arg):
         path = arg

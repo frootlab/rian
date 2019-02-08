@@ -23,13 +23,13 @@ __docformat__ = 'google'
 
 import types
 from typing import Any, NewType, Tuple, List, Optional, Iterator, Union
-from nemoa.base import attrib, check, abc
+from flib import attrib, check, abc
 from nemoa.db import record, cursor
-from nemoa.errors import RowLookupError, ProxyError, InvalidTypeError
+from flib.errors import RowLookupError, ProxyError, InvalidTypeError
 from nemoa.math import stype
-from nemoa.types import StrList, StrTuple, OptOp, SeqOp, OptType
-from nemoa.types import OptStrTuple, OptInt, OptStr
-from nemoa.types import Mapping, OptMapping
+from flib.types import StrList, StrTuple, OptOp, SeqOp, OptType
+from flib.types import OptStrTuple, OptInt, OptStr
+from flib.types import Mapping, OptMapping
 
 #
 # Structural Types
@@ -98,7 +98,7 @@ class Table(attrib.Group):
             This does not comprise metadata of the fields, which has to be
             included within the field declarations.
         parent: Reference to parent :class:`attribute group
-            <nemoa.base.attrib.Group>`, which is used for inheritance and
+            <flib.attrib.Group>`, which is used for inheritance and
             shared attributes. By default no parent is referenced.
 
     """
@@ -607,7 +607,7 @@ class Proxy(Table, abc.Proxy):
         proxy_mode: Optional Integer, that determines the operation mode of the
             proxy.
         parent: Reference to parent :class:`attribute group
-            <nemoa.base.attrib.Group>`, which is used for inheritance and
+            <flib.attrib.Group>`, which is used for inheritance and
             shared attributes. By default no parent is referenced.
 
     """

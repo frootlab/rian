@@ -25,11 +25,11 @@ import contextlib
 import io
 from pathlib import Path
 import weakref
-from nemoa.base import abc, env
-from nemoa.errors import PullError, PushError, ConnectError, DisconnectError
-from nemoa.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
-from nemoa.types import ErrMeta, ErrType, ErrStack
-from nemoa.types import BinaryFileLike, TextFileLike
+from flib import abc, env
+from flib.errors import PullError, PushError, ConnectError, DisconnectError
+from flib.types import Any, Iterator, PathLike, FileLike, FileRef, OptStr
+from flib.types import ErrMeta, ErrType, ErrStack
+from flib.types import BinaryFileLike, TextFileLike
 
 #
 # File Info Class
@@ -42,7 +42,7 @@ class FileInfo:
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, an instance of the class
-            :class:`~nemoa.base.abc.FileAccessor` or an opened file object in
+            :class:`~flib.abc.FileAccessor` or an opened file object in
             reading or writing mode.
 
     """
@@ -187,16 +187,16 @@ class FileProxy(abc.Proxy):
         file: :term:`File reference` to a :term:`file object`. The reference can
             ether be given as a String or :term:`path-like object`, that points
             to a valid entry in the file system, an instance of the class
-            :class:`~nemoa.base.abc.FileAccessor` or an opened file object in
+            :class:`~flib.abc.FileAccessor` or an opened file object in
             reading or writing mode.
         mode: String, which characters specify the mode in which the file stream
             is wrapped. If mode contains the character 'r', then a
             :meth:`.pull`-request is executed during the initialisation,
             otherwise any pull-request raises a
-            :class:`~nemoa.errors.PullError`. If mode contains the character
+            :class:`~flib.errors.PullError`. If mode contains the character
             'w', then a :meth:`.push`-request is executed when closing the
             FileProxy instance with :meth:`.close`, otherwise any push-request
-            raises a :class:`~nemoa.errors.PushError`. The default mode is 'rw'.
+            raises a :class:`~flib.errors.PushError`. The default mode is 'rw'.
 
     """
 
@@ -311,7 +311,7 @@ def openx(file: FileRef, *args: Any, **kwds: Any) -> Iterator[FileLike]:
     Args:
         file: :term:`File reference` that points to a valid filename in the
             directory structure of the system, a :term:`file object` or an
-            instance of the class :class:`~nemoa.base.abc.FileAccessor`.
+            instance of the class :class:`~flib.abc.FileAccessor`.
         mode: String, which characters specify the mode in which the file stream
             is opened. The default mode is text reading mode. Supported
             characters are:
@@ -339,7 +339,7 @@ def tmpfile(file: FileRef) -> Iterator[Path]:
     Args:
         file: :term:`File reference` that points to a valid filename in the
             directory structure of the system, a :term:`file object` or an
-            instance of the class :class:`~nemoa.base.abc.FileAccessor`.
+            instance of the class :class:`~flib.abc.FileAccessor`.
 
     Yields:
         :term:`path-like object` that points to a temporary file.

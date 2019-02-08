@@ -24,10 +24,10 @@ __docformat__ = 'google'
 import getopt
 import sys
 from typing import Any
-from nemoa.base import env
+from flib import env
 from nemoa.core import ui
 from nemoa.core.ui import shell
-from nemoa.types import BoolOp
+from flib.types import BoolOp
 import nemoa
 
 def print_scripts(workspace: str) -> None:

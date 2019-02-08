@@ -21,10 +21,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.base import pkg
+from flib import pkg
 from nemoa.db import table
-from nemoa.errors import ConnectError
-from nemoa.types import Any, Module
+from flib.errors import ConnectError
+from flib.types import Any, Module
 
 #
 # Constructors

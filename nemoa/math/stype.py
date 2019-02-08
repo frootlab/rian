@@ -24,9 +24,9 @@ __docformat__ = 'google'
 import functools
 from typing import Any, Callable, NamedTuple, Hashable, Tuple, Union, Type
 from typing import Optional, Mapping, Dict
-from nemoa.base import check
+from flib import check
 from nemoa.math import operator
-from nemoa.types import AnyOp, OptOp, OptType, NoneType
+from flib.types import AnyOp, OptOp, OptType, NoneType
 
 Keywords = Optional[Mapping[str, Any]]
 FieldID = Hashable

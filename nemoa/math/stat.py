@@ -22,7 +22,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from typing import List, Optional
-from nemoa.base import catalog
+from flib import catalog
 
 #
 # Define Catalog Categories

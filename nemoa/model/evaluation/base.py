@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy as np
-from nemoa.base import array, otree
+from flib import array, otree
 
 class Evaluation:
 

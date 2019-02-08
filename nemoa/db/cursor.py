@@ -23,18 +23,18 @@ __docformat__ = 'google'
 
 import random
 from typing import List, NewType, Tuple, Union, Optional
-from nemoa.base import attrib
+from flib import attrib
 from nemoa.db import record
 from nemoa.math import operator, stype
-from nemoa.errors import InvalidTypeError, NemoaError
-from nemoa.types import StrList, StrTuple, OptIntList, OptOp, Callable, OptInt
-from nemoa.types import OptStr, Iterator, Mapping, SeqOp, AnyOp, OptType, BoolOp
+from flib.errors import InvalidTypeError, UserError
+from flib.types import StrList, StrTuple, OptIntList, OptOp, Callable, OptInt
+from flib.types import OptStr, Iterator, Mapping, SeqOp, AnyOp, OptType, BoolOp
 
 #
 # Exceptions
 #
 
-class CursorError(NemoaError):
+class CursorError(UserError):
     """Base Class for Cursor Errors."""
 
 class ModeError(CursorError):
@@ -118,7 +118,7 @@ class Cursor(attrib.Group):
             order is ascending with respect to given column names in the
             orderby parameter, for ``True`` it is descending.
         parent: Reference to parent :class:'attribute group
-            <nemoa.base.attrib.Group>', which is used for inheritance and
+            <flib.attrib.Group>', which is used for inheritance and
             shared attributes. By default no parent is referenced.
         dtype: Optional type of the returned records. Supported types are
             :class:`tuple` and :class:`dict`. The default type of the returned

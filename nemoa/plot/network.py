@@ -24,10 +24,10 @@ __docformat__ = 'google'
 import matplotlib.patches
 import networkx as nx
 import numpy as np
-from nemoa.base import mapping
+from flib import mapping
 from nemoa.math import graph
 from nemoa.plot import Plot
-from nemoa.types import Any, OptBool, OptStr, OptTuple, FloatPair, Type
+from flib.types import Any, OptBool, OptStr, OptTuple, FloatPair, Type
 
 #
 # Structural Types

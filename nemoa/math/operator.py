@@ -27,11 +27,11 @@ import itertools
 import operator
 from typing import List, Optional, Tuple, Sequence, Union
 from typing import Any, Hashable
-from nemoa.base import abc, check, parser
-from nemoa.errors import InvalidTypeError
+from flib import abc, check, parser
+from flib.errors import InvalidTypeError
 from nemoa.math import stype
-from nemoa.types import Method, Mapping, NoneType, OptOp, SeqHom
-from nemoa.types import SeqOp, AnyOp, StrList, StrTuple
+from flib.types import Method, Mapping, NoneType, OptOp, SeqHom
+from flib.types import SeqOp, AnyOp, StrList, StrTuple
 from nemoa.math.stype import FieldID, Frame
 
 Key = Optional[Union[FieldID, Frame]]

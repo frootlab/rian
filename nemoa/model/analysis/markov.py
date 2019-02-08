@@ -29,7 +29,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from nemoa.base import catalog
+from flib import catalog
 
 #
 # (1) Sampler for Markov Random Fields

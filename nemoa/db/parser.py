@@ -31,8 +31,8 @@ import random
 from typing import Any, Sequence, Union
 import uuid
 import numpy as np
-from nemoa.base import parser, phonetic
-from nemoa.base.parser import Symbol, UNARY, BINARY, FUNCTION, CONSTANT
+from flib import parser, phonetic
+from flib.parser import Symbol, UNARY, BINARY, FUNCTION, CONSTANT
 from nemoa.db import dtype
 
 #

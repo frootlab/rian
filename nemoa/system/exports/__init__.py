@@ -38,12 +38,12 @@ def save(system, path = None, filetype = None, workspace = None,
 
     """
 
-    from nemoa.base import otree
+    from flib import otree
 
     if not otree.has_base(system, 'System'):
         raise ValueError("system is not valid")
 
-    from nemoa.base import env
+    from flib import env
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':

@@ -4,9 +4,10 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+from typing import Any, Dict
+from flib import otree
 import nemoa
-from nemoa.base import nbase, otree
-from nemoa.types import Any, Dict
+from nemoa.base import nbase
 
 class Model(nbase.ObjectIP):
     """Model base class.

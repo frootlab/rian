@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from nemoa.base import otree
+from flib import otree
 import nemoa.model.exports.archive
 import nemoa.model.exports.image
 
@@ -43,7 +43,7 @@ def save(model, path = None, filetype = None, workspace = None,
         Boolean value which is True if file export was successful
 
     """
-    from nemoa.base import env
+    from flib import env
 
     if not otree.has_base(model, 'Model'):
         raise TypeError("model is not valid")

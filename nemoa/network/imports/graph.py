@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import networkx
-from nemoa.base import mapping
+from flib import mapping
 
 
 def filetypes():
@@ -22,7 +22,7 @@ def filetypes():
 
 def load(path, **kwds):
     """Import network from graph description file."""
-    from nemoa.base import env
+    from flib import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -39,7 +39,7 @@ def load(path, **kwds):
 
 def _graph_decode(G):
     """ """
-    from nemoa.base import binary
+    from flib import binary
 
     # no encoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':

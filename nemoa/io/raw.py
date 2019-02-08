@@ -23,10 +23,10 @@ __docformat__ = 'google'
 
 import contextlib
 import io
-from nemoa.base import binary
+from flib import binary
 from nemoa.io import FileConnector
-from nemoa.types import BytesLikeOrStr
-from nemoa.types import OptInt, OptStr, FileRef, Iterator
+from flib.types import BytesLikeOrStr
+from flib.types import OptInt, OptStr, FileRef, Iterator
 
 #
 # Structural Types

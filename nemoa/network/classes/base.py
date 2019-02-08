@@ -5,11 +5,13 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import importlib
+from typing import Any, Dict
 import networkx
-from nemoa.base import otree, nbase
-from nemoa.core import log
-from nemoa.types import Any, Dict, Function
+from flib import otree
 import nemoa
+from nemoa.core import log
+from nemoa.base import nbase
+from flib.types import Function
 
 class Network(nbase.ObjectIP):
     """Network base class.

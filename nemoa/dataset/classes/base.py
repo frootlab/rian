@@ -6,8 +6,9 @@ __license__ = 'GPLv3'
 
 from typing import Any, Dict, Optional
 import numpy as np
+from flib import array, catalog, otree
 import nemoa
-from nemoa.base import array, catalog, nbase, otree
+from nemoa.base import nbase
 from nemoa.core import log, ui
 
 class Dataset(nbase.ObjectIP):

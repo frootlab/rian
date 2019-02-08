@@ -26,9 +26,9 @@ import contextlib
 import itertools
 import dataclasses
 from typing import Any, Union, Tuple, Type
-from nemoa.base import check
-from nemoa.errors import InvalidTypeError
-from nemoa.types import StrDict, StrList, void, OptOp, TypeHint
+from flib import check
+from flib.errors import InvalidTypeError
+from flib.types import StrDict, StrList, void, OptOp, TypeHint
 
 #
 # Structural Types

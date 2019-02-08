@@ -16,7 +16,7 @@ def filetypes():
 def load(path, **kwds):
     """Import system from text file."""
 
-    from nemoa.base import env
+    from flib import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -48,7 +48,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from nemoa.base import env
+        from flib import env
         from nemoa.io import ini
 
         # import ini file to dictionary, using ini file structure

@@ -27,12 +27,12 @@ from pathlib import Path
 from typing import Any, ClassVar, List, Optional
 import weakref
 from nemoa import errors
-from nemoa.base import abc, attrib, env
+from flib import abc, attrib, env
 from nemoa.core import dcmeta, log, ws
 from nemoa.io import ini
-from nemoa.types import BytesLike, ErrType, ErrMeta, ErrStack
-from nemoa.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
-from nemoa.types import PathLike, StrDict, StrList, StrOrInt
+from flib.types import BytesLike, ErrType, ErrMeta, ErrStack
+from flib.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
+from flib.types import PathLike, StrDict, StrList, StrOrInt
 
 #
 # Session Records
@@ -270,7 +270,7 @@ class Session(attrib.Group, SessionType):
                 True.
 
         Returns:
-            Instance of class :class:`~nemoa.base.abc.FileAccessor`, which
+            Instance of class :class:`~flib.abc.FileAccessor`, which
             points to a workspace member.
 
         """
