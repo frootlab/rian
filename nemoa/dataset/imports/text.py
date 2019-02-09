@@ -4,8 +4,9 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from flib import array, env
+from flib import env
 from flib.io import csv, ini
+from nemoa.base import array
 
 def filetypes():
     """Get supported text filetypes for dataset import."""

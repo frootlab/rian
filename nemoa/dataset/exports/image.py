@@ -6,8 +6,8 @@ __license__ = 'GPLv3'
 
 import networkx as nx
 import numpy as np
-import nemoa
 from flib import call, otree
+import nemoa
 from nemoa.plot import Plot, heatmap, histogram, network, scatter
 
 def filetypes():

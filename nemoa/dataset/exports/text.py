@@ -5,8 +5,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import os
-from flib import array
 from flib.io import csv, ini
+from nemoa.base import array
 
 def filetypes() -> dict:
     """Get supported text filetypes for dataset export."""

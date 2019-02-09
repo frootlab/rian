@@ -4,11 +4,12 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
+import copy
 from typing import Any, Dict, Optional
 import numpy as np
-from flib import array, catalog, otree
+from flib import catalog, otree
 import nemoa
-from nemoa.base import nbase
+from nemoa.base import array, nbase
 from nemoa.core import log, ui
 
 class Dataset(nbase.ObjectIP):
@@ -1069,7 +1070,6 @@ class Dataset(nbase.ObjectIP):
         """
 
         if table is None:
-            import copy
             return copy.deepcopy(self._tables)
 
         # check table name
@@ -1161,7 +1161,6 @@ class Dataset(nbase.ObjectIP):
         """Get dataset tables."""
 
         if key is None:
-            import copy
             return copy.deepcopy(self._tables)
 
         if isinstance(key, str) and key in list(self._tables.keys()):

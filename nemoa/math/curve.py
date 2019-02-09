@@ -29,9 +29,12 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from typing import Any
 import numpy as np
-from flib import array, call, catalog
-from flib.types import Any, NpArray, NpArrayLike, StrList
+from flib import call, catalog
+from flib.types import StrList
+from nemoa.base import array
+from nemoa.typing import NpArray, NpArrayLike
 
 #
 # Define Catalog Categories
