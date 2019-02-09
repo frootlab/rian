@@ -21,14 +21,13 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.math import matrix
-from flib import test
+from nemoa.math import matrix, test
 
 #
 # Test Cases
 #
 
-class TestMatrix(test.MathTest, test.ModuleTest):
+class TestMatrix(test.MathModule):
     module = matrix
 
     def test_Norm(self) -> None:

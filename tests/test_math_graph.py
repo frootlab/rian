@@ -22,15 +22,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import networkx as nx
-from nemoa.math import graph
 from flib import test
+from nemoa.math import graph
 
 #
 # Test Cases
 #
 
 class TestGraph(test.ModuleTest):
-    """Testsuite for modules within the package 'nemoa.math.graph'."""
 
     def setUp(self) -> None:
         self.G = nx.DiGraph([(1, 3), (1, 4), (2, 3), (2, 4)], directed=True)

@@ -22,14 +22,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import numpy as np
-from flib import test
-from nemoa.math import curve
+from nemoa.math import curve, test
 
 #
 # Test Cases
 #
 
-class TestCurve(test.MathTest, test.ModuleTest):
+class TestCurve(test.MathModule):
     module = curve
 
     def setUp(self) -> None:

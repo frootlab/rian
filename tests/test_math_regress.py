@@ -21,14 +21,13 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from nemoa.math import regress
-from flib import test
+from nemoa.math import regress, test
 
 #
 # Test Cases
 #
 
-class TestRegress(test.MathTest, test.ModuleTest):
+class TestRegress(test.MathModule):
     module = regress
 
     def test_Error(self) -> None:
