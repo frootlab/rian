@@ -23,13 +23,13 @@ __docformat__ = 'google'
 
 from typing import Any
 from nemoa.db import table
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestTable(tests.ModuleTest):
+class TestTable(test.ModuleTest):
     module = table
 
     def test_Table(self) -> None:

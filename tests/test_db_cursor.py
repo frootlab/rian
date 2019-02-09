@@ -24,14 +24,14 @@ __docformat__ = 'google'
 import string
 from typing import Any
 from nemoa.db import cursor, record, table
-from nemoa.types import StrList
-import tests
+from flib.types import StrList
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestCursor(tests.ModuleTest):
+class TestCursor(test.ModuleTest):
     module = cursor
 
     def setUp(self) -> None:

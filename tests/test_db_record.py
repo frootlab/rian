@@ -23,15 +23,15 @@ __docformat__ = 'google'
 
 import dataclasses
 from nemoa.db import record
-from nemoa.types import AnyOp
-import tests
-from tests import Case
+from flib.types import AnyOp
+from flib import test
+from flib.test import Case
 
 #
 # Test Cases
 #
 
-class TestRecord(tests.ModuleTest):
+class TestRecord(test.ModuleTest):
     module = record
 
     def test_build(self) -> None:

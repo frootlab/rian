@@ -22,13 +22,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.base import nbase
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestNbase(tests.ModuleTest):
+class TestNbase(test.ModuleTest):
     module = nbase
 
     def test_ObjectIP(self) -> None:

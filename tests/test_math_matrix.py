@@ -22,13 +22,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.math import matrix
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestMatrix(tests.MathTest, tests.ModuleTest):
+class TestMatrix(test.MathTest, test.ModuleTest):
     module = matrix
 
     def test_Norm(self) -> None:

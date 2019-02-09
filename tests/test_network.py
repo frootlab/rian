@@ -21,9 +21,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 from flib import otree
-import tests
+from flib import test
 
-class TestCase(tests.GenericTest):
+class TestCase(test.GenericTest):
     def test_network_import(self) -> None:
         with self.subTest(filetype='ini'):
             network = nemoa.network.open('deep', workspace='testsuite')

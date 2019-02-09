@@ -21,11 +21,10 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from flib import otree
+from flib import otree, test
 import nemoa.dataset
-import tests
 
-class TestCase(tests.GenericTest):
+class TestCase(test.GenericTest):
 
     def test_dataset_import(self):
 

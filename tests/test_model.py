@@ -21,9 +21,9 @@ __license__ = 'GPLv3'
 
 import nemoa
 from flib import otree
-import tests
+from flib import test
 
-class TestCase(tests.GenericTest):
+class TestCase(test.GenericTest):
     def setUp(self) -> None:
         self.mode = nemoa.get('mode')
         self.workspace = nemoa.get('workspace')

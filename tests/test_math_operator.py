@@ -23,13 +23,13 @@ __docformat__ = 'google'
 
 from unittest import mock
 from nemoa.math import operator
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestOperator(tests.ModuleTest):
+class TestOperator(test.ModuleTest):
     module = operator
 
     def test_Operator(self) -> None:

@@ -22,13 +22,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.math import regress
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestRegress(tests.MathTest, tests.ModuleTest):
+class TestRegress(test.MathTest, test.ModuleTest):
     module = regress
 
     def test_Error(self) -> None:

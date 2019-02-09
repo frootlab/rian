@@ -21,13 +21,13 @@ __license__ = 'GPLv3'
 
 import nemoa
 from flib import otree
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestCase(tests.GenericTest):
+class TestCase(test.GenericTest):
     def test_system_import(self) -> None:
         with self.subTest(filetype="ini"):
             system = nemoa.system.open('dbn', workspace='testsuite')

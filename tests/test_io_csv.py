@@ -21,15 +21,14 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
-from flib import env
+from flib import env, test
 from nemoa.io import csv
-import tests
 
 #
 # Test Cases
 #
 
-class TestCsv(tests.ModuleTest):
+class TestCsv(test.ModuleTest):
     module = csv
 
     def setUp(self) -> None:

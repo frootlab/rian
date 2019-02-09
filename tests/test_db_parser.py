@@ -22,15 +22,15 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.db import parser
-from nemoa.types import AnyOp
-import tests
-from tests import Case
+from flib.types import AnyOp
+from flib import test
+from flib.test import Case
 
 #
 # Test Cases
 #
 
-class TestParser(tests.ModuleTest):
+class TestParser(test.ModuleTest):
     module = parser
 
     def test_parse_clause(self) -> None:

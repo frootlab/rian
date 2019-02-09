@@ -22,13 +22,13 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from nemoa.math import stype, operator
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestStype(tests.ModuleTest):
+class TestStype(test.ModuleTest):
     module = stype
 
     def test_Variable(self) -> None:

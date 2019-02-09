@@ -22,15 +22,14 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import configparser
-from flib import env
+from flib import env, test
 from nemoa.io import ini
-import tests
 
 #
 # Test Cases
 #
 
-class TestIni(tests.ModuleTest):
+class TestIni(test.ModuleTest):
     module = ini
 
     def setUp(self) -> None:

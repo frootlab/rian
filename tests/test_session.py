@@ -20,13 +20,13 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestCase(tests.GenericTest):
+class TestCase(test.GenericTest):
 
     def test_session_about(self) -> None:
 

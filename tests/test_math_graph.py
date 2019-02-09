@@ -23,13 +23,13 @@ __docformat__ = 'google'
 
 import networkx as nx
 from nemoa.math import graph
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestGraph(tests.ModuleTest):
+class TestGraph(test.ModuleTest):
     """Testsuite for modules within the package 'nemoa.math.graph'."""
 
     def setUp(self) -> None:

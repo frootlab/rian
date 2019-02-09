@@ -23,13 +23,13 @@ __docformat__ = 'google'
 
 import networkx as nx
 from nemoa.plot import network
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestNetwork(tests.ModuleTest):
+class TestNetwork(test.ModuleTest):
     module = network
 
     def setUp(self) -> None:

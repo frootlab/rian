@@ -23,13 +23,13 @@ __docformat__ = 'google'
 
 from flib import env
 from nemoa.io import raw
-import tests
+from flib import test
 
 #
 # Test Cases
 #
 
-class TestRaw(tests.ModuleTest):
+class TestRaw(test.ModuleTest):
     module = raw
 
     def setUp(self) -> None:
