@@ -27,7 +27,7 @@ from typing import ClassVar, Optional
 from flib import attrib, env
 from nemoa.core import dcmeta
 from flib.errors import FileFormatError
-from nemoa.io import ini, zip as archive
+from flib.io import ini, zip as archive
 from flib.types import StrList, PathLike, OptBytes, OptPathLike
 
 class Workspace(archive.File, attrib.Group):

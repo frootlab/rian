@@ -1,4 +1,4 @@
-nemoa.io package
+flib.io package
 ================
 
 Submodules
@@ -6,16 +6,16 @@ Submodules
 
 .. toctree::
 
-   nemoa.io.csv
-   nemoa.io.ini
-   nemoa.io.plain
-   nemoa.io.raw
-   nemoa.io.ws
+   flib.io.csv
+   flib.io.ini
+   flib.io.plain
+   flib.io.raw
+   flib.io.ws
 
 Module contents
 ---------------
 
-.. automodule:: nemoa.io
+.. automodule:: flib.io
     :members:
     :undoc-members:
     :show-inheritance:

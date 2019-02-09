@@ -10,7 +10,7 @@ Subpackages
     nemoa.core
     nemoa.dataset
     nemoa.db
-    nemoa.io
+    flib.io
     nemoa.math
     nemoa.model
     nemoa.network

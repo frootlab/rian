@@ -1,7 +1,7 @@
-nemoa.io.ini module
+flib.io.ini module
 ===================
 
-.. automodule:: nemoa.io.ini
+.. automodule:: flib.io.ini
     :members:
     :undoc-members:
     :show-inheritance:

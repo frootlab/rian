@@ -1,7 +1,7 @@
-nemoa.io.plain module
+flib.io.plain module
 =====================
 
-.. automodule:: nemoa.io.plain
+.. automodule:: flib.io.plain
     :members:
     :undoc-members:
     :show-inheritance:

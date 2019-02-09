@@ -1,7 +1,7 @@
-nemoa.io.ws module
+flib.io.ws module
 ==================
 
-.. automodule:: nemoa.io.ws
+.. automodule:: flib.io.ws
     :members:
     :undoc-members:
     :show-inheritance:

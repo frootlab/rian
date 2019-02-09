@@ -1,7 +1,7 @@
-nemoa.io.csv module
+flib.io.csv module
 ===================
 
-.. automodule:: nemoa.io.csv
+.. automodule:: flib.io.csv
     :members:
     :undoc-members:
     :show-inheritance:

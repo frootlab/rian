@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 from flib import env
-from nemoa.io import ini
+from flib.io import ini
 
 def filetypes():
     """Get supported text filetypes for workspace import."""

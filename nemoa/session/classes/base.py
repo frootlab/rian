@@ -14,7 +14,7 @@ from flib import env, stack
 import nemoa
 from nemoa import workspace
 from nemoa.core import tty
-from nemoa.io import ini
+from flib.io import ini
 
 class Session:
     """Session Manager."""

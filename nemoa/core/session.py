@@ -29,7 +29,7 @@ import weakref
 from nemoa import errors
 from flib import abc, attrib, env
 from nemoa.core import dcmeta, log, ws
-from nemoa.io import ini
+from flib.io import ini
 from flib.types import BytesLike, ErrType, ErrMeta, ErrStack
 from flib.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
 from flib.types import PathLike, StrDict, StrList, StrOrInt

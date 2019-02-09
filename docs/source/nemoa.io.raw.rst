@@ -1,7 +1,7 @@
-nemoa.io.raw module
+flib.io.raw module
 ===================
 
-.. automodule:: nemoa.io.raw
+.. automodule:: flib.io.raw
     :members:
     :undoc-members:
     :show-inheritance:
