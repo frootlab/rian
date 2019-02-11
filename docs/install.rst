@@ -23,15 +23,16 @@ to create and work with Python virtual environments, please follow instructions
 on `venv <https://docs.python.org/3/library/venv.html>`_ and `virtual
 environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 
-Install latest version of nemoa
--------------------------------
+Install the latest distributed package
+--------------------------------------
 
-You can install the latest distributed package of nemoa by using pip::
+You can install the latest distributed package of nemoa by using `pip`
 
-    $ pip install nemoa
+.. highlight:: shell
+    pip install nemoa
 
-Install the nemoa development branch
-------------------------------------
+Install the development branch
+------------------------------
 
 The installation requires that you have `Git <https://git-scm.com/>`_ installed
 on your system. Under this prerequisite the first step is to clone the github
@@ -52,11 +53,9 @@ Update the nemoa development branch
 -----------------------------------
 
 Once you have cloned the `nemoa` GitHub repository onto a local directory, you
-can update it anytime by running a ``git pull`` and the ``pip install`` command
-in this directory::
+can update it anytime by running a ``git pull`` in this directory::
 
 $ git pull
-$ pip install -e .
 
 Required packages
 -----------------
@@ -83,4 +82,4 @@ not included in the distributed package you are required to install the nemoa
 development branch. Thereupon you have to switch to repository directory and
 run::
 
-$ python tests
+$ python3 tests
