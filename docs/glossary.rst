@@ -489,14 +489,6 @@ Basic Parameters and Formats
 
 .. glossary::
 
-    File Reference
-
-        *File References* aggregate different types, that identify files,
-        including: :term:`File objects <file object>`, Strings and
-        :term:`path-like objects <path-like object>`, that point to filenames in
-        the directory structure of the system and instances of the class
-        :class:`~nemoa.base.abc.FileAccessor`.
-
     Field Identifier
 
         *Field Identifiers* uniquely identify fields within objects. Since

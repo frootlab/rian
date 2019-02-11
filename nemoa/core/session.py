@@ -26,10 +26,9 @@ import datetime
 from pathlib import Path
 from typing import Any, ClassVar, List, Optional
 import weakref
-from nemoa import errors
-from flib import abc, attrib, env
+from flib import abc, attrib, env, errors
 from nemoa.core import dcmeta, log, ws
-from iolib import ini
+from iolib import ini, abc as ioabc
 from flib.types import BytesLike, ErrType, ErrMeta, ErrStack
 from flib.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
 from flib.types import PathLike, StrDict, StrList, StrOrInt
@@ -258,8 +257,8 @@ class Session(attrib.Group, SessionType):
         if hasattr(self._file, 'close'):
             self._file.close()
 
-    def get_file_accessor(self, path: PathLike) -> abc.FileAccessor:
-        """Get file accessor to workspace member.
+    def get_file_accessor(self, path: PathLike) -> ioabc.Connector:
+        """Get connector to workspace member.
 
         Args:
             path: String or :term:`path-like object`, that represents a
@@ -270,7 +269,7 @@ class Session(attrib.Group, SessionType):
                 True.
 
         Returns:
-            Instance of class :class:`~flib.abc.FileAccessor`, which
+            Instance of class :class:`~iolib.abc.Connector`, which
             points to a workspace member.
 
         """

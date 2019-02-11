@@ -35,22 +35,15 @@ Components
 Nemoa provides:
 
     * A transparent `DW`_ architecture for the seamless integration of existing
-        SQL databases, flat data from laboratory measurement devices or data
-        generators.
+      SQL databases, flat data from laboratory measurement devices or data
+      generators.
     * A versatile and fast data modeling and data analysis framework.
-
-.. References:
-.. _Python: https://www.python.org/
-.. _DW: https://en.wikipedia.org/wiki/Data_warehouse
-.. _SQLAlchemy: https://www.sqlalchemy.org/
-.. _TensorFlow®: https://www.tensorflow.org/
 
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
 
    Installation <install>
-   Reference <source/modules>
    Glossary <glossary>
    License <license>
    Bibliography <bibliography>
@@ -61,3 +54,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. References:
+.. _Python: https://www.python.org/
+.. _DW: https://en.wikipedia.org/wiki/Data_warehouse
+.. _SQLAlchemy: https://www.sqlalchemy.org/
+.. _TensorFlow®: https://www.tensorflow.org/

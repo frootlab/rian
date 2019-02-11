@@ -213,4 +213,7 @@ todo_include_todos = True
 # Intersphinx Mapping
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None)}
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'flib': ('http://flib.readthedocs.io/en/latest/', None),
+    'iolib': ('http://iolib.readthedocs.io/en/latest/', None),
+    'pandb': ('http://pandb.readthedocs.io/en/latest/', None)}
