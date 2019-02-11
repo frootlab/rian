@@ -18,10 +18,17 @@ installing the full `scientific Python stack <https://scipy.org/install.html>`_.
    online documentation.
 
 Below it is assumed, that you have the default Python environment configured on
-your computer and you intend to install `nemoa` inside of it.  If you want
+your computer and you intend to install nemoa inside of it.  If you want
 to create and work with Python virtual environments, please follow instructions
 on `venv <https://docs.python.org/3/library/venv.html>`_ and `virtual
 environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
+
+Install latest version of nemoa
+-------------------------------
+
+You can install the latest distributed package of nemoa by using pip::
+
+    $ pip install nemoa
 
 Install the nemoa development branch
 ------------------------------------
@@ -71,7 +78,9 @@ automatically. These packages include::
 Testing your installation
 -------------------------
 
-Nemoa uses the Python builtin package ``unittest`` for testing. If you have a
-file-based installation you can test the installed package with::
+Nemoa uses the Python builtin package unittest for testing. Since the tests are
+not included in the distributed package you are required to install the nemoa
+development branch. Thereupon you have to switch to repository directory and
+run::
 
-$ nemoa -t
+$ python tests

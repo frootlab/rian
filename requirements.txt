@@ -1,0 +1,10 @@
+numpy>=1.15
+matplotlib>=3.0
+networkx>=2.1
+SQLAlchemy>=1.2.17
+ipython>=7.1
+appdirs>=1.4.1
+pyparsing>=2.2
+flib>=0.1.11
+iolib>=0.0.3
+pandb>=0.1.0

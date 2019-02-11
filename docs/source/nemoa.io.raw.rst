@@ -1,7 +1,7 @@
-flib.io.raw module
+iolib.raw module
 ===================
 
-.. automodule:: flib.io.raw
+.. automodule:: iolib.raw
     :members:
     :undoc-members:
     :show-inheritance:

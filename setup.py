@@ -30,10 +30,6 @@ import subprocess
 import setuptools
 from setuptools.command.install import install as Installer
 
-# Module Constants
-AUTHOR = 'frootlab'
-PKGNAME = 'nemoa'
-
 class CustomInstaller(Installer): # type: ignore
     """Customized setuptools install command."""
 
@@ -41,25 +37,21 @@ class CustomInstaller(Installer): # type: ignore
         Installer.run(self)
         subprocess.call([sys.executable, __file__, 'postinstall'])
 
-def get_vars() -> dict:
-    """Get module variables from __init__ file."""
-    text = pathlib.Path(PKGNAME, '__init__.py').read_text()
+def install() -> None:
+    """Setuptools based installation script."""
+
+    # Get module variables from __init__ file.
+    text = pathlib.Path('nemoa', '__init__.py').read_text()
     rekey = "__([a-zA-Z][a-zA-Z0-9_]*)__"
     reval = r"['\"]([^'\"]*)['\"]"
     pattern = f"^[ ]*{rekey}[ ]*=[ ]*{reval}"
-    dvars = {}
+    pkg_vars = {}
     for mo in re.finditer(pattern, text, re.M):
-        dvars[str(mo.group(1))] = str(mo.group(2))
-    return dvars
+        pkg_vars[str(mo.group(1))] = str(mo.group(2))
 
-def install() -> None:
-    """Setuptools based installation script."""
-    # Update package variables from package init
-    pkg_vars = get_vars()
-
-    # Install nemoa package
+    # Install package
     setuptools.setup(
-        name=PKGNAME,
+        name='nemoa',
         version=pkg_vars['version'],
         description=pkg_vars['description'],
         long_description=pathlib.Path('.', 'README.rst').read_text(),
@@ -91,19 +83,17 @@ def install() -> None:
         license=pkg_vars['license'],
         packages=setuptools.find_packages(),
         package_dir={
-            PKGNAME: PKGNAME},
+            'nemoa': 'nemoa'},
         package_data={
-            PKGNAME: ['data/*.zip']},
+            'nemoa': ['data/*.zip']},
         cmdclass={
             'install': CustomInstaller},
         python_requires='>=3.7',
         install_requires=[
-            'appdirs>=1.4',
             'ipython>=7.1',
             'matplotlib>=3.0',
             'networkx>=2.1',
-            'numpy>=1.15',
-            'pyparsing>=2.2'],
+            'numpy>=1.15'],
         extras_require={
             'gui': ['pyside'],
             'gene': ['rpy2']},
@@ -135,14 +125,14 @@ def post_install() -> None:
     # copy user workspaces
     user_src_base = str(pathlib.Path('.', 'data', 'user'))
     user_tgt_base = appdirs.user_data_dir(
-        appname=PKGNAME, appauthor=AUTHOR)
+        appname='nemoa', appauthor='frootlab')
     user_tgt_base = str(pathlib.Path(user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
     # copy site workspaces
     site_src_base = str(pathlib.Path('.', 'data', 'site'))
     site_tgt_base = appdirs.site_data_dir(
-        appname=PKGNAME, appauthor=AUTHOR)
+        appname='nemoa', appauthor='frootlab')
     site_tgt_base = str(pathlib.Path(site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 

@@ -1,7 +1,7 @@
-flib.io.plain module
+iolib.plain module
 =====================
 
-.. automodule:: flib.io.plain
+.. automodule:: iolib.plain
     :members:
     :undoc-members:
     :show-inheritance:

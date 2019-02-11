@@ -49,7 +49,7 @@ class Ini:
 
         """
         from flib import env
-        from flib.io import ini
+        from iolib import ini
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions

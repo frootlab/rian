@@ -1,7 +1,7 @@
-flib.io.csv module
+iolib.csv module
 ===================
 
-.. automodule:: flib.io.csv
+.. automodule:: iolib.csv
     :members:
     :undoc-members:
     :show-inheritance:

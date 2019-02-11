@@ -47,7 +47,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from flib.io import ini
+        from iolib import ini
 
         scheme = {
             'network': {
@@ -69,7 +69,7 @@ class Ini:
 
     def _parse_layer_network(self, path):
         from flib import env
-        from flib.io import ini
+        from iolib import ini
 
         scheme = {
             'network': {

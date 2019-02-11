@@ -1,7 +1,7 @@
-flib.io.ini module
+iolib.ini module
 ===================
 
-.. automodule:: flib.io.ini
+.. automodule:: iolib.ini
     :members:
     :undoc-members:
     :show-inheritance:

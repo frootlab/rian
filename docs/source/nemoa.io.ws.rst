@@ -1,7 +1,7 @@
-flib.io.ws module
+iolib.ws module
 ==================
 
-.. automodule:: flib.io.ws
+.. automodule:: iolib.ws
     :members:
     :undoc-members:
     :show-inheritance:

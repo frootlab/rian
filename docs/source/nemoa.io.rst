@@ -1,4 +1,4 @@
-flib.io package
+iolib package
 ================
 
 Submodules
@@ -6,16 +6,16 @@ Submodules
 
 .. toctree::
 
-   flib.io.csv
-   flib.io.ini
-   flib.io.plain
-   flib.io.raw
-   flib.io.ws
+   iolib.csv
+   iolib.ini
+   iolib.plain
+   iolib.raw
+   iolib.ws
 
 Module contents
 ---------------
 
-.. automodule:: flib.io
+.. automodule:: iolib
     :members:
     :undoc-members:
     :show-inheritance:
