@@ -26,10 +26,9 @@ environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 Install the latest distributed package
 --------------------------------------
 
-You can install the latest distributed package of nemoa by using `pip`
+You can install the latest distributed package of nemoa by using `pip`::
 
-.. highlight:: shell
-    pip install nemoa
+    $ pip install nemoa
 
 Install the development branch
 ------------------------------
@@ -38,12 +37,12 @@ The installation requires that you have `Git <https://git-scm.com/>`_ installed
 on your system. Under this prerequisite the first step is to clone the github
 repository of `nemoa`::
 
-$ git clone https://github.com/frootlab/nemoa.git
+    $ git clone https://github.com/frootlab/nemoa.git
 
 Thereupon the development branch can locally be installed by using `pip`::
 
-$ cd nemoa
-$ pip install -e .
+    $ cd nemoa
+    $ pip install -e .
 
 The ``pip install`` command allows you to follow the development branch as
 it changes by creating links in the right places and installing the command
@@ -55,7 +54,7 @@ Update the nemoa development branch
 Once you have cloned the `nemoa` GitHub repository onto a local directory, you
 can update it anytime by running a ``git pull`` in this directory::
 
-$ git pull
+    $ git pull
 
 Required packages
 -----------------
@@ -82,4 +81,4 @@ not included in the distributed package you are required to install the nemoa
 development branch. Thereupon you have to switch to repository directory and
 run::
 
-$ python3 tests
+    $ python3 tests
