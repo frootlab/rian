@@ -93,7 +93,10 @@ def install() -> None:
             'ipython>=7.1',
             'matplotlib>=3.0',
             'networkx>=2.1',
-            'numpy>=1.15'],
+            'numpy>=1.15',
+            'flib>=0.1.13',
+            'iolib>=0.1.1',
+            'pandb>=0.1.2'],
         extras_require={
             'gui': ['pyside'],
             'gene': ['rpy2']},

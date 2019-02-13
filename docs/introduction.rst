@@ -5,7 +5,7 @@ In many domains of enterprise and scientific data analysis the lack of
 structural knowledge encourages the use of machine intelligence methods, which
 surpass the structural flexibility of classical statistical methods. Since this
 approach, however, generally is paid by high mathematical uncertainty, it is
-indispensable to properly choose and adapt the method to it's respective
+indispensable to properly select and adapt the method to it's respective
 application. This requires a close cooperation between enterprise analytics and
 data science.
 
@@ -32,3 +32,9 @@ provides:
       SQL databases, flat data from laboratory measurement devices or data
       generators.
     * A versatile and fast data modeling and data analysis framework.
+
+.. References:
+.. _Python: https://www.python.org/
+.. _DW: https://en.wikipedia.org/wiki/Data_warehouse
+.. _SQLAlchemy: https://www.sqlalchemy.org/
+.. _TensorFlow®: https://www.tensorflow.org/
