@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2019 Patrick Michl
 #
-# This file is part of flib, https://github.com/frootlab/flib
+# This file is part of flab.base, https://github.com/frootlab/flab.base
 #
-#  flib is free software: you can redistribute it and/or modify it under the
+#  flab.base is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  flib is distributed in the hope that it will be useful, but WITHOUT ANY
+#  flab.base is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License along with
-#  flib. If not, see <http://www.gnu.org/licenses/>.
+#  flab.base. If not, see <http://www.gnu.org/licenses/>.
 #
 """Unittests for module 'nemoa.base.array'."""
 
@@ -22,8 +22,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import numpy as np
-from flib import test
-from flib.types import NaN
+from flab.base import test
+from flab.base.types import NaN
 from nemoa.base import array
 
 #

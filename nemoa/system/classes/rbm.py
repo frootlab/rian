@@ -10,7 +10,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from flib import otree
+from flab.base import otree
 import nemoa.system.classes.ann
 
 class RBM(nemoa.system.classes.ann.ANN):

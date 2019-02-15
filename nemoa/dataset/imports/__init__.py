@@ -34,7 +34,7 @@ def load(path, filetype=None, **kwds):
 
     import os
 
-    from flib import env
+    from flab.base import env
 
     # get path (if necessary)
     if 'workspace' in kwds or not os.path.isfile(path):

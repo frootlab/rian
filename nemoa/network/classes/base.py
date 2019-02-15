@@ -7,11 +7,11 @@ __license__ = 'GPLv3'
 import importlib
 from typing import Any, Dict
 import networkx
-from flib import otree
+from flab.base import otree
 import nemoa
 from nemoa.core import log
 from nemoa.base import nbase
-from flib.types import Function
+from flab.base.types import Function
 
 class Network(nbase.ObjectIP):
     """Network base class.

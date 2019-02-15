@@ -21,7 +21,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from flib import otree, test
+from flab.base import otree, test
 import nemoa.dataset
 
 class TestCase(test.GenericTest):

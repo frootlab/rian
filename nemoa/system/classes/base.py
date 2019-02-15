@@ -5,11 +5,11 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
-from flib import catalog, otree
+from flab.base import catalog, otree
 import nemoa
 from nemoa.base import nbase
 from nemoa.math import curve
-from flib.types import Any, Dict
+from flab.base.types import Any, Dict
 
 class System(nbase.ObjectIP):
     """Base class for systems.
@@ -817,7 +817,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see flib.vector.norm for a list
+                residuals. see flab.base.vector.norm for a list
                 of provided norms
 
         """
@@ -855,7 +855,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see flib.vector.norm for a list of provided
+                see flab.base.vector.norm for a list of provided
                 norms
 
         """
@@ -893,7 +893,7 @@ class System(nbase.ObjectIP):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see flib.vector.norm for a list of provided
+                see flab.base.vector.norm for a list of provided
                 norms
 
         """

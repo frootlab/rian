@@ -16,7 +16,7 @@ def filetypes():
 def load(path, **kwds):
     """Import network from text file."""
 
-    from flib import env
+    from flab.base import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -47,7 +47,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from iolib import ini
+        from flab.io import ini
 
         scheme = {
             'network': {
@@ -68,8 +68,8 @@ class Ini:
             "type '%s'." % (path, network['network']['type']))
 
     def _parse_layer_network(self, path):
-        from flib import env
-        from iolib import ini
+        from flab.base import env
+        from flab.io import ini
 
         scheme = {
             'network': {

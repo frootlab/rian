@@ -23,7 +23,7 @@ __docformat__ = 'google'
 
 import networkx as nx
 from nemoa.plot import network
-from flib import test
+from flab.base import test
 
 #
 # Test Cases

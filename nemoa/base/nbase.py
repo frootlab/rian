@@ -22,8 +22,8 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from pathlib import Path
-from flib import check, mapping, env, otree
-from flib.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
+from flab.base import check, mapping, env, otree
+from flab.base.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.

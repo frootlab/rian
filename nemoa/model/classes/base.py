@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 from typing import Any, Dict
-from flib import otree
+from flab.base import otree
 import nemoa
 from nemoa.base import nbase
 

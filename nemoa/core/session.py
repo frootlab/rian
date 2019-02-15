@@ -26,12 +26,12 @@ import datetime
 from pathlib import Path
 from typing import Any, ClassVar, List, Optional
 import weakref
-from flib import abc, attrib, env, errors
+from flab.base import abc, attrib, env, errors
 from nemoa.core import dcmeta, log, ws
-from iolib import ini, abc as ioabc
-from flib.types import BytesLike, ErrType, ErrMeta, ErrStack
-from flib.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
-from flib.types import PathLike, StrDict, StrList, StrOrInt
+from flab.io import ini, abc as ioabc
+from flab.base.types import BytesLike, ErrType, ErrMeta, ErrStack
+from flab.base.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
+from flab.base.types import PathLike, StrDict, StrList, StrOrInt
 
 #
 # Session Records
@@ -269,7 +269,7 @@ class Session(attrib.Group, SessionType):
                 True.
 
         Returns:
-            Instance of class :class:`~iolib.abc.Connector`, which
+            Instance of class :class:`~flab.io.abc.Connector`, which
             points to a workspace member.
 
         """

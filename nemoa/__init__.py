@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013-2019 Patrick Michl
+# Copyright (c) 2013-2019 Frootlab Developers
 #
 # This file is part of nemoa, https://frootlab.github.io/nemoa
 #
@@ -22,12 +22,12 @@ Nemoa utilizes methods from probabilistic graphical modeling [PGM]_, machine
 learning [ML]_ and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.577'
+__version__ = '0.5.578'
 __status__ = 'Development'
 __description__ = 'enterprise data analysis'
 __url__ = 'https://frootlab.github.io/nemoa'
 __license__ = 'GPLv3'
-__copyright__ = 'Copyright (c) 2013-2019 Nemoa Developers'
+__copyright__ = 'Copyright (c) 2013-2019 Frootlab Developers'
 __organization__ = 'frootlab'
 __author__ = 'frootlab'
 __email__ = 'frootlab@gmail.com'

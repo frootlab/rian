@@ -4,8 +4,8 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from flib import env
-from iolib import ini
+from flab.base import env
+from flab.io import ini
 
 def filetypes():
     """Get supported text filetypes for workspace import."""

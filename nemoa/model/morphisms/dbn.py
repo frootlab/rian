@@ -10,7 +10,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from flib import catalog
+from flab.base import catalog
 from nemoa.core import ui
 import nemoa.model.morphisms.ann
 

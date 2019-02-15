@@ -22,7 +22,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 from typing import List, Optional
-from flib import catalog
+from flab.base import catalog
 
 #
 # Define Catalog Categories

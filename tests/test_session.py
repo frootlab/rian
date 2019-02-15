@@ -20,7 +20,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-from flib import test
+from flab.base import test
 
 #
 # Test Cases

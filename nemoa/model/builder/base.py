@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-from flib import otree
+from flab.base import otree
 
 def types():
     """Get supported layer network types for network building."""

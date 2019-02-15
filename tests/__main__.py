@@ -26,7 +26,7 @@ import importlib
 import os
 import sys
 import unittest
-from flib import pkg
+from flab.base import pkg
 from nemoa.core import ui
 
 #

@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa.model.morphisms.base
-from flib import catalog
+from flab.base import catalog
 
 class ANN(nemoa.model.morphisms.base.Optimizer):
 

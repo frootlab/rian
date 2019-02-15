@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import time
 import numpy
 import nemoa
-from flib import otree
+from flab.base import otree
 from nemoa.core import ui
 
 class Optimizer:

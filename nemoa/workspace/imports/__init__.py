@@ -27,7 +27,7 @@ def load(arg, base = None, filetype = None, **kwds):
     """Import workspace dictionary from file or workspace."""
 
     import os
-    from flib import env
+    from flab.base import env
 
     if os.path.isfile(arg):
         path = arg

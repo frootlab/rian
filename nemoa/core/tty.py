@@ -33,9 +33,9 @@ import queue
 import sys
 import threading
 import time
-from flib import env, pkg
-from flib.types import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
-from flib.types import Module, OptStr
+from flab.base import env, pkg
+from flab.base.types import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
+from flab.base.types import Module, OptStr
 
 #
 # TTY Controle Classes

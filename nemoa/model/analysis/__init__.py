@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from flib import catalog
+from flab.base import catalog
 
 def algorithms(*args, **kwds):
     """Returns dictionary of algorithms, that pass given filters. """

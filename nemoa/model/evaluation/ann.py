@@ -17,7 +17,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from flib import catalog
+from flab.base import catalog
 from nemoa.math import curve
 from nemoa.model.evaluation.base import Evaluation
 
@@ -285,7 +285,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate data reconstuction error from
-                residuals. see flib.vector.norm for a list
+                residuals. see flab.base.vector.norm for a list
                 of provided norms
 
         """
@@ -322,7 +322,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate accuracy
-                see flib.vector.norm for a list of provided
+                see flab.base.vector.norm for a list of provided
                 norms
 
         """
@@ -360,7 +360,7 @@ class ANN(Evaluation):
             block: list of strings containing labels of source units
                 that are blocked by setting the values to their means
             norm: used norm to calculate deviation for precision
-                see flib.vector.norm for a list of provided
+                see flab.base.vector.norm for a list of provided
                 norms
 
         """

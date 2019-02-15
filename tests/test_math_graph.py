@@ -22,7 +22,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import networkx as nx
-from flib import test
+from flab.base import test
 from nemoa.math import graph
 
 #

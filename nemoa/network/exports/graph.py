@@ -41,7 +41,7 @@ def save(network, path, filetype, **kwds):
 
 def _graph_encode(graph, coding=None):
     """Encode graph parameters."""
-    from flib import binary
+    from flab.base import binary
 
     # no encoding
     if not isinstance(coding, str) or coding.lower() == 'none':
