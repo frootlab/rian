@@ -10,11 +10,11 @@ import imp
 import logging
 import os
 import traceback
-from flab.base import env, stack
+from flib.base import env, stack
 import nemoa
 from nemoa import workspace
 from nemoa.core import tty
-from flab.io import ini
+from flib.io import ini
 
 class Session:
     """Session Manager."""

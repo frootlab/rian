@@ -31,10 +31,10 @@ import importlib
 import logging
 import warnings
 from pathlib import Path
-from flab.base import attrib, env, abc
-from flab.errors import ExistsError, NotExistsError
-from flab.base.types import void, Any, AnyOp, ClassVar, PathLike, StrList
-from flab.base.types import StrOrInt, OptPath, Void
+from flib.base import attrib, env, abc
+from flib.errors import ExistsError, NotExistsError
+from flib.base.types import void, Any, AnyOp, ClassVar, PathLike, StrList
+from flib.base.types import StrOrInt, OptPath, Void
 
 #
 # Logger Class

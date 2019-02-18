@@ -6,7 +6,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import numpy
-from flab.base import catalog, mapping
+from flib.base import catalog, mapping
 from nemoa.core import ui
 import nemoa.model.morphisms.ann
 

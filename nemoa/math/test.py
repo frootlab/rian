@@ -23,7 +23,7 @@ __docformat__ = 'google'
 
 from typing import Any, Callable
 import numpy as np
-from flab.base import test
+from flib.base import test
 from nemoa.typing import NpArray
 
 class MathModule(test.ModuleTest):

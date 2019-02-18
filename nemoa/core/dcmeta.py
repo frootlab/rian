@@ -23,8 +23,8 @@ __docformat__ = 'google'
 
 from datetime import datetime as Date
 from typing import Any
-from flab.base import attrib
-from flab.base.types import StrList
+from flib.base import attrib
+from flib.base.types import StrList
 
 
 # Dublin Core (DC) Attributes

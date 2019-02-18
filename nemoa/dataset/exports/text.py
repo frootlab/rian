@@ -5,7 +5,7 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import os
-from flab.io import csv, ini
+from flib.io import csv, ini
 from nemoa.base import array
 
 def filetypes() -> dict:

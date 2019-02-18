@@ -33,7 +33,7 @@ def load(path, filetype = None, **kwds):
     """Import system dictionary from file or workspace."""
 
     import os
-    from flab.base import env
+    from flib.base import env
 
     # get path (if necessary)
     if 'workspace' in kwds or not os.path.isfile(path):

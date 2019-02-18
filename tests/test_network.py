@@ -20,8 +20,8 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
 import nemoa
-from flab.base import otree
-from flab.base import test
+from flib.base import otree
+from flib.base import test
 
 class TestCase(test.GenericTest):
     def test_network_import(self) -> None:

@@ -15,9 +15,9 @@ Nemoa
 enterprise application. Nemoa is open source and based on the `Python`_
 programming language.
 
-The key goal of nemoa is to provide a long-term data analysis framework, which
+The key goal of Nemoa is to provide a long-term data analysis framework, which
 seemingly integrates into existing enterprise data environments and thereby
-supports collaborative data science. To achieve this goal *nemoa* orchestrates
+supports collaborative data science. To achieve this goal Nemoa orchestrates
 established frameworks like `TensorFlow®`_ and `SQLAlchemy`_ and dynamically
 extends their capabilities by **community driven** algorithms for `probabilistic
 graphical modeling`_, `machine learning`_ and `structured data-analysis`_.
@@ -45,7 +45,7 @@ License
 
 Nemoa is available free for any use under the `GPLv3 license`_::
 
-   Copyright (c) 2019 Nemoa Developers
+   Copyright (c) 2019 Frootlab Developers
    Patrick Michl <patrick.michl@gmail.com>
 
 .. _Python: https://www.python.org/

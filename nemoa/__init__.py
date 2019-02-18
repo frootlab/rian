@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2013-2019 Frootlab Developers
 #
-# This file is part of nemoa, https://frootlab.github.io/nemoa
+# This file is part of Nemoa, https://frootlab.github.io/nemoa
 #
-#  nemoa is free software: you can redistribute it and/or modify it under the
+#  Nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  Nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License along with
-#  nemoa. If not, see <http://www.gnu.org/licenses/>.
+#  Nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
 """Nemoa data analysis.
 
-Nemoa is a data analysis framework for collaborative data science and enterprise
-application. Nemoa is open source and based on the Python programming language.
-Nemoa utilizes methods from probabilistic graphical modeling [PGM]_, machine
-learning [ML]_ and structured data-analysis [SDA]_.
+*Nemoa* is a data analysis framework for collaborative data science and
+enterprise application. Nemoa is open source and based on the Python programming
+language. Nemoa utilizes methods from probabilistic graphical modeling [PGM]_,
+machine learning [ML]_ and structured data-analysis [SDA]_.
 
 """
 __version__ = '0.5.578'

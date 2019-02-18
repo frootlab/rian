@@ -15,7 +15,7 @@ __license__ = 'GPLv3'
 
 import numpy
 import nemoa
-from flab.base import catalog
+from flib.base import catalog
 
 class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).

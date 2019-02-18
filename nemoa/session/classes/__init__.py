@@ -4,7 +4,7 @@ __author__ = 'Patrick Michl'
 __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 
-from flab.base import pkg
+from flib.base import pkg
 
 def new(*args, **kwds):
     """Create new session instance."""

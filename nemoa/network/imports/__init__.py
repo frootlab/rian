@@ -37,7 +37,7 @@ def load(path, filetype = None, **kwds):
     """Import network dictionary from file or workspace."""
 
     import os
-    from flab.base import env
+    from flib.base import env
     import nemoa
 
     # get path (if necessary)

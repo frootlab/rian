@@ -214,6 +214,6 @@ todo_include_todos = True
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'flab.base': ('http://flab-base.readthedocs.io/en/latest/', None),
-    'flab.io': ('http://flab-io.readthedocs.io/en/latest/', None),
+    'flib.base': ('http://flib-base.readthedocs.io/en/latest/', None),
+    'flib.io': ('http://flib-io.readthedocs.io/en/latest/', None),
     'pandb': ('http://pandb.readthedocs.io/en/latest/', None)}

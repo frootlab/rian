@@ -7,7 +7,7 @@ __license__ = 'GPLv3'
 import copy
 from typing import Any, Dict, Optional
 import numpy as np
-from flab.base import catalog, otree
+from flib.base import catalog, otree
 import nemoa
 from nemoa.base import array, nbase
 from nemoa.core import log, ui

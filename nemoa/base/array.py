@@ -24,9 +24,9 @@ __docformat__ = 'google'
 from typing import List
 import numpy as np
 from numpy.lib import recfunctions as nprec
-from flab.base import check
-from flab.base.types import StrPairDict, StrListPair, NaN, OptList
-from flab.base.types import Number, OptNumber, OptStrList
+from flib.base import check
+from flib.base.types import StrPairDict, StrListPair, NaN, OptList
+from flib.base.types import Number, OptNumber, OptStrList
 from nemoa.typing import NpArray, NpArrayLike, NpRecArray, NpFields
 
 #

@@ -38,12 +38,12 @@ def save(system, path = None, filetype = None, workspace = None,
 
     """
 
-    from flab.base import otree
+    from flib.base import otree
 
     if not otree.has_base(system, 'System'):
         raise ValueError("system is not valid")
 
-    from flab.base import env
+    from flib.base import env
 
     # get directory, filename and fileextension
     if isinstance(workspace, str) and not workspace == 'None':

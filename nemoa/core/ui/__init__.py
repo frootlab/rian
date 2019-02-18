@@ -24,9 +24,9 @@ __docformat__ = 'google'
 import functools
 import os
 import sys
-from flab.base import pkg
+from flib.base import pkg
 from nemoa.core import log
-from flab.base.types import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
+from flib.base.types import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
 
 #
 # Module Variables

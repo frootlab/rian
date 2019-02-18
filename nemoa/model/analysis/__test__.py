@@ -12,7 +12,7 @@ from nemoa.test import GenericTest
 #         with self.subTest(function = "algorithm"):
 #             from nemoa.model.analysis import algorithms
 #             test = algorithms(tag = )
-#             test = curname() == 'flab.base.__test__'
+#             test = curname() == 'flib.base.__test__'
 #             self.assertTrue(test)
 
 #    def test_PGM_Bayes(self):
