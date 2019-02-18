@@ -11,7 +11,7 @@ from flib.base import otree
 import nemoa
 from nemoa.core import log
 from nemoa.base import nbase
-from flib.base.types import Function
+from flib.typing import Function
 
 class Network(nbase.ObjectIP):
     """Network base class.

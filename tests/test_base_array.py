@@ -23,7 +23,7 @@ __docformat__ = 'google'
 
 import numpy as np
 from flib.base import test
-from flib.base.types import NaN
+from flib.typing import NaN
 from nemoa.base import array
 
 #

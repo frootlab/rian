@@ -9,7 +9,7 @@ from flib.base import catalog, otree
 import nemoa
 from nemoa.base import nbase
 from nemoa.math import curve
-from flib.base.types import Any, Dict
+from flib.typing import Any, Dict
 
 class System(nbase.ObjectIP):
     """Base class for systems.

@@ -21,9 +21,10 @@ __email__ = 'frootlab@gmail.com'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+from typing import Any, Dict
 from pathlib import Path
-from flib.base import check, mapping, env, otree
-from flib.base.types import Any, ClassVar, Dict, OptInt, OptStr, PathLike
+from flib.base import mapping, env, otree
+from flib.typing import check, ClassVar, OptInt, OptStr, PathLike
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.

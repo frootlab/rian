@@ -32,7 +32,7 @@ __docformat__ = 'google'
 from typing import Any
 import numpy as np
 from flib.base import call, catalog
-from flib.base.types import StrList
+from flib.typing import StrList
 from nemoa.base import array
 from nemoa.typing import NpArray, NpArrayLike
 

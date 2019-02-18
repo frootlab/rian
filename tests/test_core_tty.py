@@ -23,7 +23,7 @@ __docformat__ = 'google'
 
 from unittest import skipIf
 from nemoa.core import tty
-from flib.base.types import Module
+from flib.typing import Module
 from flib.base import test
 
 ttylib = tty.get_lib().__name__

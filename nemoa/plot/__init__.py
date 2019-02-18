@@ -29,7 +29,7 @@ except ImportError as err:
         "https://matplotlib.org") from err
 
 import matplotlib.pyplot as plt
-from flib.base.types import Any, OptDict
+from flib.typing import Any, OptDict
 
 #
 # Plot Class

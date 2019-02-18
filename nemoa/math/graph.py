@@ -22,7 +22,7 @@ __license__ = 'GPLv3'
 __docformat__ = 'google'
 
 import networkx as nx
-from flib.base.types import Any, OptBool, OptStr, OptTuple, FloatPair
+from flib.typing import Any, OptBool, OptStr, OptTuple, FloatPair
 
 DiGraph = nx.classes.digraph.DiGraph
 

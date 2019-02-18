@@ -27,7 +27,7 @@ import numpy as np
 from flib.base import mapping
 from nemoa.math import graph
 from nemoa.plot import Plot
-from flib.base.types import Any, OptBool, OptStr, OptTuple, FloatPair, Type
+from flib.typing import Any, OptBool, OptStr, OptTuple, FloatPair, Type
 
 #
 # Structural Types

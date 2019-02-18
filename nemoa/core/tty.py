@@ -34,8 +34,8 @@ import sys
 import threading
 import time
 from flib.base import env, pkg
-from flib.base.types import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
-from flib.base.types import Module, OptStr
+from flib.typing import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
+from flib.typing import Module, OptStr
 
 #
 # TTY Controle Classes

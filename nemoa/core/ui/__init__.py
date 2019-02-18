@@ -26,7 +26,7 @@ import os
 import sys
 from flib.base import pkg
 from nemoa.core import log
-from flib.base.types import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
+from flib.typing import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
 
 #
 # Module Variables

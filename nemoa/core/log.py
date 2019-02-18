@@ -33,8 +33,8 @@ import warnings
 from pathlib import Path
 from flib.base import attrib, env, abc
 from flib.errors import ExistsError, NotExistsError
-from flib.base.types import void, Any, AnyOp, ClassVar, PathLike, StrList
-from flib.base.types import StrOrInt, OptPath, Void
+from flib.typing import void, Any, AnyOp, ClassVar, PathLike, StrList
+from flib.typing import StrOrInt, OptPath, Void
 
 #
 # Logger Class

@@ -23,8 +23,8 @@ __docformat__ = 'google'
 
 from typing import Any
 import numpy as np
-from flib.base import call, catalog, check
-from flib.base.types import StrList
+from flib.base import call, catalog
+from flib.typing import check, StrList
 from nemoa.base import array
 from nemoa.typing import NpAxes, NpArray, NpArrayLike
 

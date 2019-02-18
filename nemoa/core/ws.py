@@ -28,7 +28,7 @@ from flib.base import attrib, env
 from nemoa.core import dcmeta
 from flib.errors import FileFormatError
 from flib.io import ini, zip as archive
-from flib.base.types import StrList, PathLike, OptBytes, OptPathLike
+from flib.typing import StrList, PathLike, OptBytes, OptPathLike
 
 class Workspace(archive.File, attrib.Group):
     """Workspaces.

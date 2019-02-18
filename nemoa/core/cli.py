@@ -27,7 +27,7 @@ from typing import Any
 from flib.base import env
 from nemoa.core import ui
 from nemoa.core.ui import shell
-from flib.base.types import BoolOp
+from flib.typing import BoolOp
 import nemoa
 
 def print_scripts(workspace: str) -> None:

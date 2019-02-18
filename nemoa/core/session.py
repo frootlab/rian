@@ -29,9 +29,9 @@ import weakref
 from flib.base import abc, attrib, env, errors
 from nemoa.core import dcmeta, log, ws
 from flib.io import ini, abc as ioabc
-from flib.base.types import BytesLike, ErrType, ErrMeta, ErrStack
-from flib.base.types import FileLike, OptBytes, OptPath, OptPathLike, OptStr
-from flib.base.types import PathLike, StrDict, StrList, StrOrInt
+from flib.typing import BytesLike, ErrType, ErrMeta, ErrStack
+from flib.typing import FileLike, OptBytes, OptPath, OptPathLike, OptStr
+from flib.typing import PathLike, StrDict, StrList, StrOrInt
 
 #
 # Session Records
