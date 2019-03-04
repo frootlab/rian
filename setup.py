@@ -94,7 +94,7 @@ def install() -> None:
             'matplotlib>=3.0',
             'networkx>=2.1',
             'numpy>=1.15',
-            'flib=0.9.0',
+            'flib>=0.9.0',
             'pandb>=0.1.8'],
         extras_require={
             'gui': ['pyside'],
