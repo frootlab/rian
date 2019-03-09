@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013-2019 Frootlab Developers
+# Copyright (C) 2019 Frootlab Developers
+# Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://frootlab.github.io/nemoa
+# This file is part of Nemoa, https://github.com/frootlab/nemoa
 #
 #  Nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software

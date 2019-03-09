@@ -3,16 +3,18 @@ Nemoa
 
 .. toctree::
    :maxdepth: 2
+   :numbered:
 
    Introduction <introduction>
    Installation <install>
-   :ref:`modindex`
+   API Reference <api/nemoa>
    Glossary <glossary>
    License <license>
    Bibliography <bibliography>
 
-Indices
--------
+Appendix
+--------
 
+* :ref:`modindex`
 * :ref:`genindex`
 * :ref:`search`

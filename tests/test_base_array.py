@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2019 Patrick Michl
+# Copyright (C) 2019 Frootlab Developers
+# Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of flib.base, https://github.com/frootlab/flib.base
+# This file is part of Nemoa, https://github.com/frootlab/nemoa
 #
-#  flib.base is free software: you can redistribute it and/or modify it under the
+#  Nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  flib.base is distributed in the hope that it will be useful, but WITHOUT ANY
+#  Nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License along with
-#  flib.base. If not, see <http://www.gnu.org/licenses/>.
+#  Nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
 """Unittests for module 'nemoa.base.array'."""
 

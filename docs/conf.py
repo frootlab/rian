@@ -1,47 +1,59 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2019 Frootlab Developers
+# Copyright (C) 2013-2019 Patrick Michl
 #
-# Configuration file for the Sphinx documentation builder.
+# This file is part of Nemoa, https://github.com/frootlab/nemoa
 #
-# This file does only contain a selection of the most common options. For a
-# full list see the documentation:
-# http://www.sphinx-doc.org/en/master/config
-
-# Parser options
-
-# from recommonmark.parser import CommonMarkParser
-
-# source_parsers = {
-#     '.md': CommonMarkParser,
-# }
-
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
+#  Nemoa is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+#  Nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+#  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License along with
+#  Nemoa. If not, see <http://www.gnu.org/licenses/>.
+#
+"""Configuration file for the Sphinx documentation builder.
 
+This file does only contain a selection of the most common options. For a full
+list see the documentation: http://www.sphinx-doc.org/en/master/config
 
-# -- Project information -----------------------------------------------------
+"""
+__copyright__ = '2019 Frootlab Developers'
+__author__ = 'Frootlab Developers'
+__email__ = 'frootlab@gmail.com'
+__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
+__license__ = 'GPLv3'
+__docformat__ = 'google'
 
-import nemoa
+import os
+import sys
+sys.path.insert(0, os.path.abspath('..'))
 
-project = nemoa.__name__
-copyright = nemoa.__copyright__
-author = nemoa.__author__
-version = nemoa.__version__
-release = nemoa.__version__
+import nemoa as package
+
+project = package.__name__
+copyright = package.__copyright__
+author = package.__author__
+version = package.__version__
+release = package.__version__
 
 add_module_names = False
 
-# -- General configuration ---------------------------------------------------
+# Run apidoc
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
+def run_apidoc(_) -> None:
+    from sphinx.apidoc import main
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'nemoa'))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    out_dir = os.path.join(cur_dir, 'api')
+    pkg_dir = os.path.join(cur_dir, '..', 'nemoa')
+    main(['', '-o', out_dir, pkg_dir, '--separate'])
+
+def setup(app) -> None:
+    app.connect('builder-inited', run_apidoc)
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -50,7 +62,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
-    #'sphinx_autodoc_typehints',
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
     'sphinx.ext.intersphinx']
@@ -86,9 +97,8 @@ pygments_style = None
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
+html_title = 'Nemoa'
+html_logo = 'logo/Nemoa-128.png'
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -157,8 +167,7 @@ latex_elements = { # type: ignore
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'nemoa.tex', 'nemoa Documentation',
-     'Patrick Michl', 'manual'),
+    (master_doc, 'nemoa.tex', 'Nemoa', 'Patrick Michl', 'manual'),
 ]
 
 
@@ -167,8 +176,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'nemoa', 'nemoa Documentation',
-     [author], 1)
+    (master_doc, 'nemoa', 'Nemoa', [author], 1)
 ]
 
 
@@ -178,9 +186,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'nemoa', 'nemoa Documentation',
-     author, 'nemoa', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'nemoa', 'Nemoa', author, 'nemoa',
+    'One line description of project.', 'Miscellaneous'),
 ]
 
 
@@ -201,19 +208,13 @@ epub_title = project
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
 
-
-# -- Extension configuration -------------------------------------------------
-
-# -- Options for todo extension ----------------------------------------------
-
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
-
 
 # Intersphinx Mapping
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'flib.base': ('http://flib-base.readthedocs.io/en/latest/', None),
-    'flib.io': ('http://flib-io.readthedocs.io/en/latest/', None),
-    'pandb': ('http://pandb.readthedocs.io/en/latest/', None)}
+    'flib': ('http://flib.readthedocs.io/en/latest/', None),
+    'pandb': ('http://pandb.readthedocs.io/en/latest/', None),
+    'motley': ('http://motley.readthedocs.io/en/latest/', None)}
