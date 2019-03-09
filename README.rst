@@ -2,7 +2,7 @@
 
    <div align="center">
      <a href="https://github.com/frootlab/nemoa">
-       <img src="https://raw.githubusercontent.com/frootlab/nemoa/master/docs/logo/Nemoa-256.png">
+       <img src="https://bit.ly/2VHbyJI">
      </a>
      <br>
    </div>
