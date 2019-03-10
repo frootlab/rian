@@ -28,17 +28,33 @@ __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 
+import pathlib
+import re
+
+# Parse top level module for attributes
+text = pathlib.Path('../nemoa/__init__.py').read_text()
+pattern = r"^[ ]*__([^\d\W]\w*)__[ ]*=[ ]*['\"]([^'\"]*)['\"]"
+matches = re.finditer(pattern, text, re.M)
+pkg = {str(m.group(1)): str(m.group(2)) for m in matches}
+
+# Define module variables used by Sphinx
+project = 'Nemoa'
+copyright = pkg['copyright']
+author = pkg['author']
+version = pkg['version']
+release = pkg['version']
+
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-import nemoa as package
-
-project = package.__name__
-copyright = package.__copyright__
-author = package.__author__
-version = package.__version__
-release = package.__version__
+# import nemoa as package
+#
+# project = package.__name__
+# copyright = package.__copyright__
+# author = package.__author__
+# version = package.__version__
+# release = package.__version__
 
 add_module_names = False
 

@@ -2,12 +2,10 @@
 
    <div align="center">
      <a href="https://github.com/frootlab/nemoa">
-       <img src="https://bit.ly/2VHbyJI">
+       <img src="https://bit.ly/2J3e37O">
      </a>
      <br>
    </div>
-
-----------
 
 Nemoa
 =====
