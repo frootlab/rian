@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2019 Frootlab Developers
 # Copyright (C) 2013-2019 Patrick Michl
 #
@@ -15,9 +16,13 @@
 #  You should have received a copy of the GNU General Public License along with
 #  Nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-__author__ = 'Patrick Michl'
-__email__ = 'frootlab@gmail.com'
+
+__copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
+__author__ = 'Frootlab Developers'
+__email__ = 'frootlab@gmail.com'
+__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 
 from flib.base import otree
 from nemoa.dataset.exports import archive, text, image

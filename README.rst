@@ -41,7 +41,7 @@ gold standard samples of the respective domain of application (e.g. latin
 handwriting samples, spoken word samples, TCGA gene expression data, etc.).
 
 Nemoa is `open source`_, based on the `Python`_ programming language and
-actively developed as part of `Project Infimum`_ at `Frootlab`_.
+actively developed as part of the `Smart Analytics`_ project at `Frootlab`_.
 
 Current Development Status
 --------------------------
@@ -62,8 +62,8 @@ computer, you can install the latest distributed version by using pip::
 Documentation
 -------------
 
-The latest Nemoa documentation is available as an `online manual`_ and for
-download in the formats `PDF`_, `Epub`_ and `HTML`_.
+The documentation of the latest distributed version is available as an `online
+manual`_ and for download, given in the formats `PDF`_, `EPUB`_ and `HTML`_.
 
 Contribute
 ----------
@@ -80,7 +80,7 @@ License
 Nemoa is `open source`_ and available free for any use under the `GPLv3
 license`_::
 
-   © 2019 Frootlab Developers
+   © 2019 Frootlab Developers:
      Patrick Michl <patrick.michl@gmail.com>
    © 2013-2019 Patrick Michl
 
@@ -88,11 +88,10 @@ license`_::
 .. _TensorFlow®: https://www.tensorflow.org/
 .. _SQLAlchemy: https://www.sqlalchemy.org/
 .. _PyPI: https://pypi.org/project/pandb/
-.. _GPLv3 license: https://www.gnu.org/licenses/gpl.html
 .. _Installation Manual: https://nemoa.readthedocs.io/en/latest/install.html
 .. _online manual: https://nemoa.readthedocs.io/en/latest/
 .. _PDF: https://readthedocs.org/projects/nemoa/downloads/pdf/latest/
-.. _Epub: https://readthedocs.org/projects/nemoa/downloads/epub/latest/
+.. _EPUB: https://readthedocs.org/projects/nemoa/downloads/epub/latest/
 .. _HTML: https://readthedocs.org/projects/nemoa/downloads/htmlzip/latest/
 .. _issue tracker: https://github.com/frootlab/nemoa/issues
 .. _Frootlab: https://github.com/frootlab
@@ -103,7 +102,8 @@ license`_::
     https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics)
 .. _GPLv3 license: https://www.gnu.org/licenses/gpl.html
 .. _issue tracker: https://github.com/frootlab/nemoa/issues
+.. _application: frootlab@gmail.com
 .. _google group: http://groups.google.com/group/nemoa
-.. _Project Infimum: https://github.com/orgs/frootlab/projects
+.. _Smart Analytics: https://github.com/orgs/frootlab/projects
+.. _GPLv3 license: https://www.gnu.org/licenses/gpl.html
 .. _open source: https://github.com/frootlab/pandora
-.. _application: patrick.michl@gmail.com

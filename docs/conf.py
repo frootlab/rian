@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2019 Frootlab Developers
 # Copyright (C) 2013-2019 Patrick Michl
 #
@@ -22,23 +23,28 @@ list see the documentation: http://www.sphinx-doc.org/en/master/config
 
 """
 __copyright__ = '2019 Frootlab Developers'
+__license__ = 'GPLv3'
+__docformat__ = 'google'
 __author__ = 'Frootlab Developers'
 __email__ = 'frootlab@gmail.com'
 __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
-__license__ = 'GPLv3'
-__docformat__ = 'google'
 
 import pathlib
 import re
 
+# -- Project information -----------------------------------------------------
+
+# Module Variables
+project = 'Nemoa'
+package = 'nemoa'
+
 # Parse top level module for attributes
-text = pathlib.Path('../nemoa/__init__.py').read_text()
+text = pathlib.Path(f'../{package}/__init__.py').read_text()
 pattern = r"^[ ]*__([^\d\W]\w*)__[ ]*=[ ]*['\"]([^'\"]*)['\"]"
 matches = re.finditer(pattern, text, re.M)
 pkg = {str(m.group(1)): str(m.group(2)) for m in matches}
 
 # Define module variables used by Sphinx
-project = 'Nemoa'
 copyright = pkg['copyright']
 author = pkg['author']
 version = pkg['version']
@@ -48,24 +54,16 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-# import nemoa as package
-#
-# project = package.__name__
-# copyright = package.__copyright__
-# author = package.__author__
-# version = package.__version__
-# release = package.__version__
-
 add_module_names = False
 
 # Run apidoc
 
 def run_apidoc(_) -> None:
     from sphinx.apidoc import main
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'nemoa'))
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', package))
     cur_dir = os.path.abspath(os.path.dirname(__file__))
     out_dir = os.path.join(cur_dir, 'api')
-    pkg_dir = os.path.join(cur_dir, '..', 'nemoa')
+    pkg_dir = os.path.join(cur_dir, '..', package)
     main(['', '-o', out_dir, pkg_dir, '--separate'])
 
 def setup(app) -> None:
@@ -113,8 +111,8 @@ pygments_style = None
 
 # -- Options for HTML output -------------------------------------------------
 
-html_title = 'Nemoa'
-html_logo = 'logo/Nemoa-128.png'
+html_title = project
+html_logo = f'logo/{project}-128.png'
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -156,7 +154,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'nemoadoc'
+htmlhelp_basename = f'{package}doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -183,7 +181,7 @@ latex_elements = { # type: ignore
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'nemoa.tex', 'Nemoa', 'Patrick Michl', 'manual'),
+    (master_doc, f'{package}.tex', project, 'Patrick Michl', 'manual'),
 ]
 
 
@@ -191,9 +189,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'nemoa', 'Nemoa', [author], 1)
-]
+man_pages = [(master_doc, package, pkg['description'], ['Patrick Michl'], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -202,8 +198,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'nemoa', 'Nemoa', author, 'nemoa',
-    'One line description of project.', 'Miscellaneous'),
+    (master_doc, package, Project, 'Patrick Michl', package,
+    pkg['description'], 'Miscellaneous'),
 ]
 
 

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2019 Frootlab Developers
 # Copyright (C) 2013-2019 Patrick Michl
 #
@@ -17,14 +18,16 @@
 #
 """Restricted Boltzmann Machine class networks.
 
-Various classes of restricted boltzmann machines aimed for data modeling
-and per layer pretraining of multilayer feedforward artificial neural
-networks
-"""
+Various classes of restricted boltzmann machines aimed for data modeling and per
+layer pretraining of multilayer feedforward artificial neural networks
 
-__author__ = 'Patrick Michl'
-__email__ = 'frootlab@gmail.com'
+"""
+__copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
+__author__ = 'Frootlab Developers'
+__email__ = 'frootlab@gmail.com'
+__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 
 from flib.base import otree
 import nemoa.system.classes.ann

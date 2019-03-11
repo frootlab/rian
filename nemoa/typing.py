@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2019 Frootlab Developers
 # Copyright (C) 2013-2019 Patrick Michl
 #
@@ -17,10 +18,12 @@
 #
 """Structural types for type hinting."""
 
-__author__ = 'Patrick Michl'
-__email__ = 'frootlab@gmail.com'
+__copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
+__author__ = 'Frootlab Developers'
+__email__ = 'frootlab@gmail.com'
+__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 
 from numbers import Number
 from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Union

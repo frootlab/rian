@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2019 Frootlab Developers
 # Copyright (C) 2013-2019 Patrick Michl
 #
@@ -15,25 +16,24 @@
 #  You should have received a copy of the GNU General Public License along with
 #  Nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-"""Nemoa data analysis.
+"""Nemoa Data Analysis.
 
-*Nemoa* is a data analysis framework for collaborative data science and
-enterprise application. Nemoa is open source and based on the Python programming
-language. Nemoa utilizes methods from probabilistic graphical modeling [PGM]_,
-machine learning [ML]_ and structured data-analysis [SDA]_.
+Nemoa is a data analysis framework for collaborative data science and enterprise
+application. Nemoa is open source and based on the Python programming language.
+Nemoa utilizes methods from probabilistic graphical modeling [PGM]_, machine
+learning [ML]_ and structured data-analysis [SDA]_.
 
 """
 __version__ = '0.5.581'
-__status__ = 'Development'
-__description__ = 'enterprise data analysis'
-__url__ = 'https://frootlab.github.io/nemoa'
 __license__ = 'GPLv3'
-__copyright__ = 'Copyright (c) 2013-2019 Frootlab Developers'
-__organization__ = 'frootlab'
-__author__ = 'frootlab'
+__copyright__ = '2019 Frootlab Developers'
+__description__ = 'Enterprise Machine-Learning and Predictive Analytics'
+__url__ = 'https://github.com/frootlab/nemoa'
+__organization__ = 'Frootlab'
+__author__ = 'Frootlab Developers'
 __email__ = 'frootlab@gmail.com'
-__maintainer__ = 'Patrick Michl'
 __authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
+__maintainer__ = 'Patrick Michl'
 __credits__ = ['Willi Jäger']
 __docformat__ = 'google'
 

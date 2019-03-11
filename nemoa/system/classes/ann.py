@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2019 Frootlab Developers
 # Copyright (C) 2013-2019 Patrick Michl
 #
@@ -18,16 +19,17 @@
 """Artificial Neuronal Network (ANN).
 
 Generic class of layered feed forward networks aimed to provide common
-attributes, methods, optimization algorithms like back-propagation of
-errors [HINTON1986]_ and unit classes to other systems by inheritence. For
-multilayer network topologies DBNs usually show better performance than
-plain ANNs.
+attributes, methods, optimization algorithms like back-propagation of errors
+[HINTON1986]_ and unit classes to other systems by inheritence. For multilayer
+network topologies DBNs usually show better performance than plain ANNs.
 
 """
-
-__author__ = 'Patrick Michl'
-__email__ = 'frootlab@gmail.com'
+__copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
+__docformat__ = 'google'
+__author__ = 'Frootlab Developers'
+__email__ = 'frootlab@gmail.com'
+__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
 
 import numpy
 import nemoa
