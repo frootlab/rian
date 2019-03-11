@@ -198,7 +198,7 @@ man_pages = [(master_doc, package, pkg['description'], ['Patrick Michl'], 1)]
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, package, Project, 'Patrick Michl', package,
+    (master_doc, package, project, 'Patrick Michl', package,
     pkg['description'], 'Miscellaneous'),
 ]
 
