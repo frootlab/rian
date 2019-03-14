@@ -22,8 +22,8 @@ __copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 __author__ = 'Frootlab Developers'
-__email__ = 'frootlab@gmail.com'
-__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
+__email__ = 'contact@frootlab.org'
+__authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import Any
 import numpy as np
@@ -206,5 +206,5 @@ def rmse(x: NpArray, y: NpArray, axes: NpAxes = 0) -> NpArray:
     """
     return vector.qmean_dist(x, y, axes=axes)
 
-# TODO (patrick.michl@gmail.com): Goodness of fit Measures
+# TODO (patrick.michl@frootlab.org): Goodness of fit Measures
 # https://en.wikipedia.org/wiki/Goodness_of_fit

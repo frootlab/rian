@@ -22,8 +22,8 @@ __copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 __author__ = 'Frootlab Developers'
-__email__ = 'frootlab@gmail.com'
-__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
+__email__ = 'contact@frootlab.org'
+__authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import networkx as nx
 from nemoa.plot import network
@@ -51,7 +51,7 @@ class TestNetwork(test.ModuleTest):
         self.pos3 = {1: (4., 2.), 2: (4., 16.), 4: (32., 2.), 3: (32., 16.)}
 
     def test_Graph2D(self) -> None:
-        # TODO (patrick.michl@gmail.com): Write unittest for completeness
+        # TODO (patrick.michl@frootlab.org): Write unittest for completeness
         # of classes
         pass
 

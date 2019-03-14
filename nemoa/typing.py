@@ -22,13 +22,13 @@ __copyright__ = '2019 Frootlab Developers'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 __author__ = 'Frootlab Developers'
-__email__ = 'frootlab@gmail.com'
-__authors__ = ['Patrick Michl <patrick.michl@gmail.com>']
+__email__ = 'contact@frootlab.org'
+__authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from numbers import Number
 from typing import Any, Callable, Iterable, Optional, Sequence, Tuple, Union
 
-# TODO (patrick.michl@gmail.com): Currently (numpy 1.15.3) typing support for
+# TODO (patrick.michl@frootlab.org): Currently (numpy 1.15.3) typing support for
 # numpy is not available but a workaround is in progress, see:
 # https://github.com/numpy/numpy-stubs
 NpShape = Optional[Tuple[int, ...]]
@@ -47,7 +47,7 @@ OptNpArray = Optional[NpArray]
 NpArrayFunc = Callable[..., NpArray]
 NpRecArrayFunc = Callable[..., NpRecArray]
 NpMatrixFunc = Callable[..., NpMatrix]
-# TODO (patrick.michl@gmail.com): Currently (Python 3.7.2) the typing module
+# TODO (patrick.michl@frootlab.org): Currently (Python 3.7.2) the typing module
 # does not support argument specification for callables with variing numbers of
 # arguments, but this feature is in progress, see:
 # https://github.com/python/typing/issues/264

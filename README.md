@@ -71,7 +71,7 @@ the [issue tracker](https://github.com/frootlab/nemoa/issues) provided by
 GitHub. Currently, as the Frootlab Developers team still is growing, we do not
 provide any Contribution Guide Lines to collaboration partners. However, if you
 are interested to join the team, we would be glad, to receive an informal
-[application](frootlab@gmail.com).
+[application](mailto:application@frootlab.org).
 
 License
 -------
@@ -80,5 +80,5 @@ Nemoa is [open source](https://github.com/frootlab/pandora) and available free
 for any use under the [GPLv3 license](https://www.gnu.org/licenses/gpl.html):
 
     © 2019 Frootlab Developers:
-      Patrick Michl <patrick.michl@gmail.com>
+      Patrick Michl <patrick.michl@frootlab.org>
     © 2013-2019 Patrick Michl
