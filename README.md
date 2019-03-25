@@ -48,7 +48,7 @@ Installation
 ------------
 
 Comprehensive information and installation support is provided within the
-[online manual](https://nemoa.readthedocs.io/en/latest/). If you already have a
+[online manual](http://docs.frootlab.org/nemoa). If you already have a
 Python environment configured on your computer, you can install the latest
 distributed version by using pip:
 
@@ -58,7 +58,7 @@ Documentation
 -------------
 
 The documentation of the latest distributed version is available as an [online
-manual](https://nemoa.readthedocs.io/en/latest/) and for download, given in the
+manual](http://docs.frootlab.org/nemoa) and for download, given in the
 formats [PDF](https://readthedocs.org/projects/nemoa/downloads/pdf/latest/),
 [EPUB](https://readthedocs.org/projects/nemoa/downloads/epub/latest/) and
 [HTML](https://readthedocs.org/projects/nemoa/downloads/htmlzip/latest/).

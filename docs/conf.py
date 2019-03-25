@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Frootlab Developers
+# Copyright (C) 2019 Frootlab
 # Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://github.com/frootlab/nemoa
+# This file is part of Nemoa, https://www.frootlab.org/nemoa
 #
 #  Nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,7 @@ This file does only contain a selection of the most common options. For a full
 list see the documentation: http://www.sphinx-doc.org/en/master/config
 
 """
-__copyright__ = '2019 Frootlab Developers'
+__copyright__ = '2019 Frootlab'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 __author__ = 'Frootlab Developers'
@@ -31,6 +31,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import pathlib
 import re
+import sphinx_bootstrap_theme
 
 # -- Project information -----------------------------------------------------
 
@@ -113,7 +114,8 @@ pygments_style = None
 
 html_title = project
 html_logo = f'logo/{project}-128.png'
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'bootstrap'
+html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

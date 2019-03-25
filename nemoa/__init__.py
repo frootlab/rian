@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Frootlab Developers
+# Copyright (C) 2019 Frootlab
 # Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://github.com/frootlab/nemoa
+# This file is part of Nemoa, https://www.frootlab.org/nemoa
 #
 #  Nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -26,9 +26,9 @@ learning [ML]_ and structured data-analysis [SDA]_.
 """
 __version__ = '0.5.581'
 __license__ = 'GPLv3'
-__copyright__ = '2019 Frootlab Developers'
+__copyright__ = '2019 Frootlab'
 __description__ = 'Enterprise Machine-Learning and Predictive Analytics'
-__url__ = 'https://github.com/frootlab/nemoa'
+__url__ = 'https://www.frootlab.org/nemoa'
 __organization__ = 'Frootlab'
 __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'

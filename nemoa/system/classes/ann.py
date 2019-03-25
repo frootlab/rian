@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 Frootlab Developers
+# Copyright (C) 2019 Frootlab
 # Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://github.com/frootlab/nemoa
+# This file is part of Nemoa, https://www.frootlab.org/nemoa
 #
 #  Nemoa is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -24,7 +24,7 @@ attributes, methods, optimization algorithms like back-propagation of errors
 network topologies DBNs usually show better performance than plain ANNs.
 
 """
-__copyright__ = '2019 Frootlab Developers'
+__copyright__ = '2019 Frootlab'
 __license__ = 'GPLv3'
 __docformat__ = 'google'
 __author__ = 'Frootlab Developers'
