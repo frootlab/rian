@@ -34,7 +34,7 @@ handwriting samples, spoken word samples, TCGA gene expression data, etc.).
 
 Nemoa is [open source](https://github.com/frootlab/pandora), based on the
 [Python](https://www.python.org/) programming language and actively developed as
-part of the [Smart Analytics](https://github.com/orgs/frootlab/projects) project
+part of the [Liquid ML](https://github.com/orgs/frootlab/projects) framework
 at [Frootlab](https://github.com/frootlab).
 
 Current Development Status

@@ -109,7 +109,13 @@ class Heatmap(heatmap.Heatmap):
         fname = self._config.get('func')
         fdict = dataset.get('algorithm', fname)
         func = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = call.parameters(func, default = self._config)
+
+        # Note: The following workaround is to be replaced by:
+        # kwds = call.parameters(func, **self._config)
+        keys = set(call.parameters(func).keys())
+        keys = keys.intersection(self._config.keys())
+        kwds = {key: self._config[key] for key in keys}
+
         array = dataset.evaluate(fname, **kwds)
 
         # check return value
@@ -147,7 +153,13 @@ class Histogram(histogram.Histogram):
         fname = self._config.get('func')
         fdict = dataset.get('algorithm', fname)
         func = fdict.get('func', None) or fdict.get('reference', None)
-        kwds = call.parameters(func, default=self._config)
+
+        # Note: The following workaround is to be replaced by:
+        # kwds = call.parameters(func, **self._config)
+        keys = set(call.parameters(func).keys())
+        keys = keys.intersection(self._config.keys())
+        kwds = {key: self._config[key] for key in keys}
+
         array = dataset.evaluate(fname, **kwds)
 
         # check return value

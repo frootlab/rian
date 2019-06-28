@@ -95,8 +95,8 @@ def install() -> None:
             'matplotlib>=3.0',
             'networkx>=2.1',
             'numpy>=1.15',
-            'flib>=0.9.0',
-            'pandb>=0.1.8'],
+            'flib>=0.9.2',
+            'pandb>=0.1.10'],
         extras_require={
             'gui': ['pyside'],
             'gene': ['rpy2']},

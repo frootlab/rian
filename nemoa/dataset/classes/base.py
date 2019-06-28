@@ -27,6 +27,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 import copy
 from typing import Any, Dict, Optional
 import numpy as np
+from numpy.lib import recfunctions as nprec
 from flib.base import catalog, otree
 import nemoa
 from nemoa.base import array, nbase
@@ -155,11 +156,11 @@ class Dataset(nbase.ObjectIP):
             if 'columns_orig' in table_config \
                 and 'columns_conv' in table_config \
                 and 'columns_lost' in table_config:
-                source_columns = table_config['columns_orig']
+                srccols = table_config['columns_orig']
                 columns_conv = table_config['columns_conv']
                 columns_lost = table_config['columns_lost']
             else:
-                source_columns = \
+                srccols = \
                     self._tables[table].dtype.names
 
                 if 'labelformat' in table_config:
@@ -168,9 +169,9 @@ class Dataset(nbase.ObjectIP):
                     source_labelformat = 'generic:string'
 
                 columns_conv, columns_lost = \
-                    labels.convert(source_columns, input = source_labelformat)
+                    labels.convert(srccols, input = source_labelformat)
 
-                table_config['columns_orig'] = source_columns
+                table_config['columns_orig'] = srccols
                 table_config['columns_conv'] = columns_conv
                 table_config['columns_lost'] = columns_lost
 
@@ -221,9 +222,7 @@ class Dataset(nbase.ObjectIP):
 
             # prepare dictionary for column source ids
             col_labels[table] = {
-                #'original': source_columns,
                 'conv': columns_conv,
-                #'usecols': (),
                 'notusecols': columns_lost }
 
         # intersect converted table column names
@@ -542,8 +541,8 @@ class Dataset(nbase.ObjectIP):
             "could not transform data: "
             "unsupported transformation '%s'." % transformation)
 
-    def _initialize_transform_system(self, system = None,
-        mapping = None, func: str = 'expect'):
+    def _initialize_transform_system(self,
+            system = None,  mapping = None, func: str = 'expect'):
         """ """
 
         if not otree.has_base(system, 'System'):
@@ -551,58 +550,57 @@ class Dataset(nbase.ObjectIP):
 
         ui.info("transform data using model '%s'." % system.name)
 
-        if mapping is None: mapping = system.mapping
+        if mapping is None:
+            mapping = system.mapping
 
-        source_columns = system.get('units', layer = mapping[0])
-        target_columns = system.get('units', layer = mapping[-1])
+        srccols = system.get('units', layer=mapping[0])
+        tgtcols = system.get('units', layer=mapping[-1])
 
-        colnames = self._get_colnames(source_columns)
+        colnames = self._get_colnames(srccols)
 
         for table in self._tables:
 
             # get data, mapping and transformation function
             data = self._tables[table]
-            data = self._get_table(table, cols = source_columns)
+            data = self._get_table(table, cols=srccols)
 
-            # 2Do: do not create copy of data but view!
-            data_array = data.copy().view('<f8').reshape(data.size,
-                len(source_columns))
+            # Create unstructured array. Note: The conversation depends on the
+            # used NumPy version. For more information see:
+            # https://docs.scipy.org/doc/numpy/user/basics.rec.html
+            if np.__version__ >= '1.16':
+                array = nprec.structured_to_unstructured(data)
+            else:
+                array = data.copy().view('<f8').reshape(data.size, len(srccols))
 
             # transform data
             if func == 'expect':
-                trans_array = system._get_unitexpect(
-                    data_array, mapping)
+                trans_array = system._get_unitexpect(array, mapping)
             elif func == 'value':
-                trans_array = system._get_unitvalues(
-                    data_array, mapping)
+                trans_array = system._get_unitvalues(array, mapping)
             elif func == 'sample':
-                trans_array = system._get_unitsamples(
-                    data_array, mapping)
+                trans_array = system._get_unitsamples(array, mapping)
 
             # create empty record array
             num_rows = self._tables[table]['label'].size
-            col_names = ('label',) + tuple(target_columns)
-            col_formats = ('<U12',) + tuple(['<f8' \
-                for x in target_columns])
+            col_names = ('label', ) + tuple(tgtcols)
+            col_formats = ('<U12', ) + tuple(['<f8' for x in tgtcols])
             new_rec_array = np.recarray((num_rows,),
-                dtype = list(zip(col_names, col_formats)))
+                dtype=list(zip(col_names, col_formats)))
 
             # set values in record array
             new_rec_array['label'] = self._tables[table]['label']
-            for colid, colname in \
-                enumerate(new_rec_array.dtype.names[1:]):
+            for colid, colname in enumerate(new_rec_array.dtype.names[1:]):
 
                 # update source data columns
-                new_rec_array[colname] = \
-                    (trans_array[:, colid]).astype(float)
+                new_rec_array[colname] = (trans_array[:, colid]).astype(float)
 
             # set record array
             self._tables[table] = new_rec_array
 
         # create trivial column mapping
-        colmapping = { col: col for col in target_columns }
+        colmapping = { col: col for col in tgtcols }
 
-        return self._set_columns(target_columns, colmapping)
+        return self._set_columns(tgtcols, colmapping)
 
     def get(self, key: str = 'name', *args, **kwds):
         """Get meta information and content."""
@@ -806,8 +804,9 @@ class Dataset(nbase.ObjectIP):
         """Get list of row filters."""
         return list(self._config['rowfilter'].keys())
 
-    def _get_data(self, size = 0, rows = '*', cols = '*',
-        noise = (None, 0.), output = 'array'):
+    def _get_data(self,
+            size: int = 0, rows: str = '*', cols: str = '*',
+            noise: tuple = (None, 0.), output: str = 'array'):
         """Return a given number of stratified samples.
 
         Args:
@@ -910,7 +909,7 @@ class Dataset(nbase.ObjectIP):
 
         """
 
-        # get columns from column filter or from list
+        # Get columns from column filter or from list
         if isinstance(cols, str):
             columns = self._get_columns(cols)
         elif isinstance(cols, list):
@@ -919,7 +918,7 @@ class Dataset(nbase.ObjectIP):
             raise ValueError("""could not retrieve data:
                 Argument 'cols' is not valid.""")
 
-        # assert validity of columns and get column names of tables
+        # Assert validity of columns and get column names of tables
         if not len(columns) == len(set(columns)):
             raise ValueError("""could not retrieve data:
                 columns are not unique!""")
@@ -928,14 +927,17 @@ class Dataset(nbase.ObjectIP):
                 unknown columns!""")
         colnames = self._get_colnames(columns)
 
-        # check return data type
-        if isinstance(output, str): fmt_tuple = (output, )
-        elif isinstance(output, tuple): fmt_tuple = output
+        # Check output type
+        if isinstance(output, str):
+            fmt_tuple = (output, )
+        elif isinstance(output, tuple):
+            fmt_tuple = output
         else:
-            raise ValueError("""could not retrieve data:
-                invalid 'format' argument!""")
+            raise ValueError(
+                "could not retrieve data: "
+                "invalid 'format' argument!")
 
-        # check for identical column names
+        # Check for identical column names
         if len(set(colnames)) == len(colnames):
             ucolnames = colnames
         else:
@@ -945,25 +947,40 @@ class Dataset(nbase.ObjectIP):
             ucolnames = []
             for col in colnames:
                 counter[col] += 1
-                if counter[col] == 1: ucolnames.append(col)
-                else: ucolnames.append('%s.%i' % (col, counter[col]))
+                if counter[col] == 1:
+                    ucolnames.append(col)
+                else:
+                    ucolnames.append('%s.%i' % (col, counter[col]))
 
-        # format data
+        # Create requested data format. For 'recarray' a sliced structured array
+        # is created, which comprises record labels in the first column. For
+        # 'array' a sliced unstructured array is creted that only contains data.
+        # Thereby the conversation from structured to unstructured depends on
+        # the NumPy version: For NumPy < 1.16 a view causes the sliced
+        # structured array to be repacked. For NumPy >= 1.16 the sliced
+        # structured array is more efficiently converted into an unstructured
+        # array. For 'cols' and 'rows' respectively a list of column- or row
+        # names is created.
         rettuple = ()
-        for fmt_str in fmt_tuple:
-            if fmt_str == 'recarray':
+        for item in fmt_tuple:
+            if item == 'array':
+                sliced = data[ucolnames]
+                if np.__version__ >= '1.16':
+                    array = nprec.structured_to_unstructured(sliced)
+                else:
+                    packed = sliced.copy().view('<f8')
+                    array = packed.reshape(data.size, len(ucolnames))
+                rettuple += (array, )
+            elif item == 'recarray':
                 rettuple += (data[['label'] + ucolnames], )
-            elif fmt_str == 'array':
-                # 2Do: do not create copy of data but view!
-                rettuple += (data[ucolnames].copy().view('<f8').reshape(
-                    data.size, len(ucolnames)), )
-            elif fmt_str == 'cols':
+            elif item == 'cols':
                 rettuple += (ucolnames, )
-            elif fmt_str == 'rows':
+            elif item == 'rows':
                 rettuple += (data['label'].tolist(), )
             else:
                 raise ValueError("""could not retrieve data:
                     invalid argument 'cols'.""")
+
         if isinstance(output, str):
             return rettuple[0]
         return rettuple
@@ -1351,10 +1368,13 @@ class Dataset(nbase.ObjectIP):
         category = ('dataset', 'evaluation'),
         plot     = 'histogram'
     )
-    def _get_sample(self, *args, **kwds):
+    def _get_sample(self,
+            size: int = 0, rows: str = '*', cols: str = '*',
+            noise: tuple = (None, 0.), output: str = 'array'):
         """Return a given number of stratified samples."""
 
-        return self._get_data(*args, **kwds)
+        return self._get_data(
+            size=size, rows=rows, cols=cols, noise=noise, output=output)
 
     @catalog.custom(
         name     = 'covariance',

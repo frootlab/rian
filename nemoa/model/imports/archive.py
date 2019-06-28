@@ -46,10 +46,9 @@ class Npz:
         self.settings = {**self.default, **kwds}
 
     def load(self, path):
-        copy = numpy.load(path, encoding='latin1')
-
-        return {
-            'config': copy['config'].item(),
-            'dataset': copy['dataset'].item(),
-            'network': copy['network'].item(),
-            'system': copy['system'].item() }
+        with numpy.load(path, encoding='latin1', allow_pickle=True) as copy:
+            return {
+                'config': copy['config'].item(),
+                'dataset': copy['dataset'].item(),
+                'network': copy['network'].item(),
+                'system': copy['system'].item() }

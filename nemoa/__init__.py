@@ -24,7 +24,7 @@ Nemoa utilizes methods from probabilistic graphical modeling [PGM]_, machine
 learning [ML]_ and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.581'
+__version__ = '0.5.582'
 __license__ = 'GPLv3'
 __copyright__ = '2019 Frootlab'
 __description__ = 'Enterprise Machine-Learning and Predictive Analytics'
