@@ -96,7 +96,7 @@ def install() -> None:
             'networkx>=2.1',
             'numpy>=1.15',
             'hup>=0.9.2',
-            'pandb>=0.1.11'],
+            'deet>=0.1.11'],
         extras_require={
             'gui': ['pyside'],
             'gene': ['rpy2']},

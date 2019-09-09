@@ -230,5 +230,5 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'hup': ('http://hup.readthedocs.io/en/latest/', None),
-    'pandb': ('http://pandb.readthedocs.io/en/latest/', None),
+    'deet': ('http://deet.readthedocs.io/en/latest/', None),
     'motley': ('http://motley.readthedocs.io/en/latest/', None)}
