@@ -73,8 +73,8 @@ are interested to join the team, we would be glad, to receive an informal
 License
 -------
 
-Nemoa is [open source](https://github.com/frootlab/pandora) and available free
-for any use under the [GPLv3 license](https://www.gnu.org/licenses/gpl.html):
+Nemoa is open source and available free for any use under the
+[GPLv3 license](https://www.gnu.org/licenses/gpl.html):
 
     © 2019 Frootlab Developers:
       Patrick Michl <patrick.michl@frootlab.org>
