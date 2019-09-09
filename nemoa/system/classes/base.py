@@ -25,11 +25,11 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
-from flib.base import catalog, otree
+from hup.base import catalog, otree
 import nemoa
 from nemoa.base import nbase
 from nemoa.math import curve
-from flib.typing import Any, Dict
+from hup.typing import Any, Dict
 
 class System(nbase.ObjectIP):
     """Base class for systems.

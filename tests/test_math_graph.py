@@ -26,7 +26,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import networkx as nx
-from flib.base import test
+from hup.base import test
 from nemoa.math import graph
 
 #

@@ -25,7 +25,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import Any, Dict
-from flib.base import otree
+from hup.base import otree
 import nemoa
 from nemoa.base import nbase
 

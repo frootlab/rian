@@ -26,7 +26,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import networkx as nx
 import numpy as np
-from flib.base import call, otree
+from hup.base import call, otree
 import nemoa
 from nemoa.plot import Plot, heatmap, histogram, network, scatter
 

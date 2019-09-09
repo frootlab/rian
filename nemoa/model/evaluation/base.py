@@ -25,7 +25,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy as np
-from flib.base import otree
+from hup.base import otree
 from nemoa.base import array
 
 class Evaluation:

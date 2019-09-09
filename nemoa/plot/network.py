@@ -28,10 +28,10 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 import matplotlib.patches
 import networkx as nx
 import numpy as np
-from flib.base import mapping
+from hup.base import mapping
 from nemoa.math import graph
 from nemoa.plot import Plot
-from flib.typing import Any, OptBool, OptStr, OptTuple, FloatPair, Type
+from hup.typing import Any, OptBool, OptStr, OptTuple, FloatPair, Type
 
 #
 # Structural Types

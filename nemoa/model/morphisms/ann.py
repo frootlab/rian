@@ -27,7 +27,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
 import nemoa.model.morphisms.base
-from flib.base import catalog
+from hup.base import catalog
 
 class ANN(nemoa.model.morphisms.base.Optimizer):
 

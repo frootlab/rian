@@ -30,11 +30,11 @@ import imp
 import logging
 import os
 import traceback
-from flib.base import env, stack
+from hup.base import env, stack
 import nemoa
 from nemoa import workspace
 from nemoa.core import tty
-from flib.io import ini
+from hup.io import ini
 
 class Session:
     """Session Manager."""

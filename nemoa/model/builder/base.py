@@ -25,7 +25,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import nemoa
-from flib.base import otree
+from hup.base import otree
 
 def types():
     """Get supported layer network types for network building."""

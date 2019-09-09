@@ -61,7 +61,7 @@ def save(network, path, filetype, **kwds):
 
 def _graph_encode(graph, coding=None):
     """Encode graph parameters."""
-    from flib.base import binary
+    from hup.base import binary
 
     # no encoding
     if not isinstance(coding, str) or coding.lower() == 'none':

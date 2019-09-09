@@ -24,8 +24,8 @@ __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
-from flib.base import env
-from flib.io import ini
+from hup.base import env
+from hup.io import ini
 
 def filetypes():
     """Get supported text filetypes for workspace import."""

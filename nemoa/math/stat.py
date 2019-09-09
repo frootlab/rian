@@ -26,7 +26,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import List, Optional
-from flib.base import catalog
+from hup.base import catalog
 
 #
 # Define Catalog Categories

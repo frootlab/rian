@@ -27,8 +27,8 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import Any, Dict
 from pathlib import Path
-from flib.base import mapping, env, otree
-from flib.typing import check, ClassVar, OptInt, OptStr, PathLike
+from hup.base import mapping, env, otree
+from hup.typing import check, ClassVar, OptInt, OptStr, PathLike
 
 class ObjectIP:
     """Base class for objects subjected to intellectual property.

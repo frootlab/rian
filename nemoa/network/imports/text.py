@@ -36,7 +36,7 @@ def filetypes():
 def load(path, **kwds):
     """Import network from text file."""
 
-    from flib.base import env
+    from hup.base import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -67,7 +67,7 @@ class Ini:
                 configuration dictionary.
 
         """
-        from flib.io import ini
+        from hup.io import ini
 
         scheme = {
             'network': {
@@ -88,8 +88,8 @@ class Ini:
             "type '%s'." % (path, network['network']['type']))
 
     def _parse_layer_network(self, path):
-        from flib.base import env
-        from flib.io import ini
+        from hup.base import env
+        from hup.io import ini
 
         scheme = {
             'network': {

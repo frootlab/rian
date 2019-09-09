@@ -27,8 +27,8 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from datetime import datetime as Date
 from typing import Any
-from flib.base import attrib
-from flib.typing import StrList
+from hup.base import attrib
+from hup.typing import StrList
 
 
 # Dublin Core (DC) Attributes

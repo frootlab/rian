@@ -25,7 +25,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import networkx
-from flib.base import mapping
+from hup.base import mapping
 
 
 def filetypes():
@@ -42,7 +42,7 @@ def filetypes():
 
 def load(path, **kwds):
     """Import network from graph description file."""
-    from flib.base import env
+    from hup.base import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -59,7 +59,7 @@ def load(path, **kwds):
 
 def _graph_decode(G):
     """ """
-    from flib.base import binary
+    from hup.base import binary
 
     # no encoding
     if not G.graph.get('coding', None) or G.graph['coding'].lower() == 'none':

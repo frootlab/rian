@@ -25,8 +25,8 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import nemoa
-from flib.base import otree
-from flib.base import test
+from hup.base import otree
+from hup.base import test
 
 class TestCase(test.GenericTest):
     def test_network_import(self) -> None:

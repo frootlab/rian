@@ -49,7 +49,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
-from flib.base import catalog
+from hup.base import catalog
 from nemoa.math import curve
 
 #

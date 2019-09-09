@@ -36,9 +36,9 @@ import queue
 import sys
 import threading
 import time
-from flib.base import env, pkg
-from flib.typing import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
-from flib.typing import Module, OptStr
+from hup.base import env, pkg
+from hup.typing import Any, ClassVar, ErrType, ErrMeta, ErrStack, Method
+from hup.typing import Module, OptStr
 
 #
 # TTY Controle Classes

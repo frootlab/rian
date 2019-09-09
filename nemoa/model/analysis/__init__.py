@@ -24,7 +24,7 @@ __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
-from flib.base import catalog
+from hup.base import catalog
 
 def algorithms(*args, **kwds):
     """Returns dictionary of algorithms, that pass given filters. """

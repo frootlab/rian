@@ -34,8 +34,8 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import Any
 import numpy as np
-from flib.base import call, catalog
-from flib.typing import StrList
+from hup.base import call, catalog
+from hup.typing import StrList
 from nemoa.base import array
 from nemoa.typing import NpArray, NpArrayLike
 

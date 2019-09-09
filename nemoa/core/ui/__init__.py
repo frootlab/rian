@@ -28,9 +28,9 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 import functools
 import os
 import sys
-from flib.base import pkg
+from hup.base import pkg
 from nemoa.core import log
-from flib.typing import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
+from hup.typing import Any, AnyOp, ErrMeta, ErrType, ErrStack, OptVoid
 
 #
 # Module Variables

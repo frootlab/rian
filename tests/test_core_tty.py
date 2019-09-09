@@ -27,8 +27,8 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from unittest import skipIf
 from nemoa.core import tty
-from flib.typing import Module
-from flib.base import test
+from hup.typing import Module
+from hup.base import test
 
 ttylib = tty.get_lib().__name__
 

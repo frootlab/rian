@@ -36,7 +36,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
 import nemoa
-from flib.base import catalog
+from hup.base import catalog
 from nemoa.math import curve
 from nemoa.model.evaluation.base import Evaluation
 

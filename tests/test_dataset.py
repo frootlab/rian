@@ -26,7 +26,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
 import nemoa
-from flib.base import otree, test
+from hup.base import otree, test
 import nemoa.dataset
 
 class TestCase(test.GenericTest):

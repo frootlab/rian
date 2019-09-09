@@ -28,10 +28,10 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 import getopt
 import sys
 from typing import Any
-from flib.base import env
+from hup.base import env
 from nemoa.core import ui
 from nemoa.core.ui import shell
-from flib.typing import BoolOp
+from hup.typing import BoolOp
 import nemoa
 
 def print_scripts(workspace: str) -> None:

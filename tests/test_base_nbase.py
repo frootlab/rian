@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License along with
 #  Nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-"""Unittests for module 'flib.base.nbase'."""
+"""Unittests for module 'hup.base.nbase'."""
 
 __copyright__ = '2019 Frootlab'
 __license__ = 'GPLv3'
@@ -26,7 +26,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from nemoa.base import nbase
-from flib.base import test
+from hup.base import test
 
 #
 # Test Cases

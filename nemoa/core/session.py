@@ -30,12 +30,12 @@ import datetime
 from pathlib import Path
 from typing import Any, ClassVar, List, Optional
 import weakref
-from flib.base import abc, attrib, env, errors
+from hup.base import abc, attrib, env, errors
 from nemoa.core import dcmeta, log, ws
-from flib.io import ini, abc as ioabc
-from flib.typing import BytesLike, ErrType, ErrMeta, ErrStack
-from flib.typing import FileLike, OptBytes, OptPath, OptPathLike, OptStr
-from flib.typing import PathLike, StrDict, StrList, StrOrInt
+from hup.io import ini, abc as ioabc
+from hup.typing import BytesLike, ErrType, ErrMeta, ErrStack
+from hup.typing import FileLike, OptBytes, OptPath, OptPathLike, OptStr
+from hup.typing import PathLike, StrDict, StrList, StrOrInt
 
 #
 # Session Records
@@ -273,7 +273,7 @@ class Session(attrib.Group, SessionType):
                 True.
 
         Returns:
-            Instance of class :class:`~flib.io.abc.Connector`, which
+            Instance of class :class:`~hup.io.abc.Connector`, which
             points to a workspace member.
 
         """

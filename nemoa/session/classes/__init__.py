@@ -24,7 +24,7 @@ __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
-from flib.base import pkg
+from hup.base import pkg
 
 def new(*args, **kwds):
     """Create new session instance."""

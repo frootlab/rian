@@ -27,8 +27,8 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import Any
 import numpy as np
-from flib.base import call, catalog
-from flib.typing import check, StrList
+from hup.base import call, catalog
+from hup.typing import check, StrList
 from nemoa.base import array
 from nemoa.typing import NpAxes, NpArray, NpArrayLike
 

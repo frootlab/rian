@@ -27,7 +27,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 import time
 import numpy
 import nemoa
-from flib.base import otree
+from hup.base import otree
 from nemoa.core import ui
 
 class Optimizer:

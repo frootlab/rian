@@ -33,7 +33,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
 import nemoa
-from flib.base import catalog
+from hup.base import catalog
 
 class ANN(nemoa.system.classes.base.System):
     """Artificial Neuronal Network (ANN).

@@ -48,7 +48,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
 import nemoa
-from flib.base import catalog
+from hup.base import catalog
 
 #
 # (1) Sampler for Markov Random Fields

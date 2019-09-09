@@ -36,7 +36,7 @@ def filetypes():
 def load(path, **kwds):
     """Import system from text file."""
 
-    from flib.base import env
+    from hup.base import env
 
     # extract filetype from path
     filetype = env.fileext(path).lower()
@@ -68,8 +68,8 @@ class Ini:
                 configuration dictionary.
 
         """
-        from flib.base import env
-        from flib.io import ini
+        from hup.base import env
+        from hup.io import ini
 
         # import ini file to dictionary, using ini file structure
         # described with regular expressions

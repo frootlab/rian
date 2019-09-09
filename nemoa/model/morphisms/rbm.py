@@ -26,7 +26,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
-from flib.base import catalog, mapping
+from hup.base import catalog, mapping
 from nemoa.core import ui
 import nemoa.model.morphisms.ann
 

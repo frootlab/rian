@@ -28,7 +28,7 @@ import copy
 from typing import Any, Dict, Optional
 import numpy as np
 from numpy.lib import recfunctions as nprec
-from flib.base import catalog, otree
+from hup.base import catalog, otree
 import nemoa
 from nemoa.base import array, nbase
 from nemoa.core import log, ui

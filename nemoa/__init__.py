@@ -16,15 +16,15 @@
 #  You should have received a copy of the GNU General Public License along with
 #  Nemoa. If not, see <http://www.gnu.org/licenses/>.
 #
-"""Nemoa Data Analysis.
+"""Nemoa.
 
 Nemoa is a data analysis framework for collaborative data science and enterprise
-application. Nemoa is open source and based on the Python programming language.
-Nemoa utilizes methods from probabilistic graphical modeling [PGM]_, machine
-learning [ML]_ and structured data-analysis [SDA]_.
+analytical applications. Nemoa is open source and based on the Python
+programming language. Nemoa utilizes methods from probabilistic graphical
+modeling [PGM]_, machine learning [ML]_ and structured data-analysis [SDA]_.
 
 """
-__version__ = '0.5.582'
+__version__ = '0.5.583'
 __license__ = 'GPLv3'
 __copyright__ = '2019 Frootlab'
 __description__ = 'Enterprise Machine-Learning and Predictive Analytics'

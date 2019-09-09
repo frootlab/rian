@@ -1,8 +1,5 @@
 <div align="center">
-  <a href="https://github.com/frootlab/nemoa">
-    <img src="https://bit.ly/2VRCy9t">
-  </a>
-  <br>
+  <img src="https://www.frootlab.org/images/fig/nemoa.svg" width=350px>
 </div>
 
 Nemoa
@@ -32,10 +29,10 @@ such a metric would be the average prediction accuracy within a fixed set of
 gold standard samples of the respective domain of application (e.g. latin
 handwriting samples, spoken word samples, TCGA gene expression data, etc.).
 
-Nemoa is [open source](https://github.com/frootlab/pandora), based on the
-[Python](https://www.python.org/) programming language and actively developed as
-part of the [Liquid ML](https://github.com/orgs/frootlab/projects) framework
-at [Frootlab](https://github.com/frootlab).
+Nemoa is open source, based on the [Python](https://www.python.org/) programming
+language and actively developed as part of the [Liquid
+Code](https://www.frootlab.org/liquid) framework at
+[Frootlab](https://www.frootlab.org).
 
 Current Development Status
 --------------------------

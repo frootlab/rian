@@ -24,7 +24,7 @@ __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
-from flib.base import otree
+from hup.base import otree
 import nemoa.model.exports.archive
 import nemoa.model.exports.image
 
@@ -63,7 +63,7 @@ def save(model, path = None, filetype = None, workspace = None,
         Boolean value which is True if file export was successful
 
     """
-    from flib.base import env
+    from hup.base import env
 
     if not otree.has_base(model, 'Model'):
         raise TypeError("model is not valid")

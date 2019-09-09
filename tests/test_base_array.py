@@ -26,8 +26,8 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy as np
-from flib.base import test
-from flib.typing import NaN
+from hup.base import test
+from hup.typing import NaN
 from nemoa.base import array
 
 #

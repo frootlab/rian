@@ -28,11 +28,11 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 import datetime
 from pathlib import Path
 from typing import ClassVar, Optional
-from flib.base import attrib, env
+from hup.base import attrib, env
 from nemoa.core import dcmeta
-from flib.errors import FileFormatError
-from flib.io import ini, zip as archive
-from flib.typing import StrList, PathLike, OptBytes, OptPathLike
+from hup.errors import FileFormatError
+from hup.io import ini, zip as archive
+from hup.typing import StrList, PathLike, OptBytes, OptPathLike
 
 class Workspace(archive.File, attrib.Group):
     """Workspaces.

@@ -27,7 +27,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 from typing import Any, Callable
 import numpy as np
-from flib.base import test
+from hup.base import test
 from nemoa.typing import NpArray
 
 class MathModule(test.ModuleTest):

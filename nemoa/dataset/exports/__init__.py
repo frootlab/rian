@@ -24,7 +24,7 @@ __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
-from flib.base import otree
+from hup.base import otree
 from nemoa.dataset.exports import archive, text, image
 
 def filetypes(filetype = None):
@@ -73,7 +73,7 @@ def save(
     if not otree.has_base(dataset, 'Dataset'):
         raise TypeError("dataset is not valid")
 
-    from flib.base import env
+    from hup.base import env
     import nemoa
 
     # get directory, filename and fileextension

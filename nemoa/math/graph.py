@@ -26,7 +26,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import networkx as nx
-from flib.typing import Any, OptBool, OptStr, OptTuple, FloatPair
+from hup.typing import Any, OptBool, OptStr, OptTuple, FloatPair
 
 DiGraph = nx.classes.digraph.DiGraph
 

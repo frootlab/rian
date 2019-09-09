@@ -27,7 +27,7 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import networkx as nx
 from nemoa.plot import network
-from flib.base import test
+from hup.base import test
 
 #
 # Test Cases

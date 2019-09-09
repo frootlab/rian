@@ -24,7 +24,7 @@ __author__ = 'Frootlab Developers'
 __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
-from flib.base import otree
+from hup.base import otree
 import nemoa
 from nemoa.network.exports import archive, graph, image
 
@@ -70,7 +70,7 @@ def save(network, path = None, filetype = None, workspace = None,
 
     """
 
-    from flib.base import env
+    from hup.base import env
 
     if not otree.has_base(network, 'Network'):
         raise ValueError("network is not valid")

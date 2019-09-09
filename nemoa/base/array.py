@@ -28,8 +28,8 @@ __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 from typing import List
 import numpy as np
 from numpy.lib import recfunctions as nprec
-from flib.typing import check, StrPairDict, StrListPair, NaN, OptList
-from flib.typing import Number, OptNumber, OptStrList
+from hup.typing import check, StrPairDict, StrListPair, NaN, OptList
+from hup.typing import Number, OptNumber, OptStrList
 from nemoa.typing import NpArray, NpArrayLike, NpRecArray, NpFields
 
 #

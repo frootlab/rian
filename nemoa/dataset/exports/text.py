@@ -25,7 +25,7 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import os
-from flib.io import csv, ini
+from hup.io import csv, ini
 from nemoa.base import array
 
 def filetypes() -> dict:
