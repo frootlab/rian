@@ -34,8 +34,8 @@ application (e.g. latin handwriting, spoken words, TCGA gene expression data,
 etc.).
 
 Rian is open source, based on the [Python](https://www.python.org/) programming
-language and actively developed as part of the [Liquid
-Code](https://www.frootlab.org/liquid) framework at
+language and actively developed as part of the
+[Vivid Code](https://www.frootlab.org/vivid) framework at
 [Frootlab](https://www.frootlab.org).
 
 Current Development Status
