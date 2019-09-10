@@ -3,18 +3,18 @@
 # Copyright (C) 2019 Frootlab
 # Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://www.frootlab.org/nemoa
+# This file is part of Frootlab Rian, https://www.frootlab.org/rian
 #
-#  Nemoa is free software: you can redistribute it and/or modify it under the
+#  Rian is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  Nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  Rian is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License along with
-#  Nemoa. If not, see <http://www.gnu.org/licenses/>.
+#  Rian. If not, see <http://www.gnu.org/licenses/>.
 #
 """Configuration file for the Sphinx documentation builder.
 
@@ -36,8 +36,8 @@ import sphinx_bootstrap_theme
 # -- Project information -----------------------------------------------------
 
 # Module Variables
-project = 'Nemoa'
-package = 'nemoa'
+project = 'Rian'
+package = 'rian'
 
 # Parse top level module for attributes
 text = pathlib.Path(f'../{package}/__init__.py').read_text()

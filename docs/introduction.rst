@@ -12,20 +12,20 @@ data science.
 .. image:: images/model.png
    :width: 300
    :align: center
-   :alt: Nemoa Deep Belief Model
+   :alt: Rian Deep Belief Model
 
-*Nemoa* is a data analysis framework for collaborative data science and
+*Rian* is a data analysis framework for collaborative data science and
 enterprise application. The key goal of the project is to provide a long-term
 data analysis framework, which seemingly integrates into existing enterprise
 data environments and thereby supports collaborative data science. To achieve
-this goal nemoa orchestrates established frameworks like `TensorFlow®`_ and
+this goal rian orchestrates established frameworks like `TensorFlow®`_ and
 `SQLAlchemy`_ and dynamically extends their capabilities by community driven
 algorithms for probabilistic graphical modeling [PGM]_, machine learning [ML]_
 and structured data-analysis [SDA]_.
 
 Components
 ----------
-Nemoa is open source and based on the `Python`_ programming language. It
+Rian is open source and based on the `Python`_ programming language. It
 provides:
 
     * A transparent `DW`_ architecture for the seamless integration of existing

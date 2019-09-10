@@ -1,35 +1,39 @@
 <div align="center">
-  <img src="https://www.frootlab.org/images/fig/nemoa.svg" width=350px>
+  <img src="https://www.frootlab.org/images/fig/rian.svg" width=350px>
 </div>
 
-Nemoa
+Rian
 =====
 
-[![Building Status](https://travis-ci.org/frootlab/nemoa.svg?branch=master)](https://travis-ci.org/frootlab/nemoa)
-[![Documentation Status](https://readthedocs.org/projects/nemoa/badge/?version=latest)](https://nemoa.readthedocs.io/en/latest/?badge=latest)
-[![PIP Version](https://badge.fury.io/py/nemoa.svg)](https://badge.fury.io/py/nemoa)
+[![Building Status](https://travis-ci.org/frootlab/rian.svg?branch=master)](https://travis-ci.org/frootlab/rian)
+[![Documentation Status](https://readthedocs.org/projects/rian/badge/?version=latest)](https://rian.readthedocs.io/en/latest/?badge=latest)
+[![PIP Version](https://badge.fury.io/py/rian.svg)](https://badge.fury.io/py/rian)
 
-*Nemoa* is a machine learning- and data analysis framework, that implements the
-**Cloud-Assisted Meta Programming** (CAMP) paradigm.
+*Rian* is a machine learning- and data analysis framework, that implements *cloud-assisted meta programming* (CAMP).
 
-The key goal of Nemoa is to provide a long-term data analysis framework, which
+The key goal of Rian is to provide a long-term data analysis framework, which
 seemingly integrates into existing enterprise data environments and thereby
-supports collaborative data science. To achieve this goal Nemoa orchestrates
-established Python frameworks like [TensorFlow®](https://www.tensorflow.org/)
-and [SQLAlchemy](https://www.sqlalchemy.org/) and dynamically extends their
-capabilities by community driven algorithms (e.g. for [probabilistic graphical
+supports collaborative data science. To achieve this goal Rian orchestrates
+established frameworks like [TensorFlow®](https://www.tensorflow.org/) and
+dynamically extends their capabilities by community driven algorithms (e.g. for
+[probabilistic graphical
 modeling](https://en.wikipedia.org/wiki/Graphical_model), [machine
 learning](https://en.wikipedia.org/wiki/Machine_learning) and [structured
 data-analysis](https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics))).
 
-Thereby Nemoa allows client-side implementations to use abstract **currently
-best fitting** (CBF) algorithms. During runtime the concrete implementation of
-CBF algorithms are chosen server-sided by category and metric. An example for
-such a metric would be the average prediction accuracy within a fixed set of
-gold standard samples of the respective domain of application (e.g. latin
-handwriting samples, spoken word samples, TCGA gene expression data, etc.).
+Thereby Rian allows the client-side usage of abstract algorithms,
+that are specified with respect to their category, the used data type and an
+evaluation metric that determines their fitness. During runtime
+these abstract specifications are resolved server-sided from a code catalog, by
+a *currently best fitting* (CBF) algorithm.
 
-Nemoa is open source, based on the [Python](https://www.python.org/) programming
+For given category and application, the CBF algorithms are determined by their
+used metric. Examples for such metrices would be the prediction accuracies
+within a fixed set of gold standard samples of the respective domain of
+application (e.g. latin handwriting, spoken words, TCGA gene expression data,
+etc.).
+
+Rian is open source, based on the [Python](https://www.python.org/) programming
 language and actively developed as part of the [Liquid
 Code](https://www.frootlab.org/liquid) framework at
 [Frootlab](https://www.frootlab.org).
@@ -37,43 +41,42 @@ Code](https://www.frootlab.org/liquid) framework at
 Current Development Status
 --------------------------
 
-Nemoa currently is in *Pre-Alpha* development stage, which immediately follows
+Rian currently is in *Pre-Alpha* development stage, which immediately follows
 the *Planning* stage. This means, that at least some essential requirements of
-Nemoa are not yet implemented.
+Rian are not yet implemented.
 
 Installation
 ------------
 
 Comprehensive information and installation support is provided within the
-[online manual](http://docs.frootlab.org/nemoa). If you already have a
+[online manual](http://docs.frootlab.org/rian). If you already have a
 Python environment configured on your computer, you can install the latest
 distributed version by using pip:
 
-    $ pip install nemoa
+    $ pip install rian
 
 Documentation
 -------------
 
 The documentation of the latest distributed version is available as an [online
-manual](http://docs.frootlab.org/nemoa) and for download, given in the
-formats [PDF](https://readthedocs.org/projects/nemoa/downloads/pdf/latest/),
-[EPUB](https://readthedocs.org/projects/nemoa/downloads/epub/latest/) and
-[HTML](https://readthedocs.org/projects/nemoa/downloads/htmlzip/latest/).
+manual](http://docs.frootlab.org/rian) and for download, given in the
+formats [PDF](https://readthedocs.org/projects/rian/downloads/pdf/latest/),
+[EPUB](https://readthedocs.org/projects/rian/downloads/epub/latest/) and
+[HTML](https://readthedocs.org/projects/rian/downloads/htmlzip/latest/).
 
-Contribute
-----------
+Contributions
+-------------
 
-Contributors are very welcome! Feel free to report bugs and feature requests to
-the [issue tracker](https://github.com/frootlab/nemoa/issues) provided by
-GitHub. Currently, as the Frootlab Developers team still is growing, we do not
-provide any Contribution Guide Lines to collaboration partners. However, if you
-are interested to join the team, we would be glad, to receive an informal
-[application](mailto:application@frootlab.org).
+Contributors are very welcome! Feel free to report bugs, ideas and feature
+requests to the [issue tracker](https://github.com/frootlab/rian/issues),
+provided by GitHub. Currently, as our team still is growing, we do not provide
+any Contribution Guide Lines. So, if you are interested to help or to join the
+team, we would be glad, to [hear about you](mailto:application@frootlab.org).
 
 License
 -------
 
-Nemoa is open source and available free for any use under the
+Rian is open source software and available free for any use under the
 [GPLv3 license](https://www.gnu.org/licenses/gpl.html):
 
     © 2019 Frootlab Developers:

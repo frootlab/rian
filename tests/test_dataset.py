@@ -3,18 +3,18 @@
 # Copyright (C) 2019 Frootlab
 # Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://www.frootlab.org/nemoa
+# This file is part of Frootlab Rian, https://www.frootlab.org/rian
 #
-#  Nemoa is free software: you can redistribute it and/or modify it under the
+#  Rian is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  Nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  Rian is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License along with
-#  Nemoa. If not, see <http://www.gnu.org/licenses/>.
+#  Rian. If not, see <http://www.gnu.org/licenses/>.
 #
 
 __copyright__ = '2019 Frootlab'
@@ -25,26 +25,26 @@ __email__ = 'contact@frootlab.org'
 __authors__ = ['Patrick Michl <patrick.michl@frootlab.org>']
 
 import numpy
-import nemoa
+import rian
 from hup.base import otree, test
-import nemoa.dataset
+import rian.dataset
 
 class TestCase(test.GenericTest):
 
     def test_dataset_import(self):
 
         with self.subTest(filetype="csv"):
-            dataset = nemoa.dataset.open('sinus', workspace='testsuite')
+            dataset = rian.dataset.open('sinus', workspace='testsuite')
             test = otree.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
         with self.subTest(filetype="tab"):
-            dataset = nemoa.dataset.open('linear', workspace='testsuite')
+            dataset = rian.dataset.open('linear', workspace='testsuite')
             test = otree.has_base(dataset, 'Dataset')
             self.assertTrue(test)
 
     def test_dataset_evaluate(self):
-        dataset = nemoa.dataset.open('linear', workspace='testsuite')
+        dataset = rian.dataset.open('linear', workspace='testsuite')
 
         with self.subTest("test_gauss"):
             evaluate = dataset.evaluate('test_gauss')
@@ -77,7 +77,7 @@ class TestCase(test.GenericTest):
     def test_dataset_create(self):
 
         with self.subTest(create="rules"):
-            dataset = nemoa.dataset.create('rules',
+            dataset = rian.dataset.create('rules',
                 name='example',
                 columns=['i1', 'i2', 'i3', 'i4', 'o1', 'o2'],
                 initialize='gauss + bernoulli',

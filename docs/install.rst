@@ -1,7 +1,7 @@
 Install
 =======
 
-Nemoa requires Python 3.7 or later. If you do not already have a Python
+Rian requires Python 3.7 or later. If you do not already have a Python
 environment configured on your computer, please see the instructions for
 installing the full `scientific Python stack <https://scipy.org/install.html>`_.
 
@@ -18,7 +18,7 @@ installing the full `scientific Python stack <https://scipy.org/install.html>`_.
    online documentation.
 
 Below it is assumed, that you have the default Python environment configured on
-your computer and you intend to install Nemoa inside of it.  If you want
+your computer and you intend to install Rian inside of it.  If you want
 to create and work with Python virtual environments, please follow instructions
 on `venv <https://docs.python.org/3/library/venv.html>`_ and `virtual
 environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
@@ -26,22 +26,22 @@ environments <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
 Install the latest distributed package
 --------------------------------------
 
-You can install the latest distributed package of Nemoa by using `pip`::
+You can install the latest distributed package of Rian by using `pip`::
 
-    $ pip install nemoa
+    $ pip install rian
 
 Install the development branch
 ------------------------------
 
 The installation requires that you have `Git <https://git-scm.com/>`_ installed
 on your system. Under this prerequisite the first step is to clone the GitHub
-repository of Nemoa::
+repository of Rian::
 
-    $ git clone https://github.com/frootlab/nemoa.git
+    $ git clone https://github.com/frootlab/rian.git
 
 Thereupon the development branch can locally be installed by using `pip`::
 
-    $ cd nemoa
+    $ cd rian
     $ pip install -e .
 
 The ``pip install`` command allows you to follow the development branch as
@@ -51,7 +51,7 @@ line scripts to the appropriate locations.
 Update the development branch
 -----------------------------
 
-Once you have cloned the Nemoa GitHub repository onto a local directory, you
+Once you have cloned the Rian GitHub repository onto a local directory, you
 can update it anytime by running a ``git pull`` in this directory::
 
     $ git pull
@@ -59,8 +59,8 @@ can update it anytime by running a ``git pull`` in this directory::
 Testing the development branch
 ------------------------------
 
-Nemoa uses the Python builtin package unittest for testing. Since the tests are
-not included in the distributed package you are required to install the Nemoa
+Rian uses the Python builtin package unittest for testing. Since the tests are
+not included in the distributed package you are required to install the Rian
 development branch. Thereupon you have to switch to the repository directory and
 run::
 

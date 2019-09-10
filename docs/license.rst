@@ -1,7 +1,7 @@
 License
 =======
 
-Nemoa is distributed with the GNU General Public License v3 [GPLV3]_.
+Rian is distributed with the GNU General Public License v3 [GPLV3]_.
 
 ::
 

@@ -499,13 +499,13 @@ Basic Parameters and Formats
         :objects: For the domain type :class:`object` fields are identified by
             attribute names, and therefore required to be valid identifiers as
             specified in :PEP:`3131`. Additionally the functions in the module
-            :mod:`nemoa.base.operator` accept the usage of dots, for the
+            :mod:`rian.base.operator` accept the usage of dots, for the
             identification of arbitrary sub-objects within object hierarchies.
         :mappings: For the domain type :class:`dict` (or any subclass of the
             :class:`Mapping class <collection.abs.Mapping>`) fields are
             identified by the keys of the mappings and therefore required to be
             :term:`hashable`. Additionally the functions in the module
-            :mod:`nemoa.base.operator` require, that the field identifiers are
+            :mod:`rian.base.operator` require, that the field identifiers are
             not given by tuples.
         :sequences: For the domain type :class:`tuple` (or any subclass of the
             :class:`Sequence class <collection.abs.Sequence>`) the fields are
@@ -568,16 +568,16 @@ Parameters and Formats used in Data Warehousing
 
         *Row like* data comprises different data formats, which are used to
         represent table records. This includes tuples, mappings and instances of
-        the :class:`Record class <nemoa.db.table.Record>`. The :class:`Table
-        class <nemoa.db.table.Table>` accepts these data types for appending
-        rows by :meth:`~nemoa.db.table.Table.insert` and for retrieving rows by
-        :meth:`~nemoa.db.table.Table.select`.
+        the :class:`Record class <rian.db.table.Record>`. The :class:`Table
+        class <rian.db.table.Table>` accepts these data types for appending
+        rows by :meth:`~rian.db.table.Table.insert` and for retrieving rows by
+        :meth:`~rian.db.table.Table.select`.
 
     Cursor Mode
 
         The *cursor mode* defines the *scrolling type* and the *operation mode*
         of a cursor. Internally the respective parameters of the
-        :class:`Cursor class <nemoa.db.table.Cursor>` are identified by binary
+        :class:`Cursor class <rian.db.table.Cursor>` are identified by binary
         flags. The public interface uses a string representation, given by
         the space separated names of the scrolling type and the the operation
         mode. Supported scrolling types are:

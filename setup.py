@@ -4,18 +4,18 @@
 # Copyright (C) 2019 Frootlab
 # Copyright (C) 2013-2019 Patrick Michl
 #
-# This file is part of Nemoa, https://www.frootlab.org/nemoa
+# This file is part of Frootlab Rian, https://www.frootlab.org/rian
 #
-#  Nemoa is free software: you can redistribute it and/or modify it under the
+#  Rian is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  Nemoa is distributed in the hope that it will be useful, but WITHOUT ANY
+#  Rian is distributed in the hope that it will be useful, but WITHOUT ANY
 #  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 #  A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License along with
-#  Nemoa. If not, see <http://www.gnu.org/licenses/>.
+#  Rian. If not, see <http://www.gnu.org/licenses/>.
 #
 """Setuptools based installation."""
 
@@ -45,14 +45,14 @@ def install() -> None:
     """Setuptools based installation script."""
 
     # Parse top level module for attributes
-    text = pathlib.Path('./nemoa/__init__.py').read_text()
+    text = pathlib.Path('./rian/__init__.py').read_text()
     pattern = r"^[ ]*__([^\d\W]\w*)__[ ]*=[ ]*['\"]([^'\"]*)['\"]"
     matches = re.finditer(pattern, text, re.M)
     pkg = {str(m.group(1)): str(m.group(2)) for m in matches}
 
     # Install package
     setuptools.setup(
-        name='nemoa',
+        name='rian',
         version=pkg['version'],
         description=pkg['description'],
         long_description=pathlib.Path('.', 'README.md').read_text(),
@@ -84,9 +84,9 @@ def install() -> None:
         license=pkg['license'],
         packages=setuptools.find_packages(),
         package_dir={
-            'nemoa': 'nemoa'},
+            'rian': 'rian'},
         package_data={
-            'nemoa': ['data/*.zip']},
+            'rian': ['data/*.zip']},
         cmdclass={
             'install': CustomInstaller},
         python_requires='>=3.7',
@@ -102,7 +102,7 @@ def install() -> None:
             'gene': ['rpy2']},
         entry_points={
             'console_scripts': [
-                'nemoa = nemoa.core.cli:main']},
+                'rian = rian.core.cli:main']},
         zip_safe=False)
 
 def post_install() -> None:
@@ -128,14 +128,14 @@ def post_install() -> None:
     # copy user workspaces
     user_src_base = str(pathlib.Path('.', 'data', 'user'))
     user_tgt_base = appdirs.user_data_dir(
-        appname='nemoa', appauthor='frootlab')
+        appname='rian', appauthor='frootlab')
     user_tgt_base = str(pathlib.Path(user_tgt_base, 'workspaces'))
     copytree(user_src_base, user_tgt_base)
 
     # copy site workspaces
     site_src_base = str(pathlib.Path('.', 'data', 'site'))
     site_tgt_base = appdirs.site_data_dir(
-        appname='nemoa', appauthor='frootlab')
+        appname='rian', appauthor='frootlab')
     site_tgt_base = str(pathlib.Path(site_tgt_base, 'workspaces'))
     copytree(site_src_base, site_tgt_base)
 
