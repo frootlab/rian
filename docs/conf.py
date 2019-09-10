@@ -231,4 +231,4 @@ intersphinx_mapping = {
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'hup': ('http://hup.readthedocs.io/en/latest/', None),
     'deet': ('http://deet.readthedocs.io/en/latest/', None),
-    'motley': ('http://motley.readthedocs.io/en/latest/', None)}
+    'brea': ('http://brea.readthedocs.io/en/latest/', None)}
