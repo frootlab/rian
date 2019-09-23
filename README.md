@@ -1,7 +1,9 @@
-<figure align="center">
-  <img src="https://www.frootlab.org/images/fig/rian.svg" width=350px
-    alt="Machine Learning using Vivid Node">
-</figure>
+<div align="center">
+  <figure>
+    <img src="https://www.frootlab.org/images/fig/rian.svg" width=350px
+      alt="Machine Learning using Vivid Node">
+  </figure>
+</div>
 
 Vivid Node
 ==========
@@ -27,13 +29,15 @@ During runtime these abstract specifications are resolved cloud-sided by
 the separation of engineering and data science, as well as simple collaborations
 between organizations without the requirement to share data.
 
-<figure align="center">
-  <img src="https://www.frootlab.org/images/fig/vivid-collaboration.svg"
-    width=400px alt="Collaborative data science using the Vivid Code framework">
-  <figcaption>
-    Collaborative data science using the Vivid Code framework
-  </figcaption>
-</figure>
+<div align="center">
+  <figure>
+    <img src="https://www.frootlab.org/images/fig/vivid-collaboration.svg"
+      width=400px alt="Collaborative data science using the Vivid Code framework">
+    <figcaption>
+      Collaborative data science using the Vivid Code framework
+    </figcaption>
+  </figure>
+</div>
 
 For a given algorithm category and data type, the currently best fitting
 algorithms are determined by the used metric. Examples for such metrices would
