@@ -1,42 +1,45 @@
-<div align="center">
-  <img src="https://www.frootlab.org/images/fig/rian.svg" width=350px>
-</div>
+<figure align="center">
+  <img src="https://www.frootlab.org/images/fig/rian.svg" width=350px
+    alt="Machine Learning using Vivid Node">
+</figure>
 
-Rian
-=====
+Vivid Node
+==========
 
 [![Building Status](https://travis-ci.org/frootlab/rian.svg?branch=master)](https://travis-ci.org/frootlab/rian)
 [![Documentation Status](https://readthedocs.org/projects/rian/badge/?version=latest)](https://rian.readthedocs.io/en/latest/?badge=latest)
 [![PIP Version](https://badge.fury.io/py/rian.svg)](https://badge.fury.io/py/rian)
 
-*Rian* is a machine learning- and data analysis framework, that implements *cloud-assisted meta programming* (CAMP).
+*Vivid Node* (alias *Rian*) is a free [Python](https://www.python.org/) library
+for next generation machine learning- and data analysis applications, that
+implement *cloud-assisted meta programming*. Rian is part of the
+[Vivid Code](http://www.frootlab.org/vivid) framework and actively developed at
+the [Frootlab](http://www.frootlab.org) Organization.
 
-The key goal of Rian is to provide a long-term data analysis framework, which
-seemingly integrates into existing enterprise data environments and thereby
-supports collaborative data science. To achieve this goal Rian orchestrates
-established frameworks like [TensorFlow®](https://www.tensorflow.org/) and
-dynamically extends their capabilities by community driven algorithms (e.g. for
-[probabilistic graphical
-modeling](https://en.wikipedia.org/wiki/Graphical_model), [machine
-learning](https://en.wikipedia.org/wiki/Machine_learning) and [structured
-data-analysis](https://en.wikipedia.org/wiki/Structured_data_analysis_(statistics))).
+The key goal of Rian is to automate and support collaborative data science. To
+achieve this goal Rian orchestrates established frameworks like
+[TensorFlow®](https://www.tensorflow.org) or [Keras®](https://keras.io) and
+dynamically extends their capabilities by cloud based community algorithms.
+Thereby Rian allows the usage of abstract defined algorithms, that are specified
+with respect to their category, the used data type and an evaluation metric.
+During runtime these abstract specifications are resolved cloud-sided by
+*currently best fitting* algorithm, that match the specification. This allows
+the separation of engineering and data science, as well as simple collaborations
+between organizations without the requirement to share data.
 
-Thereby Rian allows the client-side usage of abstract algorithms,
-that are specified with respect to their category, the used data type and an
-evaluation metric that determines their fitness. During runtime
-these abstract specifications are resolved server-sided from a code catalog, by
-a *currently best fitting* (CBF) algorithm.
+<figure align="center">
+  <img src="https://www.frootlab.org/images/fig/vivid-collaboration.svg"
+    width=400px alt="Collaborative data science using the Vivid Code framework">
+  <figcaption>
+    Collaborative data science using the Vivid Code framework
+  </figcaption>
+</figure>
 
-For given category and application, the CBF algorithms are determined by their
-used metric. Examples for such metrices would be the prediction accuracies
-within a fixed set of gold standard samples of the respective domain of
-application (e.g. latin handwriting, spoken words, TCGA gene expression data,
-etc.).
-
-Rian is open source, based on the [Python](https://www.python.org/) programming
-language and actively developed as part of the
-[Vivid Code](https://www.frootlab.org/vivid) framework at
-[Frootlab](https://www.frootlab.org).
+For a given algorithm category and data type, the currently best fitting
+algorithms are determined by the used metric. Examples for such metrices would
+be the prediction accuracies within a fixed set of gold standard samples of the
+respective domain of application (e.g. latin handwriting, spoken words, TCGA
+gene expression data, etc.).
 
 Current Development Status
 --------------------------
@@ -54,6 +57,10 @@ Python environment configured on your computer, you can install the latest
 distributed version by using pip:
 
     $ pip install rian
+
+Or alternatively:
+
+    $ pip install vivid-node
 
 Documentation
 -------------
@@ -79,6 +86,5 @@ License
 Rian is open source software and available free for any use under the
 [GPLv3 license](https://www.gnu.org/licenses/gpl.html):
 
-    © 2019 Frootlab Developers:
-      Patrick Michl <patrick.michl@frootlab.org>
+    © 2019 The Frootlab Organization
     © 2013-2019 Patrick Michl
