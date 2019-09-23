@@ -33,6 +33,7 @@ between organizations without the requirement to share data.
   <figure>
     <img src="https://www.frootlab.org/images/fig/vivid-collaboration.svg"
       width=400px alt="Collaborative data science using the Vivid Code framework">
+    <br>
     <figcaption>
       Collaborative data science using the Vivid Code framework
     </figcaption>
