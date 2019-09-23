@@ -76,8 +76,8 @@ formats [PDF](https://readthedocs.org/projects/rian/downloads/pdf/latest/),
 [EPUB](https://readthedocs.org/projects/rian/downloads/epub/latest/) and
 [HTML](https://readthedocs.org/projects/rian/downloads/htmlzip/latest/).
 
-Contributions
--------------
+Contribution
+------------
 
 Contributors are very welcome! Feel free to report bugs, ideas and feature
 requests to the [issue tracker](https://github.com/frootlab/rian/issues),
