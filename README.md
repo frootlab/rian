@@ -1,6 +1,6 @@
 <div align="center">
   <figure>
-    <img src="https://www.frootlab.org/images/fig/rian.svg" width=350px
+    <img src="https://www.frootlab.org/images/fig/vivid-node.svg" width=350px
       alt="Machine Learning using Vivid Node">
   </figure>
 </div>
@@ -31,11 +31,11 @@ between organizations without the requirement to share data.
 
 <div align="center">
   <figure>
-    <img src="https://www.frootlab.org/images/fig/vivid-collaboration.svg"
-      width=400px alt="Collaborative data science using the Vivid Code framework">
+    <img src="https://www.frootlab.org/images/fig/vivid-code-collaboration.svg"
+      width=400px alt="Automated collaborative data science using Vivid Code">
     <br>
     <figcaption>
-      Collaborative data science using the Vivid Code framework
+      Automated collaborative data science using Vivid Code
     </figcaption>
   </figure>
 </div>
